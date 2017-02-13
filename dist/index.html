@@ -28,7 +28,11 @@
         if (!settings.bypassProxy) settings.bypassProxy = location.search.indexOf('bypassProxy=true') > -1;
         settings.proxy = settings.bypassProxy ? '' : settings.proxy ? settings.proxy : '/proxy/';
 
+<<<<<<< HEAD
         w.apiDesignerWorker = new Worker('scripts/api-designer-worker.js#parser=./api-designer-parser.js&proxy=' + settings.proxy);
+=======
+        w.apiDesignerWorker = new Worker('scripts/api-designer-worker.js?parser=./api-designer-parser.js&proxy=' + settings.proxy);
+>>>>>>> parent of 52ad6d6... Correct minification
       })(window);
     </script>
 

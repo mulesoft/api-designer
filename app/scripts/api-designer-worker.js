@@ -1,9 +1,6 @@
 'use strict';
 
 var workerParameters = (function getQueryParams(qs) {
-  if (qs.indexOf('#') === 0) {
-    qs = qs.substring(1);
-  }
   qs = qs.split('+').join(' ');
 
   var params = {},
@@ -17,14 +14,13 @@ var workerParameters = (function getQueryParams(qs) {
   }
 
   return params;
-})(self.location.hash || '');
+})(self.location.search);
 
 console.log('Worker initialed with parameter:', workerParameters);
-if (!workerParameters) {
-  console.error('Missing Worker parameters in url hash');
-}
 
-if (self.location.host.indexOf('localhost:9013') > -1) {
+if (workerParameters && self.location.host.indexOf('localhost') === -1) {
+  self.importScripts(workerParameters.parser);
+} else {
   // dev dependencies to parser
   self.importScripts(
     '/bower_components/raml-1-parser/raml-json-validation.js',
@@ -32,8 +28,6 @@ if (self.location.host.indexOf('localhost:9013') > -1) {
     '/bower_components/raml-1-parser/raml-1-parser.js',
     '/.tmp/js-traverse/js-traverse.js'
   );
-} else {
-  self.importScripts(workerParameters.parser);
 }
 
 function RamlExpander() {
