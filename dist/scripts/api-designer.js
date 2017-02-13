@@ -1748,6 +1748,12 @@ if (!window.Map) {
     };
     return this;
   }).factory('ramlRepositoryElements', function () {
+    function splitPath(path) {
+      var isNotEmpty = function (string) {
+        return string && string !== '';
+      };
+      return path.split('/').filter(isNotEmpty);
+    }
     function RamlFile(path, contents, options) {
       options = options || {};
       // remove the trailing slash to path if it exists
@@ -1765,6 +1771,7 @@ if (!window.Map) {
       this.contents = contents || '';
       this.persisted = options.persisted || false;
       this.dirty = options.dirty || !this.persisted;
+      this.loaded = options.loaded || !this.persisted;
       this.root = options.root;
     }
     RamlFile.prototype.copyTo = function copyTo(other) {
@@ -1780,6 +1787,15 @@ if (!window.Map) {
       this.persisted = true;
       this.loaded = false;
       return this;
+    };
+    RamlFile.prototype.level = function level() {
+      return splitPath(this.path).length;
+    };
+    function parentFromPath(path) {
+      return '/' + splitPath(path).slice(0, -1).join('/');
+    }
+    RamlFile.prototype.parent = function parent() {
+      return parentFromPath(this.path);
     };
     function RamlDirectory(path, meta, children) {
       // remove the trailing slash to path if it exists
@@ -1828,29 +1844,47 @@ if (!window.Map) {
     var entryType = function (entry) {
       return (entry.type || 'file').toLowerCase();
     };
+    RamlDirectory.prototype.containsDirtyChildren = function () {
+      var isDirty = function (descendant) {
+        return !descendant.isDirectory && descendant.isDirty;
+      };
+      var dirtyElement = this.listAllDescendants().find(isDirty);
+      return !!dirtyElement;
+    };
+    RamlDirectory.prototype.containsFiles = function () {
+      var isFile = function (descendant) {
+        return !descendant.isDirectory;
+      };
+      var file = this.listAllDescendants().find(isFile);
+      return !!file;
+    };
+    RamlDirectory.prototype.level = function level() {
+      return splitPath(this.path).length;
+    };
+    RamlDirectory.prototype.parent = function parent() {
+      return parentFromPath(this.path);
+    };
     RamlDirectory.prototype.setChildren = function setChildren(children) {
       function notMetaFile(file) {
         return file.path.slice(-5) !== '.meta';
       }
-      var separated = {
-          folder: [],
-          file: []
-        };
-      children.forEach(function (entry) {
-        separated[entryType(entry)].push(entry);
-      });
-      var files = separated.file.filter(notMetaFile).map(function (file) {
-          return new RamlFile(file.path, file.contents, {
-            dirty: false,
-            persisted: true,
-            root: file.root
-          });
-        });
-      var directories = separated.folder.map(function (directory) {
-          return new RamlDirectory(directory.path, directory.meta, directory.children);
-        });
-      this.children = directories.concat(files).sort(sortingFunction);
+      this.children = children.filter(notMetaFile).map(entryToObject).sort(sortingFunction);
     };
+    RamlDirectory.prototype.addChild = function setChildren(child) {
+      this.children = this.children.concat(child).sort(sortingFunction);
+    };
+    function entryToObject(entry) {
+      switch (entryType(entry)) {
+      case 'file':
+        return new RamlFile(entry.path, entry.contents, {
+          dirty: false,
+          persisted: true,
+          root: entry.root
+        });
+      case 'folder':
+        return new RamlDirectory(entry.path, entry.meta, entry.children);
+      }
+    }
     /**
        * Function used to compare two ramlFile/ramlDirectory.
        * Sorting policy:
@@ -1866,10 +1900,14 @@ if (!window.Map) {
         return a.isDirectory ? -1 : 1;
       }
     }
+    var levelSortingFunction = function (thisElement, otherElement) {
+      return otherElement.level() - thisElement.level();
+    };
     return {
       RamlDirectory: RamlDirectory,
       RamlFile: RamlFile,
-      sortingFunction: sortingFunction
+      sortingFunction: sortingFunction,
+      levelSortingFunction: levelSortingFunction
     };
   }).factory('ramlRepository', [
     '$q',
@@ -1989,9 +2027,19 @@ if (!window.Map) {
         return fileSystem.directory(BASE_PATH).then(this.updateDirectory.bind(this));
       };
       service.updateDirectory = function updateDirectory(rootChildren) {
-        var dirtyFiles = new Map(this.rootFile.listAllDescendants().filter(function (element) {
-            return element && !element.isDirectory && element.dirty;
-          }).map(function (element) {
+        var _this = this;
+        var shouldNotUpdate = function (element) {
+          return element && (element.isDirectory && (element.containsDirtyChildren() || !element.containsFiles()) || !element.isDirectory && element.dirty);
+        };
+        var addElement = function (element) {
+          if (!!_this.getByPath(element.path)) {
+            return;
+          }
+          var parent = _this.getByPath(element.parent());
+          parent.addChild(element);
+        };
+        var elementsToPreserve = this.rootFile.listAllDescendants().filter(shouldNotUpdate);
+        var elementsMap = new Map(elementsToPreserve.map(function (element) {
             return [
               element.path,
               element
@@ -2000,10 +2048,11 @@ if (!window.Map) {
         this.rootFile.setChildren(rootChildren);
         this.rootFile.listAllDescendants().forEach(function (element) {
           var path = element.path;
-          if (dirtyFiles.has(path)) {
-            dirtyFiles.get(path).copyTo(element);
+          if (!element.isDirectory && elementsMap.has(path)) {
+            elementsMap.get(path).copyTo(element);
           }
         });
+        elementsToPreserve.sort(ramlRepositoryElements.levelSortingFunction).forEach(addElement);
       };
       service.removeDirectory = function removeDirectory(directory) {
         // recursively remove all the child directory and files
@@ -2227,13 +2276,13 @@ if (!window.Map) {
         var newPath = service.join(destination.path, target.name);
         var promise;
         if (target.isDirectory) {
-          promise = fileSystem.rename(target.path, newPath);
+          promise = fileSystem.rename(target.path, newPath, { isDirectory: true });
           // renames the path of each child under the current directory
           target.forEachChildDo(function (c) {
             c.path = c.path.replace(target.path, newPath);
           });
         } else {
-          promise = target.persisted ? fileSystem.rename(target.path, newPath) : $q.when(target);
+          promise = target.persisted ? fileSystem.rename(target.path, newPath, { isDirectory: false }) : $q.when(target);
         }
         return promise.then(function () {
           target.path = newPath;
