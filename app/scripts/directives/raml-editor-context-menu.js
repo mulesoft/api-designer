@@ -140,7 +140,7 @@
           }
 
           function close(e) {
-            if (e && e.target.firstChild.nodeValue.match('New File')) {
+            if (e && e.target.firstChild.nodeValue && e.target.firstChild.nodeValue.match('New File')) {
               return;
             }
             scroll.enable();
@@ -164,6 +164,7 @@
             open: function open(event, target) {
               scroll.disable();
               this.target = target;
+              scope.target = target;
 
               scope.actions = createActions(target);
 

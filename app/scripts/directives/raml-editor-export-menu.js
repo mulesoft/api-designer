@@ -29,9 +29,13 @@
           }
 
           function replaceExtension (path, ext) {
-            var index = path.lastIndexOf('.');
-            if (index > -1) {
-              path = path.substr(0, index);
+            var dot = path.lastIndexOf('.');
+            if (dot > -1) {
+              path = path.substr(0, dot);
+            }
+            var slash = path.lastIndexOf('/');
+            if (slash > -1) {
+              path = path.substr(slash + 1);
             }
             return path + '.' + ext;
           }
@@ -52,7 +56,7 @@
             var selectedFile = scope.fileBrowser.selectedFile;
             ramlToSwagger.json(selectedFile).then(function (convert) {
               var lines = JSON.stringify(convert.contents, null, 2);
-              saveFile(lines, replaceExtension(convert.name, 'json'));
+              saveFile(lines, replaceExtension(convert.name || convert.path, 'json'));
             }).catch(function (error) {
               broadcastError(error);
             });
@@ -61,7 +65,7 @@
           scope.exportYamlFiles = function exportYamlFiles() {
             var selectedFile = scope.fileBrowser.selectedFile;
             ramlToSwagger.yaml(selectedFile).then(function (convert) {
-              saveFile(convert.contents, replaceExtension(convert.name, 'yaml'));
+              saveFile(convert.contents, replaceExtension(convert.name || convert.path, 'yaml'));
             }).catch(function (error) {
               broadcastError(error);
             });

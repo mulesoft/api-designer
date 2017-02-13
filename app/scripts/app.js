@@ -22,11 +22,5 @@
     'autoFocus',
     'rightClick',
     'dragAndDrop'
-  ])
-    .run(function ($window, $location) {
-      // Adding proxy settings for api console
-      var disableProxy = $location.search().xDisableProxy === 'true';
-      $window.RAML.Settings.proxy = disableProxy ? '' : '/proxy/';
-    })
-  ;
+  ]);
 })();

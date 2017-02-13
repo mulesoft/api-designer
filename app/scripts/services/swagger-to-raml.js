@@ -2,7 +2,7 @@
   'use strict';
 
   angular.module('ramlEditorApp')
-    .service('swaggerToRAML', function swaggerToRAML($window, $q, $http, importService, apiSpecTransformer) {
+    .service('swaggerToRAML', function swaggerToRAML($window, $q, $http, importService, oasRamlConverter) {
       var self  = this;
 
       function replaceExtension (path, ext) {
@@ -14,24 +14,7 @@
       }
 
       function ramlConverter () {
-        return new apiSpecTransformer.Converter(apiSpecTransformer.Formats.SWAGGER, apiSpecTransformer.Formats.RAML10);
-      }
-
-      function doConvert (error, converter, deferred) {
-        if (error) {
-          deferred.reject(error);
-        }
-
-        try {
-          converter.convert('yaml', function (err, result) {
-            if (err) {
-              return deferred.reject(err);
-            }
-            return deferred.resolve(result);
-          });
-        } catch (err) {
-          deferred.reject(err);
-        }
+        return new oasRamlConverter.Converter(oasRamlConverter.Formats.SWAGGER, oasRamlConverter.Formats.RAML10);
       }
 
       function convertZip(root, contents) {
@@ -65,7 +48,7 @@
           }
 
           // custom fileResolver to take in memory files from the zip
-          var fileResolver = {
+          var fsResolver = {
             canRead: function (url) {
               return this.read(url) != null;
             },
@@ -80,19 +63,15 @@
           };
 
           // convert main swagger spec
-          var deferredConverter = $q.defer();
-          var converter = ramlConverter();
-          converter.loadFile(toAbsolute(name), function (error) {
-            doConvert(error, converter, deferredConverter);
-          }, {
+          ramlConverter().convertFile(toAbsolute(name), {
             resolve: {
-              file: fileResolver,
-              http: fileResolver
+              file: fsResolver,
+              http: fsResolver
             }
-          });
-
-          return deferredConverter.promise.then(function(convertedData) {
+          }).then(function(convertedData) {
             deferred.resolve({name:replaceExtension(name, 'raml'), content:convertedData});
+          }).catch(function(err) {
+            deferred.reject(err);
           });
         }
 
@@ -102,25 +81,14 @@
       self.url = function convert(url) {
         // fetch and convert single file
         var deferred = $q.defer();
-        var converter = ramlConverter();
-        try {
-          converter.loadFile(url, function(error) {
-            doConvert(error, converter, deferred);
-          });
-        } catch (err) {
-          deferred.reject(err);
-        }
-
+        ramlConverter().convertFile(url).then(deferred.resolve).catch(deferred.reject);
         return deferred.promise;
       };
 
-      self.file = function zip(file) {
+      self.file = function f(file) {
         var deferred = $q.defer();
         importService.readFile(file).then(function (content) {
-          var converter = ramlConverter();
-          converter.loadData(content).then(function(error) {
-            doConvert(error, converter, deferred);
-          }).catch(deferred.reject);
+          ramlConverter().convertData(content).then(deferred.resolve).catch(deferred.reject);
         }).catch(deferred.reject);
         return deferred.promise;
       };

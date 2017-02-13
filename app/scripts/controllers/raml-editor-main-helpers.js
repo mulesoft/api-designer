@@ -6,6 +6,7 @@
       return {
         isRamlFile:          isRamlFile,
         isApiDefinition:     isApiDefinition,
+        isApiDefinitionV08:  isApiDefinitionV08,
         isApiDefinitionLike: isApiDefinitionLike
       };
 
@@ -23,6 +24,10 @@
 
       function isApiDefinition(raml) {
         return /^#%RAML\s(0\.8|1\.0)\s*$/.test(getFirstLine(raml));
+      }
+
+      function isApiDefinitionV08(raml) {
+        return /^#%RAML\s(0\.8)\s*$/.test(getFirstLine(raml));
       }
 
       function isTypedFragment(raml) {
