@@ -7271,7 +7271,7 @@
           };
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
       },
-      { '_process': 244 }
+      { '_process': 251 }
     ],
     10: [
       function (require, module, exports) {
@@ -8513,7 +8513,7 @@
           }));
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
       },
-      { '_process': 244 }
+      { '_process': 251 }
     ],
     14: [
       function (require, module, exports) {
@@ -8808,7 +8808,7 @@
           return http.request.call(this, params, cb);
         };
       },
-      { 'http': 263 }
+      { 'http': 270 }
     ],
     17: [
       function (require, module, exports) {
@@ -9943,7 +9943,7 @@
             }
           }
         }
-        function storeMappingPair(state, _result, overridableKeys, keyTag, keyNode, valueNode, startLine, startPos) {
+        function storeMappingPair(state, _result, overridableKeys, keyTag, keyNode, valueNode) {
           var index, quantity;
           keyNode = String(keyNode);
           if (_result === null) {
@@ -9959,8 +9959,6 @@
             }
           } else {
             if (!state.json && !_hasOwnProperty.call(overridableKeys, keyNode) && _hasOwnProperty.call(_result, keyNode)) {
-              state.line = startLine || state.line;
-              state.position = startPos || state.position;
               throwError(state, 'duplicated mapping key');
             }
             _result[keyNode] = valueNode;
@@ -10409,7 +10407,7 @@
           return false;
         }
         function readBlockMapping(state, nodeIndent, flowIndent) {
-          var following, allowCompact, _line, _pos, _tag = state.tag, _anchor = state.anchor, _result = {}, overridableKeys = {}, keyTag = null, keyNode = null, valueNode = null, atExplicitKey = false, detected = false, ch;
+          var following, allowCompact, _line, _tag = state.tag, _anchor = state.anchor, _result = {}, overridableKeys = {}, keyTag = null, keyNode = null, valueNode = null, atExplicitKey = false, detected = false, ch;
           if (state.anchor !== null) {
             state.anchorMap[state.anchor] = _result;
           }
@@ -10418,7 +10416,6 @@
             following = state.input.charCodeAt(state.position + 1);
             _line = state.line;
             // Save the current line.
-            _pos = state.position;
             //
             // Explicit notation case. There are two separate blocks:
             // first for the key (denoted by "?") and second for the value (denoted by ":")
@@ -10492,7 +10489,7 @@
                 }
               }
               if (!atExplicitKey) {
-                storeMappingPair(state, _result, overridableKeys, keyTag, keyNode, valueNode, _line, _pos);
+                storeMappingPair(state, _result, overridableKeys, keyTag, keyNode, valueNode);
                 keyTag = keyNode = valueNode = null;
               }
               skipSeparationSpace(state, true, -1);
@@ -11277,10 +11274,8 @@
             result.push(bits >> 4 & 255);
           }
           // Wrap into Buffer for NodeJS and leave Array for browser
-          if (NodeBuffer) {
-            // Support node 6.+ Buffer API when available
-            return NodeBuffer.from ? NodeBuffer.from(result) : new NodeBuffer(result);
-          }
+          if (NodeBuffer)
+            return new NodeBuffer(result);
           return result;
         }
         function representYamlBinary(object) {
@@ -12502,7 +12497,7 @@
         './ref': 62,
         './util/debug': 67,
         './util/url': 70,
-        'ono': 242
+        'ono': 249
       }
     ],
     54: [
@@ -12773,7 +12768,7 @@
         './util/url': 70,
         './util/yaml': 71,
         'call-me-maybe': 9,
-        'ono': 242
+        'ono': 249
       }
     ],
     55: [
@@ -12993,7 +12988,7 @@
         './util/plugins': 68,
         './util/promise': 69,
         './util/url': 70,
-        'ono': 242
+        'ono': 249
       }
     ],
     57: [
@@ -13341,7 +13336,7 @@
       {
         './ref': 62,
         './util/url': 70,
-        'ono': 242
+        'ono': 249
       }
     ],
     62: [
@@ -13740,7 +13735,7 @@
       {
         './ref': 62,
         './util/url': 70,
-        'ono': 242
+        'ono': 249
       }
     ],
     64: [
@@ -13890,7 +13885,7 @@
         '../util/promise': 69,
         '../util/url': 70,
         'fs': 4,
-        'ono': 242
+        'ono': 249
       }
     ],
     66: [
@@ -14001,11 +13996,11 @@
         '../util/debug': 67,
         '../util/promise': 69,
         '../util/url': 70,
-        '_process': 244,
+        '_process': 251,
         'buffer': 6,
-        'http': 263,
+        'http': 270,
         'https': 16,
-        'ono': 242
+        'ono': 249
       }
     ],
     67: [
@@ -14377,8 +14372,8 @@
         }.call(this, require('_process')));
       },
       {
-        '_process': 244,
-        'url': 277
+        '_process': 251,
+        'url': 284
       }
     ],
     71: [
@@ -14419,7 +14414,7 @@
       },
       {
         'js-yaml': 21,
-        'ono': 242
+        'ono': 249
       }
     ],
     72: [
@@ -35001,9 +34996,9 @@
       },
       {
         './lib/converter': 211,
-        './lib/exporters/index': 221,
-        './lib/formats': 225,
-        './lib/importers/index': 231
+        './lib/exporters/index': 224,
+        './lib/formats': 229,
+        './lib/importers/index': 235
       }
     ],
     211: [
@@ -35113,8 +35108,8 @@
         exports.Converter = Converter;
       },
       {
-        './exporters/index': 221,
-        './importers/index': 231
+        './exporters/index': 224,
+        './importers/index': 235
       }
     ],
     212: [
@@ -35162,6 +35157,10 @@
               this.consumes;
               this.middlewareBefore = '';
               this.middlewareAfter = '';
+              this.mock = {
+                enabled: false,
+                statusCode: 200
+              };
               // this.securedBy = {
               // 	none: true
               // };
@@ -35276,7 +35275,7 @@
                 },
                 get: function get() {
                   if (Array.isArray(this.request.bodies) && this.request.bodies.length > 0) {
-                    return this.request.bodies;
+                    return this.request.bodies[0];
                   }
                   return {};
                 }
@@ -35359,6 +35358,15 @@
                 },
                 get: function get() {
                   return this.securedBy;
+                }
+              },
+              {
+                key: 'Mock',
+                set: function set(mock) {
+                  this.mock = mock;
+                },
+                get: function get() {
+                  return this.mock;
                 }  // get Request() {
                    // 	return this.request;
                    // };
@@ -35396,8 +35404,8 @@
         module.exports = Endpoint;
       },
       {
-        '../utils/json': 236,
-        '../utils/strings': 237
+        '../utils/json': 243,
+        '../utils/strings': 244
       }
     ],
     213: [
@@ -35448,6 +35456,23 @@
               };
             }
             _createClass(Environment, [
+              {
+                key: 'loadSLData',
+                value: function loadSLData(envData) {
+                  for (var key in envData) {
+                    if (!envData.hasOwnProperty(key))
+                      continue;
+                    //direct map supported keys
+                    this[key] = envData[key];
+                  }
+                }
+              },
+              {
+                key: 'toJSON',
+                value: function toJSON() {
+                  return { groups: this.resourcesOrder };
+                }
+              },
               {
                 key: 'Host',
                 set: function set(host) {
@@ -35539,9 +35564,7 @@
                 },
                 get: function get() {
                   return this.securitySchemes;
-                }  // addSecurityScheme (key, securityScheme) {
-                   // 	this.securitySchemes[key] = securityScheme;
-                   // };
+                }
               }
             ]);
             return Environment;
@@ -35587,8 +35610,11 @@
               this.endpoints = [];
               this.resources = [];
               this.schemas = [];
+              this.utilityFunctions = [];
               this.texts = [];
               this.traits = [];
+              this.tests = [];
+              this.savedEntries = [];
               this.pathParamsRef = {};
             }
             _createClass(Project, [
@@ -35611,6 +35637,12 @@
                 }
               },
               {
+                key: 'addUtilityFunction',
+                value: function addUtilityFunction(uf) {
+                  this.utilityFunctions.push(uf);
+                }
+              },
+              {
                 key: 'addText',
                 value: function addText(txt) {
                   this.texts.push(txt);
@@ -35620,6 +35652,24 @@
                 key: 'addTrait',
                 value: function addTrait(trait) {
                   this.traits.push(trait);
+                }
+              },
+              {
+                key: 'addTest',
+                value: function addTest(test) {
+                  this.tests.push(test);
+                }
+              },
+              {
+                key: 'addSavedEntry',
+                value: function addSavedEntry(savedEntry) {
+                  this.savedEntries.push(savedEntry);
+                }
+              },
+              {
+                key: 'loadSLData',
+                value: function loadSLData(slData) {
+                  this.Description = slData.description;
                 }
               },
               {
@@ -35686,6 +35736,12 @@
                 }
               },
               {
+                key: 'UtilityFunctions',
+                get: function get() {
+                  return this.utilityFunctions;
+                }
+              },
+              {
                 key: 'Texts',
                 get: function get() {
                   return this.texts;
@@ -35695,6 +35751,24 @@
                 key: 'Traits',
                 get: function get() {
                   return this.traits;
+                }
+              },
+              {
+                key: 'Tests',
+                get: function get() {
+                  return this.tests;
+                },
+                set: function set(tests) {
+                  this.tests = tests;
+                }
+              },
+              {
+                key: 'SavedEntries',
+                get: function get() {
+                  return this.savedEntries;
+                },
+                set: function set(savedEntries) {
+                  this.savedEntries = savedEntries;
                 }
               }
             ]);
@@ -35731,14 +35805,147 @@
             throw new TypeError('Cannot call a class as a function');
           }
         }
+        var jsonHelper = require('../utils/json');
+        var SavedEntry = function () {
+            function SavedEntry() {
+              _classCallCheck(this, SavedEntry);
+              this._id = null;
+              this.request = {
+                pathParams: {},
+                bodies: [],
+                headers: '{}'
+              };
+            }
+            _createClass(SavedEntry, [
+              {
+                key: 'Id',
+                get: function get() {
+                  return this._id;
+                },
+                set: function set(id) {
+                  this._id = id;
+                }
+              },
+              {
+                key: 'Path',
+                get: function get() {
+                  return this.request.path;
+                },
+                set: function set(path) {
+                  this.request.path = path;
+                }
+              },
+              {
+                key: 'Method',
+                get: function get() {
+                  return this.request.method;
+                },
+                set: function set(requestMethod) {
+                  this.request.method = requestMethod.toLowerCase();
+                }
+              },
+              {
+                key: 'Headers',
+                get: function get() {
+                  return jsonHelper.parse(this.request.headers);
+                },
+                set: function set(headers) {
+                  this.request.headers = jsonHelper.stringify(headers, 4);
+                }
+              },
+              {
+                key: 'Body',
+                set: function set(body) {
+                  body.body = jsonHelper.stringify(body.body, 4);
+                  this.request.bodies.push(body);
+                },
+                get: function get() {
+                  if (Array.isArray(this.request.bodies) && this.request.bodies.length > 0) {
+                    return this.request.bodies[0];
+                  }
+                  return {};
+                }
+              },
+              {
+                key: 'QueryString',
+                set: function set(queryString) {
+                  queryString = jsonHelper.stringify(queryString, 4);
+                  this.request.queryString = queryString;
+                },
+                get: function get() {
+                  if (!this.request.queryString) {
+                    this.request.queryString = '{}';
+                  }
+                  return jsonHelper.parse(this.request.queryString);
+                }
+              },
+              {
+                key: 'PathParams',
+                set: function set(uriParams) {
+                  this.request.pathParams = jsonHelper.stringify(uriParams, 4);
+                },
+                get: function get() {
+                  if (!this.request.pathParams) {
+                    this.request.pathParams = '{}';
+                  }
+                  return jsonHelper.parse(this.request.pathParams);
+                }  // get Request() { return this.request; };
+              }
+            ]);
+            return SavedEntry;
+          }();
+        module.exports = SavedEntry;
+      },
+      { '../utils/json': 243 }
+    ],
+    216: [
+      function (require, module, exports) {
+        'use strict';
+        var _createClass = function () {
+            function defineProperties(target, props) {
+              for (var i = 0; i < props.length; i++) {
+                var descriptor = props[i];
+                descriptor.enumerable = descriptor.enumerable || false;
+                descriptor.configurable = true;
+                if ('value' in descriptor)
+                  descriptor.writable = true;
+                Object.defineProperty(target, descriptor.key, descriptor);
+              }
+            }
+            return function (Constructor, protoProps, staticProps) {
+              if (protoProps)
+                defineProperties(Constructor.prototype, protoProps);
+              if (staticProps)
+                defineProperties(Constructor, staticProps);
+              return Constructor;
+            };
+          }();
+        function _classCallCheck(instance, Constructor) {
+          if (!(instance instanceof Constructor)) {
+            throw new TypeError('Cannot call a class as a function');
+          }
+        }
         var Schema = function () {
             function Schema(namespace) {
               _classCallCheck(this, Schema);
               this.name = '';
               this.namespace = namespace;
               this.definition = '';
+              this.example = '';
+              this.summary = '';
+              this.description = '';
+              this.public = true;
             }
             _createClass(Schema, [
+              {
+                key: 'Id',
+                get: function get() {
+                  return this._id;
+                },
+                set: function set(id) {
+                  this._id = id;
+                }
+              },
               {
                 key: 'Name',
                 get: function get() {
@@ -35762,6 +35969,49 @@
                 get: function get() {
                   return this.definition;
                 }
+              },
+              {
+                key: 'Example',
+                get: function get() {
+                  return this.example;
+                }
+              },
+              {
+                key: 'SLData',
+                set: function set(schemaData) {
+                  var sd = schemaData || {};
+                  this.name = sd.name || '';
+                  this.definition = sd.definition || {};
+                  this.example = sd.example || {};
+                  this._id = sd._id;
+                }
+              },
+              {
+                key: 'Summary',
+                get: function get() {
+                  return this.summary || '';
+                },
+                set: function set(summary) {
+                  this.summary = summary;
+                }
+              },
+              {
+                key: 'Description',
+                get: function get() {
+                  return this.description;
+                },
+                set: function set(desc) {
+                  this.description = desc;
+                }
+              },
+              {
+                key: 'Public',
+                get: function get() {
+                  return this.public;
+                },
+                set: function set(p) {
+                  this.public = p;
+                }
               }
             ]);
             return Schema;
@@ -35770,7 +36020,7 @@
       },
       {}
     ],
-    216: [
+    217: [
       function (require, module, exports) {
         'use strict';
         var _createClass = function () {
@@ -35803,11 +36053,9 @@
               this.swagger = '2.0';
               this.info = {
                 'version': '',
-                'title': title
+                'title': title,
+                'description': description
               };
-              if (description) {
-                this.info['description'] = description;
-              }
               this.host = '';
               this.basePath = '';
               this.schemes = [];
@@ -35817,6 +36065,7 @@
               this.paths = {};
               this.parameters = {};
               this.responses = [];
+              this.definitions = {};
             }
             _createClass(SwaggerDefinition, [
               {
@@ -35846,36 +36095,210 @@
       },
       {}
     ],
-    217: [
+    218: [
       function (require, module, exports) {
         'use strict';
+        var _createClass = function () {
+            function defineProperties(target, props) {
+              for (var i = 0; i < props.length; i++) {
+                var descriptor = props[i];
+                descriptor.enumerable = descriptor.enumerable || false;
+                descriptor.configurable = true;
+                if ('value' in descriptor)
+                  descriptor.writable = true;
+                Object.defineProperty(target, descriptor.key, descriptor);
+              }
+            }
+            return function (Constructor, protoProps, staticProps) {
+              if (protoProps)
+                defineProperties(Constructor.prototype, protoProps);
+              if (staticProps)
+                defineProperties(Constructor, staticProps);
+              return Constructor;
+            };
+          }();
         function _classCallCheck(instance, Constructor) {
           if (!(instance instanceof Constructor)) {
             throw new TypeError('Cannot call a class as a function');
           }
         }
-        var Method = function Method(method, methodResolved) {
-          _classCallCheck(this, Method);
-          this.method = method;
-          this.methodResolved = methodResolved;
-          this.summary = this.method.summary || this.methodResolved.summary;
-          this.tags = this.method.tags || this.methodResolved.tags;
-          this.description = this.method.description || this.methodResolved.description;
-          this.deprecated = this.method.deprecated || this.methodResolved.deprecated;
-          this.operationId = this.method.operationId || this.methodResolved.operationId;
-          this.externalDocs = this.method.externalDocs || this.methodResolved.externalDocs;
-          this.schemes = this.method.schemes || this.methodResolved.schemes;
-          this.parameters = this.method.parameters || this.methodResolved.parameters;
-          this.consumes = this.method.consumes || this.methodResolved.consumes;
-          this.produces = this.method.produces || this.methodResolved.produces;
-          this.responses = this.method.responses || this.methodResolved.responses;
-          this.security = this.method.security || this.methodResolved.security;
-        };
+        var Method = function () {
+            function Method(method, methodResolved) {
+              _classCallCheck(this, Method);
+              this.method = method;
+              this.methodResolved = methodResolved;
+              this.summary = this.method.summary || this.methodResolved.summary;
+              this.tags = this.method.tags || this.methodResolved.tags;
+              this.description = this.method.description || this.methodResolved.description;
+              this.deprecated = this.method.deprecated || this.methodResolved.deprecated;
+              this.operationId = this.method.operationId || this.methodResolved.operationId;
+              this.externalDocs = this.method.externalDocs || this.methodResolved.externalDocs;
+              this.schemes = this.method.schemes || this.methodResolved.schemes;
+              this.parameters = this.method.parameters || this.methodResolved.parameters;
+              this.consumes = this.method.consumes || this.methodResolved.consumes;
+              this.produces = this.method.produces || this.methodResolved.produces;
+              this.responses = this.method.responses || this.methodResolved.responses;
+              this.security = this.method.security || this.methodResolved.security;
+            }
+            _createClass(Method, [
+              {
+                key: 'Summary',
+                get: function get() {
+                  return this.summary;
+                }
+              },
+              {
+                key: 'Tags',
+                get: function get() {
+                  return this.tags;
+                }
+              },
+              {
+                key: 'Description',
+                get: function get() {
+                  return this.description;
+                }
+              },
+              {
+                key: 'Deprecated',
+                get: function get() {
+                  return this.deprecated;
+                }  // get OperationId() { return this.operationId; };
+              },
+              {
+                key: 'ExternalDocs',
+                get: function get() {
+                  return this.externalDocs;
+                }  // get Schemes() { return this.schemes; };
+              },
+              {
+                key: 'Parameters',
+                get: function get() {
+                  return this.parameters;
+                }
+              },
+              {
+                key: 'Consumes',
+                get: function get() {
+                  return this.consumes;
+                }
+              },
+              {
+                key: 'Produces',
+                get: function get() {
+                  return this.produces;
+                }
+              },
+              {
+                key: 'Responses',
+                get: function get() {
+                  return this.responses;
+                }
+              },
+              {
+                key: 'Security',
+                get: function get() {
+                  return this.security;
+                }
+              }
+            ]);
+            return Method;
+          }();
         module.exports = Method;
       },
       {}
     ],
-    218: [
+    219: [
+      function (require, module, exports) {
+        'use strict';
+        var _createClass = function () {
+            function defineProperties(target, props) {
+              for (var i = 0; i < props.length; i++) {
+                var descriptor = props[i];
+                descriptor.enumerable = descriptor.enumerable || false;
+                descriptor.configurable = true;
+                if ('value' in descriptor)
+                  descriptor.writable = true;
+                Object.defineProperty(target, descriptor.key, descriptor);
+              }
+            }
+            return function (Constructor, protoProps, staticProps) {
+              if (protoProps)
+                defineProperties(Constructor.prototype, protoProps);
+              if (staticProps)
+                defineProperties(Constructor, staticProps);
+              return Constructor;
+            };
+          }();
+        function _classCallCheck(instance, Constructor) {
+          if (!(instance instanceof Constructor)) {
+            throw new TypeError('Cannot call a class as a function');
+          }
+        }
+        var jsonHelper = require('../utils/json');
+        var Test = function () {
+            function Test(name) {
+              _classCallCheck(this, Test);
+              this._id = null;
+              this.name = name;
+              this.summary = '';
+              this.initialVariables = '{}';
+              this.steps = [];  // TODO map each step to maintain proper structure
+            }
+            _createClass(Test, [
+              {
+                key: 'Id',
+                get: function get() {
+                  return this._id;
+                },
+                set: function set(id) {
+                  this._id = id;
+                }
+              },
+              {
+                key: 'Name',
+                get: function get() {
+                  return this.name;
+                },
+                set: function set(name) {
+                  this.name = name;
+                }
+              },
+              {
+                key: 'Summary',
+                get: function get() {
+                  return this.summary || '';
+                },
+                set: function set(summary) {
+                  this.summary = summary;
+                }
+              },
+              {
+                key: 'InitialVariables',
+                get: function get() {
+                  return this.initialVariables;
+                },
+                set: function set(initialVariables) {
+                  this.initialVariables = jsonHelper.stringify(initialVariables, 4);
+                }
+              },
+              {
+                key: 'Steps',
+                get: function get() {
+                  return this.steps;
+                },
+                set: function set(steps) {
+                  this.steps = steps;
+                }
+              }
+            ]);
+            return Test;
+          }();
+        module.exports = Test;
+      },
+      { '../utils/json': 243 }
+    ],
+    220: [
       function (require, module, exports) {
         'use strict';
         var _createClass = function () {
@@ -35911,6 +36334,17 @@
               this.public = '';
             }
             _createClass(Text, [
+              {
+                key: 'toJSON',
+                value: function toJSON() {
+                  return {
+                    id: this.Id,
+                    name: this.Name,
+                    content: this.Content,
+                    public: this.Public
+                  };
+                }
+              },
               {
                 key: 'Id',
                 get: function get() {
@@ -35954,7 +36388,83 @@
       },
       {}
     ],
-    219: [
+    221: [
+      function (require, module, exports) {
+        'use strict';
+        var _createClass = function () {
+            function defineProperties(target, props) {
+              for (var i = 0; i < props.length; i++) {
+                var descriptor = props[i];
+                descriptor.enumerable = descriptor.enumerable || false;
+                descriptor.configurable = true;
+                if ('value' in descriptor)
+                  descriptor.writable = true;
+                Object.defineProperty(target, descriptor.key, descriptor);
+              }
+            }
+            return function (Constructor, protoProps, staticProps) {
+              if (protoProps)
+                defineProperties(Constructor.prototype, protoProps);
+              if (staticProps)
+                defineProperties(Constructor, staticProps);
+              return Constructor;
+            };
+          }();
+        function _classCallCheck(instance, Constructor) {
+          if (!(instance instanceof Constructor)) {
+            throw new TypeError('Cannot call a class as a function');
+          }
+        }
+        var UtilityFunction = function () {
+            function UtilityFunction(name) {
+              _classCallCheck(this, UtilityFunction);
+              this.name = name;
+              this.description = '';
+              this.script = '';
+            }
+            _createClass(UtilityFunction, [
+              {
+                key: 'toJSON',
+                value: function toJSON() {
+                  return {
+                    name: this.Name,
+                    description: this.Description,
+                    script: this.Script
+                  };
+                }
+              },
+              {
+                key: 'Name',
+                get: function get() {
+                  return this.name;
+                }
+              },
+              {
+                key: 'Description',
+                set: function set(description) {
+                  this.description = description;
+                },
+                get: function get() {
+                  return this.description;
+                }
+              },
+              {
+                key: 'Script',
+                set: function set(script) {
+                  this.script = script;
+                },
+                get: function get() {
+                  return this.script;
+                }
+              }
+            ]);
+            return UtilityFunction;
+          }();
+        module.exports = UtilityFunction;
+      },
+      {}
+    ],
+    222: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -36078,7 +36588,23 @@
             _inherits(RAMLExporter, _Exporter);
             function RAMLExporter() {
               _classCallCheck(this, RAMLExporter);
-              return _possibleConstructorReturn(this, (RAMLExporter.__proto__ || Object.getPrototypeOf(RAMLExporter)).call(this));
+              var _this = _possibleConstructorReturn(this, (RAMLExporter.__proto__ || Object.getPrototypeOf(RAMLExporter)).call(this));
+              _this.hasTags = false;
+              _this.hasDeprecated = false;
+              _this.hasExternalDocs = false;
+              _this.hasInfo = false;
+              _this.hasSummary = false;
+              _this.hasSchemaTitle = false;
+              _this.hasPropertyTitle = false;
+              _this.hasBodyName = false;
+              _this.hasResponsesDefault = false;
+              _this.hasGlobalResponseDefinition = false;
+              _this.hasDefinitionName = false;
+              _this.hasAllowEmptyValue = false;
+              _this.hasCollectionFormat = false;
+              _this.hasExclusiveMaximum = false;
+              _this.hasExclusiveMinimum = false;
+              return _this;
             }
             _createClass(RAMLExporter, [
               {
@@ -36170,7 +36696,7 @@
               },
               {
                 key: '_mapRequestBody',
-                value: function _mapRequestBody(bodyData, mimeType, ramlDef) {
+                value: function _mapRequestBody(bodyData, mimeType) {
                   var body = {};
                   if (!bodyData.body || mimeType === '')
                     return body;
@@ -36179,13 +36705,14 @@
                     body[mimeType] = this.mapBody(bodyData);
                     this.convertRequiredFromProperties(body[mimeType]);
                     if (bodyData.name) {
-                      RAMLExporter._createAnnotation(body[mimeType], 'body-name', bodyData.name, ramlDef);
+                      this.hasBodyName = true;
+                      body[mimeType]['(oas-body-name)'] = bodyData.name;
                     }
                     break;
                   case 'multipart/form-data':
                   case 'application/x-www-form-urlencoded': {
                       var parsedBody = jsonHelper.parse(bodyData.body);
-                      body[mimeType] = this.mapRequestBodyForm(this.convertRefFromModel(parsedBody), ramlDef);
+                      body[mimeType] = this.mapRequestBodyForm(this.convertRefFromModel(parsedBody), false);
                       break;
                     }
                   default:  //unsuported format
@@ -36199,11 +36726,11 @@
               },
               {
                 key: '_mapNamedParams',
-                value: function _mapNamedParams(params, ramlDef) {
+                value: function _mapNamedParams(params) {
                   if (!params || _.isEmpty(params.properties))
                     return;
                   var newParams = {};
-                  var convertedParams = this.convertRefFromModel(params.properties, false, null, ramlDef);
+                  var convertedParams = this.convertRefFromModel(params.properties, false);
                   for (var key in convertedParams) {
                     if (!convertedParams.hasOwnProperty(key))
                       continue;
@@ -36221,7 +36748,7 @@
               },
               {
                 key: '_mapResponseBody',
-                value: function _mapResponseBody(responseData, mimeType, ramlDef) {
+                value: function _mapResponseBody(responseData, mimeType) {
                   var responses = {};
                   for (var i in responseData) {
                     if (!responseData.hasOwnProperty(i))
@@ -36251,17 +36778,18 @@
                         responses[code].headers = this._mapNamedParams(resBody.headers);
                       }
                       if (resBody.response_id) {
-                        RAMLExporter._createAnnotation(responses[code], 'global-response-definition', resBody.response_id, ramlDef);
+                        this.hasGlobalResponseDefinition = true;
+                        responses[code]['(oas-global-response-definition)'] = resBody.response_id;
                         delete resBody.response_id;
                       }
                     }
                   }
                   return responses;
-                }
+                }  //TODO: Stoplight doesn't support seperate path params completely yet
               },
               {
                 key: '_mapURIParams',
-                value: function _mapURIParams(pathParamData, ramlDef) {
+                value: function _mapURIParams(pathParamData) {
                   if (!pathParamData.properties || _.isEmpty(pathParamData.properties)) {
                     return;
                   }
@@ -36270,12 +36798,12 @@
                     if (!pathParamData.properties.hasOwnProperty(key))
                       continue;
                     var prop = pathParamData.properties[key];
-                    RAMLExporter._mapFormats(prop, ramlDef);
+                    RAMLExporter._mapFormats(prop);
                     pathParams[key] = ramlHelper.setParameterFields(prop, {});
                     RAMLExporter.fixEnumValueFormat(prop);
                     if (prop.items) {
                       var items = prop.items;
-                      RAMLExporter._mapFormats(items, ramlDef);
+                      RAMLExporter._mapFormats(items);
                       RAMLExporter.fixEnumValueFormat(items);
                       pathParams[key].items = items;
                     }
@@ -36284,14 +36812,7 @@
                     }
                     pathParams[key].type = pathParams[key].type || 'string';
                     //facets
-                    for (var id in pathParams[key]) {
-                      if (!pathParams[key].hasOwnProperty(id))
-                        continue;
-                      if (id === 'exclusiveMinimum' || id === 'exclusiveMaximum' || id === 'allowEmptyValue' || id === 'collectionFormat') {
-                        RAMLExporter._createAnnotation(pathParams[key], id, pathParams[key][id], ramlDef);
-                        delete pathParams[key][id];
-                      }
-                    }
+                    RAMLExporter._addFacetsDeclaration(prop, pathParams[key]);
                   }
                   return RAMLExporter._validateParam(pathParams);
                 }
@@ -36321,13 +36842,13 @@
               },
               {
                 key: 'convertRefFromModel',
-                value: function convertRefFromModel(object, isTypeDeclaration, insideProperties, ramlDef) {
-                  RAMLExporter._mapFormats(object, ramlDef);
+                value: function convertRefFromModel(object, isTypeDeclaration, insideProperties) {
+                  RAMLExporter._mapFormats(object);
                   for (var id in object) {
                     if (object.hasOwnProperty(id)) {
                       var val = object[id];
                       if (insideProperties)
-                        val = RAMLExporter.convertSchemaTitles(val, 'property');
+                        val = this.convertSchemaTitles(val, 'property');
                       if (id == '$ref' && !insideProperties) {
                         if (val.indexOf('#/') == 0) {
                           object.type = val.replace('#/definitions/', '');
@@ -36356,10 +36877,13 @@
                           object.type = '!include ' + val;
                           delete object[id];
                         } else if (id === 'collectionFormat') {
-                          RAMLExporter._createAnnotation(object, id, object[id], ramlDef);
+                          if (isTypeDeclaration)
+                            this._defineFacet(object, id);
+                          else
+                            this._defineAnnotationType(object, id);
                         }
                       } else if (val && (typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object' && (id !== 'facets' || insideProperties)) {
-                        RAMLExporter._mapFormats(val, ramlDef);
+                        RAMLExporter._mapFormats(val);
                         if (!insideProperties) {
                           if (id === 'example' && object.type === undefined)
                             object['type'] = typeof val === 'undefined' ? 'undefined' : _typeof(val);
@@ -36367,24 +36891,26 @@
                             object['type'] = 'array';
                         } else if (val.hasOwnProperty('additionalProperties'))
                           val.type = 'object';
-                        if (id === 'readOnly')
-                          RAMLExporter._createAnnotation(object, id, object[id], ramlDef);
                         if (val.type != 'string') {
-                          object[id] = this.convertRefFromModel(val, isTypeDeclaration, id === 'properties' && !insideProperties, ramlDef);
+                          object[id] = this.convertRefFromModel(val, isTypeDeclaration, id === 'properties' && !insideProperties);
                         }
                       } else if (id === '$ref') {
                         object.type = val.replace('#/definitions/', '');
                         delete object[id];
                       } else if (id === 'exclusiveMinimum' || id === 'exclusiveMaximum' || id === 'allowEmptyValue' || id === 'collectionFormat') {
-                        RAMLExporter._createAnnotation(object, id, object[id], ramlDef);
-                        delete object[id];
+                        if (isTypeDeclaration)
+                          this._defineFacet(object, id);
+                        else
+                          this._defineAnnotationType(object, id);
                       } else if (id === 'readOnly') {
-                        RAMLExporter._createAnnotation(object, id, object[id], ramlDef);
-                        delete object[id];
+                        if (!object['facets'])
+                          object['facets'] = {};
+                        object['facets']['readOnly?'] = 'boolean';
                       }
                       if (val.hasOwnProperty('readOnly') && id !== 'properties') {
-                        RAMLExporter._createAnnotation(val, 'readOnly', val['readOnly'], ramlDef);
-                        delete val['readOnly'];
+                        if (!val['facets'])
+                          val['facets'] = {};
+                        val['facets']['readOnly?'] = 'boolean';
                       }
                     }
                   }
@@ -36392,8 +36918,72 @@
                 }
               },
               {
+                key: '_defineFacet',
+                value: function _defineFacet(object, id) {
+                  if (!object.facets) {
+                    object.facets = {};
+                  }
+                  if (id === 'allowEmptyValue') {
+                    object.facets['allowEmptyValue'] = 'boolean';
+                  }
+                  if (id === 'collectionFormat') {
+                    object.facets['collectionFormat'] = 'string';
+                  }
+                  if (id === 'exclusiveMaximum') {
+                    object.facets['exclusiveMaximum'] = 'boolean';
+                  }
+                  if (id === 'exclusiveMinimum') {
+                    object.facets['exclusiveMinimum'] = 'boolean';
+                  }
+                }
+              },
+              {
+                key: '_defineAnnotationType',
+                value: function _defineAnnotationType(object, id) {
+                  if (!object.hasOwnProperty(id))
+                    return;
+                  var val = object[id];
+                  if (id === 'allowEmptyValue') {
+                    this.hasAllowEmptyValue = true;
+                    object['(oas-allowEmptyValue)'] = val;
+                  }
+                  if (id === 'collectionFormat') {
+                    this.hasCollectionFormat = true;
+                    object['(oas-collectionFormat)'] = val;
+                  }
+                  if (id === 'exclusiveMaximum') {
+                    this.hasExclusiveMaximum = true;
+                    object['(oas-exclusiveMaximum)'] = val;
+                  }
+                  if (id === 'exclusiveMinimum') {
+                    this.hasExclusiveMinimum = true;
+                    object['(oas-exclusiveMinimum)'] = val;
+                  }
+                  delete object[id];
+                }
+              },
+              {
+                key: 'convertSchemaTitles',
+                value: function convertSchemaTitles(object, objectType) {
+                  for (var id in object) {
+                    if (!object.hasOwnProperty(id))
+                      continue;
+                    var val = object[id];
+                    if (id === 'title' && typeof val === 'string') {
+                      object['(oas-' + objectType + '-title)'] = val;
+                      delete object[id];
+                      if (objectType === 'schema')
+                        this.hasSchemaTitle = true;
+                      else if (objectType === 'property')
+                        this.hasPropertyTitle = true;
+                    }
+                  }
+                  return object;
+                }
+              },
+              {
                 key: '_mapParametersTraits',
-                value: function _mapParametersTraits(slTraits, ramlDef) {
+                value: function _mapParametersTraits(slTraits) {
                   var traits = this.initializeTraits();
                   for (var i in slTraits) {
                     if (!slTraits.hasOwnProperty(i))
@@ -36403,7 +36993,7 @@
                     try {
                       var queryString = jsonHelper.parse(slTrait.request.queryString);
                       if (!jsonHelper.isEmptySchema(queryString)) {
-                        trait.queryParameters = this._mapNamedParams(queryString, ramlDef);
+                        trait.queryParameters = this._mapNamedParams(queryString);
                       }
                     } catch (e) {
                     }
@@ -36424,7 +37014,7 @@
                     try {
                       var body = jsonHelper.parse(slTrait.request.body);
                       if (!jsonHelper.isEmptySchema(body)) {
-                        trait.body = this._mapRequestBody(body, 'application/json', ramlDef);
+                        trait.body = this._mapRequestBody(body, 'application/json');
                       }
                     } catch (e) {
                     }
@@ -36457,6 +37047,116 @@
                 }
               },
               {
+                key: '_annotationsSignature',
+                value: function _annotationsSignature(ramlDef) {
+                  if (this.hasTags || this.hasDeprecated || this.hasExternalDocs || this.hasInfo || this.hasSummary || this.hasSchemaTitle || this.hasPropertyTitle || this.hasBodyName || this.hasResponsesDefault || this.hasGlobalResponseDefinition || this.hasDefinitionName || this.hasAllowEmptyValue || this.hasCollectionFormat || this.hasExclusiveMaximum || this.hasExclusiveMinimum) {
+                    if (!ramlDef.annotationTypes) {
+                      ramlDef.annotationTypes = {};
+                    }
+                    if (this.hasTags) {
+                      ramlDef.annotationTypes['oas-tags'] = {
+                        type: 'string[]',
+                        allowedTargets: 'Method'
+                      };
+                    }
+                    if (this.hasDeprecated) {
+                      ramlDef.annotationTypes['oas-deprecated'] = {
+                        type: 'boolean',
+                        allowedTargets: 'Method'
+                      };
+                    }
+                    if (this.hasSummary) {
+                      ramlDef.annotationTypes['oas-summary'] = {
+                        type: 'string',
+                        allowedTargets: 'Method'
+                      };
+                    }
+                    if (this.hasExternalDocs) {
+                      ramlDef.annotationTypes['oas-externalDocs'] = {
+                        properties: {
+                          'description?': 'string',
+                          'url': 'string'
+                        },
+                        allowedTargets: [
+                          'API',
+                          'Method',
+                          'TypeDeclaration'
+                        ]
+                      };
+                    }
+                    if (this.hasInfo) {
+                      ramlDef.annotationTypes['oas-info'] = {
+                        properties: {
+                          'termsOfService?': 'string',
+                          'contact?': {
+                            properties: {
+                              'name?': 'string',
+                              'url?': 'string',
+                              'email?': 'string'
+                            }
+                          },
+                          'license?': {
+                            properties: {
+                              'name?': 'string',
+                              'url?': 'string'
+                            }
+                          }
+                        },
+                        allowedTargets: 'API'
+                      };
+                    }
+                    if (this.hasSchemaTitle) {
+                      ramlDef.annotationTypes['oas-schema-title'] = {
+                        type: 'string',
+                        allowedTargets: 'TypeDeclaration'
+                      };
+                    }
+                    if (this.hasPropertyTitle) {
+                      ramlDef.annotationTypes['oas-property-title'] = {
+                        type: 'string',
+                        allowedTargets: 'TypeDeclaration'
+                      };
+                    }
+                    if (this.hasBodyName) {
+                      ramlDef.annotationTypes['oas-body-name'] = {
+                        type: 'string',
+                        allowedTargets: 'TypeDeclaration'
+                      };
+                    }
+                    if (this.hasResponsesDefault) {
+                      ramlDef.annotationTypes['oas-responses-default'] = {
+                        type: 'any',
+                        allowedTargets: 'Method'
+                      };
+                    }
+                    if (this.hasGlobalResponseDefinition) {
+                      ramlDef.annotationTypes['oas-global-response-definition'] = {
+                        type: 'any',
+                        allowedTargets: 'Response'
+                      };
+                    }
+                    if (this.hasDefinitionName) {
+                      ramlDef.annotationTypes['oas-definition-name'] = {
+                        type: 'string',
+                        allowedTargets: 'TypeDeclaration'
+                      };
+                    }
+                    if (this.hasAllowEmptyValue) {
+                      ramlDef.annotationTypes['oas-allowEmptyValue'] = { type: 'boolean' };
+                    }
+                    if (this.hasCollectionFormat) {
+                      ramlDef.annotationTypes['oas-collectionFormat'] = { type: 'string' };
+                    }
+                    if (this.hasExclusiveMaximum) {
+                      ramlDef.annotationTypes['oas-exclusiveMaximum'] = { type: 'boolean' };
+                    }
+                    if (this.hasExclusiveMinimum) {
+                      ramlDef.annotationTypes['oas-exclusiveMinimum'] = { type: 'boolean' };
+                    }
+                  }
+                }
+              },
+              {
                 key: '_export',
                 value: function _export() {
                   var env = this.project.Environment;
@@ -36473,44 +37173,47 @@
                     RAMLExporter._addExtensions(ramlDef, ramlDef['(oas-info)'], this.project.Environment.extensions);
                   }
                   if (this.project.Environment.ExternalDocs) {
-                    var value = {
-                        'description': this.project.Environment.ExternalDocs.description,
-                        'url': this.project.Environment.ExternalDocs.url
-                      };
-                    RAMLExporter._createAnnotation(ramlDef, 'externalDocs', value, ramlDef);
+                    this.hasExternalDocs = true;
+                    ramlDef['(oas-externalDocs)'] = {
+                      'description': this.project.Environment.ExternalDocs.description,
+                      'url': this.project.Environment.ExternalDocs.url
+                    };
                     if (this.project.Environment.ExternalDocs.extensions) {
                       RAMLExporter._addExtensions(ramlDef, ramlDef['(oas-externalDocs)'], this.project.Environment.ExternalDocs.extensions);
                     }
                   }
+                  if (this.project.Environment.contactInfo || this.project.Environment.termsOfService || this.project.Environment.license || this.project.Environment.extensions) {
+                    if (!ramlDef['(oas-info)']) {
+                      ramlDef['(oas-info)'] = {};
+                    }
+                    this.hasInfo = true;
+                  }
                   if (this.project.Environment.contactInfo) {
-                    var contact = { contact: {} };
+                    ramlDef['(oas-info)'].contact = {};
                     if (this.project.Environment.contactInfo.name) {
-                      contact['contact'].name = this.project.Environment.contactInfo.name;
+                      ramlDef['(oas-info)'].contact.name = this.project.Environment.contactInfo.name;
                     }
                     if (this.project.Environment.contactInfo.url) {
-                      contact['contact'].url = this.project.Environment.contactInfo.url;
+                      ramlDef['(oas-info)'].contact.url = this.project.Environment.contactInfo.url;
                     }
                     if (this.project.Environment.contactInfo.email) {
-                      contact['contact'].email = this.project.Environment.contactInfo.email;
+                      ramlDef['(oas-info)'].contact.email = this.project.Environment.contactInfo.email;
                     }
-                    RAMLExporter._createAnnotation(ramlDef, 'info', contact, ramlDef);
                     if (this.project.Environment.contactInfo.extensions) {
                       RAMLExporter._addExtensions(ramlDef, ramlDef['(oas-info)'].contact, this.project.Environment.contactInfo.extensions);
                     }
                   }
                   if (this.project.Environment.termsOfService) {
-                    var _value = { termsOfService: this.project.Environment.termsOfService };
-                    RAMLExporter._createAnnotation(ramlDef, 'info', _value, ramlDef);
+                    ramlDef['(oas-info)'].termsOfService = this.project.Environment.termsOfService;
                   }
                   if (this.project.Environment.license) {
-                    var _value2 = { license: {} };
+                    ramlDef['(oas-info)'].license = {};
                     if (this.project.Environment.license.name) {
-                      _value2['license'].name = this.project.Environment.license.name;
+                      ramlDef['(oas-info)'].license.name = this.project.Environment.license.name;
                     }
                     if (this.project.Environment.license.url) {
-                      _value2['license'].url = this.project.Environment.license.url;
+                      ramlDef['(oas-info)'].license.url = this.project.Environment.license.url;
                     }
-                    RAMLExporter._createAnnotation(ramlDef, 'info', _value2, ramlDef);
                     if (this.project.Environment.license.extensions) {
                       RAMLExporter._addExtensions(ramlDef, ramlDef['(oas-info)'].license, this.project.Environment.license.extensions);
                     }
@@ -36557,7 +37260,8 @@
                       method.description = endpoint.Description;
                     }
                     if (endpoint.Summary) {
-                      RAMLExporter._createAnnotation(method, 'summary', endpoint.Summary, ramlDef);
+                      this.hasSummary = true;
+                      method['(oas-summary)'] = endpoint.Summary;
                     }
                     var protocols = RAMLExporter.mapProtocols(endpoint.protocols);
                     if (!_.isEmpty(protocols)) {
@@ -36569,27 +37273,26 @@
                     }
                     if (_.toLower(endpoint.Method) === 'post' || _.toLower(endpoint.Method) === 'put' || _.toLower(endpoint.Method) === 'patch') {
                       var _mimeType = RAMLExporter.getDefaultMimeType(endpoint.Consumes, ramlDef.mediaType);
-                      if (_.isArray(endpoint.Body) && endpoint.Body.length > 0) {
-                        var body = this._mapRequestBody(endpoint.Body[0], _mimeType, ramlDef);
-                        if (!_.isEmpty(body)) {
-                          method.body = body;
-                        }
+                      var body = this._mapRequestBody(endpoint.Body, _mimeType);
+                      if (!_.isEmpty(body)) {
+                        method.body = body;
                       }
                     }
                     method.headers = this._mapNamedParams(endpoint.Headers);
                     var mimeType = RAMLExporter.getDefaultMimeType(endpoint.Produces, ramlDef.mediaType);
-                    var responses = this._mapResponseBody(endpoint.Responses, mimeType, ramlDef);
+                    var responses = this._mapResponseBody(endpoint.Responses, mimeType);
                     if (!_.isEmpty(responses)) {
                       if (responses.default) {
-                        RAMLExporter._createAnnotation(method, 'responses-default', responses.default, ramlDef);
+                        this.hasResponsesDefault = true;
+                        method['(oas-responses-default)'] = responses.default;
                         delete responses.default;
                       }
                       if (!_.isEmpty(responses)) {
                         method.responses = responses;
                       }
                     }
-                    method.queryParameters = this._mapURIParams(endpoint.QueryString, ramlDef);
-                    method.uriParameters = this._mapURIParams(endpoint.PathParams, ramlDef);
+                    method.queryParameters = this._mapURIParams(endpoint.QueryString);
+                    method.uriParameters = this._mapURIParams(endpoint.PathParams);
                     if (endpoint.securedBy) {
                       var rsecuredBy = [];
                       if (endpoint.securedBy.oauth2) {
@@ -36651,17 +37354,19 @@
                     uriParts.splice(0, 1);
                     ramlDef.addMethod(ramlDef, uriParts, endpoint.Method, method, this.project.getPathParamRef(endpoint.Path));
                     if (endpoint.Tags && !_.isEmpty(endpoint.Tags)) {
-                      RAMLExporter._createAnnotation(method, 'tags', endpoint.Tags, ramlDef);
+                      this.hasTags = true;
+                      method['(oas-tags)'] = endpoint.Tags;
                     }
                     if (endpoint.Deprecated) {
-                      RAMLExporter._createAnnotation(method, 'deprecated', endpoint.Deprecated, ramlDef);
+                      this.hasDeprecated = true;
+                      method['(oas-deprecated)'] = endpoint.Deprecated;
                     }
                     if (endpoint.ExternalDocs) {
-                      var _value3 = {
-                          'description': endpoint.ExternalDocs.description,
-                          'url': endpoint.ExternalDocs.url
-                        };
-                      RAMLExporter._createAnnotation(method, 'externalDocs', _value3, ramlDef);
+                      this.hasExternalDocs = true;
+                      method['(oas-externalDocs)'] = {
+                        'description': endpoint.ExternalDocs.description,
+                        'url': endpoint.ExternalDocs.url
+                      };
                     }
                     if (endpoint.responses.extensions) {
                       RAMLExporter._addExtensions(ramlDef, method.responses, endpoint.responses.extensions);
@@ -36669,9 +37374,9 @@
                     for (var _i in method) {
                       if (!method.hasOwnProperty(_i))
                         continue;
-                      var _value4 = method[_i];
-                      if ((typeof _value4 === 'undefined' ? 'undefined' : _typeof(_value4)) === 'object')
-                        RAMLExporter._addInnerExtensions(ramlDef, _value4);
+                      var value = method[_i];
+                      if ((typeof value === 'undefined' ? 'undefined' : _typeof(value)) === 'object')
+                        RAMLExporter._addInnerExtensions(ramlDef, value);
                     }
                     for (var _i2 in method.responses) {
                       if (!method.responses.hasOwnProperty(_i2))
@@ -36682,7 +37387,7 @@
                   }
                   var schemas = this.project.Schemas;
                   if (schemas && schemas.length > 0) {
-                    this.addSchema(ramlDef, this.mapSchema(schemas, ramlDef));
+                    this.addSchema(ramlDef, this.mapSchema(schemas));
                   }
                   for (var _i3 in schemas) {
                     if (!schemas.hasOwnProperty(_i3))
@@ -36695,7 +37400,7 @@
                     }
                   }
                   if (this.project.Traits && this.project.Traits.length > 0) {
-                    var traits = this._mapParametersTraits(this.project.Traits, ramlDef);
+                    var traits = this._mapParametersTraits(this.project.Traits);
                     if (!_.isEmpty(traits)) {
                       ramlDef.traits = traits;
                     }
@@ -36704,7 +37409,11 @@
                   if (this.project.Traits && this.project.Traits.length > 0) {
                     var _responses = this._mapResponsesTraits(this.project.Traits);
                     if (!_.isEmpty(_responses)) {
-                      RAMLExporter._createAnnotation(ramlDef, 'responses', _responses, ramlDef);
+                      ramlDef['(oas-responses)'] = _responses;
+                      if (!ramlDef.annotationTypes) {
+                        ramlDef.annotationTypes = {};
+                      }
+                      ramlDef.annotationTypes['oas-responses'] = 'any';
                     }
                   }
                   // Clean empty field in definition
@@ -36713,6 +37422,7 @@
                       delete ramlDef[field];
                     }
                   }
+                  this._annotationsSignature(ramlDef);
                   RAMLExporter._addExtensions(ramlDef, ramlDef, this.project.extensions);
                   this.data = ramlDef;
                 }
@@ -36902,8 +37612,11 @@
                       case 'maxItems':
                       case 'minItems':
                       case 'uniqueItems':
+                      case 'collectionFormat':
+                      case 'allowEmptyValue':
+                      case 'exclusiveMaximum':
+                      case 'exclusiveMinimum':
                       case 'facets':
-                      case '(oas-format)':
                       case '(oas-allowEmptyValue)':
                       case '(oas-collectionFormat)':
                       case '(oas-exclusiveMaximum)':
@@ -36954,148 +37667,8 @@
                 }
               },
               {
-                key: '_createAnnotation',
-                value: function _createAnnotation(object, id, value, ramlDef) {
-                  var definition = void 0;
-                  var found = true;
-                  switch (id) {
-                  case 'allowEmptyValue':
-                    definition = { type: 'boolean' };
-                    break;
-                  case 'tags':
-                    definition = {
-                      type: 'string[]',
-                      allowedTargets: 'Method'
-                    };
-                    break;
-                  case 'deprecated':
-                    definition = {
-                      type: 'boolean',
-                      allowedTargets: 'Method'
-                    };
-                    break;
-                  case 'summary':
-                    definition = {
-                      type: 'string',
-                      allowedTargets: 'Method'
-                    };
-                    break;
-                  case 'externalDocs':
-                    definition = {
-                      properties: {
-                        'description?': 'string',
-                        'url': 'string'
-                      },
-                      allowedTargets: [
-                        'API',
-                        'Method',
-                        'TypeDeclaration'
-                      ]
-                    };
-                    break;
-                  case 'info':
-                    definition = {
-                      properties: {
-                        'termsOfService?': 'string',
-                        'contact?': {
-                          properties: {
-                            'name?': 'string',
-                            'url?': 'string',
-                            'email?': 'string'
-                          }
-                        },
-                        'license?': {
-                          properties: {
-                            'name?': 'string',
-                            'url?': 'string'
-                          }
-                        }
-                      },
-                      allowedTargets: 'API'
-                    };
-                    break;
-                  case 'schema-title':
-                    definition = {
-                      type: 'string',
-                      allowedTargets: 'TypeDeclaration'
-                    };
-                    break;
-                  case 'property-title':
-                    definition = {
-                      type: 'string',
-                      allowedTargets: 'TypeDeclaration'
-                    };
-                    break;
-                  case 'body-name':
-                    definition = {
-                      type: 'string',
-                      allowedTargets: 'TypeDeclaration'
-                    };
-                    break;
-                  case 'responses-default':
-                    definition = {
-                      type: 'any',
-                      allowedTargets: 'Method'
-                    };
-                    break;
-                  case 'global-response-definition':
-                    definition = {
-                      type: 'any',
-                      allowedTargets: 'Response'
-                    };
-                    break;
-                  case 'definition-name':
-                    definition = {
-                      type: 'string',
-                      allowedTargets: 'TypeDeclaration'
-                    };
-                    break;
-                  case 'collectionFormat':
-                    definition = { type: 'string' };
-                    break;
-                  case 'format':
-                    definition = {
-                      type: 'string',
-                      allowedTargets: 'TypeDeclaration'
-                    };
-                    break;
-                  case 'readOnly':
-                    definition = {
-                      type: 'boolean',
-                      allowedTargets: 'TypeDeclaration'
-                    };
-                    break;
-                  case 'responses':
-                    definition = 'any';
-                    break;
-                  case 'exclusiveMaximum':
-                  case 'exclusiveMinimum':
-                    definition = { type: 'boolean' };
-                    break;
-                  default:
-                    found = false;
-                    break;
-                  }
-                  if (!found)
-                    return false;
-                  if (!ramlDef.annotationTypes) {
-                    ramlDef.annotationTypes = {};
-                  }
-                  var annotationDefId = 'oas-' + id;
-                  if (!ramlDef.annotationTypes.hasOwnProperty(annotationDefId)) {
-                    ramlDef.annotationTypes[annotationDefId] = definition;
-                  }
-                  var annotationUsageId = '(' + annotationDefId + ')';
-                  if (object.hasOwnProperty(annotationUsageId))
-                    _.merge(object[annotationUsageId], value);
-                  else
-                    object[annotationUsageId] = value;
-                  return true;
-                }
-              },
-              {
                 key: '_mapFormats',
-                value: function _mapFormats(object, ramlDef) {
+                value: function _mapFormats(object) {
                   var intValidFormats = [
                       'int',
                       'int8',
@@ -37108,8 +37681,9 @@
                     delete object.format;
                   } else if (object && object.type == 'string') {
                     if (object.format == 'byte' || object.format == 'binary' || object.format == 'password' || object.format == 'uuid') {
-                      RAMLExporter._createAnnotation(object, 'format', object.format, ramlDef);
-                      delete object.format;
+                      if (!object['facets'])
+                        object['facets'] = {};
+                      object['facets']['format'] = 'string';
                     } else if (object.format == 'date') {
                       object['type'] = 'date-only';
                       delete object.format;
@@ -37118,8 +37692,7 @@
                       object['format'] = 'rfc3339';
                     } else {
                       if (object.format && ramlHelper.getValidFormat.indexOf(object.format) < 0) {
-                        RAMLExporter._createAnnotation(object, 'format', object.format, ramlDef);
-                        delete object.format;
+                        object['facets'] = { 'format': 'string' };
                       }
                     }
                   } else if (object && object.type == 'integer') {
@@ -37139,21 +37712,25 @@
                 }
               },
               {
-                key: 'convertSchemaTitles',
-                value: function convertSchemaTitles(object, objectType, ramlDef) {
-                  for (var id in object) {
-                    if (!object.hasOwnProperty(id))
-                      continue;
-                    var val = object[id];
-                    if (id === 'title' && typeof val === 'string') {
-                      if (objectType === 'schema')
-                        RAMLExporter._createAnnotation(object, 'schema-title', val, ramlDef);
-                      else if (objectType === 'property')
-                        RAMLExporter._createAnnotation(object, 'property-title', val, ramlDef);
-                      delete object[id];
+                key: '_addFacetsDeclaration',
+                value: function _addFacetsDeclaration(property, target) {
+                  if (property.hasOwnProperty('collectionFormat') || property.hasOwnProperty('allowEmptyValue') || property.hasOwnProperty('exclusiveMaximum') || property.hasOwnProperty('exclusiveMinimum')) {
+                    if (!target['facets']) {
+                      target['facets'] = {};
+                    }
+                    if (property.hasOwnProperty('collectionFormat')) {
+                      target['facets']['collectionFormat'] = 'string';
+                    }
+                    if (property.hasOwnProperty('allowEmptyValue')) {
+                      target['facets']['allowEmptyValue'] = 'boolean';
+                    }
+                    if (property.hasOwnProperty('exclusiveMaximum')) {
+                      target['facets']['exclusiveMaximum'] = 'boolean';
+                    }
+                    if (property.hasOwnProperty('exclusiveMinimum')) {
+                      target['facets']['exclusiveMinimum'] = 'boolean';
                     }
                   }
-                  return object;
                 }
               },
               {
@@ -37350,15 +37927,15 @@
         module.exports = RAMLExporter;
       },
       {
-        '../helpers/raml': 226,
-        '../utils/json': 236,
-        '../utils/strings': 237,
-        './exporter': 220,
+        '../helpers/raml': 230,
+        '../utils/json': 243,
+        '../utils/strings': 244,
+        './exporter': 223,
         'js-yaml': 21,
         'lodash': 204
       }
     ],
-    220: [
+    223: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -37399,6 +37976,19 @@
             }
             _createClass(Exporter, [
               {
+                key: 'loadSLData',
+                value: function loadSLData(rawData) {
+                  var _this = this;
+                  return new Promise(function (resolve, reject) {
+                    var importer = Importer.factory(Formats.STOPLIGHT);
+                    importer.loadData(rawData).then(function () {
+                      _this.project = importer.import();
+                      resolve();
+                    }).catch(reject);
+                  });
+                }
+              },
+              {
                 key: 'loadProject',
                 value: function loadProject(project) {
                   this.project = project;
@@ -37413,13 +38003,13 @@
               {
                 key: 'export',
                 value: function _export(format, options) {
-                  var _this = this;
+                  var _this2 = this;
                   return new Promise(function (resolve, reject) {
                     try {
                       (function () {
-                        _this._export();
-                        var exportedData = _this._getData(format);
-                        if (options && (options.validate === true || options.validateExport === true)) {
+                        _this2._export();
+                        var exportedData = _this2._getData(format);
+                        if (options && options.validate === true) {
                           (function () {
                             var formattedData = (typeof exportedData === 'undefined' ? 'undefined' : _typeof(exportedData)) === 'object' ? JSON.stringify(exportedData) : exportedData;
                             var importer = Importer.factory(Formats.AUTO);
@@ -37512,16 +38102,17 @@
         module.exports = Exporter;
       },
       {
-        '../formats': 225,
-        '../importers/index': 231,
+        '../formats': 229,
+        '../importers/index': 235,
         'js-yaml': 21
       }
     ],
-    221: [
+    224: [
       function (require, module, exports) {
         'use strict';
         var exporters = {
             Swagger: require('./swagger'),
+            StopLightX: require('./stoplightx'),
             RAML08: require('./raml08'),
             RAML10: require('./raml10')
           };
@@ -37539,12 +38130,13 @@
         };
       },
       {
-        './raml08': 222,
-        './raml10': 223,
-        './swagger': 224
+        './raml08': 225,
+        './raml10': 226,
+        './stoplightx': 227,
+        './swagger': 228
       }
     ],
-    222: [
+    225: [
       function (require, module, exports) {
         'use strict';
         var _createClass = function () {
@@ -37740,12 +38332,12 @@
         module.exports = RAML08Exporter;
       },
       {
-        '../utils/json': 236,
-        './baseraml': 219,
+        '../utils/json': 243,
+        './baseraml': 222,
         'lodash': 204
       }
     ],
-    223: [
+    226: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -37855,7 +38447,7 @@
                 value: function mapBody(bodyData, type) {
                   var body = jsonHelper.parse(bodyData.body);
                   var result = this.convertAllOfToModel(this.convertRefFromModel(body, false));
-                  result = RAMLExporter.convertSchemaTitles(result, 'schema');
+                  result = this.convertSchemaTitles(result, 'schema');
                   result = this.mapAdditionalProperties(result);
                   if (bodyData.example) {
                     result.example = jsonHelper.parse(bodyData.example);
@@ -37889,7 +38481,7 @@
               },
               {
                 key: 'mapRequestBodyForm',
-                value: function mapRequestBodyForm(bodyData, ramlDef) {
+                value: function mapRequestBodyForm(bodyData) {
                   var body = { properties: bodyData.properties };
                   /**
     * Two different approaches to declare an optional parameter.
@@ -37903,14 +38495,7 @@
                     var property = body.properties[i];
                     property.required = false;
                     //facets
-                    //todo add annotation
-                    for (var id in property) {
-                      if (!property.hasOwnProperty(id))
-                        continue;
-                      var found = RAMLExporter._createAnnotation(property, id, property[id], ramlDef);
-                      if (found)
-                        delete property[id];
-                    }
+                    RAMLExporter._addFacetsDeclaration(property, property);
                   }
                   if (bodyData.required && bodyData.required.length > 0) {
                     for (var j in bodyData.required) {
@@ -37973,14 +38558,14 @@
               },
               {
                 key: 'mapSchema',
-                value: function mapSchema(slSchemas, ramlDef) {
+                value: function mapSchema(slSchemas) {
                   var results = {};
                   for (var i in slSchemas) {
                     if (!slSchemas.hasOwnProperty(i))
                       continue;
                     var schema = slSchemas[i];
-                    var definition = this.convertRefFromModel(jsonHelper.parse(schema.Definition), true, null, ramlDef);
-                    definition = RAML10Exporter.convertSchemaTitles(definition, 'schema', ramlDef);
+                    var definition = this.convertRefFromModel(jsonHelper.parse(schema.Definition), true);
+                    definition = this.convertSchemaTitles(definition, 'schema');
                     if (definition.allOf) {
                       definition = this.convertAllOfToModel(definition);
                     } else {
@@ -37990,7 +38575,8 @@
                     }
                     definition = this.mapAdditionalProperties(definition);
                     if (definition.externalDocs) {
-                      RAMLExporter._createAnnotation(definition, 'externalDocs', definition.externalDocs, ramlDef);
+                      definition['(oas-externalDocs)'] = definition.externalDocs;
+                      this.hasExternalDocs = true;
                       delete definition.externalDocs;
                     }
                     if (definition.additionalProperties) {
@@ -38001,14 +38587,15 @@
                       delete definition.additionalProperties;
                     }
                     if (schema.example) {
-                      definition.example = jsonHelper.parse(schema.example);  // const example = jsonHelper.parse(schema.example);
+                      definition.example = jsonHelper.parse(schema.example);  // let example = jsonHelper.parse(schema.example);
                                                                               // if (!_.isEmpty(example)) {
                                                                               // 	definition.example = example;
                     }
                     //check if schemaId contains invalid characters.
                     var schemaId = stringHelper.checkAndReplaceInvalidChars(schema.NameSpace, ramlHelper.getValidCharacters, ramlHelper.getReplacementCharacter);
                     if (schemaId !== schema.NameSpace) {
-                      RAMLExporter._createAnnotation(definition, 'definition-name', schema.NameSpace, ramlDef);
+                      this.hasDefinitionName = true;
+                      definition['(oas-definition-name)'] = schema.NameSpace;
                     }
                     results[schemaId] = definition;
                   }
@@ -38103,14 +38690,198 @@
         module.exports = RAML10Exporter;
       },
       {
-        '../helpers/raml': 226,
-        '../utils/json': 236,
-        '../utils/strings': 237,
-        './baseraml': 219,
+        '../helpers/raml': 230,
+        '../utils/json': 243,
+        '../utils/strings': 244,
+        './baseraml': 222,
         'lodash': 204
       }
     ],
-    224: [
+    227: [
+      function (require, module, exports) {
+        'use strict';
+        var _createClass = function () {
+            function defineProperties(target, props) {
+              for (var i = 0; i < props.length; i++) {
+                var descriptor = props[i];
+                descriptor.enumerable = descriptor.enumerable || false;
+                descriptor.configurable = true;
+                if ('value' in descriptor)
+                  descriptor.writable = true;
+                Object.defineProperty(target, descriptor.key, descriptor);
+              }
+            }
+            return function (Constructor, protoProps, staticProps) {
+              if (protoProps)
+                defineProperties(Constructor.prototype, protoProps);
+              if (staticProps)
+                defineProperties(Constructor, staticProps);
+              return Constructor;
+            };
+          }();
+        function _classCallCheck(instance, Constructor) {
+          if (!(instance instanceof Constructor)) {
+            throw new TypeError('Cannot call a class as a function');
+          }
+        }
+        function _possibleConstructorReturn(self, call) {
+          if (!self) {
+            throw new ReferenceError('this hasn\'t been initialised - super() hasn\'t been called');
+          }
+          return call && (typeof call === 'object' || typeof call === 'function') ? call : self;
+        }
+        function _inherits(subClass, superClass) {
+          if (typeof superClass !== 'function' && superClass !== null) {
+            throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass);
+          }
+          subClass.prototype = Object.create(superClass && superClass.prototype, {
+            constructor: {
+              value: subClass,
+              enumerable: false,
+              writable: true,
+              configurable: true
+            }
+          });
+          if (superClass)
+            Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+        }
+        var Exporter = require('./exporter'), SwaggerExporter = require('./swagger'), _ = require('lodash');
+        var prefix = 'x-stoplight';
+        var testsPrefix = 'x-tests';
+        var StopLightX = function (_Exporter) {
+            _inherits(StopLightX, _Exporter);
+            function StopLightX() {
+              _classCallCheck(this, StopLightX);
+              return _possibleConstructorReturn(this, (StopLightX.__proto__ || Object.getPrototypeOf(StopLightX)).apply(this, arguments));
+            }
+            _createClass(StopLightX, [
+              {
+                key: '_mapEndpoints',
+                value: function _mapEndpoints() {
+                  var self = this;
+                  self.project.Endpoints.forEach(function (endpoint) {
+                    self.data.paths[endpoint.Path][endpoint.Method][prefix] = {
+                      id: endpoint.Id,
+                      beforeScript: endpoint.Before || null,
+                      afterScript: endpoint.After || null,
+                      public: endpoint.Public,
+                      mock: endpoint.Mock
+                    };
+                  });
+                }
+              },
+              {
+                key: '_mapSchemas',
+                value: function _mapSchemas() {
+                  var self = this;
+                  self.project.Schemas.forEach(function (schema) {
+                    var obj = {
+                        id: schema.Id,
+                        name: schema.Name
+                      };
+                    if (!_.isEmpty(schema.Summary)) {
+                      obj.summary = schema.Summary;
+                    }
+                    if (!_.isEmpty(schema.Description)) {
+                      obj.description = schema.Description;
+                    }
+                    obj.public = schema.Public;
+                    self.data.definitions[schema.namespace][prefix] = obj;
+                  });
+                }
+              },
+              {
+                key: '_mapTests',
+                value: function _mapTests(tests, namespace) {
+                  return tests.reduce(function (res, test) {
+                    var exportTest = {
+                        id: test._id,
+                        name: test.name,
+                        initialVariables: {}
+                      };
+                    try {
+                      exportTest.initialVariables = JSON.parse(test.initialVariables);
+                    } catch (e) {
+                    }
+                    exportTest.steps = test.steps.map(function (step) {
+                      if (step.test) {
+                        return { $ref: '#/' + namespace + '/' + step.test };
+                      }
+                      var request = step.request;
+                      delete request.endpoint;
+                      if (_.get(request, 'authentication.authType') === 'none') {
+                        request.authentication = {};
+                      }
+                      if (!_.get(request, 'postData.params.length') && !_.get(request, 'postData.text.length')) {
+                        request.postData = {};
+                      } else {
+                        delete request.postData.stored;
+                      }
+                      var assertions = step.assertions.map(function (a) {
+                          if (a.op && a.op.match(/validate/) && a.value) {
+                            try {
+                              a.value = JSON.parse(a.value);
+                            } catch (e) {
+                            }
+                          }
+                          return a;
+                        });
+                      return {
+                        id: step._id || step.id,
+                        name: step.name,
+                        beforeScript: step.middlewareBefore || step.beforeScript,
+                        afterScript: step.middlewareAfter || step.afterScript,
+                        capture: step.capture,
+                        request: request,
+                        assertions: assertions
+                      };
+                    });
+                    res[test._id] = exportTest;
+                    return res;
+                  }, {});
+                }
+              },
+              {
+                key: '_export',
+                value: function _export() {
+                  var swaggerExporter = new SwaggerExporter();
+                  swaggerExporter.loadProject(this.project);
+                  swaggerExporter._export();
+                  this.data = swaggerExporter.data;
+                  var env = this.project.Environment;
+                  this._mapEndpoints();
+                  this._mapSchemas();
+                  this.data[prefix] = {
+                    beforeScript: env.MiddlewareBefore,
+                    afterScript: env.MiddlewareAfter,
+                    version: env.toJSON(),
+                    functions: this.project.UtilityFunctions.reduce(function (res, item) {
+                      res[item.name] = item.toJSON();
+                      return res;
+                    }, {}),
+                    textSections: this.project.Texts.reduce(function (res, item) {
+                      res[item.Id] = item.toJSON();
+                      return res;
+                    }, {})
+                  };
+                  this.data[testsPrefix] = this._mapTests(this.project.Tests, testsPrefix);
+                  if (env.proxy.mock) {
+                    this.data[prefix].mock = env.proxy.mock;
+                  }
+                }
+              }
+            ]);
+            return StopLightX;
+          }(Exporter);
+        module.exports = StopLightX;
+      },
+      {
+        './exporter': 223,
+        './swagger': 228,
+        'lodash': 204
+      }
+    ],
+    228: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -38163,7 +38934,7 @@
           if (superClass)
             Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
         }
-        var Exporter = require('./exporter'), jsonHelper = require('../utils/json.js'), stringHelper = require('../utils/strings.js'), urlHelper = require('../utils/url'), SwaggerDefinition = require('../entities/swagger/definition'), swaggerHelper = require('../helpers/swagger'), _ = require('lodash'), arrayHelper = require('../utils/array.js'), url = require('url');
+        var Exporter = require('./exporter'), jsonHelper = require('../utils/json.js'), stringHelper = require('../utils/strings.js'), urlHelper = require('../utils/url'), SwaggerDefinition = require('../entities/swagger/definition'), swaggerHelper = require('../helpers/swagger'), _ = require('lodash'), url = require('url');
         var Swagger = function (_Exporter) {
             _inherits(Swagger, _Exporter);
             function Swagger() {
@@ -38310,8 +39081,7 @@
                   for (var paramName in queryStringParams.properties) {
                     if (!queryStringParams.properties.hasOwnProperty(paramName))
                       continue;
-                    var param = Swagger._convertExamples(queryStringParams.properties[paramName], false);
-                    param = swaggerHelper.setParameterFields(param, {});
+                    var param = swaggerHelper.setParameterFields(queryStringParams.properties[paramName], {});
                     param.name = paramName;
                     param.in = 'query';
                     param.required = queryStringParams.hasOwnProperty('required') && queryStringParams.required.indexOf(param.name) >= 0;
@@ -38332,21 +39102,14 @@
                   // }
                   var body = jsonHelper.parse(res.body);
                   if (body && !_.isEmpty(body)) {
-                    item.schema = this.convertRefFromModel(body, false);
+                    item.schema = this.convertRefFromModel(body);
                   }
                   if (mimeType && mimeType !== '' && res.example && res.example !== '{}' && res.example.length > 2) {
                     item.examples = {};
                     item.examples[mimeType] = jsonHelper.parse(res.example);
                   }
                   if (res.headers) {
-                    Swagger.mapRequiredProperty(res.headers);
                     item.headers = res.headers;
-                    var headers = item.headers;
-                    for (var id in headers) {
-                      if (!headers.hasOwnProperty(id))
-                        continue;
-                      headers[id] = Swagger._convertExamples(headers[id], false);
-                    }
                   }
                   return item;
                 }
@@ -38370,26 +39133,12 @@
                 }
               },
               {
-                key: '_mapRequestBodies',
-                value: function _mapRequestBodies(slRequestBodies, mimeTypes) {
-                  var result = {};
-                  for (var id in slRequestBodies) {
-                    if (!slRequestBodies.hasOwnProperty(id))
-                      continue;
-                    var requestBody = slRequestBodies[id];
-                    result['x-raml-body-' + requestBody.mimeType] = this._mapRequestBody(requestBody, mimeTypes, false);
-                  }
-                  return result;
-                }
-              },
-              {
                 key: '_mapRequestBody',
-                value: function _mapRequestBody(slRequestBody, requestTypes, multipleBodies) {
-                  var result = [];
+                value: function _mapRequestBody(slRequestBody, requestTypes) {
                   if (_.isEmpty(slRequestBody.body)) {
-                    return result;
+                    return [];
                   }
-                  var body = jsonHelper.parse(slRequestBody.body) || {};
+                  var result = [], body = jsonHelper.parse(slRequestBody.body) || {};
                   var param = {};
                   if (!_.isEmpty(slRequestBody.description)) {
                     param.description = slRequestBody.description;
@@ -38412,9 +39161,6 @@
                           if (body.required && body.required.indexOf(prop) >= 0) {
                             param.required = true;
                           }
-                          if (param.hasOwnProperty('type')) {
-                            param.type = multipleBodies ? { type: 'object' } : param.type;
-                          }
                           result.push(param);
                         }
                       } else {
@@ -38423,23 +39169,16 @@
                         if (body.ref) {
                           param['x-raml-type'] = body.ref;
                         }
-                        if (param.hasOwnProperty('type')) {
-                          param.type = multipleBodies ? { type: 'object' } : param.type;
-                        }
-                        if (body.hasOwnProperty('type') && body.type === 'file')
-                          param.type = body.type;
                         result.push(param);
                       }
                     } else {
                       if (body.required && body.required.length <= 0) {
                         delete body.required;
                       }
+                      Swagger.mapExample(slRequestBody, body);
                       param.name = 'body';
                       param.in = 'body';
-                      param.schema = multipleBodies ? { type: 'object' } : this.convertRefFromModel(body, false);
-                      if (!_.isEmpty(slRequestBody.example)) {
-                        param.schema.example = JSON.parse(slRequestBody.example);
-                      }
+                      param.schema = this.convertRefFromModel(body);
                       result.push(param);
                     }
                   }
@@ -38454,8 +39193,7 @@
                     for (var property in slHeaders.properties) {
                       if (!slHeaders.properties.hasOwnProperty(property))
                         continue;
-                      var param = Swagger._convertExamples(slHeaders.properties[property], false);
-                      param = swaggerHelper.setParameterFields(param, {});
+                      var param = swaggerHelper.setParameterFields(slHeaders.properties[property], {});
                       param.name = property;
                       param.in = 'header';
                       param.required = slHeaders.required && slHeaders.required.indexOf(property) >= 0;
@@ -38482,12 +39220,12 @@
                     if (!slSchemas.hasOwnProperty(i))
                       continue;
                     var schema = slSchemas[i];
-                    var definition = jsonHelper.parse(schema.Definition);
+                    var definition = this.convertRefFromModel(jsonHelper.parse(schema.Definition));
                     if (definition.hasOwnProperty('$schema')) {
                       delete definition['$schema'];
                       delete definition['id'];
                     }
-                    definition = this.convertRefFromModel(definition, true);
+                    Swagger.mapExample(schema, definition);
                     result[schema.NameSpace] = definition;
                   }
                   return result;
@@ -38495,52 +39233,28 @@
               },
               {
                 key: 'convertRefFromModel',
-                value: function convertRefFromModel(object, isSchema, isProperty) {
-                  if (object.hasOwnProperty('definitions') && object.hasOwnProperty('items') && object.type == 'array') {
-                    object = Swagger.convertDefinitions(object);
-                  }
+                value: function convertRefFromModel(object) {
                   for (var id in object) {
-                    if (!object.hasOwnProperty(id) || swaggerHelper.isExtension(id))
-                      continue;
-                    var val = object[id];
-                    if (id == 'allOf') {
-                      var allOf = object.allOf;
-                      for (var key in allOf) {
-                        if (!allOf.hasOwnProperty(key))
-                          continue;
-                        var obj = allOf[key];
-                        if ((typeof obj === 'undefined' ? 'undefined' : _typeof(obj)) === 'object')
-                          allOf[key] = this.convertRefFromModel(obj, isSchema);
-                        else
-                          allOf[key] = { '$ref': '#/definitions/' + obj };
+                    if (object.hasOwnProperty(id)) {
+                      var val = object[id];
+                      if (id == 'allOf') {
+                        object.allOf = val.map(function (obj) {
+                          if ((typeof obj === 'undefined' ? 'undefined' : _typeof(obj)) === 'object')
+                            return obj;
+                          else
+                            return { '$ref': '#/definitions/' + obj };
+                        });
+                      } else if (typeof val === 'string') {
+                        if (id == 'ref') {
+                          object.$ref = '#/definitions/' + val;
+                          delete object[id];
+                        } else if (id == 'include') {
+                          object.$ref = val;
+                          delete object[id];
+                        }
+                      } else if (val && (typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object') {
+                        object[id] = this.convertRefFromModel(val);
                       }
-                      //check if all elements from allOf are the same.
-                      //if yes, remove allOf attribute.
-                      if (arrayHelper.allEqual(allOf)) {
-                        _.merge(object, object.allOf[0]);
-                        delete object.allOf;
-                      }
-                    } else if (typeof val === 'string') {
-                      if (id == 'ref') {
-                        object.$ref = '#/definitions/' + val;
-                        delete object[id];
-                        id = '$ref';
-                      } else if (id == 'include') {
-                        object.$ref = val;
-                        delete object[id];
-                        id = '$ref';
-                      }
-                    } else if (val && (typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object') {
-                      if (id === 'example' || id === 'examples') {
-                        object = Swagger._convertExamples(object, isSchema);
-                        id = 'example';
-                      } else if (id !== 'xml') {
-                        object[id] = this.convertRefFromModel(val, isSchema, id == 'properties' && !isProperty);
-                      }
-                    }
-                    if (!_.isArray(object) && isSchema && !isProperty && swaggerHelper.getSupportedSchemaFields.indexOf(id) < 0) {
-                      object['x-raml-facets-' + id] = val;
-                      delete object[id];
                     }
                   }
                   return object;
@@ -38672,8 +39386,7 @@
                   for (var i in endpoints) {
                     if (!endpoints.hasOwnProperty(i))
                       continue;
-                    var endpoint = endpoints[i];
-                    var parameters = [];
+                    var endpoint = endpoints[i], parameters = [];
                     var requestTypes = this._getRequestTypes(endpoint, parameters, env.Consumes);
                     // To build parameters we need to grab data from body for supported mimeTypes
                     requestTypes = _.isEmpty(requestTypes) ? env.Consumes : requestTypes;
@@ -38682,18 +39395,11 @@
                       swaggerDef.paths[endpoint.Path] = params.length ? { parameters: params } : {};
                     }
                     parameters = parameters.concat(this._mapQueryString(endpoint.QueryString));
-                    var requestBodySize = _.size(endpoint.Body);
-                    if (requestBodySize > 1) {
-                      parameters = parameters.concat(this._mapRequestBody(endpoint.Body[0], requestTypes, true));
-                    } else {
-                      if (!_.isEmpty(endpoint.Body)) {
-                        parameters = parameters.concat(this._mapRequestBody(endpoint.Body[0], requestTypes, false));
-                      }
-                    }
+                    parameters = parameters.concat(this._mapRequestBody(endpoint.Body, requestTypes));
                     parameters = parameters.concat(this._mapRequestHeaders(endpoint.Headers));
                     parameters = parameters.concat(this._mapEndpointTraitParameters(endpoint, parameters));
                     parameters = Swagger._validateParameters(parameters);
-                    var responses = _.assign({}, this._mapResponseBody(endpoint, env), this._mapEndpointTraitResponses(endpoint));
+                    var responses = _.assign({}, this._mapEndpointTraitResponses(endpoint), this._mapResponseBody(endpoint, env));
                     if (_.isEmpty(responses)) {
                       // empty schema for swagger spec validation
                       responses['default'] = {
@@ -38702,16 +39408,12 @@
                       };
                     }
                     // if (_.isEmpty(endpoint.Produces)) {
-                    //   for (const statusCode in responses) {
-                    //     const response = responses[statusCode];
+                    //   for (let statusCode in responses) {
+                    //     let response = responses[statusCode];
                     //     delete response.schema;
                     //   }
                     // }
                     swaggerDef.paths[endpoint.Path][endpoint.Method] = this._constructSwaggerMethod(endpoint, parameters, responses, env);
-                    if (requestBodySize > 1) {
-                      var bodies = this._mapRequestBodies(endpoint.Body, requestTypes);
-                      _.merge(swaggerDef.paths[endpoint.Path][endpoint.Method], bodies);
-                    }
                     //Is it OK to include produces/consumes in all cases?
                     if (endpoint.SecuredBy) {
                       var security = Swagger._mapEndpointSecurity(endpoint.SecuredBy, this.project.Environment.SecuritySchemes);
@@ -38730,8 +39432,7 @@
                   for (var i in traits) {
                     if (!traits.hasOwnProperty(i))
                       continue;
-                    var trait = traits[i];
-                    var params = [];
+                    var trait = traits[i], params = [];
                     try {
                       var schema = jsonHelper.parse(trait.request.queryString);
                       if (!jsonHelper.isEmptySchema(schema)) {
@@ -38765,7 +39466,7 @@
                     for (var _i2 in trait.responses) {
                       var res = trait.responses[_i2];
                       var responseName = stringHelper.computeTraitName(trait.name, res.codes && res.codes.length > 0 && parseInt(res.codes[0]) ? res.codes[0] : 'default');
-                      responses[responseName] = this.mapResponseBody(res);
+                      responses[responseName] = mapResponseBody(res);
                     }
                   }
                   return responses;
@@ -38830,10 +39531,7 @@
                   } else {
                     delete swaggerDef.consumes;
                   }
-                  var definitions = this._mapSchema(this.project.Schemas);
-                  if (!_.isEmpty(definitions)) {
-                    swaggerDef.definitions = definitions;
-                  }
+                  swaggerDef.definitions = this._mapSchema(this.project.Schemas);
                   var parameters = this._mapTraitParameters(this.project.Traits);
                   if (!_.isEmpty(parameters)) {
                     swaggerDef.parameters = parameters;
@@ -39063,20 +39761,6 @@
                 }
               },
               {
-                key: 'mapRequiredProperty',
-                value: function mapRequiredProperty(headers) {
-                  for (var i in headers) {
-                    if (!headers.hasOwnProperty(i))
-                      continue;
-                    var header = headers[i];
-                    if (header.hasOwnProperty('required')) {
-                      header['x-raml-required'] = header['required'];
-                      delete header.required;
-                    }
-                  }
-                }
-              },
-              {
                 key: '_hasAttributes',
                 value: function _hasAttributes(object, atts) {
                   for (var id in object) {
@@ -39091,61 +39775,6 @@
                         object[id] = Swagger._hasAttributes(val, atts);
                       }
                     }
-                  }
-                  return object;
-                }
-              },
-              {
-                key: 'convertDefinitions',
-                value: function convertDefinitions(object) {
-                  var ref = object.items.$ref.split('/');
-                  var item = ref[ref.length - 1];
-                  var definitions = object.definitions;
-                  for (var id in definitions) {
-                    if (!definitions.hasOwnProperty(id))
-                      continue;
-                    if (id === item) {
-                      object['items'] = definitions[id];
-                      delete definitions[id];
-                      if (_.isEmpty(object.definitions))
-                        delete object['definitions'];
-                      break;
-                    }
-                  }
-                  return object;
-                }
-              },
-              {
-                key: '_convertExamples',
-                value: function _convertExamples(object, isSchema) {
-                  if (isSchema) {
-                    if (object.hasOwnProperty('examples')) {
-                      var val = object.examples;
-                      if (!_.isArray(val))
-                        return val;
-                      object.example = val[0];
-                      if (val.length > 1) {
-                        var additionalExamples = [];
-                        for (var i = 1; i < val.length; i++) {
-                          additionalExamples.push(val[i]);
-                        }
-                        object['x-raml-additional-examples'] = additionalExamples;
-                      }
-                      delete object.examples;
-                    }
-                  } else if (object.hasOwnProperty('example')) {
-                    object['x-raml-example'] = object.example;
-                    delete object.example;
-                  } else if (object.hasOwnProperty('examples')) {
-                    var _val = object.examples;
-                    if (!_.isArray(_val))
-                      return _val;
-                    var examples = [];
-                    for (var _i5 = 0; _i5 < _val.length; _i5++) {
-                      examples.push(_val[_i5]);
-                    }
-                    object['x-raml-example'] = examples;
-                    delete object.examples;
                   }
                   return object;
                 }
@@ -39183,18 +39812,17 @@
         module.exports = Swagger;
       },
       {
-        '../entities/swagger/definition': 216,
-        '../helpers/swagger': 227,
-        '../utils/array.js': 235,
-        '../utils/json.js': 236,
-        '../utils/strings.js': 237,
-        '../utils/url': 238,
-        './exporter': 220,
+        '../entities/swagger/definition': 217,
+        '../helpers/swagger': 231,
+        '../utils/json.js': 243,
+        '../utils/strings.js': 244,
+        '../utils/url': 245,
+        './exporter': 223,
         'lodash': 204,
-        'url': 277
+        'url': 284
       }
     ],
-    225: [
+    229: [
       function (require, module, exports) {
         'use strict';
         var supportedFormats = {
@@ -39228,13 +39856,34 @@
               formats: ['yaml'],
               import: true,
               export: true
+            },
+            'POSTMAN': {
+              name: 'Postman',
+              className: 'Postman',
+              formats: ['json'],
+              import: false,
+              export: false
+            },
+            'STOPLIGHT': {
+              name: 'StopLight',
+              className: 'StopLight',
+              formats: ['json'],
+              import: false,
+              export: false
+            },
+            'STOPLIGHTX': {
+              name: 'StopLightX',
+              className: 'StopLightX',
+              formats: ['json'],
+              import: false,
+              export: false
             }
           };
         module.exports = supportedFormats;
       },
       {}
     ],
-    226: [
+    230: [
       function (require, module, exports) {
         'use strict';
         var _ = require('lodash');
@@ -39312,11 +39961,12 @@
             'number',
             'integer',
             'boolean',
+            'date',
             'datetime',
             'date-only',
             'file',
             'array',
-            'nil',
+            'nilValue',
             'time-only',
             'datetime-only'
           ],
@@ -39350,8 +40000,6 @@
             'required',
             'facets',
             'items',
-            'example',
-            'examples',
             '(oas-allowEmptyValue)',
             '(oas-collectionFormat)',
             '(oas-exclusiveMaximum)',
@@ -39390,7 +40038,7 @@
       },
       { 'lodash': 204 }
     ],
-    227: [
+    231: [
       function (require, module, exports) {
         'use strict';
         module.exports = {
@@ -39415,38 +40063,7 @@
             'format',
             'collectionFormat',
             'allowEmptyValue',
-            'required',
-            'x-raml-example'
-          ],
-          getSupportedSchemaFields: [
-            '$ref',
-            'format',
-            'title',
-            'description',
-            'default',
-            'multipleOf',
-            'maximum',
-            'exclusiveMaximum',
-            'minimum',
-            'exclusiveMinimum',
-            'maxLength',
-            'minLength',
-            'pattern',
-            'maxItems',
-            'minItems',
-            'uniqueItems',
-            'maxProperties',
-            'minProperties',
-            'required',
-            'enum',
-            'type',
-            'items',
-            'allOf',
-            'properties',
-            'additionalProperties',
-            'example',
-            'discriminator',
-            'xml'
+            'required'
           ],
           setParameterFields: function setParameterFields(source, target) {
             for (var prop in source) {
@@ -39472,15 +40089,12 @@
               }
             }
             return target;
-          },
-          isExtension: function isExtension(id) {
-            return id.substring(0, 2) === 'x-';
           }
         };
       },
       {}
     ],
-    228: [
+    232: [
       function (require, module, exports) {
         'use strict';
         var _createClass = function () {
@@ -39530,9 +40144,12 @@
         }
         var fs = require('fs'), _ = require('lodash'), Formats = require('../formats'), Importer = require('./importer'), urlHelper = require('../utils/url');
         var importers = {
+            Postman: require('./postman'),
             RAML08: require('./raml08'),
             RAML10: require('./raml10'),
-            Swagger: require('./swagger')
+            Swagger: require('./swagger'),
+            StopLight: require('./stoplight'),
+            StopLightX: require('./stoplightx')
           };
         var Auto = function (_Importer) {
             _inherits(Auto, _Importer);
@@ -39541,9 +40158,16 @@
               _classCallCheck(this, Auto);
               var _this = _possibleConstructorReturn(this, (Auto.__proto__ || Object.getPrototypeOf(Auto)).call(this));
               _this.importer = null;
+              _this.detectedFormat = null;
               return _this;
             }
             _createClass(Auto, [
+              {
+                key: 'getDetectedFormat',
+                value: function getDetectedFormat() {
+                  return this.detectedFormat;
+                }
+              },
               {
                 key: 'loadData',
                 value: function loadData(data, options, url) {
@@ -39570,15 +40194,9 @@
                       return _this3.loadData(body, options, filePath);
                     });
                   } else {
-                    if (options && options.fsResolver) {
-                      return options.fsResolver.contentAsync(filePath).then(function (fileContent) {
-                        return _this3.loadData(fileContent, options, filePath);
-                      });
-                    } else {
-                      // Local file
-                      var fileContent = fs.readFileSync(filePath, 'utf8');
-                      return this.loadData(fileContent, options);
-                    }
+                    // Local file
+                    var fileContent = fs.readFileSync(filePath, 'utf8');
+                    return this.loadData(fileContent, options);
                   }
                 }
               },
@@ -39596,6 +40214,7 @@
                   var importer = new importers[detectedFormat.className]();
                   var promise = url ? importer.loadFile(url, options) : importer.loadData(data, options);
                   promise.then(function () {
+                    _this4.detectedFormat = detectedFormat;
                     _this4.data = importer.data;
                     _this4.importer = importer;
                     resolve();
@@ -39608,12 +40227,19 @@
                   if (!data)
                     return;
                   data = _.trim(data);
-                  if (/#%RAML[\s]*1\.?0?/.test(data))
-                    return Formats.RAML10;
-                  if (/#%RAML[\s]*0\.?8?/.test(data))
-                    return Formats.RAML08;
-                  if (/swagger:[\s'"]*\d\.?\d?/.test(data) || /{"swagger":[\s'"]*\d\.?\d?/.test(data))
-                    return Formats.SWAGGER;
+                  try {
+                    var json = JSON.parse(data);
+                    // found a json
+                    return json.swagger ? Formats.STOPLIGHTX : Formats.POSTMAN;
+                  } catch (err) {
+                    // assume a yaml
+                    if (/#%RAML[\s]*1\.?0?/.test(data))
+                      return Formats.RAML10;
+                    if (/#%RAML[\s]*0\.?8?/.test(data))
+                      return Formats.RAML08;
+                    if (/swagger:[\s'"]*\d\.?\d?/.test(data))
+                      return Formats.SWAGGER;
+                  }
                 }
               }]);
             return Auto;
@@ -39621,17 +40247,20 @@
         module.exports = Auto;
       },
       {
-        '../formats': 225,
-        '../utils/url': 238,
-        './importer': 230,
-        './raml08': 232,
-        './raml10': 233,
-        './swagger': 234,
+        '../formats': 229,
+        '../utils/url': 245,
+        './importer': 234,
+        './postman': 236,
+        './raml08': 237,
+        './raml10': 238,
+        './stoplight': 239,
+        './stoplightx': 240,
+        './swagger': 241,
         'fs': 4,
         'lodash': 204
       }
     ],
-    229: [
+    233: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -39695,24 +40324,26 @@
               _this.schemas = [];
               return _this;
             }
-            // _getSecuritySchemeSettingsByName(schemeName) {
-            // 	const securitySchemes = this.data.securitySchemes;
-            // 	for (const i in securitySchemes) {
-            // 		if (!securitySchemes.hasOwnProperty(i)) continue;
-            //
-            // 		const entries = _.entries(securitySchemes[i]);
-            // 		for (let index = 0; index < entries.length; index++) {
-            // 			const entry = entries[index];
-            // 			const key = entry[0];
-            // 			const value = entry[1];
-            //
-            // 			if (schemeName === key) {
-            // 				return value;
-            // 			}
-            // 		}
-            // 	}
-            // }
             _createClass(RAMLImporter, [
+              {
+                key: '_getSecuritySchemeSettingsByName',
+                value: function _getSecuritySchemeSettingsByName(schemeName) {
+                  var securitySchemes = this.data.securitySchemes;
+                  for (var i in securitySchemes) {
+                    if (!securitySchemes.hasOwnProperty(i))
+                      continue;
+                    var entries = _.entries(securitySchemes[i]);
+                    for (var index = 0; index < entries.length; index++) {
+                      var entry = entries[index];
+                      var key = entry[0];
+                      var value = entry[1];
+                      if (schemeName === key) {
+                        return value;
+                      }
+                    }
+                  }
+                }
+              },
               {
                 key: '_mapRequestBody',
                 value: function _mapRequestBody(methodBody, checkEmptyType) {
@@ -39724,7 +40355,10 @@
                 value: function _mapQueryString(queryString) {
                   var result = queryString;
                   delete result.typePropertyKind;
-                  RAMLImporter._mapTypesFormats(queryString, false);
+                  if (queryString.type) {
+                    result['x-raml-type'] = _.isArray(queryString.type) && queryString.type.length == 1 ? queryString.type[0] : queryString.type;
+                    queryString.type = 'string';
+                  }
                   if (queryString.properties) {
                     queryString.required = [];
                   }
@@ -39739,8 +40373,8 @@
               },
               {
                 key: '_mapRequestHeaders',
-                value: function _mapRequestHeaders(data, traits) {
-                  return RAMLImporter._mapHeadersParameters(data, traits);
+                value: function _mapRequestHeaders(data) {
+                  return RAMLImporter._mapQueryParameters(data);
                 }
               },
               {
@@ -39755,11 +40389,10 @@
                     if (!uriParams.hasOwnProperty(i))
                       continue;
                     var key = uriParams[i];
-                    pathParams.properties[key.name] = { type: key.type || 'string' };
-                    var description = key.displayName || key.description;
-                    if (description) {
-                      pathParams.properties[key.name]['description'] = description;
-                    }
+                    pathParams.properties[key.name] = {
+                      description: key.displayName || key.description || '',
+                      type: key.type || 'string'
+                    };
                     RAMLImporter._convertRequiredToArray(key, key.name, pathParams.required);
                     RAMLImporter._addAnnotations(key, pathParams.properties[key.name]);
                   }
@@ -39774,11 +40407,7 @@
                     if (!responses.hasOwnProperty(code))
                       continue;
                     var response = responses[code];
-                    var result = {};
-                    if (response.hasOwnProperty('body') && !_.isEmpty(response.body)) {
-                      var mimeType = Object.keys(response.body)[0];
-                      result = this.mapRequestBody(response.body[mimeType], false, mimeType);
-                    }
+                    var result = this._mapRequestBody(response.body, false);
                     result.codes = [response.code];
                     if (result.body) {
                       result.body = jsonHelper.cleanSchema(result.body);
@@ -39789,12 +40418,7 @@
                         if (!response.headers.hasOwnProperty(index))
                           continue;
                         var header = response.headers[index];
-                        if (!header.hasOwnProperty('type'))
-                          header.type = 'string';
-                        else
-                          RAMLImporter._mapTypesFormats(header, false);
                         r[header.name] = this._mapQueryString(header);
-                        header = RAMLImporter._mapExamples(header);
                         delete r[header.name]['name'];
                       }
                       result.headers = r;
@@ -39811,24 +40435,18 @@
                 }
               },
               {
-                key: '_mapSchemas',
-                value: function _mapSchemas(schemData) {
+                key: '_mapSchema',
+                value: function _mapSchema(schemData) {
                   //check if type attribute is abscent and fill with default value (type: string).
                   RAMLImporter._checkForDefaultType(schemData);
-                  return this.mapSchemas(schemData);
+                  return this.mapSchema(schemData);
                 }
               },
               {
                 key: '_mapEndpoint',
                 value: function _mapEndpoint(resource, baseURI, pathParams) {
                   if (resource.uriParameters) {
-                    if (_.isEmpty(pathParams))
-                      pathParams = this._mapURIParams(resource.uriParameters);
-                    else {
-                      var newParams = this._mapURIParams(resource.uriParameters);
-                      _.merge(pathParams.properties, newParams.properties);
-                      pathParams.required = _.concat(pathParams.required, newParams.required);
-                    }
+                    pathParams = this._mapURIParams(resource.uriParameters);
                   }
                   var mResource = {
                       path: baseURI + resource.relativeUri,
@@ -39859,15 +40477,15 @@
                     if (method.body) {
                       var c = RAMLImporter.mapMimeTypes(method.body, this.data.mediaType);
                       endpoint.Consumes = c.length > 0 ? c : null;
-                      this.mapRequestBodies(endpoint, method.body, true);
+                      endpoint.Body = this._mapRequestBody(method.body, true);
                     }
                     if (method.queryParameters) {
-                      endpoint.QueryString = RAMLImporter._mapQueryParameters(method.queryParameters, this.data.traits);
+                      endpoint.QueryString = RAMLImporter._mapQueryParameters(method.queryParameters);
                     } else if (method.queryString) {
                       endpoint.QueryString = this._mapQueryString(method.queryString);
                     }
                     if (method.headers) {
-                      endpoint.Headers = this._mapRequestHeaders(method.headers, this.data.traits);
+                      endpoint.Headers = this._mapRequestHeaders(method.headers);
                     }
                     if (method.responses) {
                       var produces = [];
@@ -40062,7 +40680,7 @@
                         this._mapEndpoint(resources[_i2], '', {});
                       }
                     }
-                    var schemas = this._mapSchemas(this.getSchemas(this.data));
+                    var schemas = this._mapSchema(this.getSchema(this.data));
                     for (var s in schemas) {
                       if (!schemas.hasOwnProperty(s))
                         continue;
@@ -40073,17 +40691,6 @@
                   } catch (e) {
                     console.error('raml#import', e);
                     throw e;
-                  }
-                }
-              },
-              {
-                key: 'mapRequestBodies',
-                value: function mapRequestBodies(endpoint, methodBodies, checkEmptyType) {
-                  for (var mimeType in methodBodies) {
-                    if (!methodBodies.hasOwnProperty(mimeType))
-                      continue;
-                    var methodBody = methodBodies[mimeType];
-                    endpoint.Body = this.mapRequestBody(methodBody, checkEmptyType, mimeType);
                   }
                 }  //noinspection JSMethodCanBeStatic
               },
@@ -40100,14 +40707,14 @@
                 }  //noinspection JSMethodCanBeStatic
               },
               {
-                key: 'mapSchemas',
-                value: function mapSchemas() {
+                key: 'mapSchema',
+                value: function mapSchema() {
                   throw new Error('mapSchema method not implemented');
                 }  //noinspection JSMethodCanBeStatic
               },
               {
-                key: 'getSchemas',
-                value: function getSchemas() {
+                key: 'getSchema',
+                value: function getSchema() {
                   throw new Error('getSchema method not implemented');
                 }
               }
@@ -40216,24 +40823,8 @@
                 }
               },
               {
-                key: '_mapHeadersParameters',
-                value: function _mapHeadersParameters(queryParameters, traits) {
-                  return RAMLImporter._mapParameters(queryParameters, traits, 'headers');
-                }
-              },
-              {
                 key: '_mapQueryParameters',
-                value: function _mapQueryParameters(queryParameters, traits) {
-                  return RAMLImporter._mapParameters(queryParameters, traits, 'queryParameters');
-                }
-              },
-              {
-                key: '_mapParameters',
-                value: function _mapParameters(queryParameters, traits, parameterName) {
-                  //avoid queryParameters from expand option.
-                  if (traits) {
-                    RAMLImporter._filterPropertiesFromTraits(queryParameters, traits, parameterName);
-                  }
+                value: function _mapQueryParameters(queryParameters) {
                   var queryString = {
                       type: 'object',
                       properties: {},
@@ -40243,36 +40834,10 @@
                     if (!queryParameters.hasOwnProperty(key))
                       continue;
                     var qp = queryParameters[key];
-                    var parameterFields = ramlHelper.setParameterFields(qp, {});
-                    queryString.properties[key] = RAMLImporter.convertRefToModel(parameterFields, false);
+                    queryString.properties[key] = RAMLImporter.convertRefToModel(ramlHelper.setParameterFields(qp, {}));
                     RAMLImporter._convertRequiredToArray(qp, key, queryString.required);
                   }
                   return queryString;
-                }
-              },
-              {
-                key: '_filterPropertiesFromTraits',
-                value: function _filterPropertiesFromTraits(params, traits, propertyName) {
-                  for (var i in traits) {
-                    if (!traits.hasOwnProperty(i))
-                      continue;
-                    for (var j in traits[i]) {
-                      if (!traits[i].hasOwnProperty(j))
-                        continue;
-                      var param = traits[i][j];
-                      if (param.hasOwnProperty(propertyName)) {
-                        for (var k in param[propertyName]) {
-                          if (!param[propertyName].hasOwnProperty(k))
-                            continue;
-                          var p = param[propertyName][k];
-                          var found = _.find(params, { name: p.name });
-                          if (found) {
-                            delete params[k];
-                          }
-                        }
-                      }
-                    }
-                  }
                 }
               },
               {
@@ -40282,56 +40847,6 @@
                     required.push(key);
                   }
                   delete object.required;
-                }
-              },
-              {
-                key: '_mapTypesFormats',
-                value: function _mapTypesFormats(object, isSchema) {
-                  if (!object.hasOwnProperty('type') || object.type === 'object')
-                    return object;
-                  var type = _.isArray(object.type) && object.type.length == 1 ? object.type[0] : object.type;
-                  object.type = type;
-                  switch (type) {
-                  case 'date-only':
-                    object.type = 'string';
-                    object.format = 'date';
-                    break;
-                  case 'time-only':
-                    object.type = 'string';
-                    object['x-raml-format'] = 'time-only';
-                    break;
-                  case 'datetime-only':
-                    object.type = 'string';
-                    object['x-raml-format'] = 'datetime-only';
-                    break;
-                  case 'datetime':
-                    object.type = 'string';
-                    if (object.format == 'rfc3339' || !object.hasOwnProperty('format')) {
-                      object.format = 'date-time';
-                    } else {
-                      object['x-raml-format'] = object.format;
-                      delete object.format;
-                    }
-                    break;
-                  case 'file':
-                    if (isSchema) {
-                      object.type = 'string';
-                      object['x-raml-type'] = 'file';
-                    }
-                    if (object.hasOwnProperty('fileTypes')) {
-                      object['x-raml-fileTypes'] = object['fileTypes'];
-                      delete object['fileTypes'];
-                    }
-                    break;
-                  default:
-                    if (typeof type === 'string' && (type.includes('|') || type.includes('?'))) {
-                      object.type = 'object';
-                    } else if ((typeof type === 'undefined' ? 'undefined' : _typeof(type)) !== 'object' && ramlHelper.getScalarTypes.indexOf(type) < 0) {
-                      object['x-raml-type'] = type;
-                      object.type = 'string';
-                    }
-                    break;
-                  }
                 }
               },
               {
@@ -40361,7 +40876,7 @@
                     }
                   } else {
                     if ((typeof object === 'undefined' ? 'undefined' : _typeof(object)) === 'object' && !object.hasOwnProperty('type') && !object.hasOwnProperty('schema')) {
-                      object.type = ['string'];
+                      object['type'] = ['string'];
                     }
                   }
                 }
@@ -40387,7 +40902,7 @@
               },
               {
                 key: 'convertRefToModel',
-                value: function convertRefToModel(object, isSchema, isProperty) {
+                value: function convertRefToModel(object) {
                   if (jsonHelper.isJson(object)) {
                     return object;
                   }
@@ -40403,17 +40918,14 @@
                   for (var id in object) {
                     if (!object.hasOwnProperty(id))
                       continue;
+                    var isType = id == 'type';
+                    if (isType && _.isArray(object[id]) && object[id].length == 1) {
+                      object[id] = object[id][0];
+                    }
                     var val = object[id];
                     if (!val)
                       continue;
-                    if (id === 'type') {
-                      if (_.isArray(object[id]) && object[id].length == 1)
-                        object[id] = object[id][0];
-                      val = object[id];
-                      if (val !== 'object' && typeof val === 'string' && !xmlHelper.isXml(val)) {
-                        object[id] = RAMLImporter._modifyUnionType(val);
-                        val = object[id];
-                      }
+                    if (isType) {
                       if (jsonHelper.isJson(val)) {
                         object = val;
                         delete object[id];
@@ -40423,30 +40935,45 @@
                         object.ref = val;
                         delete object[id];
                       }
-                      if (!isProperty) {
-                        RAMLImporter._mapTypesFormats(object, isSchema);
-                      }
                     }
-                    if (id === 'example' || id === 'examples') {
-                      object = RAMLImporter._mapExamples(object);
-                    } else if ((typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object') {
-                      if (id === 'items' && !val.hasOwnProperty('type') && !val.hasOwnProperty('properties')) {
-                        if (!_.isArray(val))
-                          val.type = 'string';
-                        else {
-                          object.items = { ref: val[0] };
-                          return object;
+                    if (isType && typeof val === 'string') {
+                      if (val == 'date-only') {
+                        object.type = 'string';
+                        object.format = 'date';
+                      } else if (val == 'time-only') {
+                        object.type = 'string';
+                        object['x-raml-format'] = 'time-only';
+                      } else if (val == 'datetime-only') {
+                        object.type = 'string';
+                        object['x-raml-format'] = 'datetime-only';
+                      } else if (val == 'datetime') {
+                        object.type = 'string';
+                        if (object.format == 'rfc3339') {
+                          object.format = 'date-time';
+                        } else {
+                          object['x-raml-format'] = object.format;
+                          delete object.format;
+                        }
+                      } else if (val === 'file') {
+                        object.type = 'string';
+                        object['x-raml-type'] = 'file';
+                        if (object.hasOwnProperty('fileTypes')) {
+                          object['x-raml-fileTypes'] = object['fileTypes'];
+                          delete object['fileTypes'];
                         }
                       }
-                      if (id == 'fixedFacets') {
+                    } else if ((typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object') {
+                      if (id == 'structuredExample' || id == 'fixedFacets') {
                         //delete garbage
                         delete object[id];
+                      } else if (id === 'items' && !val.type && val.hasOwnProperty('0')) {
+                        object.items = { ref: val[0] };
                       } else {
-                        if (id == 'xml') {
+                        if (id == 'xml' || id === 'example') {
                           //no process xml object
                           object[id] = val;
                         } else {
-                          object[id] = RAMLImporter.convertRefToModel(val, isSchema, id === 'properties' && !isProperty);
+                          object[id] = RAMLImporter.convertRefToModel(val);
                         }
                       }
                     } else if (id == 'name') {
@@ -40455,14 +40982,6 @@
                     }
                   }
                   return object;
-                }
-              },
-              {
-                key: '_modifyUnionType',
-                value: function _modifyUnionType(type) {
-                  if (type.includes('|') || type.includes('?'))
-                    type = 'object';
-                  return type;
                 }
               },
               {
@@ -40494,10 +41013,9 @@
               {
                 key: '_options',
                 value: function _options(options) {
-                  var validate = options && (options.validate === true || options.validateImport === true);
                   var parseOptions = {
                       attributeDefaults: false,
-                      rejectOnErrors: validate
+                      rejectOnErrors: options && options.validate === true
                     };
                   return !options ? parseOptions : _.merge(parseOptions, options);
                 }
@@ -40511,56 +41029,12 @@
                   for (var i in annotations) {
                     if (!annotations.hasOwnProperty(i))
                       continue;
-                    if (_.startsWith(i, 'oas-'))
-                      continue;
                     var value = annotations[i];
                     var key = 'x-raml-annotation-' + i;
                     target[key] = value.structuredValue || '';
                   }
                   if (target.annotations)
                     delete target.annotations;
-                }
-              },
-              {
-                key: '_mapExamples',
-                value: function _mapExamples(object) {
-                  if (object.hasOwnProperty('example')) {
-                    var example = object.example;
-                    if (object.hasOwnProperty('structuredExample')) {
-                      example = object.structuredExample;
-                      delete object.structuredExample;
-                    }
-                    if (example.hasOwnProperty('structuredValue')) {
-                      object.example = example.structuredValue;
-                    } else if (example.hasOwnProperty('value')) {
-                      object.example = JSON.parse(example.value);
-                    }
-                    if (example.hasOwnProperty('strict') && !example.strict) {
-                      object.example.strict = false;
-                    }
-                    if (example.hasOwnProperty('name') && example.name) {
-                      object.example['x-raml-example-name'] = example.name;
-                    }
-                  } else if (object.hasOwnProperty('examples')) {
-                    var examples = object.examples;
-                    for (var id in examples) {
-                      if (!examples.hasOwnProperty(id))
-                        continue;
-                      var _example = examples[id];
-                      if (_example.hasOwnProperty('structuredValue')) {
-                        object.examples[id] = _example.structuredValue;
-                      } else if (_example.hasOwnProperty('value')) {
-                        object.examples[id] = JSON.parse(_example.value);
-                      }
-                      if (_example.hasOwnProperty('strict') && !_example.strict) {
-                        object.examples[id].strict = false;
-                      }
-                      if (_example.hasOwnProperty('name') && _example.name) {
-                        object.examples[id]['x-raml-example-name'] = _example.name;
-                      }
-                    }
-                  }
-                  return object;
                 }
               }
             ]);
@@ -40571,15 +41045,15 @@
       {
         '../entities/endpoint': 212,
         '../entities/project': 214,
-        '../helpers/raml': 226,
-        '../utils/json': 236,
-        '../utils/xml': 239,
-        './importer': 230,
+        '../helpers/raml': 230,
+        '../utils/json': 243,
+        '../utils/xml': 246,
+        './importer': 234,
         'lodash': 204,
-        'url': 277
+        'url': 284
       }
     ],
-    230: [
+    234: [
       function (require, module, exports) {
         'use strict';
         var _createClass = function () {
@@ -40712,13 +41186,16 @@
       },
       {}
     ],
-    231: [
+    235: [
       function (require, module, exports) {
         'use strict';
         var importers = {
+            Postman: require('./postman'),
             RAML08: require('./raml08'),
             RAML10: require('./raml10'),
             Swagger: require('./swagger'),
+            StopLight: require('./stoplight'),
+            StopLightX: require('./stoplightx'),
             Auto: require('./auto')
           };
         function doesSupportFormat(format) {
@@ -40735,20 +41212,18 @@
         };
       },
       {
-        './auto': 228,
-        './raml08': 232,
-        './raml10': 233,
-        './swagger': 234
+        './auto': 232,
+        './postman': 236,
+        './raml08': 237,
+        './raml10': 238,
+        './stoplight': 239,
+        './stoplightx': 240,
+        './swagger': 241
       }
     ],
-    232: [
+    236: [
       function (require, module, exports) {
         'use strict';
-        var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
-            return typeof obj;
-          } : function (obj) {
-            return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
-          };
         var _createClass = function () {
             function defineProperties(target, props) {
               for (var i = 0; i < props.length; i++) {
@@ -40794,7 +41269,377 @@
           if (superClass)
             Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
         }
-        var RAMLImporter = require('./baseraml'), Schema = require('../entities/schema'), jsonHelper = require('../utils/json'), ramlHelper = require('../helpers/raml'), Text = require('../entities/text'), _ = require('lodash');
+        var fs = require('fs'), Endpoint = require('../entities/endpoint'), SavedEntry = require('../entities/savedEntry'), Importer = require('./importer'), Project = require('../entities/project'), urlHelper = require('../utils/url'), jsonHelper = require('../utils/json'), arrayHelper = require('../utils/array'), _ = require('lodash');
+        var Postman = function (_Importer) {
+            _inherits(Postman, _Importer);
+            function Postman() {
+              _classCallCheck(this, Postman);
+              return _possibleConstructorReturn(this, (Postman.__proto__ || Object.getPrototypeOf(Postman)).call(this));
+            }
+            _createClass(Postman, [
+              {
+                key: '_mapURIParams',
+                value: function _mapURIParams(data) {
+                  var pathParams = {};
+                  for (var key in data) {
+                    if (!data.hasOwnProperty(key))
+                      continue;
+                    pathParams[key] = Postman.transformVariableFormat(data[key]);
+                  }
+                  return pathParams;
+                }
+              },
+              {
+                key: '_mapRequestHeaders',
+                value: function _mapRequestHeaders(data) {
+                  var headerObj = {
+                      type: 'object',
+                      properties: {},
+                      required: []
+                    }, headers = void 0;
+                  headers = data.split('\n');
+                  for (var j in headers) {
+                    if (!headers.hasOwnProperty(j))
+                      continue;
+                    var header = headers[j];
+                    if (!header) {
+                      continue;
+                    }
+                    var keyValueParts = header.split(':');
+                    headerObj['properties'][keyValueParts[0]] = {
+                      type: 'string',
+                      default: Postman.transformVariableFormat(keyValueParts[1])
+                    };
+                  }
+                  return headerObj;
+                }
+              },
+              {
+                key: '_mapRequestBody',
+                value: function _mapRequestBody(requestData) {
+                  var data = {
+                      body: {
+                        type: 'object',
+                        properties: {},
+                        required: []
+                      }
+                    };
+                  for (var j in requestData) {
+                    if (!requestData.hasOwnProperty(j))
+                      continue;
+                    var type = null;
+                    switch (requestData[j].type) {
+                    case 'text':
+                      type = 'string';
+                      break;
+                    default:
+                      type = 'binary';
+                    }
+                    data.body.properties[requestData[j].key] = {
+                      'type': type,
+                      'default': Postman.transformVariableFormat(requestData[j].value)
+                    };
+                  }
+                  return data;
+                }
+              },
+              {
+                key: '_mapEndpoint',
+                value: function _mapEndpoint(pmr) {
+                  var endpoint = void 0, urlParts = void 0;
+                  endpoint = new Endpoint(pmr.name);
+                  endpoint.Id = pmr.id;
+                  urlParts = pmr.url.split('?');
+                  endpoint.QueryString = Postman.parseQuery(urlParts[1]);
+                  endpoint.Path = Postman.transformVariableFormat(urlParts[0]);
+                  endpoint.Method = pmr.method;
+                  endpoint.Before = pmr.preRequestScript;
+                  endpoint.PathParams = this._mapURIParams(pmr.pathVariables);
+                  //parse headers
+                  endpoint.Headers = this._mapRequestHeaders(pmr.headers);
+                  //TODO map Body
+                  endpoint.Consumes = Postman.mapConsumes(pmr.dataMode);
+                  endpoint.Body = this._mapRequestBody(pmr.data);
+                  return endpoint;
+                }
+              },
+              {
+                key: 'loadData',
+                value: function loadData(data) {
+                  var me = this;
+                  return new Promise(function (resolve, reject) {
+                    me._parseData(data, function (err) {
+                      if (err) {
+                        reject(err);
+                      } else {
+                        resolve();
+                      }
+                    });
+                  });
+                }
+              },
+              {
+                key: '_parseData',
+                value: function _parseData(data, cb) {
+                  try {
+                    this.data = JSON.parse(data);
+                    cb();
+                  } catch (err) {
+                    cb(err);
+                  }
+                }
+              },
+              {
+                key: 'loadFile',
+                value: function loadFile(filePath, cb) {
+                  var me = this;
+                  if (urlHelper.isURL(filePath)) {
+                    urlHelper.get(filePath).then(function (body) {
+                      me._parseData(body, cb);
+                    }).catch(cb);
+                  } else {
+                    var data = fs.readFileSync(filePath, 'utf8');
+                    me._parseData(data, cb);
+                  }
+                }
+              },
+              {
+                key: '_mergeEndpointHeaders',
+                value: function _mergeEndpointHeaders(endpoints) {
+                  return jsonHelper.stringify({
+                    type: 'object',
+                    properties: endpoints.reduce(function (result, endpoint) {
+                      return _.merge(result, jsonHelper.parse(endpoint.Headers).properties);
+                    }, {}),
+                    required: []
+                  }, 4);
+                }
+              },
+              {
+                key: '_mergeEndpointQueryString',
+                value: function _mergeEndpointQueryString(endpoints) {
+                  return jsonHelper.stringify({
+                    type: 'object',
+                    properties: endpoints.reduce(function (result, endpoint) {
+                      return _.merge(result, jsonHelper.parse(endpoint.QueryString).properties);
+                    }, {}),
+                    required: []
+                  }, 4);
+                }
+              },
+              {
+                key: '_mergeEndpointGroups',
+                value: function _mergeEndpointGroups(endpoints) {
+                  var endpoint = endpoints[0];
+                  if (endpoints.length <= 1) {
+                    return endpoint;
+                  }
+                  var headers = this._mergeEndpointHeaders(endpoints);
+                  var queryString = this._mergeEndpointQueryString(endpoints);
+                  endpoint.Name = endpoint.Path;
+                  endpoint.Headers = headers;
+                  endpoint.QueryString = queryString;
+                  // TODO maybe we should also merge pathParams and body
+                  return endpoint;
+                }
+              },
+              {
+                key: '_mergeEndpoints',
+                value: function _mergeEndpoints(endpoints) {
+                  var self = this;
+                  var groups = arrayHelper.groupBy(endpoints, function (endpoint) {
+                      return [
+                        endpoint.Path,
+                        endpoint.Method
+                      ];
+                    });
+                  return groups.map(function (group) {
+                    return self._mergeEndpointGroups(group);
+                  });
+                }
+              },
+              {
+                key: '_mapSavedEntry',
+                value: function _mapSavedEntry(pmr) {
+                  var savedEntry = new SavedEntry(pmr.name);
+                  var urlParts = pmr.url.split('?');
+                  savedEntry.Id = pmr.id;
+                  savedEntry.QueryString = Postman.parseQuery(urlParts[1]);
+                  savedEntry.Path = Postman.transformVariableFormat(urlParts[0]);
+                  savedEntry.Method = pmr.method;
+                  savedEntry.PathParams = this._mapURIParams(pmr.pathVariables);
+                  savedEntry.Headers = this._mapRequestHeaders(pmr.headers);
+                  savedEntry.Consumes = Postman.mapConsumes(pmr.dataMode);
+                  if (savedEntry.Method.toLowerCase() !== 'get' && savedEntry.Method.toLowerCase() !== 'head') {
+                    savedEntry.Body = this._mapRequestBody(pmr.data);
+                  }
+                  return savedEntry;
+                }
+              },
+              {
+                key: '_import',
+                value: function _import() {
+                  var self = this;
+                  this.project = new Project(this.data.name || '');
+                  this.project.Description = this.data.description || '';
+                  var requests = this.data.requests || [];
+                  var folders = this.data.folders || [];
+                  // TODO process only unique requests
+                  var endpoints = requests.map(function (request) {
+                      return self._mapEndpoint(request);
+                    });
+                  this._mergeEndpoints(endpoints).forEach(function (endpoint) {
+                    self.project.addEndpoint(endpoint);
+                  });
+                  requests.map(function (request) {
+                    self.project.addSavedEntry(self._mapSavedEntry(request));
+                  });
+                  folders.forEach(function (folder) {
+                    self.project.environment.resourcesOrder.savedEntries.push({
+                      _id: folder.id,
+                      name: folder.name,
+                      items: folder.order.map(function (item) {
+                        return {
+                          type: 'savedEntries',
+                          _id: item
+                        };
+                      })
+                    });
+                  });  //disable temporarily
+                       //TODO
+                       /*for (let i = 0; i < this.data.folders.length; i++) {
+    this.project.addEndpointGroup(mapEndpointGroup(this.data.folders[i]));
+    }*/
+                }
+              }
+            ], [
+              {
+                key: 'transformVariableFormat',
+                value: function transformVariableFormat(val) {
+                  if (!val)
+                    return null;
+                  return val.replace(/\{\{(.*)\}\}/i, '<<$1>>');
+                }
+              },
+              {
+                key: 'parseQuery',
+                value: function parseQuery(qstr) {
+                  var query = {};
+                  if (qstr && qstr.length > 0) {
+                    var a = qstr.split('&');
+                    for (var i in a) {
+                      if (!a.hasOwnProperty(i))
+                        continue;
+                      var b = a[i].split('=');
+                      if (!Array.isArray(b) || b.length <= 0)
+                        continue;
+                      query[decodeURIComponent(b[0])] = {
+                        type: 'string',
+                        default: Postman.transformVariableFormat(decodeURIComponent(b[1] || ''))
+                      };
+                    }
+                  }
+                  return {
+                    type: 'object',
+                    properties: query,
+                    required: []
+                  };
+                }
+              },
+              {
+                key: 'mapConsumes',
+                value: function mapConsumes(mode) {
+                  var consumes = [];
+                  switch (mode) {
+                  case 'urlencoded':
+                    consumes.push('application/x-www-form-urlencoded');
+                    break;
+                  case 'params':
+                    //check for best suitability
+                    consumes.push('multipart/form-data');
+                    break;
+                  default:
+                    consumes.push('text/plain');
+                    break;
+                  }
+                  return consumes;
+                }
+              },
+              {
+                key: 'mapEndpointGroup',
+                value: function mapEndpointGroup(folder) {
+                  return {
+                    name: folder.name,
+                    items: folder.order
+                  };
+                }
+              }
+            ]);
+            return Postman;
+          }(Importer);
+        module.exports = Postman;
+      },
+      {
+        '../entities/endpoint': 212,
+        '../entities/project': 214,
+        '../entities/savedEntry': 215,
+        '../utils/array': 242,
+        '../utils/json': 243,
+        '../utils/url': 245,
+        './importer': 234,
+        'fs': 4,
+        'lodash': 204
+      }
+    ],
+    237: [
+      function (require, module, exports) {
+        'use strict';
+        var _createClass = function () {
+            function defineProperties(target, props) {
+              for (var i = 0; i < props.length; i++) {
+                var descriptor = props[i];
+                descriptor.enumerable = descriptor.enumerable || false;
+                descriptor.configurable = true;
+                if ('value' in descriptor)
+                  descriptor.writable = true;
+                Object.defineProperty(target, descriptor.key, descriptor);
+              }
+            }
+            return function (Constructor, protoProps, staticProps) {
+              if (protoProps)
+                defineProperties(Constructor.prototype, protoProps);
+              if (staticProps)
+                defineProperties(Constructor, staticProps);
+              return Constructor;
+            };
+          }();
+        function _classCallCheck(instance, Constructor) {
+          if (!(instance instanceof Constructor)) {
+            throw new TypeError('Cannot call a class as a function');
+          }
+        }
+        function _possibleConstructorReturn(self, call) {
+          if (!self) {
+            throw new ReferenceError('this hasn\'t been initialised - super() hasn\'t been called');
+          }
+          return call && (typeof call === 'object' || typeof call === 'function') ? call : self;
+        }
+        function _inherits(subClass, superClass) {
+          if (typeof superClass !== 'function' && superClass !== null) {
+            throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass);
+          }
+          subClass.prototype = Object.create(superClass && superClass.prototype, {
+            constructor: {
+              value: subClass,
+              enumerable: false,
+              writable: true,
+              configurable: true
+            }
+          });
+          if (superClass)
+            Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+        }
+        var RAMLImporter = require('./baseraml'), Schema = require('../entities/schema'), jsonHelper = require('../utils/json'), Text = require('../entities/text');
         var RAML08Importer = function (_RAMLImporter) {
             _inherits(RAML08Importer, _RAMLImporter);
             function RAML08Importer() {
@@ -40804,35 +41649,41 @@
             _createClass(RAML08Importer, [
               {
                 key: 'mapRequestBody',
-                value: function mapRequestBody(methodBody, checkEmptyType, mimeType) {
+                value: function mapRequestBody(methodBody) {
                   var data = {
                       mimeType: '',
                       body: {},
                       example: ''
                     };
-                  data.mimeType = mimeType;
-                  if (methodBody.example) {
-                    data.example = methodBody.example;
-                  }
-                  if (methodBody.schema) {
-                    data.body = RAMLImporter.convertRefToModel(jsonHelper.parse(methodBody.schema), false);
-                  } else if (methodBody.formParameters) {
-                    data.body = {
-                      type: 'object',
-                      'properties': {},
-                      'required': []
-                    };
-                    var formParams = methodBody.formParameters;
-                    for (var j in formParams) {
-                      if (!formParams.hasOwnProperty(j))
-                        continue;
-                      var param = formParams[j];
-                      data.body.properties[param.name] = { type: param.type };
-                      if (param.description) {
-                        data.body.properties[param.name].description = param.description;
-                      }
-                      if (param.required) {
-                        data.body.required.push(param.name);
+                  //TODO: only one, the latest is in effect in stoplight!
+                  for (var i in methodBody) {
+                    if (!methodBody.hasOwnProperty(i))
+                      continue;
+                    var mimeType = methodBody[i];
+                    data.mimeType = mimeType.name;
+                    if (mimeType.example) {
+                      data.example = mimeType.example;
+                    }
+                    if (mimeType.schema) {
+                      data.body = RAMLImporter.convertRefToModel(jsonHelper.parse(mimeType.schema));
+                    } else if (mimeType.formParameters) {
+                      data.body = {
+                        type: 'object',
+                        'properties': {},
+                        'required': []
+                      };
+                      var formParams = mimeType.formParameters;
+                      for (var j in formParams) {
+                        if (!formParams.hasOwnProperty(j))
+                          continue;
+                        var param = formParams[j];
+                        data.body.properties[param.name] = { type: param.type };
+                        if (param.description) {
+                          data.body.properties[param.name].description = param.description;
+                        }
+                        if (param.required) {
+                          data.body.required.push(param.name);
+                        }
                       }
                     }
                   }
@@ -40840,8 +41691,8 @@
                 }
               },
               {
-                key: 'mapSchemas',
-                value: function mapSchemas(schemData) {
+                key: 'mapSchema',
+                value: function mapSchema(schemData) {
                   var schemas = [];
                   for (var i in schemData) {
                     if (!schemData.hasOwnProperty(i))
@@ -40851,17 +41702,16 @@
                         continue;
                       var sd = new Schema(schemaName);
                       sd.Name = schemaName;
-                      var definition = RAML08Importer._mapSchema(schemData[i][schemaName], true);
-                      sd.Definition = jsonHelper.cleanSchema(definition);
+                      sd.Definition = jsonHelper.cleanSchema(schemData[i][schemaName]);
                       schemas.push(sd);
                     }
                   }
                   return schemas;
-                }
+                }  //noinspection JSMethodCanBeStatic
               },
               {
-                key: 'getSchemas',
-                value: function getSchemas(data) {
+                key: 'getSchema',
+                value: function getSchema(data) {
                   return data.schemas;
                 }
               },
@@ -40887,42 +41737,19 @@
                   }
                 }
               }
-            ], [{
-                key: '_mapSchema',
-                value: function _mapSchema(definition, isSchema) {
-                  definition = jsonHelper.parse(definition);
-                  for (var id in definition) {
-                    if (!definition.hasOwnProperty(id))
-                      continue;
-                    var val = definition[id];
-                    if (id === 'type') {
-                      if (_.isArray(val) && val.length == 1)
-                        val = val[0];
-                      if (typeof val === 'string' && val != 'object' && ramlHelper.getScalarTypes.indexOf(val) < 0) {
-                        definition['x-raml-type'] = val;
-                        delete definition.type;
-                      }
-                    } else if ((typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object') {
-                      RAML08Importer._mapSchema(val, isSchema);
-                    }
-                  }
-                  return definition;
-                }
-              }]);
+            ]);
             return RAML08Importer;
           }(RAMLImporter);
         module.exports = RAML08Importer;
       },
       {
-        '../entities/schema': 215,
-        '../entities/text': 218,
-        '../helpers/raml': 226,
-        '../utils/json': 236,
-        './baseraml': 229,
-        'lodash': 204
+        '../entities/schema': 216,
+        '../entities/text': 220,
+        '../utils/json': 243,
+        './baseraml': 233
       }
     ],
-    233: [
+    238: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -40985,75 +41812,128 @@
             _createClass(RAML10Importer, [
               {
                 key: 'mapRequestBody',
-                value: function mapRequestBody(methodBody, checkEmptyType, mimeType) {
+                value: function mapRequestBody(methodBody, checkEmptyType) {
                   var data = { mimeType: '' };
-                  if (checkEmptyType) {
-                    RAMLImporter._fillDefaultType(methodBody);
-                  }
-                  data.mimeType = mimeType;
-                  if (methodBody.description) {
-                    data.description = methodBody.description;
-                    delete methodBody.description;
-                  }
-                  if (methodBody.properties && !_.isEmpty(methodBody.properties)) {
-                    switch (data.mimeType) {
-                    case 'application/json':
-                      data.body = RAML10Importer._mapSchema(methodBody, true);
-                      // data.body = RAML10Importer.convertObjectProperty(mimeType);
-                      delete data.body.description;
-                      // delete data.body.type;
-                      break;
-                    case 'multipart/form-data':
-                    case 'application/x-www-form-urlencoded': {
-                        data.body = {
-                          type: 'object',
-                          'properties': {},
-                          'required': []
-                        };
-                        var formParams = methodBody.properties;
-                        for (var j in formParams) {
-                          if (!formParams.hasOwnProperty(j))
-                            continue;
-                          var param = formParams[j];
-                          var bodyType = !_.isEmpty(param.type) ? param.type[0] : param.type;
-                          data.body.properties[param.name] = { type: bodyType };
-                          if (param.description) {
-                            data.body.properties[param.name].description = param.description;
-                          }
-                          if (param.format) {
-                            data.body.properties[param.name].format = param.format;
-                          }
-                          RAMLImporter._convertRequiredToArray(param, param.name, data.body.required);
-                        }
-                        break;
-                      }
-                    default:
+                  //TODO: only one, the latest is in effect in stoplight!
+                  for (var i in methodBody) {
+                    if (!methodBody.hasOwnProperty(i))
+                      continue;
+                    var mimeType = methodBody[i];
+                    if (checkEmptyType) {
+                      RAMLImporter._fillDefaultType(mimeType);
                     }
-                  } else if (RAML10Importer.isArray(methodBody)) {
-                    data.body = RAMLImporter.convertRefToModel(RAML10Importer.convertArray(methodBody), false);
-                  } else if (methodBody.schema && !_.isEmpty(methodBody.schema)) {
-                    data.body = RAMLImporter.convertRefToModel({ type: methodBody.schema[0] }, false);
-                  } else if (methodBody.type && !_.isEmpty(methodBody.type) && methodBody.type[0] !== 'object') {
-                    data.body = RAML10Importer._mapSchema(methodBody, false);  // data.body = RAMLImporter.convertRefToModel({
-                                                                               // 	type: mimeType.type[0]
-                                                                               // });
+                    data.mimeType = i;
+                    if (mimeType.example) {
+                      data.example = mimeType.example;
+                      delete mimeType.example;
+                    }
+                    if (mimeType.description) {
+                      data.description = mimeType.description;
+                    }
+                    if (mimeType.properties && !_.isEmpty(mimeType.properties)) {
+                      switch (data.mimeType) {
+                      case 'application/json':
+                        data.body = RAML10Importer.convertObjectProperty(mimeType);
+                        delete data.body.description;
+                        // delete data.body.type;
+                        break;
+                      case 'multipart/form-data':
+                      case 'application/x-www-form-urlencoded': {
+                          data.body = {
+                            type: 'object',
+                            'properties': {},
+                            'required': []
+                          };
+                          var formParams = mimeType.properties;
+                          for (var j in formParams) {
+                            if (!formParams.hasOwnProperty(j))
+                              continue;
+                            var param = formParams[j];
+                            var bodyType = !_.isEmpty(param.type) ? param.type[0] : param.type;
+                            data.body.properties[param.name] = { type: bodyType };
+                            if (param.description) {
+                              data.body.properties[param.name].description = param.description;
+                            }
+                            if (param.format) {
+                              data.body.properties[param.name].format = param.format;
+                            }
+                            RAMLImporter._convertRequiredToArray(param, param.name, data.body.required);
+                          }
+                          break;
+                        }
+                      default:
+                      }
+                    } else if (RAML10Importer.isArray(mimeType)) {
+                      data.body = RAMLImporter.convertRefToModel(RAML10Importer.convertArray(mimeType));
+                    } else if (mimeType.schema && !_.isEmpty(mimeType.schema)) {
+                      data.body = RAMLImporter.convertRefToModel({ type: mimeType.schema[0] });
+                    } else if (mimeType.type && !_.isEmpty(mimeType.type) && mimeType.type[0] !== 'object') {
+                      data.body = RAMLImporter.convertRefToModel({ type: mimeType.type[0] });
+                    }
                   }
                   return data;
                 }
               },
               {
-                key: 'mapSchemas',
-                value: function mapSchemas(schemData) {
+                key: 'mapSchema',
+                value: function mapSchema(schemData) {
                   var schemas = [];
-                  for (var index in schemData) {
-                    if (!schemData.hasOwnProperty(index))
+                  for (var i in schemData) {
+                    if (!schemData.hasOwnProperty(i))
                       continue;
-                    for (var schemaName in schemData[index]) {
-                      if (!schemData[index].hasOwnProperty(schemaName))
+                    for (var schemaName in schemData[i]) {
+                      if (!schemData[i].hasOwnProperty(schemaName))
                         continue;
                       var sd = new Schema(schemaName);
                       sd.Name = schemaName;
-                      sd.Definition = RAML10Importer._mapSchema(schemData[index][schemaName], true);
+                      var definition = schemData[i][schemaName];
+                      var properties = null;
+                      var result = definition;
+                      if (definition.properties && !_.isEmpty(definition.properties)) {
+                        properties = RAML10Importer.convertObjectProperty(definition);
+                      }
+                      if (definition.type && definition.type != 'object') {
+                        //type
+                        RAML10Importer._removeHarmlessChars(definition.type);
+                        //remove ( and )
+                        RAML10Importer._modifyUnionType(definition.type);
+                        if (properties) {
+                          //type and properties
+                          result.allOf = definition.type;
+                          result.allOf.push(properties);
+                          delete result.type;
+                          delete result.properties;
+                        } else {
+                          result = RAML10Importer._convertCustomTypes(definition);
+                          if (_.isArray(definition.type) && definition.type.length > 1) {
+                            result.allOf = definition.type;
+                            delete result.type;
+                          } else {
+                            //definition.type is json string value. or type=object
+                            var jsonObject = jsonHelper.parse(_.isArray(definition.type) ? definition.type[0] : definition.type);
+                            if ((typeof jsonObject === 'undefined' ? 'undefined' : _typeof(jsonObject)) === 'object') {
+                              result = jsonObject;
+                            }
+                          }
+                        }
+                      } else {
+                        //only properties
+                        if (!properties) {
+                          if (definition.hasOwnProperty('schema')) {
+                            definition = jsonHelper.parse(_.isArray(definition.schema) ? definition.schema[0] : definition.schema);
+                            result = RAML10Importer.convertObjectProperty(definition);
+                          } else if (definition.type == 'object') {
+                            result = definition;
+                          }
+                        } else {
+                          //type = object with properties
+                          result = properties;
+                        }
+                      }
+                      //add annotations
+                      RAMLImporter._addAnnotations(definition, result);
+                      result = RAML10Importer._convertCustomTypes(result);
+                      sd.Definition = RAMLImporter.convertRefToModel(result);
                       schemas.push(sd);
                     }
                   }
@@ -41061,8 +41941,8 @@
                 }
               },
               {
-                key: 'getSchemas',
-                value: function getSchemas(data) {
+                key: 'getSchema',
+                value: function getSchema(data) {
                   return data.types || data.schemas;
                 }
               },
@@ -41076,38 +41956,11 @@
               }
             ], [
               {
-                key: 'convertArrayTypeExpression',
-                value: function convertArrayTypeExpression(param) {
-                  var valid = true;
-                  var result = {};
-                  var types = [];
-                  for (var i = 0; i < param.length; i++) {
-                    var key = param[i];
-                    if ((typeof key === 'undefined' ? 'undefined' : _typeof(key)) === 'object') {
-                      if (key.hasOwnProperty('type') && typeof key.type[0] === 'string' && RAMLImporter.isValidRefValue(key.type[0])) {
-                        types.push(key.type[0]);
-                      } else {
-                        valid = false;
-                        break;
-                      }
-                    }
-                  }
-                  if (valid) {
-                    result['name'] = param[0].name;
-                    result['type'] = types;
-                    result['typePropertyKind'] = 'TYPE_EXPRESSION';
-                    return result;
-                  }
-                  return param;
-                }
-              },
-              {
                 key: 'convertObjectProperty',
                 value: function convertObjectProperty(source) {
                   var target = Object.assign({}, source);
                   target.properties = {};
-                  if (source.type !== 'array')
-                    target.type = 'object';
+                  target.type = 'object';
                   target.required = [];
                   if (source.description) {
                     target.description = jsonHelper.stringify(source.description);
@@ -41116,23 +41969,16 @@
                     var skipRequired = false;
                     if (!source.properties.hasOwnProperty(paramName))
                       continue;
-                    var parameter = source.properties[paramName];
-                    var param = _.isArray(parameter) ? RAML10Importer.convertArrayTypeExpression(parameter) : parameter;
+                    var param = source.properties[paramName];
                     if (RAML10Importer.isArray(param)) {
                       target.properties[paramName] = RAML10Importer.convertArray(param);
                     } else if (RAML10Importer.isFacet(param)) {
                       //check for facets
                       target.properties[paramName] = RAML10Importer.convertFacet(param);
                     } else if (RAML10Importer.isAdditionalProperties(param)) {
-                      RAML10Importer.convertAdditionalProperties(target, param);
+                      target.additionalProperties = RAML10Importer.convertAdditionalProperties(param);
                       skipRequired = true;
                     } else {
-                      if (_.isArray(param.type) && param.type.length > 1) {
-                        RAML10Importer._removeHarmlessChars(param.type);
-                        RAML10Importer._modifyUnionType(param);
-                        param.allOf = param.type;
-                        delete param.type;
-                      }
                       target.properties[paramName] = param;
                     }
                     //add annotations
@@ -41141,72 +41987,12 @@
                       continue;
                     //required
                     RAMLImporter._convertRequiredToArray(param, paramName, target['required']);
-                    if (param.properties && !_.isEmpty(param.properties))
-                      target.properties[paramName] = this.convertObjectProperty(param);
                   }
                   if (target.required && target.required.length == 0) {
                     delete target.required;
                   }
-                  if (target.properties && _.isEmpty(target.properties)) {
-                    delete target.properties;
-                  }
-                  // RAMLImporter.convertRefToModel(target);
+                  RAMLImporter.convertRefToModel(target);
                   return target;
-                }
-              },
-              {
-                key: '_mapSchema',
-                value: function _mapSchema(definition, isSchema) {
-                  var properties = null;
-                  var result = definition;
-                  if (definition.properties && !_.isEmpty(definition.properties)) {
-                    properties = RAML10Importer.convertObjectProperty(definition);
-                  }
-                  if (definition.hasOwnProperty('type') && definition.type != 'object') {
-                    //type
-                    if (_.isArray(definition.type)) {
-                      RAML10Importer._removeHarmlessChars(definition.type);
-                      //remove ( and )
-                      RAML10Importer._modifyUnionType(definition);
-                    }
-                    if (properties) {
-                      //type and properties
-                      result.allOf = definition.type;
-                      result.allOf.push(properties);
-                      delete result.type;
-                      delete result.properties;
-                    } else {
-                      result = RAML10Importer._convertCustomTypes(definition);
-                      if (_.isArray(definition.type) && definition.type.length > 1) {
-                        result.allOf = definition.type;
-                        delete result.type;
-                      } else {
-                        //definition.type is json string value. or type=object
-                        var jsonObject = jsonHelper.parse(_.isArray(definition.type) ? definition.type[0] : definition.type);
-                        if ((typeof jsonObject === 'undefined' ? 'undefined' : _typeof(jsonObject)) === 'object') {
-                          jsonObject = RAML10Importer.convertObjectProperty(jsonObject);
-                          result = jsonObject;
-                        }
-                      }
-                    }
-                  } else {
-                    //only properties
-                    if (!properties) {
-                      if (definition.hasOwnProperty('schema')) {
-                        definition = jsonHelper.parse(_.isArray(definition.schema) ? definition.schema[0] : definition.schema);
-                        result = RAML10Importer.convertObjectProperty(definition);
-                      } else if (definition.type == 'object') {
-                        result = definition;
-                      }
-                    } else {
-                      //type = object with properties
-                      result = properties;
-                    }
-                  }
-                  //add annotations
-                  RAMLImporter._addAnnotations(definition, result);
-                  result = RAML10Importer._convertCustomTypes(result);
-                  return RAMLImporter.convertRefToModel(result, isSchema);
                 }
               },
               {
@@ -41227,11 +42013,7 @@
               },
               {
                 key: '_modifyUnionType',
-                value: function _modifyUnionType(definition) {
-                  var type = definition.type;
-                  if (type.length > 1) {
-                    definition['x-raml-union-type-definition'] = '[' + _.join(type, ',') + ']';
-                  }
+                value: function _modifyUnionType(type) {
                   for (var index in type) {
                     if (!type.hasOwnProperty(index))
                       continue;
@@ -41239,7 +42021,7 @@
                       type[index] = { type: 'object' };
                     }
                   }
-                  return definition;
+                  return type;
                 }
               },
               {
@@ -41289,9 +42071,7 @@
                       if (RAML10Importer.isRamlArray(items)) {
                         definition.items = RAML10Importer.convertArray(RAML10Importer.convertRamlArray(definition.items));
                       } else {
-                        if ((typeof items === 'undefined' ? 'undefined' : _typeof(items)) !== 'object' || _.isArray(items)) {
-                          definition.items = { type: items };
-                        }
+                        definition.items = { type: items };
                       }
                     }
                   } else {
@@ -41319,29 +42099,13 @@
               },
               {
                 key: 'convertAdditionalProperties',
-                value: function convertAdditionalProperties(target, definition) {
-                  var type = definition.type;
+                value: function convertAdditionalProperties(definition) {
                   var pattern = definition.name;
-                  var info = {};
-                  if (_.isArray(type) && type.length == 1) {
-                    info.type = type[0];
-                  }
                   if (pattern !== '//') {
-                    info.pattern = pattern;
+                    definition['x-raml-pattern'] = pattern;
                   }
-                  if (info.hasOwnProperty('pattern')) {
-                    if (!target.hasOwnProperty('additionalProperties')) {
-                      target.additionalProperties = { 'x-raml-additional-properties-info': [] };
-                    }
-                    if (!target.additionalProperties.type)
-                      target.additionalProperties.type = info.type;
-                    else
-                      target.additionalProperties.type = 'object';
-                    target.additionalProperties['x-raml-additional-properties-info'].push(info);
-                  } else {
-                    target.additionalProperties = {};
-                    target.additionalProperties.type = info.type;
-                  }
+                  delete definition.name;
+                  return definition;
                 }
               },
               {
@@ -41374,7 +42138,7 @@
                     if (definition.hasOwnProperty(key)) {
                       definition[key] = fixedFacets[key];
                     } else {
-                      definition['x-raml-facets-' + key] = fixedFacets[key];
+                      definition['x-' + key] = fixedFacets[key];
                     }
                   }
                   delete definition.fixedFacets;
@@ -41387,13 +42151,368 @@
         module.exports = RAML10Importer;
       },
       {
-        '../entities/schema': 215,
-        '../utils/json': 236,
-        './baseraml': 229,
+        '../entities/schema': 216,
+        '../utils/json': 243,
+        './baseraml': 233,
         'lodash': 204
       }
     ],
-    234: [
+    239: [
+      function (require, module, exports) {
+        'use strict';
+        var _createClass = function () {
+            function defineProperties(target, props) {
+              for (var i = 0; i < props.length; i++) {
+                var descriptor = props[i];
+                descriptor.enumerable = descriptor.enumerable || false;
+                descriptor.configurable = true;
+                if ('value' in descriptor)
+                  descriptor.writable = true;
+                Object.defineProperty(target, descriptor.key, descriptor);
+              }
+            }
+            return function (Constructor, protoProps, staticProps) {
+              if (protoProps)
+                defineProperties(Constructor.prototype, protoProps);
+              if (staticProps)
+                defineProperties(Constructor, staticProps);
+              return Constructor;
+            };
+          }();
+        function _classCallCheck(instance, Constructor) {
+          if (!(instance instanceof Constructor)) {
+            throw new TypeError('Cannot call a class as a function');
+          }
+        }
+        function _possibleConstructorReturn(self, call) {
+          if (!self) {
+            throw new ReferenceError('this hasn\'t been initialised - super() hasn\'t been called');
+          }
+          return call && (typeof call === 'object' || typeof call === 'function') ? call : self;
+        }
+        function _inherits(subClass, superClass) {
+          if (typeof superClass !== 'function' && superClass !== null) {
+            throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass);
+          }
+          subClass.prototype = Object.create(superClass && superClass.prototype, {
+            constructor: {
+              value: subClass,
+              enumerable: false,
+              writable: true,
+              configurable: true
+            }
+          });
+          if (superClass)
+            Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+        }
+        var Endpoint = require('../entities/endpoint'), Project = require('../entities/project'), Schema = require('../entities/schema'), UtilityFunction = require('../entities/utilityFunction'), Text = require('../entities/text'), Importer = require('./importer'), fs = require('fs');
+        var StopLight = function (_Importer) {
+            _inherits(StopLight, _Importer);
+            function StopLight() {
+              _classCallCheck(this, StopLight);
+              var _this = _possibleConstructorReturn(this, (StopLight.__proto__ || Object.getPrototypeOf(StopLight)).call(this));
+              _this.metadata = null;
+              return _this;
+            }
+            _createClass(StopLight, [
+              {
+                key: 'loadFile',
+                value: function loadFile(path, cb) {
+                  try {
+                    this.data = JSON.parse(fs.readFileSync(path, 'utf8'));
+                    cb();
+                  } catch (err) {
+                    cb(err);
+                  }
+                }
+              },
+              {
+                key: '_mapSchema',
+                value: function _mapSchema() {
+                  for (var i in this.data.project.schemas) {
+                    if (!this.data.project.schemas.hasOwnProperty(i))
+                      continue;
+                    var schemaData = this.data.project.schemas[i];
+                    schemaData.namespace = schemaData.namespace.replace('#/definitions/', '');
+                    var schema = new Schema(schemaData.namespace);
+                    schema.SLData = schemaData;
+                    this.project.addSchema(schema);
+                  }
+                }
+              },
+              {
+                key: 'mapEndpoint',
+                value: function mapEndpoint() {
+                  //all formats are going throught stoplight endpoint, no need to map itself
+                  for (var i in this.data.project.endpoints) {
+                    if (!this.data.project.endpoints.hasOwnProperty(i))
+                      continue;
+                    var endpointData = this.data.project.endpoints[i];
+                    var endpoint = new Endpoint('');
+                    endpoint.SLData = endpointData;
+                    this.project.addEndpoint(endpoint);
+                  }
+                }
+              },
+              {
+                key: 'mapUtilityFunctions',
+                value: function mapUtilityFunctions() {
+                  for (var i in this.data.project.utilityFunctions) {
+                    var ufData = this.data.project.utilityFunctions[i];
+                    var uf = new UtilityFunction(ufData.name);
+                    uf.Description = ufData.description;
+                    uf.Script = ufData.script;
+                    this.project.addUtilityFunction(uf);
+                  }
+                }
+              },
+              {
+                key: 'mapTexts',
+                value: function mapTexts() {
+                  for (var i in this.data.project.texts) {
+                    var txt = this.data.project.texts[i];
+                    var text = new Text(txt.name);
+                    text.Id = txt._id;
+                    text.Name = txt.name;
+                    text.Content = txt.content;
+                    text.Public = txt.public;
+                    this.project.addText(text);
+                  }
+                }
+              },
+              {
+                key: 'mapTraits',
+                value: function mapTraits() {
+                  this.project.traits = this.data.project.traits;
+                }
+              },
+              {
+                key: 'mapSecuritySchemes',
+                value: function mapSecuritySchemes() {
+                  this.project.SecuritySchemes = this.data.project.securitySchemes;
+                }
+              },
+              {
+                key: '_import',
+                value: function _import() {
+                  if (!this.data.project) {
+                    throw new Error('Invalid formatted stoplight data');
+                  }
+                  this.project = new Project(this.data.project.name);
+                  this.project.loadSLData(this.data.project);
+                  this.project.Environment.loadSLData(this.data.project.environment);
+                  this.mapEndpoint();
+                  this._mapSchema();
+                  this.mapUtilityFunctions();
+                  this.mapSecuritySchemes();
+                  this.mapTexts();
+                  this.mapTraits();
+                  if (this.data.project.resourcesOrder) {
+                    this.project.GroupsOrder = this.data.project.resourcesOrder;
+                  }
+                }
+              }
+            ]);
+            return StopLight;
+          }(Importer);
+        module.exports = StopLight;
+      },
+      {
+        '../entities/endpoint': 212,
+        '../entities/project': 214,
+        '../entities/schema': 216,
+        '../entities/text': 220,
+        '../entities/utilityFunction': 221,
+        './importer': 234,
+        'fs': 4
+      }
+    ],
+    240: [
+      function (require, module, exports) {
+        'use strict';
+        var _createClass = function () {
+            function defineProperties(target, props) {
+              for (var i = 0; i < props.length; i++) {
+                var descriptor = props[i];
+                descriptor.enumerable = descriptor.enumerable || false;
+                descriptor.configurable = true;
+                if ('value' in descriptor)
+                  descriptor.writable = true;
+                Object.defineProperty(target, descriptor.key, descriptor);
+              }
+            }
+            return function (Constructor, protoProps, staticProps) {
+              if (protoProps)
+                defineProperties(Constructor.prototype, protoProps);
+              if (staticProps)
+                defineProperties(Constructor, staticProps);
+              return Constructor;
+            };
+          }();
+        function _classCallCheck(instance, Constructor) {
+          if (!(instance instanceof Constructor)) {
+            throw new TypeError('Cannot call a class as a function');
+          }
+        }
+        function _possibleConstructorReturn(self, call) {
+          if (!self) {
+            throw new ReferenceError('this hasn\'t been initialised - super() hasn\'t been called');
+          }
+          return call && (typeof call === 'object' || typeof call === 'function') ? call : self;
+        }
+        function _inherits(subClass, superClass) {
+          if (typeof superClass !== 'function' && superClass !== null) {
+            throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass);
+          }
+          subClass.prototype = Object.create(superClass && superClass.prototype, {
+            constructor: {
+              value: subClass,
+              enumerable: false,
+              writable: true,
+              configurable: true
+            }
+          });
+          if (superClass)
+            Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+        }
+        var Swagger = require('./swagger'), Importer = require('./importer'), UtilityFunction = require('../entities/utilityFunction'), Text = require('../entities/text'), Test = require('../entities/test'), _ = require('lodash');
+        var prefix = 'x-stoplight';
+        var testsPrefix = 'x-tests';
+        var StopLightX = function (_Importer) {
+            _inherits(StopLightX, _Importer);
+            function StopLightX() {
+              _classCallCheck(this, StopLightX);
+              var _this = _possibleConstructorReturn(this, (StopLightX.__proto__ || Object.getPrototypeOf(StopLightX)).call(this));
+              _this.importer = new Swagger();
+              return _this;
+            }
+            _createClass(StopLightX, [
+              {
+                key: 'loadFile',
+                value: function loadFile(path) {
+                  var me = this;
+                  return this.importer.loadFile(path).then(function () {
+                    me.data = me.importer.data;
+                  });
+                }
+              },
+              {
+                key: 'loadData',
+                value: function loadData(path, options) {
+                  var me = this;
+                  return new Promise(function (resolve, reject) {
+                    me.importer.loadData(path, options).then(function () {
+                      me.data = me.importer.data;
+                      resolve();
+                    }).catch(function (err) {
+                      reject(err);
+                    });
+                  });
+                }
+              },
+              {
+                key: '_import',
+                value: function _import() {
+                  this.project = this.importer.import();
+                  var data = this.importer.data;
+                  if (!data.hasOwnProperty(prefix)) {
+                    return;
+                  }
+                  var environment = this.project.Environment;
+                  var stoplightData = data[prefix];
+                  if (stoplightData.hasOwnProperty('version')) {
+                    environment.loadSLData(data[prefix].version);
+                    //property names are different from db name
+                    environment.GroupsOrder = data[prefix].version.groups;
+                    environment.MiddlewareBefore = data[prefix].beforeScript;
+                    environment.MiddlewareAfter = data[prefix].afterScript;
+                    this.project.Environment = environment;
+                  }
+                  for (var name in data[prefix].functions) {
+                    if (!data[prefix].functions.hasOwnProperty(name))
+                      continue;
+                    var ufData = data[prefix].functions[name];
+                    var uf = new UtilityFunction(ufData.name);
+                    uf.Description = ufData.description;
+                    uf.Script = ufData.script;
+                    this.project.addUtilityFunction(uf);
+                  }
+                  for (var _name in data[prefix].textSections) {
+                    if (!data[prefix].textSections.hasOwnProperty(_name))
+                      continue;
+                    var txtData = data[prefix].textSections[_name];
+                    var txt = new Text(txtData.name);
+                    txt.Id = txtData.id;
+                    txt.Content = txtData.content;
+                    txt.Public = txtData.public;
+                    this.project.addText(txt);
+                  }
+                  for (var i in this.project.Endpoints) {
+                    if (!this.project.Endpoints.hasOwnProperty(i))
+                      continue;
+                    var endpoint = this.project.Endpoints[i];
+                    var method = data.paths[endpoint.Path][endpoint.Method][prefix];
+                    if (method) {
+                      endpoint.Before = method['beforeScript'];
+                      endpoint.After = method['afterScript'];
+                      endpoint.Mock = method['mock'];
+                      endpoint.Id = method['id'];
+                    }
+                  }
+                  for (var _i in this.project.Schemas) {
+                    if (!this.project.Schemas.hasOwnProperty(_i))
+                      continue;
+                    var schema = this.project.Schemas[_i];
+                    var schemaData = data.definitions[schema.NameSpace][prefix];
+                    if (schemaData) {
+                      schema.Id = schemaData.id;
+                      schema.Name = schemaData.name;
+                      if (!_.isEmpty(schemaData.summary)) {
+                        schema.Summary = schemaData.summary;
+                      }
+                      schema.Description = schemaData.description;
+                      schema.Public = schemaData.public;
+                    }
+                  }
+                  if (data.hasOwnProperty(testsPrefix)) {
+                    for (var id in data[testsPrefix]) {
+                      if (!data[testsPrefix].hasOwnProperty(id))
+                        continue;
+                      var testData = data[testsPrefix][id];
+                      var test = new Test(testData.name);
+                      test.Id = testData.id;
+                      if (!_.isEmpty(testData.summary)) {
+                        test.Summary = testData.summary;
+                      }
+                      test.InitialVariables = testData.initialVariables;
+                      test.Steps = testData.steps.map(function (step) {
+                        if (step.$ref) {
+                          var parts = step.$ref.split('/');
+                          var stepId = _.last(parts);
+                          return { test: stepId };
+                        }
+                        return step;
+                      });
+                      this.project.addTest(test);
+                    }
+                  }
+                }
+              }
+            ]);
+            return StopLightX;
+          }(Importer);
+        module.exports = StopLightX;
+      },
+      {
+        '../entities/test': 219,
+        '../entities/text': 220,
+        '../entities/utilityFunction': 221,
+        './importer': 234,
+        './swagger': 241,
+        'lodash': 204
+      }
+    ],
+    241: [
       function (require, module, exports) {
         'use strict';
         var _createClass = function () {
@@ -41591,8 +42710,7 @@
                         body: {},
                         example: '',
                         codes: []
-                      };
-                    var description = '';
+                      }, description = '';
                     var response = responses[code];
                     if (skipParameterRefs && Swagger.needDeReferenced(response) && (response.$ref.match(/trait/) || _.includes($refs, response.$ref))) {
                       continue;
@@ -41679,10 +42797,9 @@
                   var _this2 = this;
                   return new Promise(function (resolve, reject) {
                     var validateOptions = _.cloneDeep(options || {});
-                    var validate = options && (options.validate === true || options.validateImport === true);
                     validateOptions.validate = {
-                      schema: validate,
-                      spec: validate
+                      schema: options && options.validate === true,
+                      spec: options && options.validate === true
                     };
                     // with validation
                     //in case of data, if not cloned, referenced to resolved data
@@ -41947,9 +43064,7 @@
                   for (var k in parameters) {
                     if (!parameters.hasOwnProperty(k))
                       continue;
-                    var param = parameters[k];
-                    var parts = k.split(':');
-                    var name = k;
+                    var param = parameters[k], parts = k.split(':'), name = k;
                     if (parts[0] === 'trait') {
                       name = parts[1];
                     }
@@ -42296,9 +43411,7 @@
                     if (!Swagger.needDeReferenced(param) || Swagger._isFilePath(param)) {
                       continue;
                     }
-                    var parts = param.$ref.split('/');
-                    var traitParts = parts[parts.length - 1].split(':');
-                    var name = traitParts[0];
+                    var parts = param.$ref.split('/'), traitParts = parts[parts.length - 1].split(':'), name = traitParts[0];
                     if (traitParts[0] === 'trait') {
                       name = traitParts[1];
                     }
@@ -42375,31 +43488,36 @@
       {
         '../entities/endpoint': 212,
         '../entities/project': 214,
-        '../entities/schema': 215,
-        '../entities/swagger/method': 217,
-        '../helpers/swagger': 227,
-        '../utils/json': 236,
-        './importer': 230,
+        '../entities/schema': 216,
+        '../entities/swagger/method': 218,
+        '../helpers/swagger': 231,
+        '../utils/json': 243,
+        './importer': 234,
         'js-yaml': 21,
         'lodash': 204,
-        'swagger-parser': 269
+        'swagger-parser': 276
       }
     ],
-    235: [
+    242: [
       function (require, module, exports) {
         'use strict';
-        var _ = require('lodash');
         module.exports = {
-          allEqual: function allEqual(array) {
-            return !!array.reduce(function (a, b) {
-              return _.isEqual(a, b) ? a : NaN;
+          groupBy: function groupBy(array, f) {
+            var groups = {};
+            array.forEach(function (o) {
+              var group = JSON.stringify(f(o));
+              groups[group] = groups[group] || [];
+              groups[group].push(o);
+            });
+            return Object.keys(groups).map(function (group) {
+              return groups[group];
             });
           }
         };
       },
-      { 'lodash': 204 }
+      {}
     ],
-    236: [
+    243: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -42510,6 +43628,9 @@
             if (!parsed || !Object.keys(parsed).length || parsed.properties && !Object.keys(parsed.properties).length) {
               return true;
             }
+            if (parsed.type === 'object' && _.isEmpty(parsed.properties)) {
+              return true;
+            }
             return parsed.type === 'array' && _.isEmpty(parsed.items);
           },
           cleanSchema: function cleanSchema(schema) {
@@ -42535,7 +43656,7 @@
         'lodash': 204
       }
     ],
-    237: [
+    244: [
       function (require, module, exports) {
         'use strict';
         var _ = require('lodash');
@@ -42568,7 +43689,7 @@
       },
       { 'lodash': 204 }
     ],
-    238: [
+    245: [
       function (require, module, exports) {
         'use strict';
         var request = require('request');
@@ -42603,7 +43724,7 @@
         'request': 2
       }
     ],
-    239: [
+    246: [
       function (require, module, exports) {
         'use strict';
         var parseString = require('xml2js').parseString;
@@ -42618,9 +43739,9 @@
           }
         };
       },
-      { 'xml2js': 348 }
+      { 'xml2js': 355 }
     ],
-    240: [
+    247: [
       function (require, module, exports) {
         'use strict';
         // modified from https://github.com/es-shims/es5-shim
@@ -42762,9 +43883,9 @@
         };
         module.exports = keysShim;
       },
-      { './isArguments': 241 }
+      { './isArguments': 248 }
     ],
-    241: [
+    248: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -42784,7 +43905,7 @@
       },
       {}
     ],
-    242: [
+    249: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -42988,9 +44109,9 @@
           }
         }
       },
-      { 'util': 281 }
+      { 'util': 288 }
     ],
-    243: [
+    250: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -43034,9 +44155,9 @@
           }
         }.call(this, require('_process')));
       },
-      { '_process': 244 }
+      { '_process': 251 }
     ],
-    244: [
+    251: [
       function (require, module, exports) {
         // shim for using process in browser
         var process = module.exports = {};
@@ -43210,7 +44331,7 @@
       },
       {}
     ],
-    245: [
+    252: [
       function (require, module, exports) {
         (function (global) {
           /*! https://mths.be/punycode v1.4.1 by @mathias */
@@ -43628,7 +44749,7 @@
       },
       {}
     ],
-    246: [
+    253: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -43705,7 +44826,7 @@
       },
       {}
     ],
-    247: [
+    254: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -43790,18 +44911,18 @@
       },
       {}
     ],
-    248: [
+    255: [
       function (require, module, exports) {
         'use strict';
         exports.decode = exports.parse = require('./decode');
         exports.encode = exports.stringify = require('./encode');
       },
       {
-        './decode': 246,
-        './encode': 247
+        './decode': 253,
+        './encode': 254
       }
     ],
-    249: [
+    256: [
       function (require, module, exports) {
         (function (Buffer) {
           'use strict';
@@ -45291,11 +46412,11 @@
       },
       {
         'buffer': 6,
-        'stream': 250,
-        'string_decoder': 267
+        'stream': 257,
+        'string_decoder': 274
       }
     ],
-    250: [
+    257: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -45401,26 +46522,26 @@
       {
         'events': 14,
         'inherits': 19,
-        'readable-stream/duplex.js': 252,
-        'readable-stream/passthrough.js': 259,
-        'readable-stream/readable.js': 260,
-        'readable-stream/transform.js': 261,
-        'readable-stream/writable.js': 262
+        'readable-stream/duplex.js': 259,
+        'readable-stream/passthrough.js': 266,
+        'readable-stream/readable.js': 267,
+        'readable-stream/transform.js': 268,
+        'readable-stream/writable.js': 269
       }
     ],
-    251: [
+    258: [
       function (require, module, exports) {
         arguments[4][7][0].apply(exports, arguments);
       },
       { 'dup': 7 }
     ],
-    252: [
+    259: [
       function (require, module, exports) {
         module.exports = require('./lib/_stream_duplex.js');
       },
-      { './lib/_stream_duplex.js': 253 }
+      { './lib/_stream_duplex.js': 260 }
     ],
-    253: [
+    260: [
       function (require, module, exports) {
         // a duplex stream is just a stream that is both readable and writable.
         // Since JS doesn't have multiple prototypal inheritance, this class
@@ -45487,14 +46608,14 @@
         }
       },
       {
-        './_stream_readable': 255,
-        './_stream_writable': 257,
+        './_stream_readable': 262,
+        './_stream_writable': 264,
         'core-util-is': 10,
         'inherits': 19,
-        'process-nextick-args': 243
+        'process-nextick-args': 250
       }
     ],
-    254: [
+    261: [
       function (require, module, exports) {
         // a passthrough stream.
         // basically just the most minimal sort of Transform stream.
@@ -45517,12 +46638,12 @@
         };
       },
       {
-        './_stream_transform': 256,
+        './_stream_transform': 263,
         'core-util-is': 10,
         'inherits': 19
       }
     ],
-    255: [
+    262: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -46429,21 +47550,21 @@
         }.call(this, require('_process')));
       },
       {
-        './_stream_duplex': 253,
-        './internal/streams/BufferList': 258,
-        '_process': 244,
+        './_stream_duplex': 260,
+        './internal/streams/BufferList': 265,
+        '_process': 251,
         'buffer': 6,
         'buffer-shims': 5,
         'core-util-is': 10,
         'events': 14,
         'inherits': 19,
-        'isarray': 251,
-        'process-nextick-args': 243,
-        'string_decoder/': 267,
+        'isarray': 258,
+        'process-nextick-args': 250,
+        'string_decoder/': 274,
         'util': 3
       }
     ],
-    256: [
+    263: [
       function (require, module, exports) {
         // a transform stream is a readable/writable stream where you do
         // something with the data.  Sometimes it's called a "filter",
@@ -46608,12 +47729,12 @@
         }
       },
       {
-        './_stream_duplex': 253,
+        './_stream_duplex': 260,
         'core-util-is': 10,
         'inherits': 19
       }
     ],
-    257: [
+    264: [
       function (require, module, exports) {
         (function (process) {
           // A bit simpler than readable streams.
@@ -47116,18 +48237,18 @@
         }.call(this, require('_process')));
       },
       {
-        './_stream_duplex': 253,
-        '_process': 244,
+        './_stream_duplex': 260,
+        '_process': 251,
         'buffer': 6,
         'buffer-shims': 5,
         'core-util-is': 10,
         'events': 14,
         'inherits': 19,
-        'process-nextick-args': 243,
-        'util-deprecate': 278
+        'process-nextick-args': 250,
+        'util-deprecate': 285
       }
     ],
-    258: [
+    265: [
       function (require, module, exports) {
         'use strict';
         var Buffer = require('buffer').Buffer;
@@ -47208,13 +48329,13 @@
         'buffer-shims': 5
       }
     ],
-    259: [
+    266: [
       function (require, module, exports) {
         module.exports = require('./lib/_stream_passthrough.js');
       },
-      { './lib/_stream_passthrough.js': 254 }
+      { './lib/_stream_passthrough.js': 261 }
     ],
-    260: [
+    267: [
       function (require, module, exports) {
         (function (process) {
           var Stream = function () {
@@ -47236,27 +48357,27 @@
         }.call(this, require('_process')));
       },
       {
-        './lib/_stream_duplex.js': 253,
-        './lib/_stream_passthrough.js': 254,
-        './lib/_stream_readable.js': 255,
-        './lib/_stream_transform.js': 256,
-        './lib/_stream_writable.js': 257,
-        '_process': 244
+        './lib/_stream_duplex.js': 260,
+        './lib/_stream_passthrough.js': 261,
+        './lib/_stream_readable.js': 262,
+        './lib/_stream_transform.js': 263,
+        './lib/_stream_writable.js': 264,
+        '_process': 251
       }
     ],
-    261: [
+    268: [
       function (require, module, exports) {
         module.exports = require('./lib/_stream_transform.js');
       },
-      { './lib/_stream_transform.js': 256 }
+      { './lib/_stream_transform.js': 263 }
     ],
-    262: [
+    269: [
       function (require, module, exports) {
         module.exports = require('./lib/_stream_writable.js');
       },
-      { './lib/_stream_writable.js': 257 }
+      { './lib/_stream_writable.js': 264 }
     ],
-    263: [
+    270: [
       function (require, module, exports) {
         var ClientRequest = require('./lib/request');
         var extend = require('xtend');
@@ -47324,13 +48445,13 @@
         ];
       },
       {
-        './lib/request': 265,
+        './lib/request': 272,
         'builtin-status-codes': 8,
-        'url': 277,
-        'xtend': 366
+        'url': 284,
+        'xtend': 373
       }
     ],
-    264: [
+    271: [
       function (require, module, exports) {
         (function (global) {
           'use strict';
@@ -47372,7 +48493,7 @@
       },
       {}
     ],
-    265: [
+    272: [
       function (require, module, exports) {
         (function (process, global, Buffer) {
           'use strict';
@@ -47623,18 +48744,18 @@
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}, require('buffer').Buffer));
       },
       {
-        './capability': 264,
-        './response': 266,
-        '_process': 244,
+        './capability': 271,
+        './response': 273,
+        '_process': 251,
         'buffer': 6,
         'foreach': 15,
         'indexof': 18,
         'inherits': 19,
-        'object-keys': 240,
-        'stream': 250
+        'object-keys': 247,
+        'stream': 257
       }
     ],
-    266: [
+    273: [
       function (require, module, exports) {
         (function (process, global, Buffer) {
           'use strict';
@@ -47807,15 +48928,15 @@
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}, require('buffer').Buffer));
       },
       {
-        './capability': 264,
-        '_process': 244,
+        './capability': 271,
+        '_process': 251,
         'buffer': 6,
         'foreach': 15,
         'inherits': 19,
-        'stream': 250
+        'stream': 257
       }
     ],
-    267: [
+    274: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -48019,7 +49140,7 @@
       },
       { 'buffer': 6 }
     ],
-    268: [
+    275: [
       function (require, module, exports) {
         'use strict';
         module.exports = [
@@ -48034,7 +49155,7 @@
       },
       {}
     ],
-    269: [
+    276: [
       function (require, module, exports) {
         /** !
  * Swagger Parser v4.0.0-beta.2
@@ -48215,18 +49336,18 @@
         }
       },
       {
-        './options': 270,
-        './promise': 271,
-        './util': 272,
-        './validate-schema': 273,
-        './validate-spec': 274,
+        './options': 277,
+        './promise': 278,
+        './util': 279,
+        './validate-schema': 280,
+        './validate-spec': 281,
         'call-me-maybe': 9,
         'json-schema-ref-parser': 54,
         'json-schema-ref-parser/lib/dereference': 53,
-        'ono': 242
+        'ono': 249
       }
     ],
-    270: [
+    277: [
       function (require, module, exports) {
         'use strict';
         var $RefParserOptions = require('json-schema-ref-parser/lib/options'), util = require('util');
@@ -48252,10 +49373,10 @@
       },
       {
         'json-schema-ref-parser/lib/options': 55,
-        'util': 281
+        'util': 288
       }
     ],
-    271: [
+    278: [
       function (require, module, exports) {
         arguments[4][69][0].apply(exports, arguments);
       },
@@ -48264,7 +49385,7 @@
         'es6-promise': 13
       }
     ],
-    272: [
+    279: [
       function (require, module, exports) {
         'use strict';
         var debug = require('debug'), util = require('util');
@@ -48283,10 +49404,10 @@
       },
       {
         'debug': 11,
-        'util': 281
+        'util': 288
       }
     ],
-    273: [
+    280: [
       function (require, module, exports) {
         'use strict';
         var util = require('./util'), ono = require('ono'), ZSchema = require('z-schema'), swaggerSchema = require('swagger-schema-official/schema');
@@ -48341,13 +49462,13 @@
         }
       },
       {
-        './util': 272,
-        'ono': 242,
-        'swagger-schema-official/schema': 275,
-        'z-schema': 376
+        './util': 279,
+        'ono': 249,
+        'swagger-schema-official/schema': 282,
+        'z-schema': 383
       }
     ],
-    274: [
+    281: [
       function (require, module, exports) {
         'use strict';
         var util = require('./util'), ono = require('ono'), swaggerMethods = require('swagger-methods'), primitiveTypes = [
@@ -48592,12 +49713,12 @@
         }
       },
       {
-        './util': 272,
-        'ono': 242,
-        'swagger-methods': 268
+        './util': 279,
+        'ono': 249,
+        'swagger-methods': 275
       }
     ],
-    275: [
+    282: [
       function (require, module, exports) {
         module.exports = {
           'title': 'A JSON Schema for Swagger 2.0 API.',
@@ -49575,7 +50696,7 @@
       },
       {}
     ],
-    276: [
+    283: [
       function (require, module, exports) {
         var nextTick = require('process/browser.js').nextTick;
         var apply = Function.prototype.apply;
@@ -49644,9 +50765,9 @@
           delete immediateIds[id];
         };
       },
-      { 'process/browser.js': 244 }
+      { 'process/browser.js': 251 }
     ],
-    277: [
+    284: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -50281,11 +51402,11 @@
         }
       },
       {
-        'punycode': 245,
-        'querystring': 248
+        'punycode': 252,
+        'querystring': 255
       }
     ],
-    278: [
+    285: [
       function (require, module, exports) {
         (function (global) {
           'use strict';
@@ -50354,7 +51475,7 @@
       },
       {}
     ],
-    279: [
+    286: [
       function (require, module, exports) {
         if (typeof Object.create === 'function') {
           // implementation from standard node.js 'util' module
@@ -50383,7 +51504,7 @@
       },
       {}
     ],
-    280: [
+    287: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -50397,7 +51518,7 @@
       },
       {}
     ],
-    281: [
+    288: [
       function (require, module, exports) {
         (function (process, global) {
           // Copyright Joyent, Inc. and other Node contributors.
@@ -50956,12 +52077,12 @@
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
       },
       {
-        './support/isBuffer': 280,
-        '_process': 244,
-        'inherits': 279
+        './support/isBuffer': 287,
+        '_process': 251,
+        'inherits': 286
       }
     ],
-    282: [
+    289: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -51156,69 +52277,69 @@
         module.exports = exports['default'];
       },
       {
-        './lib/blacklist': 284,
-        './lib/contains': 285,
-        './lib/equals': 286,
-        './lib/escape': 287,
-        './lib/isAfter': 288,
-        './lib/isAlpha': 289,
-        './lib/isAlphanumeric': 290,
-        './lib/isAscii': 291,
-        './lib/isBase64': 292,
-        './lib/isBefore': 293,
-        './lib/isBoolean': 294,
-        './lib/isByteLength': 295,
-        './lib/isCreditCard': 296,
-        './lib/isCurrency': 297,
-        './lib/isDataURI': 298,
-        './lib/isDate': 299,
-        './lib/isDecimal': 300,
-        './lib/isDivisibleBy': 301,
-        './lib/isEmail': 302,
-        './lib/isFQDN': 303,
-        './lib/isFloat': 304,
-        './lib/isFullWidth': 305,
-        './lib/isHalfWidth': 306,
-        './lib/isHexColor': 307,
-        './lib/isHexadecimal': 308,
-        './lib/isIP': 309,
-        './lib/isISBN': 310,
-        './lib/isISIN': 311,
-        './lib/isISO8601': 312,
-        './lib/isIn': 313,
-        './lib/isInt': 314,
-        './lib/isJSON': 315,
-        './lib/isLength': 316,
-        './lib/isLowercase': 317,
-        './lib/isMACAddress': 318,
-        './lib/isMD5': 319,
-        './lib/isMobilePhone': 320,
-        './lib/isMongoId': 321,
-        './lib/isMultibyte': 322,
-        './lib/isNull': 323,
-        './lib/isNumeric': 324,
-        './lib/isSurrogatePair': 325,
-        './lib/isURL': 326,
-        './lib/isUUID': 327,
-        './lib/isUppercase': 328,
-        './lib/isVariableWidth': 329,
-        './lib/isWhitelisted': 330,
-        './lib/ltrim': 331,
-        './lib/matches': 332,
-        './lib/normalizeEmail': 333,
-        './lib/rtrim': 334,
-        './lib/stripLow': 335,
-        './lib/toBoolean': 336,
-        './lib/toDate': 337,
-        './lib/toFloat': 338,
-        './lib/toInt': 339,
-        './lib/trim': 340,
-        './lib/unescape': 341,
-        './lib/util/toString': 344,
-        './lib/whitelist': 345
+        './lib/blacklist': 291,
+        './lib/contains': 292,
+        './lib/equals': 293,
+        './lib/escape': 294,
+        './lib/isAfter': 295,
+        './lib/isAlpha': 296,
+        './lib/isAlphanumeric': 297,
+        './lib/isAscii': 298,
+        './lib/isBase64': 299,
+        './lib/isBefore': 300,
+        './lib/isBoolean': 301,
+        './lib/isByteLength': 302,
+        './lib/isCreditCard': 303,
+        './lib/isCurrency': 304,
+        './lib/isDataURI': 305,
+        './lib/isDate': 306,
+        './lib/isDecimal': 307,
+        './lib/isDivisibleBy': 308,
+        './lib/isEmail': 309,
+        './lib/isFQDN': 310,
+        './lib/isFloat': 311,
+        './lib/isFullWidth': 312,
+        './lib/isHalfWidth': 313,
+        './lib/isHexColor': 314,
+        './lib/isHexadecimal': 315,
+        './lib/isIP': 316,
+        './lib/isISBN': 317,
+        './lib/isISIN': 318,
+        './lib/isISO8601': 319,
+        './lib/isIn': 320,
+        './lib/isInt': 321,
+        './lib/isJSON': 322,
+        './lib/isLength': 323,
+        './lib/isLowercase': 324,
+        './lib/isMACAddress': 325,
+        './lib/isMD5': 326,
+        './lib/isMobilePhone': 327,
+        './lib/isMongoId': 328,
+        './lib/isMultibyte': 329,
+        './lib/isNull': 330,
+        './lib/isNumeric': 331,
+        './lib/isSurrogatePair': 332,
+        './lib/isURL': 333,
+        './lib/isUUID': 334,
+        './lib/isUppercase': 335,
+        './lib/isVariableWidth': 336,
+        './lib/isWhitelisted': 337,
+        './lib/ltrim': 338,
+        './lib/matches': 339,
+        './lib/normalizeEmail': 340,
+        './lib/rtrim': 341,
+        './lib/stripLow': 342,
+        './lib/toBoolean': 343,
+        './lib/toDate': 344,
+        './lib/toFloat': 345,
+        './lib/toInt': 346,
+        './lib/trim': 347,
+        './lib/unescape': 348,
+        './lib/util/toString': 351,
+        './lib/whitelist': 352
       }
     ],
-    283: [
+    290: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -51298,7 +52419,7 @@
       },
       {}
     ],
-    284: [
+    291: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -51314,9 +52435,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    285: [
+    292: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -51335,11 +52456,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 342,
-        './util/toString': 344
+        './util/assertString': 349,
+        './util/toString': 351
       }
     ],
-    286: [
+    293: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -51355,9 +52476,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    287: [
+    294: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -51373,9 +52494,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    288: [
+    295: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -51397,11 +52518,11 @@
         module.exports = exports['default'];
       },
       {
-        './toDate': 337,
-        './util/assertString': 342
+        './toDate': 344,
+        './util/assertString': 349
       }
     ],
-    289: [
+    296: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -51423,11 +52544,11 @@
         module.exports = exports['default'];
       },
       {
-        './alpha': 283,
-        './util/assertString': 342
+        './alpha': 290,
+        './util/assertString': 349
       }
     ],
-    290: [
+    297: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -51449,11 +52570,11 @@
         module.exports = exports['default'];
       },
       {
-        './alpha': 283,
-        './util/assertString': 342
+        './alpha': 290,
+        './util/assertString': 349
       }
     ],
-    291: [
+    298: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -51472,9 +52593,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    292: [
+    299: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -51496,9 +52617,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    293: [
+    300: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -51520,11 +52641,11 @@
         module.exports = exports['default'];
       },
       {
-        './toDate': 337,
-        './util/assertString': 342
+        './toDate': 344,
+        './util/assertString': 349
       }
     ],
-    294: [
+    301: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -51545,9 +52666,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    295: [
+    302: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -51585,9 +52706,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    296: [
+    303: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -51629,9 +52750,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    297: [
+    304: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -51703,11 +52824,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 342,
-        './util/merge': 343
+        './util/assertString': 349,
+        './util/merge': 350
       }
     ],
-    298: [
+    305: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -51725,9 +52846,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    299: [
+    306: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -51816,11 +52937,11 @@
         module.exports = exports['default'];
       },
       {
-        './isISO8601': 312,
-        './util/assertString': 342
+        './isISO8601': 319,
+        './util/assertString': 349
       }
     ],
-    300: [
+    307: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -51837,9 +52958,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    301: [
+    308: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -51858,11 +52979,11 @@
         module.exports = exports['default'];
       },
       {
-        './toFloat': 338,
-        './util/assertString': 342
+        './toFloat': 345,
+        './util/assertString': 349
       }
     ],
-    302: [
+    309: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -51930,13 +53051,13 @@
         module.exports = exports['default'];
       },
       {
-        './isByteLength': 295,
-        './isFQDN': 303,
-        './util/assertString': 342,
-        './util/merge': 343
+        './isByteLength': 302,
+        './isFQDN': 310,
+        './util/assertString': 349,
+        './util/merge': 350
       }
     ],
-    303: [
+    310: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -51988,11 +53109,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 342,
-        './util/merge': 343
+        './util/assertString': 349,
+        './util/merge': 350
       }
     ],
-    304: [
+    311: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52013,9 +53134,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    305: [
+    312: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52032,9 +53153,9 @@
           return fullWidth.test(str);
         }
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    306: [
+    313: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52051,9 +53172,9 @@
           return halfWidth.test(str);
         }
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    307: [
+    314: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52070,9 +53191,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    308: [
+    315: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52089,9 +53210,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    309: [
+    316: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52164,9 +53285,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    310: [
+    317: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52222,9 +53343,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    311: [
+    318: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52266,9 +53387,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    312: [
+    319: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52286,9 +53407,9 @@
         // from http://goo.gl/0ejHHW
         var iso8601 = exports.iso8601 = /^([\+-]?\d{4}(?!\d{2}\b))((-?)((0[1-9]|1[0-2])(\3([12]\d|0[1-9]|3[01]))?|W([0-4]\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\d|[12]\d{2}|3([0-5]\d|6[1-6])))([T\s]((([01]\d|2[0-3])((:?)[0-5]\d)?|24:?00)([\.,]\d+(?!:))?)?(\17[0-5]\d([\.,]\d+)?)?([zZ]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?)?)?$/;  /* eslint-enable max-len */
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    313: [
+    320: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -52331,11 +53452,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 342,
-        './util/toString': 344
+        './util/assertString': 349,
+        './util/toString': 351
       }
     ],
-    314: [
+    321: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52360,9 +53481,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    315: [
+    322: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -52393,9 +53514,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    316: [
+    323: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -52434,9 +53555,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    317: [
+    324: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52452,9 +53573,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    318: [
+    325: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52471,9 +53592,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    319: [
+    326: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52490,9 +53611,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    320: [
+    327: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52552,9 +53673,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    321: [
+    328: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52573,11 +53694,11 @@
         module.exports = exports['default'];
       },
       {
-        './isHexadecimal': 308,
-        './util/assertString': 342
+        './isHexadecimal': 315,
+        './util/assertString': 349
       }
     ],
-    322: [
+    329: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52596,9 +53717,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    323: [
+    330: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52614,9 +53735,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    324: [
+    331: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52633,9 +53754,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    325: [
+    332: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52652,9 +53773,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    326: [
+    333: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52770,13 +53891,13 @@
         module.exports = exports['default'];
       },
       {
-        './isFQDN': 303,
-        './isIP': 309,
-        './util/assertString': 342,
-        './util/merge': 343
+        './isFQDN': 310,
+        './isIP': 316,
+        './util/assertString': 349,
+        './util/merge': 350
       }
     ],
-    327: [
+    334: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52800,9 +53921,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    328: [
+    335: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52818,9 +53939,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    329: [
+    336: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52839,12 +53960,12 @@
         module.exports = exports['default'];
       },
       {
-        './isFullWidth': 305,
-        './isHalfWidth': 306,
-        './util/assertString': 342
+        './isFullWidth': 312,
+        './isHalfWidth': 313,
+        './util/assertString': 349
       }
     ],
-    330: [
+    337: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52865,9 +53986,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    331: [
+    338: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52884,9 +54005,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    332: [
+    339: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52905,9 +54026,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    333: [
+    340: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52951,11 +54072,11 @@
         module.exports = exports['default'];
       },
       {
-        './isEmail': 302,
-        './util/merge': 343
+        './isEmail': 309,
+        './util/merge': 350
       }
     ],
-    334: [
+    341: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52976,9 +54097,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    335: [
+    342: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52998,11 +54119,11 @@
         module.exports = exports['default'];
       },
       {
-        './blacklist': 284,
-        './util/assertString': 342
+        './blacklist': 291,
+        './util/assertString': 349
       }
     ],
-    336: [
+    343: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53021,9 +54142,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    337: [
+    344: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53040,9 +54161,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    338: [
+    345: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53058,9 +54179,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    339: [
+    346: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53076,9 +54197,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    340: [
+    347: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53096,11 +54217,11 @@
         module.exports = exports['default'];
       },
       {
-        './ltrim': 331,
-        './rtrim': 334
+        './ltrim': 338,
+        './rtrim': 341
       }
     ],
-    341: [
+    348: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53116,9 +54237,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    342: [
+    349: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53132,7 +54253,7 @@
       },
       {}
     ],
-    343: [
+    350: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53151,7 +54272,7 @@
       },
       {}
     ],
-    344: [
+    351: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -53182,7 +54303,7 @@
       },
       {}
     ],
-    345: [
+    352: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53198,9 +54319,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 349 }
     ],
-    346: [
+    353: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.10.0
@@ -53217,7 +54338,7 @@
       },
       {}
     ],
-    347: [
+    354: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.10.0
@@ -53250,7 +54371,7 @@
       },
       {}
     ],
-    348: [
+    355: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -53791,15 +54912,15 @@
         }.call(undefined));
       },
       {
-        './bom': 346,
-        './processors': 347,
+        './bom': 353,
+        './processors': 354,
         'events': 14,
-        'sax': 249,
-        'timers': 276,
-        'xmlbuilder': 365
+        'sax': 256,
+        'timers': 283,
+        'xmlbuilder': 372
       }
     ],
-    349: [
+    356: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -53830,7 +54951,7 @@
       },
       { 'lodash/create': 186 }
     ],
-    350: [
+    357: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -53893,13 +55014,13 @@
         }.call(undefined));
       },
       {
-        './XMLDeclaration': 357,
-        './XMLDocType': 358,
-        './XMLElement': 359,
-        './XMLStringifier': 363
+        './XMLDeclaration': 364,
+        './XMLDocType': 365,
+        './XMLElement': 366,
+        './XMLStringifier': 370
       }
     ],
-    351: [
+    358: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -53954,11 +55075,11 @@
         }.call(undefined));
       },
       {
-        './XMLNode': 360,
+        './XMLNode': 367,
         'lodash/create': 186
       }
     ],
-    352: [
+    359: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -54013,11 +55134,11 @@
         }.call(undefined));
       },
       {
-        './XMLNode': 360,
+        './XMLNode': 367,
         'lodash/create': 186
       }
     ],
-    353: [
+    360: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -54085,7 +55206,7 @@
       },
       { 'lodash/create': 186 }
     ],
-    354: [
+    361: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -54131,7 +55252,7 @@
       },
       { 'lodash/create': 186 }
     ],
-    355: [
+    362: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -54217,7 +55338,7 @@
         'lodash/isObject': 199
       }
     ],
-    356: [
+    363: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -54273,7 +55394,7 @@
       },
       { 'lodash/create': 186 }
     ],
-    357: [
+    364: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -54344,12 +55465,12 @@
         }.call(undefined));
       },
       {
-        './XMLNode': 360,
+        './XMLNode': 367,
         'lodash/create': 186,
         'lodash/isObject': 199
       }
     ],
-    358: [
+    365: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -54511,18 +55632,18 @@
         }.call(undefined));
       },
       {
-        './XMLCData': 351,
-        './XMLComment': 352,
-        './XMLDTDAttList': 353,
-        './XMLDTDElement': 354,
-        './XMLDTDEntity': 355,
-        './XMLDTDNotation': 356,
-        './XMLProcessingInstruction': 361,
+        './XMLCData': 358,
+        './XMLComment': 359,
+        './XMLDTDAttList': 360,
+        './XMLDTDElement': 361,
+        './XMLDTDEntity': 362,
+        './XMLDTDNotation': 363,
+        './XMLProcessingInstruction': 368,
         'lodash/create': 186,
         'lodash/isObject': 199
       }
     ],
-    359: [
+    366: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -54732,16 +55853,16 @@
         }.call(undefined));
       },
       {
-        './XMLAttribute': 349,
-        './XMLNode': 360,
-        './XMLProcessingInstruction': 361,
+        './XMLAttribute': 356,
+        './XMLNode': 367,
+        './XMLProcessingInstruction': 368,
         'lodash/create': 186,
         'lodash/every': 188,
         'lodash/isFunction': 197,
         'lodash/isObject': 199
       }
     ],
-    360: [
+    367: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -55039,19 +56160,19 @@
         }.call(undefined));
       },
       {
-        './XMLCData': 351,
-        './XMLComment': 352,
-        './XMLDeclaration': 357,
-        './XMLDocType': 358,
-        './XMLElement': 359,
-        './XMLRaw': 362,
-        './XMLText': 364,
+        './XMLCData': 358,
+        './XMLComment': 359,
+        './XMLDeclaration': 364,
+        './XMLDocType': 365,
+        './XMLElement': 366,
+        './XMLRaw': 369,
+        './XMLText': 371,
         'lodash/isEmpty': 196,
         'lodash/isFunction': 197,
         'lodash/isObject': 199
       }
     ],
-    361: [
+    368: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -55101,7 +56222,7 @@
       },
       { 'lodash/create': 186 }
     ],
-    362: [
+    369: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -55156,11 +56277,11 @@
         }.call(undefined));
       },
       {
-        './XMLNode': 360,
+        './XMLNode': 367,
         'lodash/create': 186
       }
     ],
-    363: [
+    370: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -55307,7 +56428,7 @@
       },
       {}
     ],
-    364: [
+    371: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -55362,11 +56483,11 @@
         }.call(undefined));
       },
       {
-        './XMLNode': 360,
+        './XMLNode': 367,
         'lodash/create': 186
       }
     ],
-    365: [
+    372: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -55381,11 +56502,11 @@
         }.call(undefined));
       },
       {
-        './XMLBuilder': 350,
+        './XMLBuilder': 357,
         'lodash/assign': 184
       }
     ],
-    366: [
+    373: [
       function (require, module, exports) {
         'use strict';
         module.exports = extend;
@@ -55405,7 +56526,7 @@
       },
       {}
     ],
-    367: [
+    374: [
       function (require, module, exports) {
         'use strict';
         module.exports = {
@@ -55454,7 +56575,7 @@
       },
       {}
     ],
-    368: [
+    375: [
       function (require, module, exports) {
         'use strict';
         /*jshint maxlen: false*/
@@ -55585,9 +56706,9 @@
           };
         module.exports = FormatValidators;
       },
-      { 'validator': 282 }
+      { 'validator': 289 }
     ],
-    369: [
+    376: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -56129,12 +57250,12 @@
         };
       },
       {
-        './FormatValidators': 368,
-        './Report': 371,
-        './Utils': 375
+        './FormatValidators': 375,
+        './Report': 378,
+        './Utils': 382
       }
     ],
-    370: [
+    377: [
       function (require, module, exports) {
         'use strict';
         // Number.isFinite polyfill
@@ -56156,7 +57277,7 @@
       },
       {}
     ],
-    371: [
+    378: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -56333,13 +57454,13 @@
         }.call(this, require('_process')));
       },
       {
-        './Errors': 367,
-        './Utils': 375,
-        '_process': 244,
+        './Errors': 374,
+        './Utils': 382,
+        '_process': 251,
         'lodash.get': 73
       }
     ],
-    372: [
+    379: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -56486,13 +57607,13 @@
         exports.getRemotePath = getRemotePath;
       },
       {
-        './Report': 371,
-        './SchemaCompilation': 373,
-        './SchemaValidation': 374,
-        './Utils': 375
+        './Report': 378,
+        './SchemaCompilation': 380,
+        './SchemaValidation': 381,
+        './Utils': 382
       }
     ],
-    373: [
+    380: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -56744,12 +57865,12 @@
         };
       },
       {
-        './Report': 371,
-        './SchemaCache': 372,
-        './Utils': 375
+        './Report': 378,
+        './SchemaCache': 379,
+        './Utils': 382
       }
     ],
-    374: [
+    381: [
       function (require, module, exports) {
         'use strict';
         var FormatValidators = require('./FormatValidators'), JsonValidation = require('./JsonValidation'), Report = require('./Report'), Utils = require('./Utils');
@@ -57515,13 +58636,13 @@
         };
       },
       {
-        './FormatValidators': 368,
-        './JsonValidation': 369,
-        './Report': 371,
-        './Utils': 375
+        './FormatValidators': 375,
+        './JsonValidation': 376,
+        './Report': 378,
+        './Utils': 382
       }
     ],
-    375: [
+    382: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -57732,7 +58853,7 @@
       },
       {}
     ],
-    376: [
+    383: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -58034,21 +59155,21 @@
         }.call(this, require('_process')));
       },
       {
-        './FormatValidators': 368,
-        './JsonValidation': 369,
-        './Polyfills': 370,
-        './Report': 371,
-        './SchemaCache': 372,
-        './SchemaCompilation': 373,
-        './SchemaValidation': 374,
-        './Utils': 375,
-        './schemas/hyper-schema.json': 377,
-        './schemas/schema.json': 378,
-        '_process': 244,
+        './FormatValidators': 375,
+        './JsonValidation': 376,
+        './Polyfills': 377,
+        './Report': 378,
+        './SchemaCache': 379,
+        './SchemaCompilation': 380,
+        './SchemaValidation': 381,
+        './Utils': 382,
+        './schemas/hyper-schema.json': 384,
+        './schemas/schema.json': 385,
+        '_process': 251,
         'lodash.get': 73
       }
     ],
-    377: [
+    384: [
       function (require, module, exports) {
         module.exports = {
           '$schema': 'http://json-schema.org/draft-04/hyper-schema#',
@@ -58166,7 +59287,7 @@
       },
       {}
     ],
-    378: [
+    385: [
       function (require, module, exports) {
         module.exports = {
           'id': 'http://json-schema.org/draft-04/schema#',
@@ -72095,7 +73216,7 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
         var status = '';
         if ($scope.fileParsable) {
           if ($scope.parsing > 0) {
-            status = 'validating...';
+            status = 'parsing...';
           } else if ($scope.currentErrorCount || $scope.currentWarningCount) {
             if ($scope.currentErrorCount) {
               status += $scope.currentErrorCount + ' ' + ($scope.currentErrorCount > 1 ? 'errors' : 'error');

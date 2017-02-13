@@ -311,7 +311,7 @@
         var status = '';
         if ($scope.fileParsable) {
           if ($scope.parsing > 0) {
-            status = 'validating...';
+            status = 'parsing...';
           } else if ($scope.currentErrorCount || $scope.currentWarningCount) {
             if ($scope.currentErrorCount) {
               status += $scope.currentErrorCount + ' ' + ($scope.currentErrorCount > 1 ? 'errors' : 'error');
