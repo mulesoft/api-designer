@@ -64,7 +64,7 @@ module.exports = function(config) {
 
     // list of files to exclude
     exclude: [
-      'app/scripts/api-designer-worker.js'
+
     ],
 
     // test results reporter to use

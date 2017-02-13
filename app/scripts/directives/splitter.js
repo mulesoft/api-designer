@@ -147,6 +147,8 @@
          * means collapse target is shown
          */
         function toggleCollapseTarget(splitter, collapse) {
+          collapse = arguments.length > 1 ? collapse : !loadIsCollapsed(splitter);
+
           splitter.toggleClass('collapsed', collapse);
           getCollapseTargetEl(splitter).toggleClass('hide-display', collapse);
 
@@ -177,7 +179,6 @@
             // from last session
             resizeCollapseTarget(splitter, lastSize);
             toggleCollapseTarget(splitter, lastCollapsed);
-            scope['splitterCollapsed_' + splitter.attr('id')] = lastCollapsed;
 
             // Configure UI events
             splitter
@@ -209,9 +210,6 @@
                   // that reason we compare current state with last one
                   if (collapsed !== lastCollapsed) {
                     toggleCollapseTarget(splitter, collapsed);
-                    scope.$apply(function toogleCollapseState() {
-                      scope['splitterCollapsed_' + splitter.attr('id')] = collapsed;
-                    });
                   }
 
                   lastPos       = event[posAttr];
@@ -228,9 +226,6 @@
                     // when users try to expand it in current or next session
                     toggleCollapseTarget(splitter, true);
                     resizeCollapseTarget(splitter, lastSize);
-                    scope.$apply(function toogleCollapseState() {
-                      scope['splitterCollapsed_' + splitter.attr('id')] = true;
-                    });
                   } else {
                     saveSize(splitter, sizeAttr);
                   }
@@ -249,11 +244,7 @@
             splitter.children('.split').on('mouseup', function onClick() {
               // Need to make sure that the user is clicking, not dragging:
               if (!userIsDragging) {
-                var collapsed = !loadIsCollapsed(splitter);
-                toggleCollapseTarget(splitter, collapsed);
-                scope.$apply(function toogleCollapseState() {
-                  scope['splitterCollapsed_' + splitter.attr('id')] = collapsed;
-                });
+                toggleCollapseTarget(splitter);
                 userIsDragging = true;
                 isActive = false;
               }

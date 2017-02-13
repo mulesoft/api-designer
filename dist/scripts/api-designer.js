@@ -1,3 +1,347 @@
+(function (f) {
+  if (typeof exports === 'object' && typeof module !== 'undefined') {
+    module.exports = f();
+  } else if (typeof define === 'function' && define.amd) {
+    define([], f);
+  } else {
+    var g;
+    if (typeof window !== 'undefined') {
+      g = window;
+    } else if (typeof global !== 'undefined') {
+      g = global;
+    } else if (typeof self !== 'undefined') {
+      g = self;
+    } else {
+      g = this;
+    }
+    (g.jsTraverse || (g.jsTraverse = {})).traverse = f();
+  }
+}(function () {
+  var define, module, exports;
+  return function e(t, n, r) {
+    function s(o, u) {
+      if (!n[o]) {
+        if (!t[o]) {
+          var a = typeof require == 'function' && require;
+          if (!u && a)
+            return a(o, !0);
+          if (i)
+            return i(o, !0);
+          var f = new Error('Cannot find module \'' + o + '\'');
+          throw f.code = 'MODULE_NOT_FOUND', f;
+        }
+        var l = n[o] = { exports: {} };
+        t[o][0].call(l.exports, function (e) {
+          var n = t[o][1][e];
+          return s(n ? n : e);
+        }, l, l.exports, e, t, n, r);
+      }
+      return n[o].exports;
+    }
+    var i = typeof require == 'function' && require;
+    for (var o = 0; o < r.length; o++)
+      s(r[o]);
+    return s;
+  }({
+    1: [
+      function (require, module, exports) {
+        var traverse = module.exports = function (obj) {
+            return new Traverse(obj);
+          };
+        function Traverse(obj) {
+          this.value = obj;
+        }
+        Traverse.prototype.get = function (ps) {
+          var node = this.value;
+          for (var i = 0; i < ps.length; i++) {
+            var key = ps[i];
+            if (!node || !hasOwnProperty.call(node, key)) {
+              node = undefined;
+              break;
+            }
+            node = node[key];
+          }
+          return node;
+        };
+        Traverse.prototype.has = function (ps) {
+          var node = this.value;
+          for (var i = 0; i < ps.length; i++) {
+            var key = ps[i];
+            if (!node || !hasOwnProperty.call(node, key)) {
+              return false;
+            }
+            node = node[key];
+          }
+          return true;
+        };
+        Traverse.prototype.set = function (ps, value) {
+          var node = this.value;
+          for (var i = 0; i < ps.length - 1; i++) {
+            var key = ps[i];
+            if (!hasOwnProperty.call(node, key))
+              node[key] = {};
+            node = node[key];
+          }
+          node[ps[i]] = value;
+          return value;
+        };
+        Traverse.prototype.map = function (cb) {
+          return walk(this.value, cb, true);
+        };
+        Traverse.prototype.forEach = function (cb) {
+          this.value = walk(this.value, cb, false);
+          return this.value;
+        };
+        Traverse.prototype.reduce = function (cb, init) {
+          var skip = arguments.length === 1;
+          var acc = skip ? this.value : init;
+          this.forEach(function (x) {
+            if (!this.isRoot || !skip) {
+              acc = cb.call(this, acc, x);
+            }
+          });
+          return acc;
+        };
+        Traverse.prototype.paths = function () {
+          var acc = [];
+          this.forEach(function (x) {
+            acc.push(this.path);
+          });
+          return acc;
+        };
+        Traverse.prototype.nodes = function () {
+          var acc = [];
+          this.forEach(function (x) {
+            acc.push(this.node);
+          });
+          return acc;
+        };
+        Traverse.prototype.clone = function () {
+          var parents = [], nodes = [];
+          return function clone(src) {
+            for (var i = 0; i < parents.length; i++) {
+              if (parents[i] === src) {
+                return nodes[i];
+              }
+            }
+            if (typeof src === 'object' && src !== null) {
+              var dst = copy(src);
+              parents.push(src);
+              nodes.push(dst);
+              forEach(objectKeys(src), function (key) {
+                dst[key] = clone(src[key]);
+              });
+              parents.pop();
+              nodes.pop();
+              return dst;
+            } else {
+              return src;
+            }
+          }(this.value);
+        };
+        function walk(root, cb, immutable) {
+          var path = [];
+          var parents = [];
+          var alive = true;
+          return function walker(node_) {
+            var node = immutable ? copy(node_) : node_;
+            var modifiers = {};
+            var keepGoing = true;
+            var state = {
+                node: node,
+                node_: node_,
+                path: [].concat(path),
+                parent: parents[parents.length - 1],
+                parents: parents,
+                key: path.slice(-1)[0],
+                isRoot: path.length === 0,
+                level: path.length,
+                circular: null,
+                update: function (x, stopHere) {
+                  if (!state.isRoot) {
+                    state.parent.node[state.key] = x;
+                  }
+                  state.node = x;
+                  if (stopHere)
+                    keepGoing = false;
+                },
+                'delete': function (stopHere) {
+                  delete state.parent.node[state.key];
+                  if (stopHere)
+                    keepGoing = false;
+                },
+                remove: function (stopHere) {
+                  if (isArray(state.parent.node)) {
+                    state.parent.node.splice(state.key, 1);
+                  } else {
+                    delete state.parent.node[state.key];
+                  }
+                  if (stopHere)
+                    keepGoing = false;
+                },
+                keys: null,
+                before: function (f) {
+                  modifiers.before = f;
+                },
+                after: function (f) {
+                  modifiers.after = f;
+                },
+                pre: function (f) {
+                  modifiers.pre = f;
+                },
+                post: function (f) {
+                  modifiers.post = f;
+                },
+                stop: function () {
+                  alive = false;
+                },
+                block: function () {
+                  keepGoing = false;
+                }
+              };
+            if (!alive)
+              return state;
+            function updateState() {
+              if (typeof state.node === 'object' && state.node !== null) {
+                if (!state.keys || state.node_ !== state.node) {
+                  state.keys = objectKeys(state.node);
+                }
+                state.isLeaf = state.keys.length == 0;
+                for (var i = 0; i < parents.length; i++) {
+                  if (parents[i].node_ === node_) {
+                    state.circular = parents[i];
+                    break;
+                  }
+                }
+              } else {
+                state.isLeaf = true;
+                state.keys = null;
+              }
+              state.notLeaf = !state.isLeaf;
+              state.notRoot = !state.isRoot;
+            }
+            updateState();
+            // use return values to update if defined
+            var ret = cb.call(state, state.node);
+            if (ret !== undefined && state.update)
+              state.update(ret);
+            if (modifiers.before)
+              modifiers.before.call(state, state.node);
+            if (!keepGoing)
+              return state;
+            if (typeof state.node == 'object' && state.node !== null && !state.circular) {
+              parents.push(state);
+              updateState();
+              forEach(state.keys, function (key, i) {
+                path.push(key);
+                if (modifiers.pre)
+                  modifiers.pre.call(state, state.node[key], key);
+                var child = walker(state.node[key]);
+                if (immutable && hasOwnProperty.call(state.node, key)) {
+                  state.node[key] = child.node;
+                }
+                child.isLast = i == state.keys.length - 1;
+                child.isFirst = i == 0;
+                if (modifiers.post)
+                  modifiers.post.call(state, child);
+                path.pop();
+              });
+              parents.pop();
+            }
+            if (modifiers.after)
+              modifiers.after.call(state, state.node);
+            return state;
+          }(root).node;
+        }
+        function copy(src) {
+          if (typeof src === 'object' && src !== null) {
+            var dst;
+            if (isArray(src)) {
+              dst = [];
+            } else if (isDate(src)) {
+              dst = new Date(src.getTime ? src.getTime() : src);
+            } else if (isRegExp(src)) {
+              dst = new RegExp(src);
+            } else if (isError(src)) {
+              dst = { message: src.message };
+            } else if (isBoolean(src)) {
+              dst = new Boolean(src);
+            } else if (isNumber(src)) {
+              dst = new Number(src);
+            } else if (isString(src)) {
+              dst = new String(src);
+            } else if (Object.create && Object.getPrototypeOf) {
+              dst = Object.create(Object.getPrototypeOf(src));
+            } else if (src.constructor === Object) {
+              dst = {};
+            } else {
+              var proto = src.constructor && src.constructor.prototype || src.__proto__ || {};
+              ;
+              var T = function () {
+              };
+              T.prototype = proto;
+              dst = new T();
+            }
+            forEach(objectKeys(src), function (key) {
+              dst[key] = src[key];
+            });
+            return dst;
+          } else
+            return src;
+        }
+        var objectKeys = Object.keys || function keys(obj) {
+            var res = [];
+            for (var key in obj)
+              res.push(key);
+            return res;
+          };
+        function toS(obj) {
+          return Object.prototype.toString.call(obj);
+        }
+        function isDate(obj) {
+          return toS(obj) === '[object Date]';
+        }
+        function isRegExp(obj) {
+          return toS(obj) === '[object RegExp]';
+        }
+        function isError(obj) {
+          return toS(obj) === '[object Error]';
+        }
+        function isBoolean(obj) {
+          return toS(obj) === '[object Boolean]';
+        }
+        function isNumber(obj) {
+          return toS(obj) === '[object Number]';
+        }
+        function isString(obj) {
+          return toS(obj) === '[object String]';
+        }
+        var isArray = Array.isArray || function isArray(xs) {
+            return Object.prototype.toString.call(xs) === '[object Array]';
+          };
+        var forEach = function (xs, fn) {
+          if (xs.forEach)
+            return xs.forEach(fn);
+          else
+            for (var i = 0; i < xs.length; i++) {
+              fn(xs[i], i, xs);
+            }
+        };
+        forEach(objectKeys(Traverse.prototype), function (key) {
+          traverse[key] = function (obj) {
+            var args = [].slice.call(arguments, 1);
+            var t = new Traverse(obj);
+            return t[key].apply(t, args);
+          };
+        });
+        var hasOwnProperty = Object.hasOwnProperty || function (obj, key) {
+            return key in obj;
+          };
+      },
+      {}
+    ]
+  }, {}, [1])(1);
+}));
 (function e(t, n, r) {
   function s(o, u) {
     if (!n[o]) {
@@ -68526,7 +68870,16 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
     'autoFocus',
     'rightClick',
     'dragAndDrop'
+  ]).run([
+    '$window',
+    '$location',
+    function ($window, $location) {
+      // Adding proxy settings for api console
+      var disableProxy = $location.search().xDisableProxy === 'true';
+      $window.RAML.Settings.proxy = disableProxy ? '' : '/proxy/';
+    }
   ]);
+  ;
 }());
 /*jshint bitwise: false*/
 'use strict';
@@ -69484,13 +69837,20 @@ if (!window.Map) {
           'Shift-Tab': 'indentLess',
           'Shift-Ctrl-T': 'toggleTheme'
         };
+      var autocomplete = function onChange(cm) {
+        if (cm.getLine(cm.getCursor().line).trim()) {
+          cm.execCommand('autocomplete');
+        }
+      };
       service.configureEditor = function (editor, extension) {
         var mode = MODES[extension] || MODES.raml;
         editor.setOption('mode', mode);
         if (mode.name === 'raml') {
           editor.setOption('extraKeys', ramlKeys);
+          editor.on('change', autocomplete);
         } else {
           editor.setOption('extraKeys', defaultKeys);
+          editor.off('change', autocomplete);
         }
       };
       service.enterKey = function (cm) {
@@ -70685,7 +71045,7 @@ if (!window.Map) {
         }
         return promise.then(modifyFile, handleErrorFor(file));
       };
-      service.loadFile = function loadFile(file, nativeTimeout) {
+      service.loadFile = function loadFile(file) {
         function modifyFile(data) {
           file.dirty = false;
           file.persisted = true;
@@ -70693,7 +71053,12 @@ if (!window.Map) {
           file.contents = data;
           return file;
         }
+<<<<<<< HEAD
         return fileSystem.load(file.path, nativeTimeout).then(modifyFile, handleErrorFor(file));
+=======
+        return fileSystem.load(file.path).then(modifyFile, handleErrorFor(file));
+        ;
+>>>>>>> parent of 5867a59... Permonce inprovements: move parse to web worker, avoid console and shelf render when closed
       };
       service.removeFile = function removeFile(file) {
         var promise;
@@ -70734,19 +71099,6 @@ if (!window.Map) {
           }
           $rootScope.$broadcast('event:raml-editor-file-generated', file);
           return file;
-        });
-      };
-      // Gets a promise of the ramlDirectory/ramlFile object by path from the memory, loading the content if not loaded yet
-      service.getContentByPath = function getByPath(path, nativeTimeout) {
-        var file = service.getByPath(path);
-        if (!file) {
-          return $q.reject('getByPathLoaded: ' + path + ': no such path');
-        }
-        if (file.loaded) {
-          return $q.when(file.contents);
-        }
-        return service.loadFile(file, nativeTimeout).then(function mapContent(file) {
-          return file.contents;
         });
       };
       // Gets the ramlDirectory/ramlFile object by path from the memory
@@ -70880,7 +71232,7 @@ var FSResolver = function (homeDirectory, ramlRepository) {
     var getFileContent = function (file) {
       return file.contents;
     };
-    return ramlRepository.loadFile(file, true).then(getFileContent);
+    return ramlRepository.loadFile(file).then(getFileContent);
   };
   this.contentAsync = function (path) {
     var element = this.getElement(path);
@@ -70902,7 +71254,7 @@ var FSResolver = function (homeDirectory, ramlRepository) {
     return Promise.resolve(this.list(path));
   };
   this.exists = function (path) {
-    return !!this.getElement(path);
+    return this.getElement(path) ? true : false;
   };
   this.existsAsync = function (path) {
     return Promise.resolve(this.exists(path));
@@ -70938,7 +71290,7 @@ var FSResolver = function (homeDirectory, ramlRepository) {
   };
   this.isDirectory = function (path) {
     var element = this.getElement(path);
-    return !!(element && element.isDirectory);
+    return element && element.isDirectory ? true : false;
   };
   this.isDirectoryAsync = function (path) {
     return Promise.resolve(this.isDirectory(path));
@@ -71483,9 +71835,9 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     /**
      * Loads the content of a file.
      */
-    service.load = function (path, nativeTimeout) {
+    service.load = function (path) {
       var deferred = $q.defer();
-      (nativeTimeout ? setTimeout : $timeout)(function () {
+      $timeout(function () {
         var entry = localStorageHelper.get(path);
         if (entry && entry.type === 'file') {
           deferred.resolve(localStorageHelper.get(path).content);
@@ -71658,7 +72010,14 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       // ---
       function read$Ref($ref) {
         var path = $ref.path[0] === '/' ? $ref.path : '/' + $ref.path;
-        return ramlRepository.getContentByPath(path, true);
+        var file = ramlRepository.getByPath(path);
+        if (file) {
+          return file.loaded ? $q.when(file) : ramlRepository.loadFile({ path: path }).then(function (file) {
+            return file.contents;
+          });
+          ;
+        }
+        return $q.reject('File with path "' + path + '" does not exist');
       }
     }
   ]);
@@ -72236,7 +72595,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         return defer.promise;
       }
       function loadFile(file, defer) {
-        (file.loaded ? $q.when(file) : ramlRepository.loadFile(file)).then(function (loadedFile) {
+        (file.loaded ? $q.when(file) : ramlRepository.loadFile({ path: file.path })).then(function (loadedFile) {
           if (ramlEditorMainHelpers.isApiDefinition(loadedFile.contents)) {
             defer.resolve(loadedFile);
           }
@@ -72264,7 +72623,13 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
                 throw new Error('ramlParser: loadPath: loadApi: content: ' + path + ': no such path');
               },
               contentAsync: function contentAsync(path) {
-                return ramlRepository.getContentByPath(path);
+                var file = ramlRepository.getByPath(path);
+                if (!file) {
+                  return $q.reject('ramlEditorMain: loadRaml: contentAsync: ' + path + ': no such path');
+                }
+                return (file.loaded ? $q.when(file) : ramlRepository.loadFile({ path: path })).then(function (file) {
+                  return file.contents;
+                });
               }
             }
           };
@@ -72817,107 +73182,6 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
   ]);
   ;
 }());
-'use strict';
-angular.module('ramlEditorApp').factory('ramlWorker', [
-  'ramlRepository',
-  'ramlParser',
-  '$q',
-  function (ramlRepository, ramlParser, $q) {
-    var ramlParse = function oldParse(data) {
-      return ramlParser.loadPath(data.path, function contentAsync(path) {
-        return ramlRepository.getContentByPath(path);
-      });
-    };
-    if (window.apiDesignerWorker) {
-      var currentParse = null;
-      var parsingPending = null;
-      ramlParse = function ramlParse(data) {
-        var deferred = $q.defer();
-        var path = data.path;
-        if (currentParse) {
-          // if we already have a parse request pending, reject it as aborted
-          if (parsingPending) {
-            parsingPending.deferred.reject('aborted');
-          }
-          // leave the parser request as pending
-          parsingPending = {
-            deferred: deferred,
-            data: data
-          };
-        } else {
-          currentParse = data;
-          _postAndExpect('ramlParse', data).then(function parseOk(result) {
-            result.path = path;
-            deferred.resolve(result);
-            parsePending();
-          }).catch(function parseFail(error) {
-            error.path = path;
-            deferred.reject(error);
-            parsePending();
-          });
-        }
-        return deferred.promise;
-      };
-      var parsePending = function parsePending() {
-        currentParse = null;
-        if (parsingPending) {
-          ramlParse(parsingPending.data).then(parsingPending.deferred.resolve).catch(parsingPending.deferred.reject);
-          parsingPending = null;
-        }
-      };
-      var _listen = function _listen(type, fn) {
-        apiDesignerWorker.addEventListener('message', function workerMessage(e) {
-          if (e.data.type === type) {
-            fn(e.data.payload);
-          }
-        }, false);
-      };
-      var _post = function _post(type, payload) {
-        apiDesignerWorker.postMessage({
-          type: type,
-          payload: payload
-        });
-      };
-      var _postAndExpect = function _postAndExpect(type, payload) {
-        var deferred = $q.defer();
-        const listener = function postListener(e) {
-          if (e.data.type === type + '-resolve') {
-            apiDesignerWorker.removeEventListener('message', listener, false);
-            deferred.resolve(e.data.payload);
-          } else if (e.data.type === type + '-reject') {
-            apiDesignerWorker.removeEventListener('message', listener, false);
-            deferred.reject(e.data.payload);
-          }
-        };
-        apiDesignerWorker.addEventListener('message', listener, false);
-        _post(type, payload);
-        return deferred.promise;
-      };
-      _listen('requestFile', function requestFile(request) {
-        if (request.path === currentParse.path) {
-          _post('requestFile', {
-            path: request.path,
-            content: currentParse.contents
-          });
-        } else {
-          ramlRepository.getContentByPath(request.path, true).then(function (contents) {
-            _post('requestFile', {
-              path: request.path,
-              content: contents
-            });
-          }).catch(function (err) {
-            console.error(err);
-            _post('requestFile', {
-              path: request.path,
-              content: ''
-            });
-          });
-        }
-      });
-    }
-    return { ramlParse: ramlParse };
-  }
-]);
 (function () {
   'use strict';
   angular.module('stringFilters', []).filter('dasherize', function () {
@@ -72938,7 +73202,7 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
     'safeApply',
     'safeApplyWrapper',
     'debounce',
-    'ramlWorker',
+    'ramlParser',
     'ramlRepository',
     'codeMirror',
     'codeMirrorErrors',
@@ -72949,7 +73213,7 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
     'mockingServiceClient',
     '$q',
     'ramlEditorMainHelpers',
-    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, ramlWorker, ramlRepository, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q, ramlEditorMainHelpers) {
+    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, ramlParser, ramlRepository, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q, ramlEditorMainHelpers) {
       var editor, lineOfCurrentError, currentFile;
       function extractCurrentFileLabel(file) {
         var label = '';
@@ -73035,28 +73299,30 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
         $scope.fileParsable = $scope.getIsFileParsable(selectedFile);
         updateFile();
       };
-      $scope.loadRaml = function loadRaml(definition, path) {
-        return ramlWorker.ramlParse({
-          path: path,
-          contents: definition
+      $scope.loadRaml = function loadRaml(definition, location) {
+        return ramlParser.loadPath(location, function contentAsync(path) {
+          var file = ramlRepository.getByPath(path);
+          if (file) {
+            return (file.loaded ? $q.when(file) : ramlRepository.loadFile({ path: path })).then(function (file) {
+              return file.contents;
+            });
+            ;
+          }
+          return $q.reject('ramlEditorMain: loadRaml: contentAsync: ' + path + ': no such path');
         }).then(function (raml) {
           return ramlEditorMainHelpers.isApiDefinitionLike(definition) ? raml : null;
         });
+        ;
       };
       $scope.clearErrorMarks = function clearErrorMarks() {
         codeMirrorErrors.clearAnnotations();
         $scope.hasErrors = false;
         $scope.currentErrorCount = 0;
         $scope.currentWarningCount = 0;
-        if (!currentFile || !$scope.fileParsable || currentFile.doc.getValue().trim() === '') {
-          $scope.currentError = undefined;
-          lineOfCurrentError = undefined;
-        }
       };
-      var parseTimer;
-      $scope.parsing = 0;
       $scope.$on('event:file-updated', function onFileUpdated() {
         $scope.clearErrorMarks();
+<<<<<<< HEAD
         $timeout.cancel(parseTimer);
         parseTimer = $timeout(function defer() {
           $scope.clearErrorMarks();
@@ -73093,9 +73359,36 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
             }
           }));
         }, 700);
+=======
+        var file = $scope.fileBrowser.selectedFile;
+        if (!file || !$scope.fileParsable || file.contents.trim() === '') {
+          $scope.currentError = undefined;
+          lineOfCurrentError = undefined;
+          return;
+        }
+        $scope.loadRaml(file.contents, file.path).then(safeApplyWrapper($scope, function completeParse(api) {
+          var issues = api.errors;
+          // errors and warnings
+          if (issues && issues.length > 0) {
+            $rootScope.$broadcast('event:raml-parser-error', issues);
+            $scope.currentWarningCount = issues.reduce(function (count, issue) {
+              return issue.isWarning ? count + 1 : count;
+            }, 0);
+            $scope.currentErrorCount = issues.reduce(function (count, issue) {
+              return !issue.isWarning ? count + 1 : count;
+            }, 0);
+          }
+          if ($scope.currentErrorCount === 0) {
+            var raml = api.specification;
+            $scope.fileBrowser.selectedFile.raml = raml;
+            $rootScope.$broadcast('event:raml-parsed', raml);
+          }
+        }), safeApplyWrapper($scope, function failureParse(error) {
+          $rootScope.$broadcast('event:raml-parser-error', error.parserErrors || error);
+        }));
+>>>>>>> parent of 5867a59... Permonce inprovements: move parse to web worker, avoid console and shelf render when closed
       });
       $scope.$on('event:raml-parsed', safeApplyWrapper($scope, function onRamlParser(event, raml) {
-        $scope.fileBrowser.selectedFile.raml = raml;
         $scope.raml = raml;
         $scope.title = raml && raml.title;
         $scope.version = raml && raml.version;
@@ -73197,10 +73490,16 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
         return ramlEditorMainHelpers.isRamlFile(file.extension) && ramlEditorMainHelpers.isApiDefinitionLike(file.contents);
       };
       $scope.getIsMockingServiceVisible = function getIsMockingServiceVisible() {
-        return !($scope.mockingServiceDisabled || !$scope.fileParsable);
+        if ($scope.mockingServiceDisabled || !$scope.fileParsable) {
+          return false;
+        }
+        return true;
       };
       $scope.getIsShelfVisible = function getIsShelfVisible() {
-        return $scope.fileParsable;
+        if (!$scope.fileParsable) {
+          return false;
+        }
+        return true;
       };
       $scope.getIsConsoleVisible = function getIsConsoleVisible() {
         return $scope.fileParsable && $scope.raml;
@@ -73210,26 +73509,13 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
         config.set('shelf.collapsed', $scope.shelf.collapsed);
       };
       $scope.getSelectedFileAbsolutePath = function getSelectedFileAbsolutePath() {
-        if (!currentFile) {
-          return '';
+        var result = extractCurrentFileLabel(currentFile);
+        if ($scope.currentErrorCount) {
+          result += ' (' + $scope.currentErrorCount + ' ' + ($scope.currentErrorCount > 1 ? 'errors' : 'error') + ')';
+        } else if ($scope.currentWarningCount) {
+          result += ' (' + $scope.currentWarningCount + ' ' + ($scope.currentWarningCount > 1 ? 'warnings' : 'warning') + ')';
         }
-        var status = '';
-        if ($scope.fileParsable) {
-          if ($scope.parsing > 0) {
-            status = 'parsing...';
-          } else if ($scope.currentErrorCount || $scope.currentWarningCount) {
-            if ($scope.currentErrorCount) {
-              status += $scope.currentErrorCount + ' ' + ($scope.currentErrorCount > 1 ? 'errors' : 'error');
-            }
-            if ($scope.currentErrorCount && $scope.currentWarningCount) {
-              status += ', ';
-            }
-            if ($scope.currentWarningCount) {
-              status += $scope.currentWarningCount + ' ' + ($scope.currentWarningCount > 1 ? 'warnings' : 'warning');
-            }
-          }
-        }
-        return extractCurrentFileLabel(currentFile) + (!status ? '' : ' (' + status + ')');
+        return result;
       };
       $scope.$on('event:toggle-theme', function onToggleTheme() {
         $window.setTheme($scope.theme === 'dark' ? 'light' : 'dark');
@@ -73383,11 +73669,7 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
         $scope.$digest();
       }
       $scope.cursorMoved = safeApplyWrapper(null, function cursorMoved() {
-        if ($scope.shelf.collapsed) {
-          $scope.model = [];
-        } else {
-          newSuggestions($scope.homeDirectory, $scope.fileBrowser.selectedFile, editor).then(updateModel);
-        }
+        newSuggestions($scope.homeDirectory, $scope.fileBrowser.selectedFile, editor).then(updateModel);
       });
       $scope.orderSections = function orderSections(section) {
         var index = [
@@ -73694,6 +73976,7 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
          * means collapse target is shown
          */
       function toggleCollapseTarget(splitter, collapse) {
+        collapse = arguments.length > 1 ? collapse : !loadIsCollapsed(splitter);
         splitter.toggleClass('collapsed', collapse);
         getCollapseTargetEl(splitter).toggleClass('hide-display', collapse);
         saveIsCollapsed(splitter, collapse);
@@ -73715,7 +73998,6 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
           // from last session
           resizeCollapseTarget(splitter, lastSize);
           toggleCollapseTarget(splitter, lastCollapsed);
-          scope['splitterCollapsed_' + splitter.attr('id')] = lastCollapsed;
           // Configure UI events
           splitter.on('mousedown', function onMouseDown(event) {
             // Only respond to left mouse button
@@ -73740,9 +74022,6 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
               // that reason we compare current state with last one
               if (collapsed !== lastCollapsed) {
                 toggleCollapseTarget(splitter, collapsed);
-                scope.$apply(function toogleCollapseState() {
-                  scope['splitterCollapsed_' + splitter.attr('id')] = collapsed;
-                });
               }
               lastPos = event[posAttr];
               lastCollapsed = collapsed;
@@ -73757,9 +74036,6 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
                 // when users try to expand it in current or next session
                 toggleCollapseTarget(splitter, true);
                 resizeCollapseTarget(splitter, lastSize);
-                scope.$apply(function toogleCollapseState() {
-                  scope['splitterCollapsed_' + splitter.attr('id')] = true;
-                });
               } else {
                 saveSize(splitter, sizeAttr);
               }
@@ -73775,11 +74051,7 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
           splitter.children('.split').on('mouseup', function onClick() {
             // Need to make sure that the user is clicking, not dragging:
             if (!userIsDragging) {
-              var collapsed = !loadIsCollapsed(splitter);
-              toggleCollapseTarget(splitter, collapsed);
-              scope.$apply(function toogleCollapseState() {
-                scope['splitterCollapsed_' + splitter.attr('id')] = collapsed;
-              });
+              toggleCollapseTarget(splitter);
               userIsDragging = true;
               isActive = false;
             }
@@ -74044,7 +74316,7 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
             }, 0);
           }
           function close(e) {
-            if (e && e.target.firstChild.nodeValue && e.target.firstChild.nodeValue.match('New File')) {
+            if (e && e.target.firstChild.nodeValue.match('New File')) {
               return;
             }
             scroll.enable();
@@ -75067,7 +75339,7 @@ angular.module('ramlEditorApp').run([
     $templateCache.put('views/new-name-modal.html', '<form name="form" novalidate ng-submit="submit(form)">\n' + '  <div class="modal-header">\n' + '    <h3>{{input.title}}</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    <!-- name -->\n' + '    <div class="form-group" ng-class="{\'has-error\': form.$submitted && form.name.$invalid}">\n' + '      <p>\n' + '        {{input.message}}\n' + '      </p>\n' + '      <p ng-if="input.link">\n' + '        Learn more\n' + '        <a target="_blank" href="{{input.link}}">\n' + '          <i class="fa fa-external-link"></i>\n' + '        </a>\n' + '      </p>\n' + '      <!-- label -->\n' + '      <label for="name" class="control-label required-field-label">Name</label>\n' + '\n' + '      <!-- input -->\n' + '      <input id="name" name="name" type="text"\n' + '             ng-model="input.newName" class="form-control"\n' + '             ng-validate="isValid($value)"\n' + '             ng-maxlength="64" ng-auto-focus="true" value="{{input.suggestedName}}" required>\n' + '\n' + '      <!-- error -->\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.required">Please provide a name.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.maxlength">Name must be shorter than 64 characters.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.validate">{{validationErrorMessage}}</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n' + '    <button type="submit" class="btn btn-primary">OK</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/raml-editor-context-menu.tmpl.html', '<ul role="context-menu" ng-show="opened">\n' + '  <li role="context-menu-item" ng-mouseenter="openFileMenu(action)" ng-mouseleave="closeFileMenu()" ng-repeat="action in actions" ng-click="action.execute()">\n' + '    {{ action.label }}\n' + '    <i class="submenu-icon fa fa-caret-right" ng-if="action.fragments !== undefined"></i>\n' + '    <raml-editor-new-file-menu ng-if="action.fragments !== undefined" target="target" show-file-menu="showFileMenu" show-fragment-menu="showFragmentMenu" open-file-menu-condition="showFragmentMenu" menu-role="context-menu"></raml-editor-new-file-menu>\n' + '  </li>\n' + '</ul>\n');
     $templateCache.put('views/raml-editor-file-browser.tmpl.html', '<raml-editor-context-menu></raml-editor-context-menu>\n' + '\n' + '<script type="text/ng-template" id="file-item.html">\n' + '  <div ui-tree-handle class="file-item" ng-right-click="fileBrowser.showContextMenu($event, node)" ng-click="fileBrowser.select(node)"\n' + '    ng-class="{currentfile: fileBrowser.currentTarget.path === node.path && !isDragging,\n' + '      dirty: node.dirty,\n' + '      geared: fileBrowser.contextMenuOpenedFor(node),\n' + '      directory: node.isDirectory,\n' + '      \'no-drop\': fileBrowser.cursorState === \'no\',\n' + '      copy: fileBrowser.cursorState === \'ok\'}"\n' + '    ng-drop="node.isDirectory && fileBrowser.dropFile($event, node)">\n' + '    <span class="file-name" ng-click="toggleFolderCollapse(node)">\n' + '      <i class="fa icon fa-caret-right fa-fw" ng-if="node.isDirectory" ng-class="{\'fa-rotate-90\': !collapsed}"></i>\n' + '      <i class="fa icon fa-fw" ng-class="{\'fa-folder-o\': node.isDirectory, \'fa-file-text-o\': !node.isDirectory}"></i>\n' + '      &nbsp;{{node.name}}\n' + '    </span>\n' + '    <i class="fa fa-cog" ng-click="fileBrowser.showContextMenu($event, node)" ng-class="{hidden: isDragging}" data-nodrag></i>\n' + '  </div>\n' + '\n' + '  <ul ui-tree-nodes ng-if="node.isDirectory" ng-class="{hidden: collapsed}" ng-model="node.children">\n' + '    <li ui-tree-node ng-repeat="node in node.children" ng-include="\'file-item.html\'" data-collapsed="node.collapsed" data-path="{{node.path}}">\n' + '    </li>\n' + '  </ul>\n' + '</script>\n' + '\n' + '<div ui-tree="fileTreeOptions" ng-model="homeDirectory" class="file-list" data-drag-delay="300" data-empty-place-holder-enabled="false" ng-drop="fileBrowser.dropFile($event, homeDirectory)" ng-right-click="fileBrowser.showContextMenu($event, homeDirectory)">\n' + '  <ul ui-tree-nodes ng-model="homeDirectory.children" id="tree-root">\n' + '    <ui-tree-dummy-node class="top"></ui-tree-dummy-node>\n' + '    <li ui-tree-node ng-repeat="node in homeDirectory.children" ng-include="\'file-item.html\'" data-collapsed="node.collapsed"\n' + '     data-path="{{node.path}}"\n' + '     ng-drag-enter="node.collapsed = false"\n' + '     ng-drag-leave="node.collapsed = true"></li>\n' + '    <ui-tree-dummy-node class="bottom" ng-click="fileBrowser.select(homeDirectory)"></ui-tree-dummy-node>\n' + '  </ul>\n' + '</div>\n');
-    $templateCache.put('views/raml-editor-main.tmpl.html', '<div role="raml-editor" class="{{theme}}">\n' + '  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications, error: level === \'error\'}">\n' + '    {{message}}\n' + '    <i class="fa" ng-class="{\'fa-check\': level === \'info\', \'fa-warning\': level === \'error\'}" ng-click="hideNotifications()"></i>\n' + '  </div>\n' + '\n' + '  <header>\n' + '    <h1>\n' + '      <strong>API</strong> Designer\n' + '    </h1>\n' + '\n' + '    <a role="logo" target="_blank" href="http://mulesoft.com"></a>\n' + '  </header>\n' + '\n' + '  <ul class="menubar">\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-project-button></raml-editor-project-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-view-button></raml-editor-view-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-help-button></raml-editor-help-button>\n' + '    </li>\n' + '    <li class="spacer file-absolute-path">{{getSelectedFileAbsolutePath()}}</li>\n' + '    <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">\n' + '      <div class="title">Mocking Service</div>\n' + '      <div class="field-wrapper" ng-class="{loading: loading}">\n' + '        <i class="fa fa-spin fa-spinner" ng-if="loading"></i>\n' + '        <div class="field" ng-if="!loading">\n' + '          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />\n' + '          <label for="mockingServiceEnabled"></label>\n' + '        </div>\n' + '      </div>\n' + '    </li>\n' + '  </ul>\n' + '\n' + '  <div role="flexColumns">\n' + '    <raml-editor-file-browser role="browser"></raml-editor-file-browser>\n' + '\n' + '    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev"><div class="split split-left">&nbsp;</div></div>\n' + '\n' + '    <div role="editor" ng-class="{error: currentError}">\n' + '      <div id="code" role="code"></div>\n' + '\n' + '      <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">\n' + '        <div role="shelf-tab" ng-click="toggleShelf()">\n' + '          <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? \'fa-caret-up\' : \'fa-caret-down\'"></i>\n' + '        </div>\n' + '\n' + '        <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="\'views/raml-editor-shelf.tmpl.html\'"></div>\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="470"><div class="split split-right">&nbsp;</div></div>\n' + '\n' + '    <div ng-show="getIsConsoleVisible()" role="preview-wrapper" class="raml-console-embedded">\n' + '      <div ng-if="!splitterCollapsed_consoleAndEditor && getIsConsoleVisible()">\n' + '        <raml-console raml="raml"\n' + '            options="{ singleView: true, disableThemeSwitcher: true, disableRamlClientGenerator: true, disableTitle: true}"\n' + '            style="padding: 0; margin-top: 0;"></raml-console>\n' + '      </div>\n' + '    </div>\n' + '  </div>\n' + '</div>\n');
+    $templateCache.put('views/raml-editor-main.tmpl.html', '<div role="raml-editor" class="{{theme}}">\n' + '  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications, error: level === \'error\'}">\n' + '    {{message}}\n' + '    <i class="fa" ng-class="{\'fa-check\': level === \'info\', \'fa-warning\': level === \'error\'}" ng-click="hideNotifications()"></i>\n' + '  </div>\n' + '\n' + '  <header>\n' + '    <h1>\n' + '      <strong>API</strong> Designer\n' + '    </h1>\n' + '\n' + '    <a role="logo" target="_blank" href="http://mulesoft.com"></a>\n' + '  </header>\n' + '\n' + '  <ul class="menubar">\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-project-button></raml-editor-project-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-view-button></raml-editor-view-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-help-button></raml-editor-help-button>\n' + '    </li>\n' + '    <li class="spacer file-absolute-path">{{getSelectedFileAbsolutePath()}}</li>\n' + '    <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">\n' + '      <div class="title">Mocking Service</div>\n' + '      <div class="field-wrapper" ng-class="{loading: loading}">\n' + '        <i class="fa fa-spin fa-spinner" ng-if="loading"></i>\n' + '        <div class="field" ng-if="!loading">\n' + '          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />\n' + '          <label for="mockingServiceEnabled"></label>\n' + '        </div>\n' + '      </div>\n' + '    </li>\n' + '  </ul>\n' + '\n' + '  <div role="flexColumns">\n' + '    <raml-editor-file-browser role="browser"></raml-editor-file-browser>\n' + '\n' + '    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev"><div class="split split-left">&nbsp;</div></div>\n' + '\n' + '    <div role="editor" ng-class="{error: currentError}">\n' + '      <div id="code" role="code"></div>\n' + '\n' + '      <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">\n' + '        <div role="shelf-tab" ng-click="toggleShelf()">\n' + '          <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? \'fa-caret-up\' : \'fa-caret-down\'"></i>\n' + '        </div>\n' + '\n' + '        <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="\'views/raml-editor-shelf.tmpl.html\'"></div>\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="470"><div class="split split-right">&nbsp;</div></div>\n' + '\n' + '    <div ng-show="getIsConsoleVisible()" role="preview-wrapper" class="raml-console-embedded">\n' + '      <raml-console\n' + '        raml="raml"\n' + '        options="{\n' + '          singleView: true,\n' + '          disableThemeSwitcher: true,\n' + '          disableRamlClientGenerator: true,\n' + '          disableTitle: true\n' + '        }"\n' + '        style="padding: 0; margin-top: 0;"></raml-console>\n' + '    </div>\n' + '  </div>\n' + '</div>\n');
     $templateCache.put('views/raml-editor-shelf.tmpl.html', '<ul role="sections" ng-controller="ramlEditorShelf">\n' + '  <li role="section" ng-repeat="category in model.categories | orderBy:orderSections" class="{{category.name | dasherize}}">\n' + '    {{category.name}}&nbsp;({{category.items.length}})\n' + '    <ul role="items">\n' + '      <li ng-repeat="item in category.items" ng-click="itemClick(item)"><i class="fa fa-reply"></i><span>{{item.title}}</span></li>\n' + '    </ul>\n' + '  </li>\n' + '</ul>\n');
   }
 ]);

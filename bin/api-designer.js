@@ -3,7 +3,6 @@
 var join = require('path').join
 var express = require('express')
 var open = require('open')
-var request = require('request')
 
 var argv = require('yargs')
   .usage('Usage: $0 -p [num]')

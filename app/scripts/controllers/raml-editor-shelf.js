@@ -72,12 +72,8 @@
       }
 
       $scope.cursorMoved = safeApplyWrapper(null, function cursorMoved() {
-        if ($scope.shelf.collapsed) {
-          $scope.model = [];
-        } else {
-          newSuggestions($scope.homeDirectory, $scope.fileBrowser.selectedFile, editor)
-            .then(updateModel);
-        }
+        newSuggestions($scope.homeDirectory, $scope.fileBrowser.selectedFile, editor)
+          .then(updateModel);
       });
 
       $scope.orderSections = function orderSections(section) {

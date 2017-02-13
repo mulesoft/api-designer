@@ -241,13 +241,6 @@ module.exports = function (grunt) {
             cwd:    'bower_components/api-console/dist/img',
             src:    '*',
             dest:   '<%= yeoman.dist %>/img'
-          },
-
-          {
-            expand: true,
-            cwd:    '<%= yeoman.app %>/scripts/',
-            src:    'api-designer-worker.js',
-            dest:   '<%= yeoman.dist %>/scripts/'
           }
         ]
       }

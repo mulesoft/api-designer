@@ -36,27 +36,6 @@
         <raml-editor></raml-editor>
     </div>
 
-    <!-- build:js({.,.tmp,app}) scripts/api-designer-parser.js -->
-    <script src=".tmp/js-traverse/js-traverse.js"></script>
-    <script src="bower_components/raml-1-parser/raml-json-validation.js"></script>
-    <script src="bower_components/raml-1-parser/raml-xml-validation.js"></script>
-    <script src="bower_components/raml-1-parser/raml-1-parser.js"></script>
-    <!-- endbuild -->
-
-    <script>
-      (function(w) {
-        if (!w.Worker) return;
-
-        if (!w.RAML) w.RAML = {};
-        if (!w.RAML.Settings) w.RAML.Settings = {};
-        var settings = w.RAML.Settings;
-        if (!settings.bypassProxy) settings.bypassProxy = location.search.indexOf('bypassProxy=true') > -1;
-        settings.proxy = settings.bypassProxy ? '' : settings.proxy ? settings.proxy : '/proxy/';
-
-        w.apiDesignerWorker = new Worker('scripts/api-designer-worker.js?parser=/scripts/api-designer-parser.js&proxy=' + settings.proxy);
-      })(window);
-    </script>
-
     <!-- build:js({.,.tmp,app}) scripts/api-designer-vendor.js -->
     <!--
       jQuery has to go before AngularJS otherwise we'll end up with jqLite,
@@ -70,6 +49,10 @@
     <script src="bower_components/angular-ui-tree/dist/angular-ui-tree.js"></script>
     <script src="bower_components/angular-sanitize/angular-sanitize.js"></script>
     <script src="bower_components/es5-shim/es5-shim.js"></script>
+
+    <script src="bower_components/raml-1-parser/raml-json-validation.js"></script>
+    <script src="bower_components/raml-1-parser/raml-xml-validation.js"></script>
+    <script src="bower_components/raml-1-parser/raml-1-parser.js"></script>
 
     <script src="bower_components/resolve-url/resolve-url.js"></script>
     <script src="bower_components/jszip/jszip.js"></script>
@@ -102,6 +85,7 @@
     <!-- endbuild -->
 
     <!-- build:js({.,.tmp,app}) scripts/api-designer.js -->
+    <script src=".tmp/js-traverse/js-traverse.js"></script>
     <script src=".tmp/raml-suggestions/raml-suggestions.js"></script>
     <script src=".tmp/oas-raml-converter/oas-raml-converter.js"></script>
 <<<<<<< HEAD
@@ -154,7 +138,6 @@
     <script src="scripts/services/oas-raml-converter.js"></script>
     <script src="scripts/services/js-traverse.js"></script>
     <script src="scripts/services/ref-parser.js"></script>
-    <script src="scripts/services/worker.js"></script>
     <script src="scripts/filters/string-filters.js"></script>
     <script src="scripts/controllers/raml-editor-main.js"></script>
     <script src="scripts/controllers/raml-editor-main-helpers.js"></script>
