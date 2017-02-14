@@ -224,6 +224,7 @@
       function ($q,
                 $window,
                 $rootScope,
+                $timeout,
                 ramlRepositoryConfig,
                 ramlRepositoryElements,
                 ramlSnippets,
@@ -592,6 +593,11 @@
             file.name = newName;
             file.path = newPath;
             $rootScope.$broadcast('event:raml-editor-filetree-modified', file);
+
+            // it may be out of $digest
+            $timeout(function () {
+              file.name = newName;
+            });
             return file;
           }
 

@@ -22,7 +22,7 @@
     function ($window, $location) {
       // Adding proxy settings for api console
       var disableProxy = $location.search().xDisableProxy === 'true';
-      $window.RAML.Settings.proxy = disableProxy ? '' : '/proxy/';
+      $window.RAML.Settings.proxy = disableProxy ? '' : $window.RAML.Settings.proxy || '/proxy/';
     }
   ]);
   ;
@@ -1922,11 +1922,12 @@ if (!window.Map) {
     '$q',
     '$window',
     '$rootScope',
+    '$timeout',
     'ramlRepositoryConfig',
     'ramlRepositoryElements',
     'ramlSnippets',
     'fileSystem',
-    function ($q, $window, $rootScope, ramlRepositoryConfig, ramlRepositoryElements, ramlSnippets, fileSystem) {
+    function ($q, $window, $rootScope, $timeout, ramlRepositoryConfig, ramlRepositoryElements, ramlSnippets, fileSystem) {
       var RamlDirectory = ramlRepositoryElements.RamlDirectory;
       var RamlFile = ramlRepositoryElements.RamlFile;
       var sortingFunction = ramlRepositoryElements.sortingFunction;
@@ -2128,7 +2129,7 @@ if (!window.Map) {
         }, handleErrorFor(directory));
       };
       service.saveFile = function saveFile(file) {
-        return service.saveAndUpdate([file], file, ramlRepositoryConfig.reloadFilesOnSave);
+        return file.path.slice(-5) !== '.meta' ? service.saveAndUpdate([file], file, ramlRepositoryConfig.reloadFilesOnSave) : service.saveAndUpdate([file], file, false);
       };
       service.saveAllFiles = function saveAllFiles(currentFile) {
         var filesToBeSaved = this.rootFile.listAllDescendants().filter(function (element) {
@@ -2206,6 +2207,10 @@ if (!window.Map) {
           file.name = newName;
           file.path = newPath;
           $rootScope.$broadcast('event:raml-editor-filetree-modified', file);
+          // it may be out of $digest
+          $timeout(function () {
+            file.name = newName;
+          });
           return file;
         }
         return promise.then(modifyFile, handleErrorFor(file));
