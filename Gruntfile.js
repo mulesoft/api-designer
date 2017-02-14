@@ -423,8 +423,8 @@ module.exports = function (grunt) {
 
   grunt.registerTask('test', [
     'jshint-once',
-    'ngtemplates'
-    //'karma'
+    'ngtemplates',
+    'karma'
   ]);
 
   grunt.registerTask('localScenario', [
