@@ -1920,12 +1920,13 @@ if (!window.Map) {
     };
   }).factory('ramlRepository', [
     '$q',
+    '$window',
     '$rootScope',
     'ramlRepositoryConfig',
     'ramlRepositoryElements',
     'ramlSnippets',
     'fileSystem',
-    function ($q, $rootScope, ramlRepositoryConfig, ramlRepositoryElements, ramlSnippets, fileSystem) {
+    function ($q, $window, $rootScope, ramlRepositoryConfig, ramlRepositoryElements, ramlSnippets, fileSystem) {
       var RamlDirectory = ramlRepositoryElements.RamlDirectory;
       var RamlFile = ramlRepositoryElements.RamlFile;
       var sortingFunction = ramlRepositoryElements.sortingFunction;
@@ -2001,8 +2002,35 @@ if (!window.Map) {
       service.canExport = function canExport() {
         return fileSystem.hasOwnProperty('exportFiles');
       };
-      service.exportFiles = function exportFiles() {
-        return fileSystem.exportFiles();
+      service.exportFiles = function exportFiles(zipName) {
+        if (service.canExport()) {
+          return fileSystem.exportFiles();
+        }
+        function exportFile(file, jszip) {
+          return (file.loaded ? $q.when(file) : service.loadFile(file)).then(function (f) {
+            jszip.file(f.path, f.contents);
+          });
+        }
+        function exportDirectory(directory, jszip) {
+          jszip.folder(directory.path);
+          var promises = [];
+          for (var i = 0; i < directory.children.length; i++) {
+            var child = directory.children[i];
+            if (child.isDirectory) {
+              promises.concat(exportDirectory(child, jszip));
+            } else if (child.name.slice(-5) !== '.meta') {
+              // Skip meta files
+              promises.push(exportFile(child, jszip));
+            }
+          }
+          return promises;
+        }
+        var rootDirectory = service.getByPath('/');
+        var jszip = new $window.JSZip();
+        var promises = exportDirectory(rootDirectory, jszip);
+        $q.all(promises).then(function () {
+          $window.saveAs(jszip.generate({ type: 'blob' }), zipName || 'api.zip');
+        });
       };
       service.createDirectory = function createDirectory(parent, name) {
         var path = service.join(parent.path, name);
