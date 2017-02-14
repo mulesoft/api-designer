@@ -491,7 +491,9 @@
         };
 
         service.saveFile = function saveFile(file) {
-          return service.saveAndUpdate([file], file, ramlRepositoryConfig.reloadFilesOnSave);
+          return file.path.slice(-5) !== '.meta' ?
+            service.saveAndUpdate([file], file, ramlRepositoryConfig.reloadFilesOnSave) :
+            service.saveAndUpdate([file], file, false);
         };
 
         service.saveAllFiles = function saveAllFiles(currentFile) {
