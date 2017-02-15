@@ -5761,7 +5761,8 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
         restrict: 'E',
         templateUrl: 'views/menu/export-menu.tmpl.html',
         link: function (scope) {
-          scope.xOasExport = scope.xOasExport || $location.search().xOasExport === 'true';
+          scope.xOasExport = scope.xOasExport || true;
+          //$location.search().xOasExport === 'true';
           function saveFile(yaml, name) {
             var blob = new Blob([yaml], { type: 'application/json;charset=utf-8' });
             $window.saveAs(blob, name);
