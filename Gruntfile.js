@@ -241,6 +241,13 @@ module.exports = function (grunt) {
             cwd:    'bower_components/api-console/dist/img',
             src:    '*',
             dest:   '<%= yeoman.dist %>/img'
+          },
+
+          {
+            expand: true,
+            cwd:    '<%= yeoman.app %>/scripts/',
+            src:    'api-designer-worker.js',
+            dest:   '<%= yeoman.dist %>/scripts/'
           }
         ]
       }
@@ -264,6 +271,8 @@ module.exports = function (grunt) {
     uglify: {
       dist: {
         files: {
+          '<%= yeoman.dist %>/scripts/api-designer-parser.min.js': '<%= yeoman.dist %>/scripts/api-designer-parser.js',
+          '<%= yeoman.dist %>/scripts/api-designer-worker.min.js': '<%= yeoman.dist %>/scripts/api-designer-worker.js',
           '<%= yeoman.dist %>/scripts/api-designer.min.js':        '<%= yeoman.dist %>/scripts/api-designer.js',
           '<%= yeoman.dist %>/scripts/api-designer-vendor.min.js': '<%= yeoman.dist %>/scripts/api-designer-vendor.js'
         }

@@ -52,5 +52,5 @@ app.use('/proxy', function (req, res, next) {
 app.listen(argv.p, function () {
   console.log('API designer running on port ' + argv.p + '...')
 
-  open('http://localhost:' + argv.p)
+  open('http://localhost:' + argv.p + '/')
 })

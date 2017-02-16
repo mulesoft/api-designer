@@ -397,7 +397,7 @@ describe('RAML Editor Main Controller', function () {
       };
     });
 
-    it('error should be traced in files including it', function () {
+    it.skip('error should be traced in files including it', function () {
       ctrl = $controller('ramlEditorMain', params);
 
       sinon.stub(ramlRepository, 'getByPath', function (path) {

@@ -46,7 +46,7 @@ var FSResolver = function (homeDirectory, ramlRepository) {
     }
 
     var getFileContent = function (file) { return file.contents; };
-    return ramlRepository.loadFile(file)
+    return ramlRepository.loadFile(file, true)
       .then(getFileContent);
   };
 
@@ -66,7 +66,7 @@ var FSResolver = function (homeDirectory, ramlRepository) {
 
   this.listAsync = function(path){ return Promise.resolve(this.list(path)); };
 
-  this.exists = function(path) { return this.getElement(path)? true : false; };
+  this.exists = function(path) { return !!this.getElement(path); };
 
   this.existsAsync = function(path) { return Promise.resolve(this.exists(path)); };
 
@@ -96,7 +96,7 @@ var FSResolver = function (homeDirectory, ramlRepository) {
 
   this.isDirectory = function (path) {
     var element = this.getElement(path);
-    return element && element.isDirectory ? true : false;
+    return !!(element && element.isDirectory);
   };
 
   this.isDirectoryAsync = function (path) { return Promise.resolve(this.isDirectory(path)); };
