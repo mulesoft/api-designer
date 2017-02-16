@@ -71687,13 +71687,17 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
   'ramlRepository',
   'ramlParser',
   '$q',
-  function (ramlRepository, ramlParser, $q) {
+  '$window',
+  function (ramlRepository, ramlParser, $q, $window) {
+    // default parse method on same thread
     var ramlParse = function oldParse(data) {
       return ramlParser.loadPath(data.path, function contentAsync(path) {
         return ramlRepository.getContentByPath(path);
       });
     };
-    if (window.apiDesignerWorker) {
+    // use worker if available
+    var worker = $window.RAML.worker;
+    if (worker) {
       var currentParse = null;
       var parsingPending = null;
       ramlParse = function ramlParse(data) {
@@ -71731,14 +71735,14 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
         }
       };
       var _listen = function _listen(type, fn) {
-        apiDesignerWorker.addEventListener('message', function workerMessage(e) {
+        worker.addEventListener('message', function workerMessage(e) {
           if (e.data.type === type) {
             fn(e.data.payload);
           }
         }, false);
       };
       var _post = function _post(type, payload) {
-        apiDesignerWorker.postMessage({
+        worker.postMessage({
           type: type,
           payload: payload
         });
@@ -71747,14 +71751,14 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
         var deferred = $q.defer();
         const listener = function postListener(e) {
           if (e.data.type === type + '-resolve') {
-            apiDesignerWorker.removeEventListener('message', listener, false);
+            worker.removeEventListener('message', listener, false);
             deferred.resolve(e.data.payload);
           } else if (e.data.type === type + '-reject') {
-            apiDesignerWorker.removeEventListener('message', listener, false);
+            worker.removeEventListener('message', listener, false);
             deferred.reject(e.data.payload);
           }
         };
-        apiDesignerWorker.addEventListener('message', listener, false);
+        worker.addEventListener('message', listener, false);
         _post(type, payload);
         return deferred.promise;
       };
