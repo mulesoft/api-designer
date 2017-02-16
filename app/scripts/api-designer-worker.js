@@ -235,20 +235,28 @@ var listen = function (type, fn) {
   }, false);
 };
 
+var postReject = function (type, error) {
+  console.timeEnd(type);
+  // js exceptions cant be serialized as normal strings, so just post the error message in that case
+  var serializableError = error.stack ? {message: error.message} : error;
+  return post(type + '-reject', serializableError);
+};
+
 var listenThenPost = function (type, fn) {
   listen(type, function (data) {
     console.time(type);
-    fn(data)
-      .then(function (result) {
-        console.timeEnd(type);
-        return post(type + '-resolve', result);
-      })
-      .catch(function (error) {
-        console.timeEnd(type);
-        // js exceptions cant be serialized as normal strings, so just post the error message in that case
-        var serializableError = error.stack ? {message: error.message} : error;
-        return post(type + '-reject', serializableError);
-      });
+    try {
+      fn(data)
+        .then(function (result) {
+          console.timeEnd(type);
+          return post(type + '-resolve', result);
+        })
+        .catch(function(error) {
+          postReject(type, error);
+        });
+    } catch (e) {
+      postReject(type, e);
+    }
   });
 };
 
