@@ -82,22 +82,14 @@
     <script src="bower_components/vkbeautify/vkbeautify.js"></script>
     <script src="bower_components/crypto-js/rollups/hmac-sha1.js"></script>
     <script src="bower_components/crypto-js/components/enc-base64.js"></script>
-
-    <script src="vendor/scripts/codemirror.js"></script>
+    <script src="bower_components/codemirror/lib/codemirror.js"></script>
+    <script src="bower_components/codemirror/mode/javascript/javascript.js"></script>
+    <script src="bower_components/codemirror/mode/xml/xml.js"></script>
     <script src="bower_components/codemirror/mode/yaml/yaml.js"></script>
     <script src="bower_components/codemirror/addon/dialog/dialog.js"></script>
     <script src="bower_components/codemirror/addon/search/search.js"></script>
     <script src="bower_components/codemirror/addon/search/searchcursor.js"></script>
     <script src="bower_components/codemirror/addon/lint/lint.js"></script>
-    <script src="vendor/scripts/foldcode.js"></script>
-    <script src="vendor/scripts/foldgutter.js"></script>
-    <script src="vendor/scripts/gfm.js"></script>
-    <script src="vendor/scripts/javascript.js"></script>
-    <script src="vendor/scripts/markdown.js"></script>
-    <script src="vendor/scripts/overlay.js"></script>
-    <script src="vendor/scripts/show-hint.js"></script>
-    <script src="vendor/scripts/xml.js"></script>
-
     <script src="bower_components/angular-ui-codemirror/ui-codemirror.js"></script>
     <script src="bower_components/angular-marked/angular-marked.js"></script>
     <script src="bower_components/angular-highlightjs/angular-highlightjs.js"></script>
@@ -107,12 +99,22 @@
     <script src="bower_components/api-console/dist/scripts/api-console.js"></script>
     <script src="bower_components/file-saver.js/FileSaver.js"></script>
     <script src="bower_components/json-schema-ref-parser/dist/ref-parser.js"></script>
-
-    <script src=".tmp/raml-suggestions/raml-suggestions.js"></script>
-    <script src=".tmp/oas-raml-converter/oas-raml-converter.js"></script>
     <!-- endbuild -->
 
     <!-- build:js({.,.tmp,app}) scripts/api-designer.js -->
+    <script src=".tmp/raml-suggestions/raml-suggestions.js"></script>
+    <script src=".tmp/oas-raml-converter/oas-raml-converter.js"></script>
+
+    <script src="vendor/scripts/codemirror.js"></script>
+    <script src="vendor/scripts/foldcode.js"></script>
+    <script src="vendor/scripts/foldgutter.js"></script>
+    <script src="vendor/scripts/gfm.js"></script>
+    <script src="vendor/scripts/javascript.js"></script>
+    <script src="vendor/scripts/markdown.js"></script>
+    <script src="vendor/scripts/overlay.js"></script>
+    <script src="vendor/scripts/show-hint.js"></script>
+    <script src="vendor/scripts/xml.js"></script>
+
     <script src="scripts/app.js"></script>
     <script src="scripts/polyfills/array-polyfills.js"></script>
     <script src="scripts/polyfills/string-polyfills.js"></script>
