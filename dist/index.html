@@ -16,19 +16,17 @@
         <raml-editor></raml-editor>
     </div>
 
-    <script src="scripts/api-designer-parser.js"></script>
+    <script src="scripts/api-designer-parser.min.js"></script>
 
     <script>
-      (function(w) {
+      (function (w) {
         if (!w.Worker) return;
-
-        if (!w.RAML) w.RAML = {};
-        if (!w.RAML.Settings) w.RAML.Settings = {};
-        var settings = w.RAML.Settings;
-        if (!settings.bypassProxy) settings.bypassProxy = location.search.indexOf('bypassProxy=true') > -1;
-        settings.proxy = settings.bypassProxy ? '' : settings.proxy ? settings.proxy : '/proxy/';
-
-        w.apiDesignerWorker = new Worker('scripts/api-designer-worker.js#parser=./api-designer-parser.js&proxy=' + settings.proxy);
+        var proxy = location.search.indexOf('bypassProxy=true') > -1 ? '' : '/proxy/';
+        try {
+          w.RAML.worker = new Worker('scripts/api-designer-worker.min.js#parser=./api-designer-parser.min.js&proxy=' + proxy);
+        } catch (e) {
+          console.error('Failed to create worker, defaulting to main thread', e);
+        }
       })(window);
     </script>
 
