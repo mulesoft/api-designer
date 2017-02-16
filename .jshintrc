@@ -39,7 +39,6 @@
     "getEditor": false,
     "inject": false,
     "it": false,
-    "jasmine": false,
     "mock": false,
     "promise": false,
     "prompt": false,
@@ -48,6 +47,8 @@
     "should": false,
     "sinon": false,
     "xdescribe": false,
-    "xit": false
+    "xit": false,
+    "self": false,
+    "jsTraverse": false
   }
 }

@@ -225,10 +225,10 @@
     /**
      * Loads the content of a file.
      */
-    service.load = function (path) {
+    service.load = function (path, nativeTimeout) {
       var deferred = $q.defer();
 
-      $timeout(function () {
+      (nativeTimeout ? setTimeout : $timeout)(function () {
 
         var entry = localStorageHelper.get(path);
         if (entry && entry.type === 'file') {

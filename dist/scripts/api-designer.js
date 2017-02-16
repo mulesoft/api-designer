@@ -1,347 +1,3 @@
-(function (f) {
-  if (typeof exports === 'object' && typeof module !== 'undefined') {
-    module.exports = f();
-  } else if (typeof define === 'function' && define.amd) {
-    define([], f);
-  } else {
-    var g;
-    if (typeof window !== 'undefined') {
-      g = window;
-    } else if (typeof global !== 'undefined') {
-      g = global;
-    } else if (typeof self !== 'undefined') {
-      g = self;
-    } else {
-      g = this;
-    }
-    (g.jsTraverse || (g.jsTraverse = {})).traverse = f();
-  }
-}(function () {
-  var define, module, exports;
-  return function e(t, n, r) {
-    function s(o, u) {
-      if (!n[o]) {
-        if (!t[o]) {
-          var a = typeof require == 'function' && require;
-          if (!u && a)
-            return a(o, !0);
-          if (i)
-            return i(o, !0);
-          var f = new Error('Cannot find module \'' + o + '\'');
-          throw f.code = 'MODULE_NOT_FOUND', f;
-        }
-        var l = n[o] = { exports: {} };
-        t[o][0].call(l.exports, function (e) {
-          var n = t[o][1][e];
-          return s(n ? n : e);
-        }, l, l.exports, e, t, n, r);
-      }
-      return n[o].exports;
-    }
-    var i = typeof require == 'function' && require;
-    for (var o = 0; o < r.length; o++)
-      s(r[o]);
-    return s;
-  }({
-    1: [
-      function (require, module, exports) {
-        var traverse = module.exports = function (obj) {
-            return new Traverse(obj);
-          };
-        function Traverse(obj) {
-          this.value = obj;
-        }
-        Traverse.prototype.get = function (ps) {
-          var node = this.value;
-          for (var i = 0; i < ps.length; i++) {
-            var key = ps[i];
-            if (!node || !hasOwnProperty.call(node, key)) {
-              node = undefined;
-              break;
-            }
-            node = node[key];
-          }
-          return node;
-        };
-        Traverse.prototype.has = function (ps) {
-          var node = this.value;
-          for (var i = 0; i < ps.length; i++) {
-            var key = ps[i];
-            if (!node || !hasOwnProperty.call(node, key)) {
-              return false;
-            }
-            node = node[key];
-          }
-          return true;
-        };
-        Traverse.prototype.set = function (ps, value) {
-          var node = this.value;
-          for (var i = 0; i < ps.length - 1; i++) {
-            var key = ps[i];
-            if (!hasOwnProperty.call(node, key))
-              node[key] = {};
-            node = node[key];
-          }
-          node[ps[i]] = value;
-          return value;
-        };
-        Traverse.prototype.map = function (cb) {
-          return walk(this.value, cb, true);
-        };
-        Traverse.prototype.forEach = function (cb) {
-          this.value = walk(this.value, cb, false);
-          return this.value;
-        };
-        Traverse.prototype.reduce = function (cb, init) {
-          var skip = arguments.length === 1;
-          var acc = skip ? this.value : init;
-          this.forEach(function (x) {
-            if (!this.isRoot || !skip) {
-              acc = cb.call(this, acc, x);
-            }
-          });
-          return acc;
-        };
-        Traverse.prototype.paths = function () {
-          var acc = [];
-          this.forEach(function (x) {
-            acc.push(this.path);
-          });
-          return acc;
-        };
-        Traverse.prototype.nodes = function () {
-          var acc = [];
-          this.forEach(function (x) {
-            acc.push(this.node);
-          });
-          return acc;
-        };
-        Traverse.prototype.clone = function () {
-          var parents = [], nodes = [];
-          return function clone(src) {
-            for (var i = 0; i < parents.length; i++) {
-              if (parents[i] === src) {
-                return nodes[i];
-              }
-            }
-            if (typeof src === 'object' && src !== null) {
-              var dst = copy(src);
-              parents.push(src);
-              nodes.push(dst);
-              forEach(objectKeys(src), function (key) {
-                dst[key] = clone(src[key]);
-              });
-              parents.pop();
-              nodes.pop();
-              return dst;
-            } else {
-              return src;
-            }
-          }(this.value);
-        };
-        function walk(root, cb, immutable) {
-          var path = [];
-          var parents = [];
-          var alive = true;
-          return function walker(node_) {
-            var node = immutable ? copy(node_) : node_;
-            var modifiers = {};
-            var keepGoing = true;
-            var state = {
-                node: node,
-                node_: node_,
-                path: [].concat(path),
-                parent: parents[parents.length - 1],
-                parents: parents,
-                key: path.slice(-1)[0],
-                isRoot: path.length === 0,
-                level: path.length,
-                circular: null,
-                update: function (x, stopHere) {
-                  if (!state.isRoot) {
-                    state.parent.node[state.key] = x;
-                  }
-                  state.node = x;
-                  if (stopHere)
-                    keepGoing = false;
-                },
-                'delete': function (stopHere) {
-                  delete state.parent.node[state.key];
-                  if (stopHere)
-                    keepGoing = false;
-                },
-                remove: function (stopHere) {
-                  if (isArray(state.parent.node)) {
-                    state.parent.node.splice(state.key, 1);
-                  } else {
-                    delete state.parent.node[state.key];
-                  }
-                  if (stopHere)
-                    keepGoing = false;
-                },
-                keys: null,
-                before: function (f) {
-                  modifiers.before = f;
-                },
-                after: function (f) {
-                  modifiers.after = f;
-                },
-                pre: function (f) {
-                  modifiers.pre = f;
-                },
-                post: function (f) {
-                  modifiers.post = f;
-                },
-                stop: function () {
-                  alive = false;
-                },
-                block: function () {
-                  keepGoing = false;
-                }
-              };
-            if (!alive)
-              return state;
-            function updateState() {
-              if (typeof state.node === 'object' && state.node !== null) {
-                if (!state.keys || state.node_ !== state.node) {
-                  state.keys = objectKeys(state.node);
-                }
-                state.isLeaf = state.keys.length == 0;
-                for (var i = 0; i < parents.length; i++) {
-                  if (parents[i].node_ === node_) {
-                    state.circular = parents[i];
-                    break;
-                  }
-                }
-              } else {
-                state.isLeaf = true;
-                state.keys = null;
-              }
-              state.notLeaf = !state.isLeaf;
-              state.notRoot = !state.isRoot;
-            }
-            updateState();
-            // use return values to update if defined
-            var ret = cb.call(state, state.node);
-            if (ret !== undefined && state.update)
-              state.update(ret);
-            if (modifiers.before)
-              modifiers.before.call(state, state.node);
-            if (!keepGoing)
-              return state;
-            if (typeof state.node == 'object' && state.node !== null && !state.circular) {
-              parents.push(state);
-              updateState();
-              forEach(state.keys, function (key, i) {
-                path.push(key);
-                if (modifiers.pre)
-                  modifiers.pre.call(state, state.node[key], key);
-                var child = walker(state.node[key]);
-                if (immutable && hasOwnProperty.call(state.node, key)) {
-                  state.node[key] = child.node;
-                }
-                child.isLast = i == state.keys.length - 1;
-                child.isFirst = i == 0;
-                if (modifiers.post)
-                  modifiers.post.call(state, child);
-                path.pop();
-              });
-              parents.pop();
-            }
-            if (modifiers.after)
-              modifiers.after.call(state, state.node);
-            return state;
-          }(root).node;
-        }
-        function copy(src) {
-          if (typeof src === 'object' && src !== null) {
-            var dst;
-            if (isArray(src)) {
-              dst = [];
-            } else if (isDate(src)) {
-              dst = new Date(src.getTime ? src.getTime() : src);
-            } else if (isRegExp(src)) {
-              dst = new RegExp(src);
-            } else if (isError(src)) {
-              dst = { message: src.message };
-            } else if (isBoolean(src)) {
-              dst = new Boolean(src);
-            } else if (isNumber(src)) {
-              dst = new Number(src);
-            } else if (isString(src)) {
-              dst = new String(src);
-            } else if (Object.create && Object.getPrototypeOf) {
-              dst = Object.create(Object.getPrototypeOf(src));
-            } else if (src.constructor === Object) {
-              dst = {};
-            } else {
-              var proto = src.constructor && src.constructor.prototype || src.__proto__ || {};
-              ;
-              var T = function () {
-              };
-              T.prototype = proto;
-              dst = new T();
-            }
-            forEach(objectKeys(src), function (key) {
-              dst[key] = src[key];
-            });
-            return dst;
-          } else
-            return src;
-        }
-        var objectKeys = Object.keys || function keys(obj) {
-            var res = [];
-            for (var key in obj)
-              res.push(key);
-            return res;
-          };
-        function toS(obj) {
-          return Object.prototype.toString.call(obj);
-        }
-        function isDate(obj) {
-          return toS(obj) === '[object Date]';
-        }
-        function isRegExp(obj) {
-          return toS(obj) === '[object RegExp]';
-        }
-        function isError(obj) {
-          return toS(obj) === '[object Error]';
-        }
-        function isBoolean(obj) {
-          return toS(obj) === '[object Boolean]';
-        }
-        function isNumber(obj) {
-          return toS(obj) === '[object Number]';
-        }
-        function isString(obj) {
-          return toS(obj) === '[object String]';
-        }
-        var isArray = Array.isArray || function isArray(xs) {
-            return Object.prototype.toString.call(xs) === '[object Array]';
-          };
-        var forEach = function (xs, fn) {
-          if (xs.forEach)
-            return xs.forEach(fn);
-          else
-            for (var i = 0; i < xs.length; i++) {
-              fn(xs[i], i, xs);
-            }
-        };
-        forEach(objectKeys(Traverse.prototype), function (key) {
-          traverse[key] = function (obj) {
-            var args = [].slice.call(arguments, 1);
-            var t = new Traverse(obj);
-            return t[key].apply(t, args);
-          };
-        });
-        var hasOwnProperty = Object.hasOwnProperty || function (obj, key) {
-            return key in obj;
-          };
-      },
-      {}
-    ]
-  }, {}, [1])(1);
-}));
 (function e(t, n, r) {
   function s(o, u) {
     if (!n[o]) {
@@ -1581,8 +1237,12 @@
         }();
       exports.CompletionRequest = CompletionRequest;
       var CompletionProvider = function () {
-          function CompletionProvider(contentProvider) {
+          function CompletionProvider(contentProvider, astProvider) {
+            if (astProvider === void 0) {
+              astProvider = null;
+            }
             this.currentRequest = null;
+            this.astProvider = null;
             this.level = 0;
             this.contentProvider = contentProvider;
           }
@@ -1606,9 +1266,12 @@
           return CompletionProvider;
         }();
       exports.CompletionProvider = CompletionProvider;
-      function suggest(editorState, fsProvider) {
+      function suggest(editorState, fsProvider, astProvider) {
+        if (astProvider === void 0) {
+          astProvider = null;
+        }
         var completionRequest = new CompletionRequest(editorState);
-        var completionProvider = new CompletionProvider(fsProvider);
+        var completionProvider = new CompletionProvider(fsProvider, astProvider);
         return completionProvider.suggest(completionRequest, true);
       }
       exports.suggest = suggest;
@@ -1654,7 +1317,11 @@
         return type.isAssignableFrom(defObject.name);
       }
       function doSuggest(request, provider) {
-        var result = getSuggestions(request, provider);
+        var preParsedAST = null;
+        if (provider.astProvider) {
+          preParsedAST = provider.astProvider.getASTRoot();
+        }
+        var result = getSuggestions(request, provider, preParsedAST);
         if (result)
           return result;
         return [];
@@ -2210,7 +1877,7 @@
       function pathPartCompletion(request, contentProvider, attr, hlNode, custom) {
         var prefix = request.valuePrefix();
         var dn = contentProvider.contentDirName(request.content);
-        var ll = contentProvider.resolve(dn, prefix);
+        var ll = contentProvider.resolve(dn, prefix.indexOf('/') === 0 ? '.' + prefix : prefix);
         var indexOfDot = ll.lastIndexOf('.');
         var indexOfSlash = ll.lastIndexOf('/');
         if (!(indexOfDot > 0 && (indexOfDot > indexOfSlash || indexOfSlash < 0))) {
@@ -2417,6 +2084,34 @@
         });
         return ok;
       }
+      /**
+ * Returns true if property should be left in the completion proposals, false if the property should be removed
+ * @param node
+ * @param property
+ * @param existing
+ */
+      function filterPropertyCompletion(node, property, existing) {
+        //basic filtering
+        if (!(!property.getAdapter(parserApi.ds.RAMLPropertyService).isKey() && !property.getAdapter(parserApi.ds.RAMLPropertyService).isMerged() && !property.getAdapter(services.RAMLPropertyService).isSystem())) {
+          return false;
+        }
+        //contextual filtering
+        if (!isAllowed(node, property)) {
+          return false;
+        }
+        //duplicate filtering
+        if (!!existing[property.nameId()]) {
+          return false;
+        }
+        //annotation filtering
+        if (!!property.isAnnotation()) {
+          return false;
+        }
+        if (property.nameId() == parserApi.universes.Universe10.TypeDeclaration.properties.allowedTargets.name && property.domain().key() && property.domain().key() == parserApi.universes.Universe10.TypeDeclaration && node.localType() && !node.localType().isAnnotationType()) {
+          return false;
+        }
+        return true;
+      }
       function propertyCompletion(node, request, mv, c, hasNewLine) {
         if (hasNewLine === void 0) {
           hasNewLine = true;
@@ -2457,22 +2152,12 @@
         var needColon = isColonNeeded(offset, text);
         var ks = needColon ? ': ' : '';
         var props = hlnode.definition().allProperties();
-        //basic filtering
-        props = props.filter(function (x) {
-          return !x.getAdapter(parserApi.ds.RAMLPropertyService).isKey() && !x.getAdapter(parserApi.ds.RAMLPropertyService).isMerged() && !x.getAdapter(services.RAMLPropertyService).isSystem();
-        });
-        //contextual filtering
-        props = props.filter(function (x) {
-          return isAllowed(hlnode, x);
-        });
         var existing = {};
         hlnode.attrs().forEach(function (x) {
           existing[x.name()] = true;
         });
         props = props.filter(function (x) {
-          return !existing[x.nameId()];
-        }).filter(function (x) {
-          return !x.isAnnotation();
+          return filterPropertyCompletion(hlnode, x, existing);
         });
         if (node.definition().isAssignableFrom(parserApi.universes.Universe10.TypeDeclaration.name)) {
           if (!node.definition().isAssignableFrom('ObjectTypeDeclaration')) {
@@ -3335,6 +3020,7 @@
       'use strict';
       var completionProvider = require('./completionProvider');
       var _editorStateProvider = null;
+      var _astProvider = null;
       /**
  * Sets default editor state provider
  * @param editorStateProvider
@@ -3343,6 +3029,14 @@
         _editorStateProvider = editorStateProvider;
       }
       exports.setDefaultEditorStateProvider = setDefaultEditorStateProvider;
+      /**
+ * Sets default AST provider
+ * @param astProvider
+ */
+      function setDefaultASTProvider(astProvider) {
+        _astProvider = astProvider;
+      }
+      exports.setDefaultASTProvider = setDefaultASTProvider;
       var _fsProvider = null;
       /**
  * Sets default FS provider.
@@ -7615,7 +7309,7 @@
           };
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
       },
-      { '_process': 251 }
+      { '_process': 244 }
     ],
     10: [
       function (require, module, exports) {
@@ -8857,7 +8551,7 @@
           }));
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
       },
-      { '_process': 251 }
+      { '_process': 244 }
     ],
     14: [
       function (require, module, exports) {
@@ -9152,7 +8846,7 @@
           return http.request.call(this, params, cb);
         };
       },
-      { 'http': 270 }
+      { 'http': 263 }
     ],
     17: [
       function (require, module, exports) {
@@ -10287,7 +9981,7 @@
             }
           }
         }
-        function storeMappingPair(state, _result, overridableKeys, keyTag, keyNode, valueNode) {
+        function storeMappingPair(state, _result, overridableKeys, keyTag, keyNode, valueNode, startLine, startPos) {
           var index, quantity;
           keyNode = String(keyNode);
           if (_result === null) {
@@ -10303,6 +9997,8 @@
             }
           } else {
             if (!state.json && !_hasOwnProperty.call(overridableKeys, keyNode) && _hasOwnProperty.call(_result, keyNode)) {
+              state.line = startLine || state.line;
+              state.position = startPos || state.position;
               throwError(state, 'duplicated mapping key');
             }
             _result[keyNode] = valueNode;
@@ -10751,7 +10447,7 @@
           return false;
         }
         function readBlockMapping(state, nodeIndent, flowIndent) {
-          var following, allowCompact, _line, _tag = state.tag, _anchor = state.anchor, _result = {}, overridableKeys = {}, keyTag = null, keyNode = null, valueNode = null, atExplicitKey = false, detected = false, ch;
+          var following, allowCompact, _line, _pos, _tag = state.tag, _anchor = state.anchor, _result = {}, overridableKeys = {}, keyTag = null, keyNode = null, valueNode = null, atExplicitKey = false, detected = false, ch;
           if (state.anchor !== null) {
             state.anchorMap[state.anchor] = _result;
           }
@@ -10760,6 +10456,7 @@
             following = state.input.charCodeAt(state.position + 1);
             _line = state.line;
             // Save the current line.
+            _pos = state.position;
             //
             // Explicit notation case. There are two separate blocks:
             // first for the key (denoted by "?") and second for the value (denoted by ":")
@@ -10833,7 +10530,7 @@
                 }
               }
               if (!atExplicitKey) {
-                storeMappingPair(state, _result, overridableKeys, keyTag, keyNode, valueNode);
+                storeMappingPair(state, _result, overridableKeys, keyTag, keyNode, valueNode, _line, _pos);
                 keyTag = keyNode = valueNode = null;
               }
               skipSeparationSpace(state, true, -1);
@@ -11618,8 +11315,10 @@
             result.push(bits >> 4 & 255);
           }
           // Wrap into Buffer for NodeJS and leave Array for browser
-          if (NodeBuffer)
-            return new NodeBuffer(result);
+          if (NodeBuffer) {
+            // Support node 6.+ Buffer API when available
+            return NodeBuffer.from ? NodeBuffer.from(result) : new NodeBuffer(result);
+          }
           return result;
         }
         function representYamlBinary(object) {
@@ -12841,7 +12540,7 @@
         './ref': 62,
         './util/debug': 67,
         './util/url': 70,
-        'ono': 249
+        'ono': 242
       }
     ],
     54: [
@@ -13112,7 +12811,7 @@
         './util/url': 70,
         './util/yaml': 71,
         'call-me-maybe': 9,
-        'ono': 249
+        'ono': 242
       }
     ],
     55: [
@@ -13332,7 +13031,7 @@
         './util/plugins': 68,
         './util/promise': 69,
         './util/url': 70,
-        'ono': 249
+        'ono': 242
       }
     ],
     57: [
@@ -13680,7 +13379,7 @@
       {
         './ref': 62,
         './util/url': 70,
-        'ono': 249
+        'ono': 242
       }
     ],
     62: [
@@ -14079,7 +13778,7 @@
       {
         './ref': 62,
         './util/url': 70,
-        'ono': 249
+        'ono': 242
       }
     ],
     64: [
@@ -14229,7 +13928,7 @@
         '../util/promise': 69,
         '../util/url': 70,
         'fs': 4,
-        'ono': 249
+        'ono': 242
       }
     ],
     66: [
@@ -14340,11 +14039,11 @@
         '../util/debug': 67,
         '../util/promise': 69,
         '../util/url': 70,
-        '_process': 251,
+        '_process': 244,
         'buffer': 6,
-        'http': 270,
+        'http': 263,
         'https': 16,
-        'ono': 249
+        'ono': 242
       }
     ],
     67: [
@@ -14716,8 +14415,8 @@
         }.call(this, require('_process')));
       },
       {
-        '_process': 251,
-        'url': 284
+        '_process': 244,
+        'url': 277
       }
     ],
     71: [
@@ -14758,7 +14457,7 @@
       },
       {
         'js-yaml': 21,
-        'ono': 249
+        'ono': 242
       }
     ],
     72: [
@@ -35340,9 +35039,9 @@
       },
       {
         './lib/converter': 211,
-        './lib/exporters/index': 224,
-        './lib/formats': 229,
-        './lib/importers/index': 235
+        './lib/exporters/index': 221,
+        './lib/formats': 225,
+        './lib/importers/index': 231
       }
     ],
     211: [
@@ -35452,8 +35151,8 @@
         exports.Converter = Converter;
       },
       {
-        './exporters/index': 224,
-        './importers/index': 235
+        './exporters/index': 221,
+        './importers/index': 231
       }
     ],
     212: [
@@ -35501,10 +35200,6 @@
               this.consumes;
               this.middlewareBefore = '';
               this.middlewareAfter = '';
-              this.mock = {
-                enabled: false,
-                statusCode: 200
-              };
               // this.securedBy = {
               // 	none: true
               // };
@@ -35619,7 +35314,7 @@
                 },
                 get: function get() {
                   if (Array.isArray(this.request.bodies) && this.request.bodies.length > 0) {
-                    return this.request.bodies[0];
+                    return this.request.bodies;
                   }
                   return {};
                 }
@@ -35702,15 +35397,6 @@
                 },
                 get: function get() {
                   return this.securedBy;
-                }
-              },
-              {
-                key: 'Mock',
-                set: function set(mock) {
-                  this.mock = mock;
-                },
-                get: function get() {
-                  return this.mock;
                 }  // get Request() {
                    // 	return this.request;
                    // };
@@ -35748,8 +35434,8 @@
         module.exports = Endpoint;
       },
       {
-        '../utils/json': 243,
-        '../utils/strings': 244
+        '../utils/json': 236,
+        '../utils/strings': 237
       }
     ],
     213: [
@@ -35800,23 +35486,6 @@
               };
             }
             _createClass(Environment, [
-              {
-                key: 'loadSLData',
-                value: function loadSLData(envData) {
-                  for (var key in envData) {
-                    if (!envData.hasOwnProperty(key))
-                      continue;
-                    //direct map supported keys
-                    this[key] = envData[key];
-                  }
-                }
-              },
-              {
-                key: 'toJSON',
-                value: function toJSON() {
-                  return { groups: this.resourcesOrder };
-                }
-              },
               {
                 key: 'Host',
                 set: function set(host) {
@@ -35908,7 +35577,9 @@
                 },
                 get: function get() {
                   return this.securitySchemes;
-                }
+                }  // addSecurityScheme (key, securityScheme) {
+                   // 	this.securitySchemes[key] = securityScheme;
+                   // };
               }
             ]);
             return Environment;
@@ -35954,11 +35625,8 @@
               this.endpoints = [];
               this.resources = [];
               this.schemas = [];
-              this.utilityFunctions = [];
               this.texts = [];
               this.traits = [];
-              this.tests = [];
-              this.savedEntries = [];
               this.pathParamsRef = {};
             }
             _createClass(Project, [
@@ -35981,12 +35649,6 @@
                 }
               },
               {
-                key: 'addUtilityFunction',
-                value: function addUtilityFunction(uf) {
-                  this.utilityFunctions.push(uf);
-                }
-              },
-              {
                 key: 'addText',
                 value: function addText(txt) {
                   this.texts.push(txt);
@@ -35996,24 +35658,6 @@
                 key: 'addTrait',
                 value: function addTrait(trait) {
                   this.traits.push(trait);
-                }
-              },
-              {
-                key: 'addTest',
-                value: function addTest(test) {
-                  this.tests.push(test);
-                }
-              },
-              {
-                key: 'addSavedEntry',
-                value: function addSavedEntry(savedEntry) {
-                  this.savedEntries.push(savedEntry);
-                }
-              },
-              {
-                key: 'loadSLData',
-                value: function loadSLData(slData) {
-                  this.Description = slData.description;
                 }
               },
               {
@@ -36080,12 +35724,6 @@
                 }
               },
               {
-                key: 'UtilityFunctions',
-                get: function get() {
-                  return this.utilityFunctions;
-                }
-              },
-              {
                 key: 'Texts',
                 get: function get() {
                   return this.texts;
@@ -36095,24 +35733,6 @@
                 key: 'Traits',
                 get: function get() {
                   return this.traits;
-                }
-              },
-              {
-                key: 'Tests',
-                get: function get() {
-                  return this.tests;
-                },
-                set: function set(tests) {
-                  this.tests = tests;
-                }
-              },
-              {
-                key: 'SavedEntries',
-                get: function get() {
-                  return this.savedEntries;
-                },
-                set: function set(savedEntries) {
-                  this.savedEntries = savedEntries;
                 }
               }
             ]);
@@ -36149,147 +35769,14 @@
             throw new TypeError('Cannot call a class as a function');
           }
         }
-        var jsonHelper = require('../utils/json');
-        var SavedEntry = function () {
-            function SavedEntry() {
-              _classCallCheck(this, SavedEntry);
-              this._id = null;
-              this.request = {
-                pathParams: {},
-                bodies: [],
-                headers: '{}'
-              };
-            }
-            _createClass(SavedEntry, [
-              {
-                key: 'Id',
-                get: function get() {
-                  return this._id;
-                },
-                set: function set(id) {
-                  this._id = id;
-                }
-              },
-              {
-                key: 'Path',
-                get: function get() {
-                  return this.request.path;
-                },
-                set: function set(path) {
-                  this.request.path = path;
-                }
-              },
-              {
-                key: 'Method',
-                get: function get() {
-                  return this.request.method;
-                },
-                set: function set(requestMethod) {
-                  this.request.method = requestMethod.toLowerCase();
-                }
-              },
-              {
-                key: 'Headers',
-                get: function get() {
-                  return jsonHelper.parse(this.request.headers);
-                },
-                set: function set(headers) {
-                  this.request.headers = jsonHelper.stringify(headers, 4);
-                }
-              },
-              {
-                key: 'Body',
-                set: function set(body) {
-                  body.body = jsonHelper.stringify(body.body, 4);
-                  this.request.bodies.push(body);
-                },
-                get: function get() {
-                  if (Array.isArray(this.request.bodies) && this.request.bodies.length > 0) {
-                    return this.request.bodies[0];
-                  }
-                  return {};
-                }
-              },
-              {
-                key: 'QueryString',
-                set: function set(queryString) {
-                  queryString = jsonHelper.stringify(queryString, 4);
-                  this.request.queryString = queryString;
-                },
-                get: function get() {
-                  if (!this.request.queryString) {
-                    this.request.queryString = '{}';
-                  }
-                  return jsonHelper.parse(this.request.queryString);
-                }
-              },
-              {
-                key: 'PathParams',
-                set: function set(uriParams) {
-                  this.request.pathParams = jsonHelper.stringify(uriParams, 4);
-                },
-                get: function get() {
-                  if (!this.request.pathParams) {
-                    this.request.pathParams = '{}';
-                  }
-                  return jsonHelper.parse(this.request.pathParams);
-                }  // get Request() { return this.request; };
-              }
-            ]);
-            return SavedEntry;
-          }();
-        module.exports = SavedEntry;
-      },
-      { '../utils/json': 243 }
-    ],
-    216: [
-      function (require, module, exports) {
-        'use strict';
-        var _createClass = function () {
-            function defineProperties(target, props) {
-              for (var i = 0; i < props.length; i++) {
-                var descriptor = props[i];
-                descriptor.enumerable = descriptor.enumerable || false;
-                descriptor.configurable = true;
-                if ('value' in descriptor)
-                  descriptor.writable = true;
-                Object.defineProperty(target, descriptor.key, descriptor);
-              }
-            }
-            return function (Constructor, protoProps, staticProps) {
-              if (protoProps)
-                defineProperties(Constructor.prototype, protoProps);
-              if (staticProps)
-                defineProperties(Constructor, staticProps);
-              return Constructor;
-            };
-          }();
-        function _classCallCheck(instance, Constructor) {
-          if (!(instance instanceof Constructor)) {
-            throw new TypeError('Cannot call a class as a function');
-          }
-        }
         var Schema = function () {
             function Schema(namespace) {
               _classCallCheck(this, Schema);
               this.name = '';
               this.namespace = namespace;
               this.definition = '';
-              this.example = '';
-              this.summary = '';
-              this.description = '';
-              this.public = true;
             }
             _createClass(Schema, [
-              {
-                key: 'Id',
-                get: function get() {
-                  return this._id;
-                },
-                set: function set(id) {
-                  this._id = id;
-                }
-              },
               {
                 key: 'Name',
                 get: function get() {
@@ -36313,49 +35800,6 @@
                 get: function get() {
                   return this.definition;
                 }
-              },
-              {
-                key: 'Example',
-                get: function get() {
-                  return this.example;
-                }
-              },
-              {
-                key: 'SLData',
-                set: function set(schemaData) {
-                  var sd = schemaData || {};
-                  this.name = sd.name || '';
-                  this.definition = sd.definition || {};
-                  this.example = sd.example || {};
-                  this._id = sd._id;
-                }
-              },
-              {
-                key: 'Summary',
-                get: function get() {
-                  return this.summary || '';
-                },
-                set: function set(summary) {
-                  this.summary = summary;
-                }
-              },
-              {
-                key: 'Description',
-                get: function get() {
-                  return this.description;
-                },
-                set: function set(desc) {
-                  this.description = desc;
-                }
-              },
-              {
-                key: 'Public',
-                get: function get() {
-                  return this.public;
-                },
-                set: function set(p) {
-                  this.public = p;
-                }
               }
             ]);
             return Schema;
@@ -36364,7 +35808,7 @@
       },
       {}
     ],
-    217: [
+    216: [
       function (require, module, exports) {
         'use strict';
         var _createClass = function () {
@@ -36397,9 +35841,11 @@
               this.swagger = '2.0';
               this.info = {
                 'version': '',
-                'title': title,
-                'description': description
+                'title': title
               };
+              if (description) {
+                this.info['description'] = description;
+              }
               this.host = '';
               this.basePath = '';
               this.schemes = [];
@@ -36409,7 +35855,6 @@
               this.paths = {};
               this.parameters = {};
               this.responses = [];
-              this.definitions = {};
             }
             _createClass(SwaggerDefinition, [
               {
@@ -36439,210 +35884,36 @@
       },
       {}
     ],
-    218: [
+    217: [
       function (require, module, exports) {
         'use strict';
-        var _createClass = function () {
-            function defineProperties(target, props) {
-              for (var i = 0; i < props.length; i++) {
-                var descriptor = props[i];
-                descriptor.enumerable = descriptor.enumerable || false;
-                descriptor.configurable = true;
-                if ('value' in descriptor)
-                  descriptor.writable = true;
-                Object.defineProperty(target, descriptor.key, descriptor);
-              }
-            }
-            return function (Constructor, protoProps, staticProps) {
-              if (protoProps)
-                defineProperties(Constructor.prototype, protoProps);
-              if (staticProps)
-                defineProperties(Constructor, staticProps);
-              return Constructor;
-            };
-          }();
         function _classCallCheck(instance, Constructor) {
           if (!(instance instanceof Constructor)) {
             throw new TypeError('Cannot call a class as a function');
           }
         }
-        var Method = function () {
-            function Method(method, methodResolved) {
-              _classCallCheck(this, Method);
-              this.method = method;
-              this.methodResolved = methodResolved;
-              this.summary = this.method.summary || this.methodResolved.summary;
-              this.tags = this.method.tags || this.methodResolved.tags;
-              this.description = this.method.description || this.methodResolved.description;
-              this.deprecated = this.method.deprecated || this.methodResolved.deprecated;
-              this.operationId = this.method.operationId || this.methodResolved.operationId;
-              this.externalDocs = this.method.externalDocs || this.methodResolved.externalDocs;
-              this.schemes = this.method.schemes || this.methodResolved.schemes;
-              this.parameters = this.method.parameters || this.methodResolved.parameters;
-              this.consumes = this.method.consumes || this.methodResolved.consumes;
-              this.produces = this.method.produces || this.methodResolved.produces;
-              this.responses = this.method.responses || this.methodResolved.responses;
-              this.security = this.method.security || this.methodResolved.security;
-            }
-            _createClass(Method, [
-              {
-                key: 'Summary',
-                get: function get() {
-                  return this.summary;
-                }
-              },
-              {
-                key: 'Tags',
-                get: function get() {
-                  return this.tags;
-                }
-              },
-              {
-                key: 'Description',
-                get: function get() {
-                  return this.description;
-                }
-              },
-              {
-                key: 'Deprecated',
-                get: function get() {
-                  return this.deprecated;
-                }  // get OperationId() { return this.operationId; };
-              },
-              {
-                key: 'ExternalDocs',
-                get: function get() {
-                  return this.externalDocs;
-                }  // get Schemes() { return this.schemes; };
-              },
-              {
-                key: 'Parameters',
-                get: function get() {
-                  return this.parameters;
-                }
-              },
-              {
-                key: 'Consumes',
-                get: function get() {
-                  return this.consumes;
-                }
-              },
-              {
-                key: 'Produces',
-                get: function get() {
-                  return this.produces;
-                }
-              },
-              {
-                key: 'Responses',
-                get: function get() {
-                  return this.responses;
-                }
-              },
-              {
-                key: 'Security',
-                get: function get() {
-                  return this.security;
-                }
-              }
-            ]);
-            return Method;
-          }();
+        var Method = function Method(method, methodResolved) {
+          _classCallCheck(this, Method);
+          this.method = method;
+          this.methodResolved = methodResolved;
+          this.summary = this.method.summary || this.methodResolved.summary;
+          this.tags = this.method.tags || this.methodResolved.tags;
+          this.description = this.method.description || this.methodResolved.description;
+          this.deprecated = this.method.deprecated || this.methodResolved.deprecated;
+          this.operationId = this.method.operationId || this.methodResolved.operationId;
+          this.externalDocs = this.method.externalDocs || this.methodResolved.externalDocs;
+          this.schemes = this.method.schemes || this.methodResolved.schemes;
+          this.parameters = this.method.parameters || this.methodResolved.parameters;
+          this.consumes = this.method.consumes || this.methodResolved.consumes;
+          this.produces = this.method.produces || this.methodResolved.produces;
+          this.responses = this.method.responses || this.methodResolved.responses;
+          this.security = this.method.security || this.methodResolved.security;
+        };
         module.exports = Method;
       },
       {}
     ],
-    219: [
-      function (require, module, exports) {
-        'use strict';
-        var _createClass = function () {
-            function defineProperties(target, props) {
-              for (var i = 0; i < props.length; i++) {
-                var descriptor = props[i];
-                descriptor.enumerable = descriptor.enumerable || false;
-                descriptor.configurable = true;
-                if ('value' in descriptor)
-                  descriptor.writable = true;
-                Object.defineProperty(target, descriptor.key, descriptor);
-              }
-            }
-            return function (Constructor, protoProps, staticProps) {
-              if (protoProps)
-                defineProperties(Constructor.prototype, protoProps);
-              if (staticProps)
-                defineProperties(Constructor, staticProps);
-              return Constructor;
-            };
-          }();
-        function _classCallCheck(instance, Constructor) {
-          if (!(instance instanceof Constructor)) {
-            throw new TypeError('Cannot call a class as a function');
-          }
-        }
-        var jsonHelper = require('../utils/json');
-        var Test = function () {
-            function Test(name) {
-              _classCallCheck(this, Test);
-              this._id = null;
-              this.name = name;
-              this.summary = '';
-              this.initialVariables = '{}';
-              this.steps = [];  // TODO map each step to maintain proper structure
-            }
-            _createClass(Test, [
-              {
-                key: 'Id',
-                get: function get() {
-                  return this._id;
-                },
-                set: function set(id) {
-                  this._id = id;
-                }
-              },
-              {
-                key: 'Name',
-                get: function get() {
-                  return this.name;
-                },
-                set: function set(name) {
-                  this.name = name;
-                }
-              },
-              {
-                key: 'Summary',
-                get: function get() {
-                  return this.summary || '';
-                },
-                set: function set(summary) {
-                  this.summary = summary;
-                }
-              },
-              {
-                key: 'InitialVariables',
-                get: function get() {
-                  return this.initialVariables;
-                },
-                set: function set(initialVariables) {
-                  this.initialVariables = jsonHelper.stringify(initialVariables, 4);
-                }
-              },
-              {
-                key: 'Steps',
-                get: function get() {
-                  return this.steps;
-                },
-                set: function set(steps) {
-                  this.steps = steps;
-                }
-              }
-            ]);
-            return Test;
-          }();
-        module.exports = Test;
-      },
-      { '../utils/json': 243 }
-    ],
-    220: [
+    218: [
       function (require, module, exports) {
         'use strict';
         var _createClass = function () {
@@ -36678,17 +35949,6 @@
               this.public = '';
             }
             _createClass(Text, [
-              {
-                key: 'toJSON',
-                value: function toJSON() {
-                  return {
-                    id: this.Id,
-                    name: this.Name,
-                    content: this.Content,
-                    public: this.Public
-                  };
-                }
-              },
               {
                 key: 'Id',
                 get: function get() {
@@ -36732,83 +35992,7 @@
       },
       {}
     ],
-    221: [
-      function (require, module, exports) {
-        'use strict';
-        var _createClass = function () {
-            function defineProperties(target, props) {
-              for (var i = 0; i < props.length; i++) {
-                var descriptor = props[i];
-                descriptor.enumerable = descriptor.enumerable || false;
-                descriptor.configurable = true;
-                if ('value' in descriptor)
-                  descriptor.writable = true;
-                Object.defineProperty(target, descriptor.key, descriptor);
-              }
-            }
-            return function (Constructor, protoProps, staticProps) {
-              if (protoProps)
-                defineProperties(Constructor.prototype, protoProps);
-              if (staticProps)
-                defineProperties(Constructor, staticProps);
-              return Constructor;
-            };
-          }();
-        function _classCallCheck(instance, Constructor) {
-          if (!(instance instanceof Constructor)) {
-            throw new TypeError('Cannot call a class as a function');
-          }
-        }
-        var UtilityFunction = function () {
-            function UtilityFunction(name) {
-              _classCallCheck(this, UtilityFunction);
-              this.name = name;
-              this.description = '';
-              this.script = '';
-            }
-            _createClass(UtilityFunction, [
-              {
-                key: 'toJSON',
-                value: function toJSON() {
-                  return {
-                    name: this.Name,
-                    description: this.Description,
-                    script: this.Script
-                  };
-                }
-              },
-              {
-                key: 'Name',
-                get: function get() {
-                  return this.name;
-                }
-              },
-              {
-                key: 'Description',
-                set: function set(description) {
-                  this.description = description;
-                },
-                get: function get() {
-                  return this.description;
-                }
-              },
-              {
-                key: 'Script',
-                set: function set(script) {
-                  this.script = script;
-                },
-                get: function get() {
-                  return this.script;
-                }
-              }
-            ]);
-            return UtilityFunction;
-          }();
-        module.exports = UtilityFunction;
-      },
-      {}
-    ],
-    222: [
+    219: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -36932,23 +36116,7 @@
             _inherits(RAMLExporter, _Exporter);
             function RAMLExporter() {
               _classCallCheck(this, RAMLExporter);
-              var _this = _possibleConstructorReturn(this, (RAMLExporter.__proto__ || Object.getPrototypeOf(RAMLExporter)).call(this));
-              _this.hasTags = false;
-              _this.hasDeprecated = false;
-              _this.hasExternalDocs = false;
-              _this.hasInfo = false;
-              _this.hasSummary = false;
-              _this.hasSchemaTitle = false;
-              _this.hasPropertyTitle = false;
-              _this.hasBodyName = false;
-              _this.hasResponsesDefault = false;
-              _this.hasGlobalResponseDefinition = false;
-              _this.hasDefinitionName = false;
-              _this.hasAllowEmptyValue = false;
-              _this.hasCollectionFormat = false;
-              _this.hasExclusiveMaximum = false;
-              _this.hasExclusiveMinimum = false;
-              return _this;
+              return _possibleConstructorReturn(this, (RAMLExporter.__proto__ || Object.getPrototypeOf(RAMLExporter)).call(this));
             }
             _createClass(RAMLExporter, [
               {
@@ -37040,23 +36208,22 @@
               },
               {
                 key: '_mapRequestBody',
-                value: function _mapRequestBody(bodyData, mimeType) {
+                value: function _mapRequestBody(bodyData, mimeType, ramlDef) {
                   var body = {};
                   if (!bodyData.body || mimeType === '')
                     return body;
                   switch (mimeType) {
                   case 'application/json':
-                    body[mimeType] = this.mapBody(bodyData);
+                    body[mimeType] = this.mapBody(bodyData, mimeType, ramlDef);
                     this.convertRequiredFromProperties(body[mimeType]);
                     if (bodyData.name) {
-                      this.hasBodyName = true;
-                      body[mimeType]['(oas-body-name)'] = bodyData.name;
+                      RAMLExporter._createAnnotation(body[mimeType], 'body-name', bodyData.name, ramlDef);
                     }
                     break;
                   case 'multipart/form-data':
                   case 'application/x-www-form-urlencoded': {
                       var parsedBody = jsonHelper.parse(bodyData.body);
-                      body[mimeType] = this.mapRequestBodyForm(this.convertRefFromModel(parsedBody), false);
+                      body[mimeType] = this.mapRequestBodyForm(this.convertRefFromModel(parsedBody, false, null, ramlDef), ramlDef);
                       break;
                     }
                   default:  //unsuported format
@@ -37070,11 +36237,11 @@
               },
               {
                 key: '_mapNamedParams',
-                value: function _mapNamedParams(params) {
+                value: function _mapNamedParams(params, ramlDef) {
                   if (!params || _.isEmpty(params.properties))
                     return;
                   var newParams = {};
-                  var convertedParams = this.convertRefFromModel(params.properties, false);
+                  var convertedParams = this.convertRefFromModel(params.properties, false, null, ramlDef);
                   for (var key in convertedParams) {
                     if (!convertedParams.hasOwnProperty(key))
                       continue;
@@ -37092,7 +36259,7 @@
               },
               {
                 key: '_mapResponseBody',
-                value: function _mapResponseBody(responseData, mimeType) {
+                value: function _mapResponseBody(responseData, mimeType, ramlDef) {
                   var responses = {};
                   for (var i in responseData) {
                     if (!responseData.hasOwnProperty(i))
@@ -37105,7 +36272,7 @@
                       }
                       responses[code] = {};
                       var type = mimeType;
-                      var body = this.mapBody(resBody, type);
+                      var body = this.mapBody(resBody, type, ramlDef);
                       this.convertRequiredFromProperties(body);
                       if (!_.isEmpty(body)) {
                         responses[code].body = {};
@@ -37119,21 +36286,20 @@
                         responses[code]['description'] = resBody.description;
                       }
                       if (!jsonHelper.isEmptySchema(resBody.headers)) {
-                        responses[code].headers = this._mapNamedParams(resBody.headers);
+                        responses[code].headers = this._mapNamedParams(resBody.headers, ramlDef);
                       }
                       if (resBody.response_id) {
-                        this.hasGlobalResponseDefinition = true;
-                        responses[code]['(oas-global-response-definition)'] = resBody.response_id;
+                        RAMLExporter._createAnnotation(responses[code], 'global-response-definition', resBody.response_id, ramlDef);
                         delete resBody.response_id;
                       }
                     }
                   }
                   return responses;
-                }  //TODO: Stoplight doesn't support seperate path params completely yet
+                }
               },
               {
                 key: '_mapURIParams',
-                value: function _mapURIParams(pathParamData) {
+                value: function _mapURIParams(pathParamData, ramlDef) {
                   if (!pathParamData.properties || _.isEmpty(pathParamData.properties)) {
                     return;
                   }
@@ -37142,12 +36308,12 @@
                     if (!pathParamData.properties.hasOwnProperty(key))
                       continue;
                     var prop = pathParamData.properties[key];
-                    RAMLExporter._mapFormats(prop);
+                    RAMLExporter._mapFormats(prop, ramlDef);
                     pathParams[key] = ramlHelper.setParameterFields(prop, {});
                     RAMLExporter.fixEnumValueFormat(prop);
                     if (prop.items) {
                       var items = prop.items;
-                      RAMLExporter._mapFormats(items);
+                      RAMLExporter._mapFormats(items, ramlDef);
                       RAMLExporter.fixEnumValueFormat(items);
                       pathParams[key].items = items;
                     }
@@ -37156,7 +36322,14 @@
                     }
                     pathParams[key].type = pathParams[key].type || 'string';
                     //facets
-                    RAMLExporter._addFacetsDeclaration(prop, pathParams[key]);
+                    for (var id in pathParams[key]) {
+                      if (!pathParams[key].hasOwnProperty(id))
+                        continue;
+                      if (id === 'exclusiveMinimum' || id === 'exclusiveMaximum' || id === 'allowEmptyValue' || id === 'collectionFormat') {
+                        RAMLExporter._createAnnotation(pathParams[key], id, pathParams[key][id], ramlDef);
+                        delete pathParams[key][id];
+                      }
+                    }
                   }
                   return RAMLExporter._validateParam(pathParams);
                 }
@@ -37186,13 +36359,13 @@
               },
               {
                 key: 'convertRefFromModel',
-                value: function convertRefFromModel(object, isTypeDeclaration, insideProperties) {
-                  RAMLExporter._mapFormats(object);
+                value: function convertRefFromModel(object, isTypeDeclaration, insideProperties, ramlDef) {
+                  RAMLExporter._mapFormats(object, ramlDef);
                   for (var id in object) {
                     if (object.hasOwnProperty(id)) {
                       var val = object[id];
                       if (insideProperties)
-                        val = this.convertSchemaTitles(val, 'property');
+                        val = RAMLExporter.convertSchemaTitles(val, 'property', ramlDef);
                       if (id == '$ref' && !insideProperties) {
                         if (val.indexOf('#/') == 0) {
                           object.type = val.replace('#/definitions/', '');
@@ -37221,13 +36394,10 @@
                           object.type = '!include ' + val;
                           delete object[id];
                         } else if (id === 'collectionFormat') {
-                          if (isTypeDeclaration)
-                            this._defineFacet(object, id);
-                          else
-                            this._defineAnnotationType(object, id);
+                          RAMLExporter._createAnnotation(object, id, object[id], ramlDef);
                         }
                       } else if (val && (typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object' && (id !== 'facets' || insideProperties)) {
-                        RAMLExporter._mapFormats(val);
+                        RAMLExporter._mapFormats(val, ramlDef);
                         if (!insideProperties) {
                           if (id === 'example' && object.type === undefined)
                             object['type'] = typeof val === 'undefined' ? 'undefined' : _typeof(val);
@@ -37235,91 +36405,29 @@
                             object['type'] = 'array';
                         } else if (val.hasOwnProperty('additionalProperties'))
                           val.type = 'object';
-                        if (val.type != 'string') {
-                          object[id] = this.convertRefFromModel(val, isTypeDeclaration, id === 'properties' && !insideProperties);
-                        }
+                        if (id === 'readOnly')
+                          RAMLExporter._createAnnotation(object, id, object[id], ramlDef);
+                        object[id] = this.convertRefFromModel(val, isTypeDeclaration, id === 'properties' && !insideProperties, ramlDef);
                       } else if (id === '$ref') {
                         object.type = val.replace('#/definitions/', '');
                         delete object[id];
                       } else if (id === 'exclusiveMinimum' || id === 'exclusiveMaximum' || id === 'allowEmptyValue' || id === 'collectionFormat') {
-                        if (isTypeDeclaration)
-                          this._defineFacet(object, id);
-                        else
-                          this._defineAnnotationType(object, id);
+                        RAMLExporter._createAnnotation(object, id, object[id], ramlDef);
+                        delete object[id];
                       } else if (id === 'readOnly') {
-                        if (!object['facets'])
-                          object['facets'] = {};
-                        object['facets']['readOnly?'] = 'boolean';
+                        RAMLExporter._createAnnotation(object, id, object[id], ramlDef);
+                        delete object[id];
+                      } else if (!ramlHelper.isNumberType(object.type) && (id === 'maximum' || id === 'minimum')) {
+                        RAMLExporter._createAnnotation(object, id, object[id], ramlDef);
+                        delete object[id];
+                      }
+                      if (ramlHelper.isNumberType(object.type) && id === 'example') {
+                        object[id] = _.toNumber(object[id]);
                       }
                       if (val.hasOwnProperty('readOnly') && id !== 'properties') {
-                        if (!val['facets'])
-                          val['facets'] = {};
-                        val['facets']['readOnly?'] = 'boolean';
+                        RAMLExporter._createAnnotation(val, 'readOnly', val['readOnly'], ramlDef);
+                        delete val['readOnly'];
                       }
-                    }
-                  }
-                  return object;
-                }
-              },
-              {
-                key: '_defineFacet',
-                value: function _defineFacet(object, id) {
-                  if (!object.facets) {
-                    object.facets = {};
-                  }
-                  if (id === 'allowEmptyValue') {
-                    object.facets['allowEmptyValue'] = 'boolean';
-                  }
-                  if (id === 'collectionFormat') {
-                    object.facets['collectionFormat'] = 'string';
-                  }
-                  if (id === 'exclusiveMaximum') {
-                    object.facets['exclusiveMaximum'] = 'boolean';
-                  }
-                  if (id === 'exclusiveMinimum') {
-                    object.facets['exclusiveMinimum'] = 'boolean';
-                  }
-                }
-              },
-              {
-                key: '_defineAnnotationType',
-                value: function _defineAnnotationType(object, id) {
-                  if (!object.hasOwnProperty(id))
-                    return;
-                  var val = object[id];
-                  if (id === 'allowEmptyValue') {
-                    this.hasAllowEmptyValue = true;
-                    object['(oas-allowEmptyValue)'] = val;
-                  }
-                  if (id === 'collectionFormat') {
-                    this.hasCollectionFormat = true;
-                    object['(oas-collectionFormat)'] = val;
-                  }
-                  if (id === 'exclusiveMaximum') {
-                    this.hasExclusiveMaximum = true;
-                    object['(oas-exclusiveMaximum)'] = val;
-                  }
-                  if (id === 'exclusiveMinimum') {
-                    this.hasExclusiveMinimum = true;
-                    object['(oas-exclusiveMinimum)'] = val;
-                  }
-                  delete object[id];
-                }
-              },
-              {
-                key: 'convertSchemaTitles',
-                value: function convertSchemaTitles(object, objectType) {
-                  for (var id in object) {
-                    if (!object.hasOwnProperty(id))
-                      continue;
-                    var val = object[id];
-                    if (id === 'title' && typeof val === 'string') {
-                      object['(oas-' + objectType + '-title)'] = val;
-                      delete object[id];
-                      if (objectType === 'schema')
-                        this.hasSchemaTitle = true;
-                      else if (objectType === 'property')
-                        this.hasPropertyTitle = true;
                     }
                   }
                   return object;
@@ -37327,7 +36435,7 @@
               },
               {
                 key: '_mapParametersTraits',
-                value: function _mapParametersTraits(slTraits) {
+                value: function _mapParametersTraits(slTraits, ramlDef) {
                   var traits = this.initializeTraits();
                   for (var i in slTraits) {
                     if (!slTraits.hasOwnProperty(i))
@@ -37337,7 +36445,7 @@
                     try {
                       var queryString = jsonHelper.parse(slTrait.request.queryString);
                       if (!jsonHelper.isEmptySchema(queryString)) {
-                        trait.queryParameters = this._mapNamedParams(queryString);
+                        trait.queryParameters = this._mapNamedParams(queryString, ramlDef);
                       }
                     } catch (e) {
                     }
@@ -37358,7 +36466,7 @@
                     try {
                       var body = jsonHelper.parse(slTrait.request.body);
                       if (!jsonHelper.isEmptySchema(body)) {
-                        trait.body = this._mapRequestBody(body, 'application/json');
+                        trait.body = this._mapRequestBody(body, 'application/json', ramlDef);
                       }
                     } catch (e) {
                     }
@@ -37391,116 +36499,6 @@
                 }
               },
               {
-                key: '_annotationsSignature',
-                value: function _annotationsSignature(ramlDef) {
-                  if (this.hasTags || this.hasDeprecated || this.hasExternalDocs || this.hasInfo || this.hasSummary || this.hasSchemaTitle || this.hasPropertyTitle || this.hasBodyName || this.hasResponsesDefault || this.hasGlobalResponseDefinition || this.hasDefinitionName || this.hasAllowEmptyValue || this.hasCollectionFormat || this.hasExclusiveMaximum || this.hasExclusiveMinimum) {
-                    if (!ramlDef.annotationTypes) {
-                      ramlDef.annotationTypes = {};
-                    }
-                    if (this.hasTags) {
-                      ramlDef.annotationTypes['oas-tags'] = {
-                        type: 'string[]',
-                        allowedTargets: 'Method'
-                      };
-                    }
-                    if (this.hasDeprecated) {
-                      ramlDef.annotationTypes['oas-deprecated'] = {
-                        type: 'boolean',
-                        allowedTargets: 'Method'
-                      };
-                    }
-                    if (this.hasSummary) {
-                      ramlDef.annotationTypes['oas-summary'] = {
-                        type: 'string',
-                        allowedTargets: 'Method'
-                      };
-                    }
-                    if (this.hasExternalDocs) {
-                      ramlDef.annotationTypes['oas-externalDocs'] = {
-                        properties: {
-                          'description?': 'string',
-                          'url': 'string'
-                        },
-                        allowedTargets: [
-                          'API',
-                          'Method',
-                          'TypeDeclaration'
-                        ]
-                      };
-                    }
-                    if (this.hasInfo) {
-                      ramlDef.annotationTypes['oas-info'] = {
-                        properties: {
-                          'termsOfService?': 'string',
-                          'contact?': {
-                            properties: {
-                              'name?': 'string',
-                              'url?': 'string',
-                              'email?': 'string'
-                            }
-                          },
-                          'license?': {
-                            properties: {
-                              'name?': 'string',
-                              'url?': 'string'
-                            }
-                          }
-                        },
-                        allowedTargets: 'API'
-                      };
-                    }
-                    if (this.hasSchemaTitle) {
-                      ramlDef.annotationTypes['oas-schema-title'] = {
-                        type: 'string',
-                        allowedTargets: 'TypeDeclaration'
-                      };
-                    }
-                    if (this.hasPropertyTitle) {
-                      ramlDef.annotationTypes['oas-property-title'] = {
-                        type: 'string',
-                        allowedTargets: 'TypeDeclaration'
-                      };
-                    }
-                    if (this.hasBodyName) {
-                      ramlDef.annotationTypes['oas-body-name'] = {
-                        type: 'string',
-                        allowedTargets: 'TypeDeclaration'
-                      };
-                    }
-                    if (this.hasResponsesDefault) {
-                      ramlDef.annotationTypes['oas-responses-default'] = {
-                        type: 'any',
-                        allowedTargets: 'Method'
-                      };
-                    }
-                    if (this.hasGlobalResponseDefinition) {
-                      ramlDef.annotationTypes['oas-global-response-definition'] = {
-                        type: 'any',
-                        allowedTargets: 'Response'
-                      };
-                    }
-                    if (this.hasDefinitionName) {
-                      ramlDef.annotationTypes['oas-definition-name'] = {
-                        type: 'string',
-                        allowedTargets: 'TypeDeclaration'
-                      };
-                    }
-                    if (this.hasAllowEmptyValue) {
-                      ramlDef.annotationTypes['oas-allowEmptyValue'] = { type: 'boolean' };
-                    }
-                    if (this.hasCollectionFormat) {
-                      ramlDef.annotationTypes['oas-collectionFormat'] = { type: 'string' };
-                    }
-                    if (this.hasExclusiveMaximum) {
-                      ramlDef.annotationTypes['oas-exclusiveMaximum'] = { type: 'boolean' };
-                    }
-                    if (this.hasExclusiveMinimum) {
-                      ramlDef.annotationTypes['oas-exclusiveMinimum'] = { type: 'boolean' };
-                    }
-                  }
-                }
-              },
-              {
                 key: '_export',
                 value: function _export() {
                   var env = this.project.Environment;
@@ -37514,50 +36512,48 @@
                     if (!ramlDef['(oas-info)']) {
                       ramlDef['(oas-info)'] = {};
                     }
+                    RAMLExporter._createAnnotation(ramlDef, 'info', this.project.Environment.extensions, ramlDef);
                     RAMLExporter._addExtensions(ramlDef, ramlDef['(oas-info)'], this.project.Environment.extensions);
                   }
                   if (this.project.Environment.ExternalDocs) {
-                    this.hasExternalDocs = true;
-                    ramlDef['(oas-externalDocs)'] = {
-                      'description': this.project.Environment.ExternalDocs.description,
-                      'url': this.project.Environment.ExternalDocs.url
-                    };
+                    var value = {
+                        'description': this.project.Environment.ExternalDocs.description,
+                        'url': this.project.Environment.ExternalDocs.url
+                      };
+                    RAMLExporter._createAnnotation(ramlDef, 'externalDocs', value, ramlDef);
                     if (this.project.Environment.ExternalDocs.extensions) {
                       RAMLExporter._addExtensions(ramlDef, ramlDef['(oas-externalDocs)'], this.project.Environment.ExternalDocs.extensions);
                     }
                   }
-                  if (this.project.Environment.contactInfo || this.project.Environment.termsOfService || this.project.Environment.license || this.project.Environment.extensions) {
-                    if (!ramlDef['(oas-info)']) {
-                      ramlDef['(oas-info)'] = {};
-                    }
-                    this.hasInfo = true;
-                  }
                   if (this.project.Environment.contactInfo) {
-                    ramlDef['(oas-info)'].contact = {};
+                    var contact = { contact: {} };
                     if (this.project.Environment.contactInfo.name) {
-                      ramlDef['(oas-info)'].contact.name = this.project.Environment.contactInfo.name;
+                      contact['contact'].name = this.project.Environment.contactInfo.name;
                     }
                     if (this.project.Environment.contactInfo.url) {
-                      ramlDef['(oas-info)'].contact.url = this.project.Environment.contactInfo.url;
+                      contact['contact'].url = this.project.Environment.contactInfo.url;
                     }
                     if (this.project.Environment.contactInfo.email) {
-                      ramlDef['(oas-info)'].contact.email = this.project.Environment.contactInfo.email;
+                      contact['contact'].email = this.project.Environment.contactInfo.email;
                     }
+                    RAMLExporter._createAnnotation(ramlDef, 'info', contact, ramlDef);
                     if (this.project.Environment.contactInfo.extensions) {
                       RAMLExporter._addExtensions(ramlDef, ramlDef['(oas-info)'].contact, this.project.Environment.contactInfo.extensions);
                     }
                   }
                   if (this.project.Environment.termsOfService) {
-                    ramlDef['(oas-info)'].termsOfService = this.project.Environment.termsOfService;
+                    var _value = { termsOfService: this.project.Environment.termsOfService };
+                    RAMLExporter._createAnnotation(ramlDef, 'info', _value, ramlDef);
                   }
                   if (this.project.Environment.license) {
-                    ramlDef['(oas-info)'].license = {};
+                    var _value2 = { license: {} };
                     if (this.project.Environment.license.name) {
-                      ramlDef['(oas-info)'].license.name = this.project.Environment.license.name;
+                      _value2['license'].name = this.project.Environment.license.name;
                     }
                     if (this.project.Environment.license.url) {
-                      ramlDef['(oas-info)'].license.url = this.project.Environment.license.url;
+                      _value2['license'].url = this.project.Environment.license.url;
                     }
+                    RAMLExporter._createAnnotation(ramlDef, 'info', _value2, ramlDef);
                     if (this.project.Environment.license.extensions) {
                       RAMLExporter._addExtensions(ramlDef, ramlDef['(oas-info)'].license, this.project.Environment.license.extensions);
                     }
@@ -37604,8 +36600,7 @@
                       method.description = endpoint.Description;
                     }
                     if (endpoint.Summary) {
-                      this.hasSummary = true;
-                      method['(oas-summary)'] = endpoint.Summary;
+                      RAMLExporter._createAnnotation(method, 'summary', endpoint.Summary, ramlDef);
                     }
                     var protocols = RAMLExporter.mapProtocols(endpoint.protocols);
                     if (!_.isEmpty(protocols)) {
@@ -37617,26 +36612,27 @@
                     }
                     if (_.toLower(endpoint.Method) === 'post' || _.toLower(endpoint.Method) === 'put' || _.toLower(endpoint.Method) === 'patch') {
                       var _mimeType = RAMLExporter.getDefaultMimeType(endpoint.Consumes, ramlDef.mediaType);
-                      var body = this._mapRequestBody(endpoint.Body, _mimeType);
-                      if (!_.isEmpty(body)) {
-                        method.body = body;
+                      if (_.isArray(endpoint.Body) && endpoint.Body.length > 0) {
+                        var body = this._mapRequestBody(endpoint.Body[0], _mimeType, ramlDef);
+                        if (!_.isEmpty(body)) {
+                          method.body = body;
+                        }
                       }
                     }
-                    method.headers = this._mapNamedParams(endpoint.Headers);
+                    method.headers = this._mapNamedParams(endpoint.Headers, ramlDef);
                     var mimeType = RAMLExporter.getDefaultMimeType(endpoint.Produces, ramlDef.mediaType);
-                    var responses = this._mapResponseBody(endpoint.Responses, mimeType);
+                    var responses = this._mapResponseBody(endpoint.Responses, mimeType, ramlDef);
                     if (!_.isEmpty(responses)) {
                       if (responses.default) {
-                        this.hasResponsesDefault = true;
-                        method['(oas-responses-default)'] = responses.default;
+                        RAMLExporter._createAnnotation(method, 'responses-default', responses.default, ramlDef);
                         delete responses.default;
                       }
                       if (!_.isEmpty(responses)) {
                         method.responses = responses;
                       }
                     }
-                    method.queryParameters = this._mapURIParams(endpoint.QueryString);
-                    method.uriParameters = this._mapURIParams(endpoint.PathParams);
+                    method.queryParameters = this._mapURIParams(endpoint.QueryString, ramlDef);
+                    method.uriParameters = this._mapURIParams(endpoint.PathParams, ramlDef);
                     if (endpoint.securedBy) {
                       var rsecuredBy = [];
                       if (endpoint.securedBy.oauth2) {
@@ -37698,19 +36694,17 @@
                     uriParts.splice(0, 1);
                     ramlDef.addMethod(ramlDef, uriParts, endpoint.Method, method, this.project.getPathParamRef(endpoint.Path));
                     if (endpoint.Tags && !_.isEmpty(endpoint.Tags)) {
-                      this.hasTags = true;
-                      method['(oas-tags)'] = endpoint.Tags;
+                      RAMLExporter._createAnnotation(method, 'tags', endpoint.Tags, ramlDef);
                     }
                     if (endpoint.Deprecated) {
-                      this.hasDeprecated = true;
-                      method['(oas-deprecated)'] = endpoint.Deprecated;
+                      RAMLExporter._createAnnotation(method, 'deprecated', endpoint.Deprecated, ramlDef);
                     }
                     if (endpoint.ExternalDocs) {
-                      this.hasExternalDocs = true;
-                      method['(oas-externalDocs)'] = {
-                        'description': endpoint.ExternalDocs.description,
-                        'url': endpoint.ExternalDocs.url
-                      };
+                      var _value3 = {
+                          'description': endpoint.ExternalDocs.description,
+                          'url': endpoint.ExternalDocs.url
+                        };
+                      RAMLExporter._createAnnotation(method, 'externalDocs', _value3, ramlDef);
                     }
                     if (endpoint.responses.extensions) {
                       RAMLExporter._addExtensions(ramlDef, method.responses, endpoint.responses.extensions);
@@ -37718,9 +36712,9 @@
                     for (var _i in method) {
                       if (!method.hasOwnProperty(_i))
                         continue;
-                      var value = method[_i];
-                      if ((typeof value === 'undefined' ? 'undefined' : _typeof(value)) === 'object')
-                        RAMLExporter._addInnerExtensions(ramlDef, value);
+                      var _value4 = method[_i];
+                      if ((typeof _value4 === 'undefined' ? 'undefined' : _typeof(_value4)) === 'object')
+                        RAMLExporter._addInnerExtensions(ramlDef, _value4);
                     }
                     for (var _i2 in method.responses) {
                       if (!method.responses.hasOwnProperty(_i2))
@@ -37731,7 +36725,7 @@
                   }
                   var schemas = this.project.Schemas;
                   if (schemas && schemas.length > 0) {
-                    this.addSchema(ramlDef, this.mapSchema(schemas));
+                    this.addSchema(ramlDef, this.mapSchema(schemas, ramlDef));
                   }
                   for (var _i3 in schemas) {
                     if (!schemas.hasOwnProperty(_i3))
@@ -37744,7 +36738,7 @@
                     }
                   }
                   if (this.project.Traits && this.project.Traits.length > 0) {
-                    var traits = this._mapParametersTraits(this.project.Traits);
+                    var traits = this._mapParametersTraits(this.project.Traits, ramlDef);
                     if (!_.isEmpty(traits)) {
                       ramlDef.traits = traits;
                     }
@@ -37753,11 +36747,7 @@
                   if (this.project.Traits && this.project.Traits.length > 0) {
                     var _responses = this._mapResponsesTraits(this.project.Traits);
                     if (!_.isEmpty(_responses)) {
-                      ramlDef['(oas-responses)'] = _responses;
-                      if (!ramlDef.annotationTypes) {
-                        ramlDef.annotationTypes = {};
-                      }
-                      ramlDef.annotationTypes['oas-responses'] = 'any';
+                      RAMLExporter._createAnnotation(ramlDef, 'responses', _responses, ramlDef);
                     }
                   }
                   // Clean empty field in definition
@@ -37766,7 +36756,6 @@
                       delete ramlDef[field];
                     }
                   }
-                  this._annotationsSignature(ramlDef);
                   RAMLExporter._addExtensions(ramlDef, ramlDef, this.project.extensions);
                   this.data = ramlDef;
                 }
@@ -37956,11 +36945,8 @@
                       case 'maxItems':
                       case 'minItems':
                       case 'uniqueItems':
-                      case 'collectionFormat':
-                      case 'allowEmptyValue':
-                      case 'exclusiveMaximum':
-                      case 'exclusiveMinimum':
                       case 'facets':
+                      case '(oas-format)':
                       case '(oas-allowEmptyValue)':
                       case '(oas-collectionFormat)':
                       case '(oas-exclusiveMaximum)':
@@ -38011,8 +36997,155 @@
                 }
               },
               {
+                key: '_createAnnotation',
+                value: function _createAnnotation(object, id, value, ramlDef) {
+                  var definition = void 0;
+                  var found = true;
+                  switch (id) {
+                  case 'allowEmptyValue':
+                    definition = { type: 'boolean' };
+                    break;
+                  case 'tags':
+                    definition = {
+                      type: 'string[]',
+                      allowedTargets: 'Method'
+                    };
+                    break;
+                  case 'deprecated':
+                    definition = {
+                      type: 'boolean',
+                      allowedTargets: 'Method'
+                    };
+                    break;
+                  case 'summary':
+                    definition = {
+                      type: 'string',
+                      allowedTargets: 'Method'
+                    };
+                    break;
+                  case 'externalDocs':
+                    definition = {
+                      properties: {
+                        'description?': 'string',
+                        'url': 'string'
+                      },
+                      allowedTargets: [
+                        'API',
+                        'Method',
+                        'TypeDeclaration'
+                      ]
+                    };
+                    break;
+                  case 'info':
+                    definition = {
+                      properties: {
+                        'termsOfService?': 'string',
+                        'contact?': {
+                          properties: {
+                            'name?': 'string',
+                            'url?': 'string',
+                            'email?': 'string'
+                          }
+                        },
+                        'license?': {
+                          properties: {
+                            'name?': 'string',
+                            'url?': 'string'
+                          }
+                        }
+                      },
+                      allowedTargets: 'API'
+                    };
+                    break;
+                  case 'schema-title':
+                    definition = {
+                      type: 'string',
+                      allowedTargets: 'TypeDeclaration'
+                    };
+                    break;
+                  case 'property-title':
+                    definition = {
+                      type: 'string',
+                      allowedTargets: 'TypeDeclaration'
+                    };
+                    break;
+                  case 'body-name':
+                    definition = {
+                      type: 'string',
+                      allowedTargets: 'TypeDeclaration'
+                    };
+                    break;
+                  case 'responses-default':
+                    definition = {
+                      type: 'any',
+                      allowedTargets: 'Method'
+                    };
+                    break;
+                  case 'global-response-definition':
+                    definition = {
+                      type: 'any',
+                      allowedTargets: 'Response'
+                    };
+                    break;
+                  case 'definition-name':
+                    definition = {
+                      type: 'string',
+                      allowedTargets: 'TypeDeclaration'
+                    };
+                    break;
+                  case 'collectionFormat':
+                    definition = { type: 'string' };
+                    break;
+                  case 'format':
+                    definition = {
+                      type: 'string',
+                      allowedTargets: 'TypeDeclaration'
+                    };
+                    break;
+                  case 'readOnly':
+                    definition = {
+                      type: 'boolean',
+                      allowedTargets: 'TypeDeclaration'
+                    };
+                    break;
+                  case 'responses':
+                    definition = 'any';
+                    break;
+                  case 'exclusiveMaximum':
+                  case 'exclusiveMinimum':
+                    definition = { type: 'boolean' };
+                    break;
+                  case 'maximum':
+                  case 'minimum':
+                    definition = {
+                      allowedTargets: 'TypeDeclaration',
+                      type: 'number'
+                    };
+                    break;
+                  default:
+                    found = false;
+                    break;
+                  }
+                  if (!found)
+                    return false;
+                  if (!ramlDef.annotationTypes) {
+                    ramlDef.annotationTypes = {};
+                  }
+                  var annotationDefId = 'oas-' + id;
+                  if (!ramlDef.annotationTypes.hasOwnProperty(annotationDefId)) {
+                    ramlDef.annotationTypes[annotationDefId] = definition;
+                  }
+                  var annotationUsageId = '(' + annotationDefId + ')';
+                  if (object.hasOwnProperty(annotationUsageId))
+                    _.merge(object[annotationUsageId], value);
+                  else
+                    object[annotationUsageId] = value;
+                  return true;
+                }
+              },
+              {
                 key: '_mapFormats',
-                value: function _mapFormats(object) {
+                value: function _mapFormats(object, ramlDef) {
                   var intValidFormats = [
                       'int',
                       'int8',
@@ -38025,9 +37158,8 @@
                     delete object.format;
                   } else if (object && object.type == 'string') {
                     if (object.format == 'byte' || object.format == 'binary' || object.format == 'password' || object.format == 'uuid') {
-                      if (!object['facets'])
-                        object['facets'] = {};
-                      object['facets']['format'] = 'string';
+                      RAMLExporter._createAnnotation(object, 'format', object.format, ramlDef);
+                      delete object.format;
                     } else if (object.format == 'date') {
                       object['type'] = 'date-only';
                       delete object.format;
@@ -38036,7 +37168,8 @@
                       object['format'] = 'rfc3339';
                     } else {
                       if (object.format && ramlHelper.getValidFormat.indexOf(object.format) < 0) {
-                        object['facets'] = { 'format': 'string' };
+                        RAMLExporter._createAnnotation(object, 'format', object.format, ramlDef);
+                        delete object.format;
                       }
                     }
                   } else if (object && object.type == 'integer') {
@@ -38056,25 +37189,21 @@
                 }
               },
               {
-                key: '_addFacetsDeclaration',
-                value: function _addFacetsDeclaration(property, target) {
-                  if (property.hasOwnProperty('collectionFormat') || property.hasOwnProperty('allowEmptyValue') || property.hasOwnProperty('exclusiveMaximum') || property.hasOwnProperty('exclusiveMinimum')) {
-                    if (!target['facets']) {
-                      target['facets'] = {};
-                    }
-                    if (property.hasOwnProperty('collectionFormat')) {
-                      target['facets']['collectionFormat'] = 'string';
-                    }
-                    if (property.hasOwnProperty('allowEmptyValue')) {
-                      target['facets']['allowEmptyValue'] = 'boolean';
-                    }
-                    if (property.hasOwnProperty('exclusiveMaximum')) {
-                      target['facets']['exclusiveMaximum'] = 'boolean';
-                    }
-                    if (property.hasOwnProperty('exclusiveMinimum')) {
-                      target['facets']['exclusiveMinimum'] = 'boolean';
+                key: 'convertSchemaTitles',
+                value: function convertSchemaTitles(object, objectType, ramlDef) {
+                  for (var id in object) {
+                    if (!object.hasOwnProperty(id))
+                      continue;
+                    var val = object[id];
+                    if (id === 'title' && typeof val === 'string') {
+                      if (objectType === 'schema')
+                        RAMLExporter._createAnnotation(object, 'schema-title', val, ramlDef);
+                      else if (objectType === 'property')
+                        RAMLExporter._createAnnotation(object, 'property-title', val, ramlDef);
+                      delete object[id];
                     }
                   }
+                  return object;
                 }
               },
               {
@@ -38271,15 +37400,15 @@
         module.exports = RAMLExporter;
       },
       {
-        '../helpers/raml': 230,
-        '../utils/json': 243,
-        '../utils/strings': 244,
-        './exporter': 223,
+        '../helpers/raml': 226,
+        '../utils/json': 236,
+        '../utils/strings': 237,
+        './exporter': 220,
         'js-yaml': 21,
         'lodash': 204
       }
     ],
-    223: [
+    220: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -38320,19 +37449,6 @@
             }
             _createClass(Exporter, [
               {
-                key: 'loadSLData',
-                value: function loadSLData(rawData) {
-                  var _this = this;
-                  return new Promise(function (resolve, reject) {
-                    var importer = Importer.factory(Formats.STOPLIGHT);
-                    importer.loadData(rawData).then(function () {
-                      _this.project = importer.import();
-                      resolve();
-                    }).catch(reject);
-                  });
-                }
-              },
-              {
                 key: 'loadProject',
                 value: function loadProject(project) {
                   this.project = project;
@@ -38347,13 +37463,13 @@
               {
                 key: 'export',
                 value: function _export(format, options) {
-                  var _this2 = this;
+                  var _this = this;
                   return new Promise(function (resolve, reject) {
                     try {
                       (function () {
-                        _this2._export();
-                        var exportedData = _this2._getData(format);
-                        if (options && options.validate === true) {
+                        _this._export();
+                        var exportedData = _this._getData(format);
+                        if (options && (options.validate === true || options.validateExport === true)) {
                           (function () {
                             var formattedData = (typeof exportedData === 'undefined' ? 'undefined' : _typeof(exportedData)) === 'object' ? JSON.stringify(exportedData) : exportedData;
                             var importer = Importer.factory(Formats.AUTO);
@@ -38446,17 +37562,16 @@
         module.exports = Exporter;
       },
       {
-        '../formats': 229,
-        '../importers/index': 235,
+        '../formats': 225,
+        '../importers/index': 231,
         'js-yaml': 21
       }
     ],
-    224: [
+    221: [
       function (require, module, exports) {
         'use strict';
         var exporters = {
             Swagger: require('./swagger'),
-            StopLightX: require('./stoplightx'),
             RAML08: require('./raml08'),
             RAML10: require('./raml10')
           };
@@ -38474,13 +37589,12 @@
         };
       },
       {
-        './raml08': 225,
-        './raml10': 226,
-        './stoplightx': 227,
-        './swagger': 228
+        './raml08': 222,
+        './raml10': 223,
+        './swagger': 224
       }
     ],
-    225: [
+    222: [
       function (require, module, exports) {
         'use strict';
         var _createClass = function () {
@@ -38596,8 +37710,8 @@
               },
               {
                 key: 'mapBody',
-                value: function mapBody(bodyData) {
-                  var body = { schema: jsonHelper.format(this.convertRefFromModel(jsonHelper.parse(bodyData.body), false)) };
+                value: function mapBody(bodyData, ramlDef) {
+                  var body = { schema: jsonHelper.format(this.convertRefFromModel(jsonHelper.parse(bodyData.body), false, null, ramlDef)) };
                   var example = jsonHelper.format(bodyData.example);
                   if (!_.isEmpty(example)) {
                     body.example = example;
@@ -38676,12 +37790,12 @@
         module.exports = RAML08Exporter;
       },
       {
-        '../utils/json': 243,
-        './baseraml': 222,
+        '../utils/json': 236,
+        './baseraml': 219,
         'lodash': 204
       }
     ],
-    226: [
+    223: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -38788,10 +37902,10 @@
               },
               {
                 key: 'mapBody',
-                value: function mapBody(bodyData, type) {
+                value: function mapBody(bodyData, type, ramlDef) {
                   var body = jsonHelper.parse(bodyData.body);
-                  var result = this.convertAllOfToModel(this.convertRefFromModel(body, false));
-                  result = this.convertSchemaTitles(result, 'schema');
+                  var result = this.convertAllOfToModel(this.convertRefFromModel(body, false, null, ramlDef));
+                  result = RAMLExporter.convertSchemaTitles(result, 'schema', ramlDef);
                   result = this.mapAdditionalProperties(result);
                   if (bodyData.example) {
                     result.example = jsonHelper.parse(bodyData.example);
@@ -38825,7 +37939,7 @@
               },
               {
                 key: 'mapRequestBodyForm',
-                value: function mapRequestBodyForm(bodyData) {
+                value: function mapRequestBodyForm(bodyData, ramlDef) {
                   var body = { properties: bodyData.properties };
                   /**
     * Two different approaches to declare an optional parameter.
@@ -38839,7 +37953,14 @@
                     var property = body.properties[i];
                     property.required = false;
                     //facets
-                    RAMLExporter._addFacetsDeclaration(property, property);
+                    //todo add annotation
+                    for (var id in property) {
+                      if (!property.hasOwnProperty(id))
+                        continue;
+                      var found = RAMLExporter._createAnnotation(property, id, property[id], ramlDef);
+                      if (found)
+                        delete property[id];
+                    }
                   }
                   if (bodyData.required && bodyData.required.length > 0) {
                     for (var j in bodyData.required) {
@@ -38902,14 +38023,14 @@
               },
               {
                 key: 'mapSchema',
-                value: function mapSchema(slSchemas) {
+                value: function mapSchema(slSchemas, ramlDef) {
                   var results = {};
                   for (var i in slSchemas) {
                     if (!slSchemas.hasOwnProperty(i))
                       continue;
                     var schema = slSchemas[i];
-                    var definition = this.convertRefFromModel(jsonHelper.parse(schema.Definition), true);
-                    definition = this.convertSchemaTitles(definition, 'schema');
+                    var definition = this.convertRefFromModel(jsonHelper.parse(schema.Definition), true, null, ramlDef);
+                    definition = RAML10Exporter.convertSchemaTitles(definition, 'schema', ramlDef);
                     if (definition.allOf) {
                       definition = this.convertAllOfToModel(definition);
                     } else {
@@ -38919,8 +38040,7 @@
                     }
                     definition = this.mapAdditionalProperties(definition);
                     if (definition.externalDocs) {
-                      definition['(oas-externalDocs)'] = definition.externalDocs;
-                      this.hasExternalDocs = true;
+                      RAMLExporter._createAnnotation(definition, 'externalDocs', definition.externalDocs, ramlDef);
                       delete definition.externalDocs;
                     }
                     if (definition.additionalProperties) {
@@ -38931,15 +38051,14 @@
                       delete definition.additionalProperties;
                     }
                     if (schema.example) {
-                      definition.example = jsonHelper.parse(schema.example);  // let example = jsonHelper.parse(schema.example);
+                      definition.example = jsonHelper.parse(schema.example);  // const example = jsonHelper.parse(schema.example);
                                                                               // if (!_.isEmpty(example)) {
                                                                               // 	definition.example = example;
                     }
                     //check if schemaId contains invalid characters.
                     var schemaId = stringHelper.checkAndReplaceInvalidChars(schema.NameSpace, ramlHelper.getValidCharacters, ramlHelper.getReplacementCharacter);
                     if (schemaId !== schema.NameSpace) {
-                      this.hasDefinitionName = true;
-                      definition['(oas-definition-name)'] = schema.NameSpace;
+                      RAMLExporter._createAnnotation(definition, 'definition-name', schema.NameSpace, ramlDef);
                     }
                     results[schemaId] = definition;
                   }
@@ -38971,7 +38090,7 @@
                       } else if ((typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object') {
                         if (!hasProperties)
                           definition.properties = {};
-                        definition.properties['//'] = val;
+                        definition.properties['//'] = this.mapAdditionalProperties(val, key === 'properties' && !insideProperties);
                         delete definition.additionalProperties;
                       }
                     } else if ((typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object') {
@@ -39034,198 +38153,14 @@
         module.exports = RAML10Exporter;
       },
       {
-        '../helpers/raml': 230,
-        '../utils/json': 243,
-        '../utils/strings': 244,
-        './baseraml': 222,
+        '../helpers/raml': 226,
+        '../utils/json': 236,
+        '../utils/strings': 237,
+        './baseraml': 219,
         'lodash': 204
       }
     ],
-    227: [
-      function (require, module, exports) {
-        'use strict';
-        var _createClass = function () {
-            function defineProperties(target, props) {
-              for (var i = 0; i < props.length; i++) {
-                var descriptor = props[i];
-                descriptor.enumerable = descriptor.enumerable || false;
-                descriptor.configurable = true;
-                if ('value' in descriptor)
-                  descriptor.writable = true;
-                Object.defineProperty(target, descriptor.key, descriptor);
-              }
-            }
-            return function (Constructor, protoProps, staticProps) {
-              if (protoProps)
-                defineProperties(Constructor.prototype, protoProps);
-              if (staticProps)
-                defineProperties(Constructor, staticProps);
-              return Constructor;
-            };
-          }();
-        function _classCallCheck(instance, Constructor) {
-          if (!(instance instanceof Constructor)) {
-            throw new TypeError('Cannot call a class as a function');
-          }
-        }
-        function _possibleConstructorReturn(self, call) {
-          if (!self) {
-            throw new ReferenceError('this hasn\'t been initialised - super() hasn\'t been called');
-          }
-          return call && (typeof call === 'object' || typeof call === 'function') ? call : self;
-        }
-        function _inherits(subClass, superClass) {
-          if (typeof superClass !== 'function' && superClass !== null) {
-            throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass);
-          }
-          subClass.prototype = Object.create(superClass && superClass.prototype, {
-            constructor: {
-              value: subClass,
-              enumerable: false,
-              writable: true,
-              configurable: true
-            }
-          });
-          if (superClass)
-            Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
-        }
-        var Exporter = require('./exporter'), SwaggerExporter = require('./swagger'), _ = require('lodash');
-        var prefix = 'x-stoplight';
-        var testsPrefix = 'x-tests';
-        var StopLightX = function (_Exporter) {
-            _inherits(StopLightX, _Exporter);
-            function StopLightX() {
-              _classCallCheck(this, StopLightX);
-              return _possibleConstructorReturn(this, (StopLightX.__proto__ || Object.getPrototypeOf(StopLightX)).apply(this, arguments));
-            }
-            _createClass(StopLightX, [
-              {
-                key: '_mapEndpoints',
-                value: function _mapEndpoints() {
-                  var self = this;
-                  self.project.Endpoints.forEach(function (endpoint) {
-                    self.data.paths[endpoint.Path][endpoint.Method][prefix] = {
-                      id: endpoint.Id,
-                      beforeScript: endpoint.Before || null,
-                      afterScript: endpoint.After || null,
-                      public: endpoint.Public,
-                      mock: endpoint.Mock
-                    };
-                  });
-                }
-              },
-              {
-                key: '_mapSchemas',
-                value: function _mapSchemas() {
-                  var self = this;
-                  self.project.Schemas.forEach(function (schema) {
-                    var obj = {
-                        id: schema.Id,
-                        name: schema.Name
-                      };
-                    if (!_.isEmpty(schema.Summary)) {
-                      obj.summary = schema.Summary;
-                    }
-                    if (!_.isEmpty(schema.Description)) {
-                      obj.description = schema.Description;
-                    }
-                    obj.public = schema.Public;
-                    self.data.definitions[schema.namespace][prefix] = obj;
-                  });
-                }
-              },
-              {
-                key: '_mapTests',
-                value: function _mapTests(tests, namespace) {
-                  return tests.reduce(function (res, test) {
-                    var exportTest = {
-                        id: test._id,
-                        name: test.name,
-                        initialVariables: {}
-                      };
-                    try {
-                      exportTest.initialVariables = JSON.parse(test.initialVariables);
-                    } catch (e) {
-                    }
-                    exportTest.steps = test.steps.map(function (step) {
-                      if (step.test) {
-                        return { $ref: '#/' + namespace + '/' + step.test };
-                      }
-                      var request = step.request;
-                      delete request.endpoint;
-                      if (_.get(request, 'authentication.authType') === 'none') {
-                        request.authentication = {};
-                      }
-                      if (!_.get(request, 'postData.params.length') && !_.get(request, 'postData.text.length')) {
-                        request.postData = {};
-                      } else {
-                        delete request.postData.stored;
-                      }
-                      var assertions = step.assertions.map(function (a) {
-                          if (a.op && a.op.match(/validate/) && a.value) {
-                            try {
-                              a.value = JSON.parse(a.value);
-                            } catch (e) {
-                            }
-                          }
-                          return a;
-                        });
-                      return {
-                        id: step._id || step.id,
-                        name: step.name,
-                        beforeScript: step.middlewareBefore || step.beforeScript,
-                        afterScript: step.middlewareAfter || step.afterScript,
-                        capture: step.capture,
-                        request: request,
-                        assertions: assertions
-                      };
-                    });
-                    res[test._id] = exportTest;
-                    return res;
-                  }, {});
-                }
-              },
-              {
-                key: '_export',
-                value: function _export() {
-                  var swaggerExporter = new SwaggerExporter();
-                  swaggerExporter.loadProject(this.project);
-                  swaggerExporter._export();
-                  this.data = swaggerExporter.data;
-                  var env = this.project.Environment;
-                  this._mapEndpoints();
-                  this._mapSchemas();
-                  this.data[prefix] = {
-                    beforeScript: env.MiddlewareBefore,
-                    afterScript: env.MiddlewareAfter,
-                    version: env.toJSON(),
-                    functions: this.project.UtilityFunctions.reduce(function (res, item) {
-                      res[item.name] = item.toJSON();
-                      return res;
-                    }, {}),
-                    textSections: this.project.Texts.reduce(function (res, item) {
-                      res[item.Id] = item.toJSON();
-                      return res;
-                    }, {})
-                  };
-                  this.data[testsPrefix] = this._mapTests(this.project.Tests, testsPrefix);
-                  if (env.proxy.mock) {
-                    this.data[prefix].mock = env.proxy.mock;
-                  }
-                }
-              }
-            ]);
-            return StopLightX;
-          }(Exporter);
-        module.exports = StopLightX;
-      },
-      {
-        './exporter': 223,
-        './swagger': 228,
-        'lodash': 204
-      }
-    ],
-    228: [
+    224: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -39278,7 +38213,7 @@
           if (superClass)
             Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
         }
-        var Exporter = require('./exporter'), jsonHelper = require('../utils/json.js'), stringHelper = require('../utils/strings.js'), urlHelper = require('../utils/url'), SwaggerDefinition = require('../entities/swagger/definition'), swaggerHelper = require('../helpers/swagger'), _ = require('lodash'), url = require('url');
+        var Exporter = require('./exporter'), jsonHelper = require('../utils/json.js'), stringHelper = require('../utils/strings.js'), urlHelper = require('../utils/url'), SwaggerDefinition = require('../entities/swagger/definition'), swaggerHelper = require('../helpers/swagger'), xmlHelper = require('../utils/xml.js'), _ = require('lodash'), arrayHelper = require('../utils/array.js'), url = require('url');
         var Swagger = function (_Exporter) {
             _inherits(Swagger, _Exporter);
             function Swagger() {
@@ -39425,7 +38360,8 @@
                   for (var paramName in queryStringParams.properties) {
                     if (!queryStringParams.properties.hasOwnProperty(paramName))
                       continue;
-                    var param = swaggerHelper.setParameterFields(queryStringParams.properties[paramName], {});
+                    var param = Swagger._convertExamples(queryStringParams.properties[paramName], false);
+                    param = swaggerHelper.setParameterFields(param, {});
                     param.name = paramName;
                     param.in = 'query';
                     param.required = queryStringParams.hasOwnProperty('required') && queryStringParams.required.indexOf(param.name) >= 0;
@@ -39446,14 +38382,23 @@
                   // }
                   var body = jsonHelper.parse(res.body);
                   if (body && !_.isEmpty(body)) {
-                    item.schema = this.convertRefFromModel(body);
+                    if (body.hasOwnProperty('$schema'))
+                      delete body['$schema'];
+                    item.schema = this.convertRefFromModel(body, false);
                   }
                   if (mimeType && mimeType !== '' && res.example && res.example !== '{}' && res.example.length > 2) {
                     item.examples = {};
                     item.examples[mimeType] = jsonHelper.parse(res.example);
                   }
                   if (res.headers) {
+                    Swagger.mapHeaderProperties(res.headers);
                     item.headers = res.headers;
+                    var headers = item.headers;
+                    for (var id in headers) {
+                      if (!headers.hasOwnProperty(id))
+                        continue;
+                      headers[id] = Swagger._convertExamples(headers[id], false);
+                    }
                   }
                   return item;
                 }
@@ -39477,12 +38422,26 @@
                 }
               },
               {
-                key: '_mapRequestBody',
-                value: function _mapRequestBody(slRequestBody, requestTypes) {
-                  if (_.isEmpty(slRequestBody.body)) {
-                    return [];
+                key: '_mapRequestBodies',
+                value: function _mapRequestBodies(slRequestBodies, mimeTypes) {
+                  var result = {};
+                  for (var id in slRequestBodies) {
+                    if (!slRequestBodies.hasOwnProperty(id))
+                      continue;
+                    var requestBody = slRequestBodies[id];
+                    result['x-raml-body-' + requestBody.mimeType] = this._mapRequestBody(requestBody, mimeTypes, false);
                   }
-                  var result = [], body = jsonHelper.parse(slRequestBody.body) || {};
+                  return result;
+                }
+              },
+              {
+                key: '_mapRequestBody',
+                value: function _mapRequestBody(slRequestBody, requestTypes, multipleBodies) {
+                  var result = [];
+                  if (_.isEmpty(slRequestBody.body)) {
+                    return result;
+                  }
+                  var body = jsonHelper.parse(slRequestBody.body) || {};
                   var param = {};
                   if (!_.isEmpty(slRequestBody.description)) {
                     param.description = slRequestBody.description;
@@ -39505,6 +38464,9 @@
                           if (body.required && body.required.indexOf(prop) >= 0) {
                             param.required = true;
                           }
+                          if (param.hasOwnProperty('type')) {
+                            param.type = multipleBodies ? { type: 'object' } : param.type;
+                          }
                           result.push(param);
                         }
                       } else {
@@ -39513,16 +38475,26 @@
                         if (body.ref) {
                           param['x-raml-type'] = body.ref;
                         }
+                        if (param.hasOwnProperty('type')) {
+                          param.type = multipleBodies ? { type: 'object' } : param.type;
+                        }
+                        if (body.hasOwnProperty('type') && body.type === 'file')
+                          param.type = body.type;
                         result.push(param);
                       }
                     } else {
                       if (body.required && body.required.length <= 0) {
                         delete body.required;
                       }
-                      Swagger.mapExample(slRequestBody, body);
                       param.name = 'body';
                       param.in = 'body';
-                      param.schema = this.convertRefFromModel(body);
+                      param.schema = multipleBodies ? { type: 'object' } : this.convertRefFromModel(body, false);
+                      if (!_.isEmpty(slRequestBody.example)) {
+                        if (!xmlHelper.isXml(slRequestBody.example))
+                          param.schema.example = JSON.parse(slRequestBody.example);
+                        else
+                          param.schema.example = slRequestBody.example;
+                      }
                       result.push(param);
                     }
                   }
@@ -39537,7 +38509,8 @@
                     for (var property in slHeaders.properties) {
                       if (!slHeaders.properties.hasOwnProperty(property))
                         continue;
-                      var param = swaggerHelper.setParameterFields(slHeaders.properties[property], {});
+                      var param = Swagger._convertExamples(slHeaders.properties[property], false);
+                      param = swaggerHelper.setParameterFields(param, {});
                       param.name = property;
                       param.in = 'header';
                       param.required = slHeaders.required && slHeaders.required.indexOf(property) >= 0;
@@ -39564,12 +38537,12 @@
                     if (!slSchemas.hasOwnProperty(i))
                       continue;
                     var schema = slSchemas[i];
-                    var definition = this.convertRefFromModel(jsonHelper.parse(schema.Definition));
+                    var definition = jsonHelper.parse(schema.Definition);
                     if (definition.hasOwnProperty('$schema')) {
                       delete definition['$schema'];
                       delete definition['id'];
                     }
-                    Swagger.mapExample(schema, definition);
+                    definition = this.convertRefFromModel(definition, true);
                     result[schema.NameSpace] = definition;
                   }
                   return result;
@@ -39577,28 +38550,61 @@
               },
               {
                 key: 'convertRefFromModel',
-                value: function convertRefFromModel(object) {
+                value: function convertRefFromModel(object, isSchema, isProperty) {
+                  if (xmlHelper.isXml(object)) {
+                    object = {
+                      type: 'object',
+                      'x-raml-xsd-definition': object
+                    };
+                  }
+                  if (object.hasOwnProperty('definitions') && object.hasOwnProperty('items') && object.type == 'array') {
+                    object = Swagger.convertDefinitions(object);
+                  }
                   for (var id in object) {
-                    if (object.hasOwnProperty(id)) {
-                      var val = object[id];
-                      if (id == 'allOf') {
-                        object.allOf = val.map(function (obj) {
-                          if ((typeof obj === 'undefined' ? 'undefined' : _typeof(obj)) === 'object')
-                            return obj;
-                          else
-                            return { '$ref': '#/definitions/' + obj };
-                        });
-                      } else if (typeof val === 'string') {
-                        if (id == 'ref') {
-                          object.$ref = '#/definitions/' + val;
-                          delete object[id];
-                        } else if (id == 'include') {
-                          object.$ref = val;
-                          delete object[id];
-                        }
-                      } else if (val && (typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object') {
-                        object[id] = this.convertRefFromModel(val);
+                    if (!object.hasOwnProperty(id) || swaggerHelper.isExtension(id))
+                      continue;
+                    var val = object[id];
+                    if (id == 'allOf') {
+                      var allOf = object.allOf;
+                      for (var key in allOf) {
+                        if (!allOf.hasOwnProperty(key))
+                          continue;
+                        var obj = allOf[key];
+                        if ((typeof obj === 'undefined' ? 'undefined' : _typeof(obj)) === 'object')
+                          allOf[key] = this.convertRefFromModel(obj, isSchema);
+                        else
+                          allOf[key] = { '$ref': '#/definitions/' + obj };
                       }
+                      //check if all elements from allOf are the same.
+                      //if yes, remove allOf attribute.
+                      if (arrayHelper.allEqual(allOf)) {
+                        _.merge(object, object.allOf[0]);
+                        delete object.allOf;
+                      }
+                    } else if (id === 'schemaPath') {
+                      object['x-raml-xsd-definition'] = val;
+                      delete object[id];
+                    } else if (typeof val === 'string') {
+                      if (id == 'ref') {
+                        object.$ref = '#/definitions/' + val;
+                        delete object[id];
+                        id = '$ref';
+                      } else if (id == 'include') {
+                        object.$ref = val;
+                        delete object[id];
+                        id = '$ref';
+                      }
+                    } else if (val && (typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object') {
+                      if (id === 'example' || id === 'examples') {
+                        object = Swagger._convertExamples(object, isSchema);
+                        id = 'example';
+                      } else if (id !== 'xml') {
+                        object[id] = this.convertRefFromModel(val, isSchema, id == 'properties' && !isProperty);
+                      }
+                    }
+                    if (!_.isArray(object) && (typeof object === 'undefined' ? 'undefined' : _typeof(object)) == 'object' && !isProperty && swaggerHelper.getSupportedSchemaFields.indexOf(id) < 0) {
+                      object['x-raml-' + id] = val;
+                      delete object[id];
                     }
                   }
                   return object;
@@ -39665,9 +38671,13 @@
                   for (var i in endpoint.traits) {
                     if (!endpoint.traits.hasOwnProperty(i))
                       continue;
+                    var traitName = endpoint.traits[i];
+                    if (_.isObject(traitName) && !_.isEmpty(traitName)) {
+                      traitName = Object.keys(traitName)[0];
+                    }
                     var trait = _.find(this.project.Traits, [
                         '_id',
-                        endpoint.traits[i]
+                        traitName
                       ]);
                     if (!trait) {
                       continue;
@@ -39730,7 +38740,8 @@
                   for (var i in endpoints) {
                     if (!endpoints.hasOwnProperty(i))
                       continue;
-                    var endpoint = endpoints[i], parameters = [];
+                    var endpoint = endpoints[i];
+                    var parameters = [];
                     var requestTypes = this._getRequestTypes(endpoint, parameters, env.Consumes);
                     // To build parameters we need to grab data from body for supported mimeTypes
                     requestTypes = _.isEmpty(requestTypes) ? env.Consumes : requestTypes;
@@ -39739,11 +38750,18 @@
                       swaggerDef.paths[endpoint.Path] = params.length ? { parameters: params } : {};
                     }
                     parameters = parameters.concat(this._mapQueryString(endpoint.QueryString));
-                    parameters = parameters.concat(this._mapRequestBody(endpoint.Body, requestTypes));
+                    var requestBodySize = _.size(endpoint.Body);
+                    if (requestBodySize > 1) {
+                      parameters = parameters.concat(this._mapRequestBody(endpoint.Body[0], requestTypes, true));
+                    } else {
+                      if (!_.isEmpty(endpoint.Body)) {
+                        parameters = parameters.concat(this._mapRequestBody(endpoint.Body[0], requestTypes, false));
+                      }
+                    }
                     parameters = parameters.concat(this._mapRequestHeaders(endpoint.Headers));
                     parameters = parameters.concat(this._mapEndpointTraitParameters(endpoint, parameters));
                     parameters = Swagger._validateParameters(parameters);
-                    var responses = _.assign({}, this._mapEndpointTraitResponses(endpoint), this._mapResponseBody(endpoint, env));
+                    var responses = _.assign({}, this._mapResponseBody(endpoint, env), this._mapEndpointTraitResponses(endpoint));
                     if (_.isEmpty(responses)) {
                       // empty schema for swagger spec validation
                       responses['default'] = {
@@ -39752,12 +38770,16 @@
                       };
                     }
                     // if (_.isEmpty(endpoint.Produces)) {
-                    //   for (let statusCode in responses) {
-                    //     let response = responses[statusCode];
+                    //   for (const statusCode in responses) {
+                    //     const response = responses[statusCode];
                     //     delete response.schema;
                     //   }
                     // }
                     swaggerDef.paths[endpoint.Path][endpoint.Method] = this._constructSwaggerMethod(endpoint, parameters, responses, env);
+                    if (requestBodySize > 1) {
+                      var bodies = this._mapRequestBodies(endpoint.Body, requestTypes);
+                      _.merge(swaggerDef.paths[endpoint.Path][endpoint.Method], bodies);
+                    }
                     //Is it OK to include produces/consumes in all cases?
                     if (endpoint.SecuredBy) {
                       var security = Swagger._mapEndpointSecurity(endpoint.SecuredBy, this.project.Environment.SecuritySchemes);
@@ -39776,7 +38798,8 @@
                   for (var i in traits) {
                     if (!traits.hasOwnProperty(i))
                       continue;
-                    var trait = traits[i], params = [];
+                    var trait = traits[i];
+                    var params = [];
                     try {
                       var schema = jsonHelper.parse(trait.request.queryString);
                       if (!jsonHelper.isEmptySchema(schema)) {
@@ -39810,7 +38833,12 @@
                     for (var _i2 in trait.responses) {
                       var res = trait.responses[_i2];
                       var responseName = stringHelper.computeTraitName(trait.name, res.codes && res.codes.length > 0 && parseInt(res.codes[0]) ? res.codes[0] : 'default');
-                      responses[responseName] = mapResponseBody(res);
+                      var response = this.mapResponseBody(res);
+                      if (response.hasOwnProperty('schema') && response['schema'].hasOwnProperty('$ref') && _.includes(response['schema']['$ref'], '<<')) {
+                        response['schema']['x-raml-type'] = response['schema']['$ref'];
+                        delete response['schema']['$ref'];
+                      }
+                      responses[responseName] = response;
                     }
                   }
                   return responses;
@@ -39875,7 +38903,10 @@
                   } else {
                     delete swaggerDef.consumes;
                   }
-                  swaggerDef.definitions = this._mapSchema(this.project.Schemas);
+                  var definitions = this._mapSchema(this.project.Schemas);
+                  if (!_.isEmpty(definitions)) {
+                    swaggerDef.definitions = definitions;
+                  }
                   var parameters = this._mapTraitParameters(this.project.Traits);
                   if (!_.isEmpty(parameters)) {
                     swaggerDef.parameters = parameters;
@@ -40105,6 +39136,24 @@
                 }
               },
               {
+                key: 'mapHeaderProperties',
+                value: function mapHeaderProperties(headers) {
+                  for (var i in headers) {
+                    if (!headers.hasOwnProperty(i))
+                      continue;
+                    var header = headers[i];
+                    if (header.hasOwnProperty('required')) {
+                      header['x-raml-required'] = header['required'];
+                      delete header.required;
+                    }
+                    if (header.hasOwnProperty('repeat')) {
+                      header['x-raml-repeat'] = header['repeat'];
+                      delete header.repeat;
+                    }
+                  }
+                }
+              },
+              {
                 key: '_hasAttributes',
                 value: function _hasAttributes(object, atts) {
                   for (var id in object) {
@@ -40119,6 +39168,61 @@
                         object[id] = Swagger._hasAttributes(val, atts);
                       }
                     }
+                  }
+                  return object;
+                }
+              },
+              {
+                key: 'convertDefinitions',
+                value: function convertDefinitions(object) {
+                  var ref = object.items.$ref.split('/');
+                  var item = ref[ref.length - 1];
+                  var definitions = object.definitions;
+                  for (var id in definitions) {
+                    if (!definitions.hasOwnProperty(id))
+                      continue;
+                    if (id === item) {
+                      object['items'] = definitions[id];
+                      delete definitions[id];
+                      if (_.isEmpty(object.definitions))
+                        delete object['definitions'];
+                      break;
+                    }
+                  }
+                  return object;
+                }
+              },
+              {
+                key: '_convertExamples',
+                value: function _convertExamples(object, isSchema) {
+                  if (isSchema) {
+                    if (object.hasOwnProperty('examples')) {
+                      var val = object.examples;
+                      if (!_.isArray(val))
+                        return val;
+                      object.example = val[0];
+                      if (val.length > 1) {
+                        var additionalExamples = [];
+                        for (var i = 1; i < val.length; i++) {
+                          additionalExamples.push(val[i]);
+                        }
+                        object['x-raml-additional-examples'] = additionalExamples;
+                      }
+                      delete object.examples;
+                    }
+                  } else if (object.hasOwnProperty('example')) {
+                    object['x-raml-example'] = object.example;
+                    delete object.example;
+                  } else if (object.hasOwnProperty('examples')) {
+                    var _val = object.examples;
+                    if (!_.isArray(_val))
+                      return _val;
+                    var examples = [];
+                    for (var _i5 = 0; _i5 < _val.length; _i5++) {
+                      examples.push(_val[_i5]);
+                    }
+                    object['x-raml-example'] = examples;
+                    delete object.examples;
                   }
                   return object;
                 }
@@ -40156,17 +39260,19 @@
         module.exports = Swagger;
       },
       {
-        '../entities/swagger/definition': 217,
-        '../helpers/swagger': 231,
-        '../utils/json.js': 243,
-        '../utils/strings.js': 244,
-        '../utils/url': 245,
-        './exporter': 223,
+        '../entities/swagger/definition': 216,
+        '../helpers/swagger': 227,
+        '../utils/array.js': 235,
+        '../utils/json.js': 236,
+        '../utils/strings.js': 237,
+        '../utils/url': 238,
+        '../utils/xml.js': 239,
+        './exporter': 220,
         'lodash': 204,
-        'url': 284
+        'url': 277
       }
     ],
-    229: [
+    225: [
       function (require, module, exports) {
         'use strict';
         var supportedFormats = {
@@ -40200,34 +39306,13 @@
               formats: ['yaml'],
               import: true,
               export: true
-            },
-            'POSTMAN': {
-              name: 'Postman',
-              className: 'Postman',
-              formats: ['json'],
-              import: false,
-              export: false
-            },
-            'STOPLIGHT': {
-              name: 'StopLight',
-              className: 'StopLight',
-              formats: ['json'],
-              import: false,
-              export: false
-            },
-            'STOPLIGHTX': {
-              name: 'StopLightX',
-              className: 'StopLightX',
-              formats: ['json'],
-              import: false,
-              export: false
             }
           };
         module.exports = supportedFormats;
       },
       {}
     ],
-    230: [
+    226: [
       function (require, module, exports) {
         'use strict';
         var _ = require('lodash');
@@ -40300,19 +39385,35 @@
             '_'
           ],
           getReplacementCharacter: '_',
-          getScalarTypes: [
+          getRAML10ScalarTypes: [
             'string',
             'number',
             'integer',
             'boolean',
-            'date',
             'datetime',
             'date-only',
             'file',
             'array',
-            'nilValue',
+            'nil',
             'time-only',
             'datetime-only'
+          ],
+          getRAML08ScalarTypes: [
+            'string',
+            'number',
+            'integer',
+            'boolean',
+            'datetime',
+            'date-only',
+            'file',
+            'array',
+            'null',
+            'time-only',
+            'datetime-only'
+          ],
+          getNumberTypes: [
+            'number',
+            'integer'
           ],
           getValidFormat: [
             'byte',
@@ -40344,6 +39445,8 @@
             'required',
             'facets',
             'items',
+            'example',
+            'examples',
             '(oas-allowEmptyValue)',
             '(oas-collectionFormat)',
             '(oas-exclusiveMaximum)',
@@ -40351,6 +39454,9 @@
           ],
           getRFC3339Format: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.(\d*)Z$/,
           getDateOnlyFormat: /^\d{4}[^-]\d{2}[^-]\d{2}$/,
+          isNumberType: function isNumberType(type) {
+            return this.getNumberTypes.indexOf(type) >= 0;
+          },
           setParameterFields: function setParameterFields(source, target) {
             for (var prop in source) {
               if (!source.hasOwnProperty(prop))
@@ -40382,7 +39488,7 @@
       },
       { 'lodash': 204 }
     ],
-    231: [
+    227: [
       function (require, module, exports) {
         'use strict';
         module.exports = {
@@ -40407,7 +39513,39 @@
             'format',
             'collectionFormat',
             'allowEmptyValue',
-            'required'
+            'required',
+            'x-raml-example'
+          ],
+          getSupportedSchemaFields: [
+            '$ref',
+            'format',
+            'title',
+            'description',
+            'default',
+            'multipleOf',
+            'maximum',
+            'exclusiveMaximum',
+            'minimum',
+            'exclusiveMinimum',
+            'maxLength',
+            'minLength',
+            'pattern',
+            'maxItems',
+            'minItems',
+            'uniqueItems',
+            'maxProperties',
+            'minProperties',
+            'required',
+            'enum',
+            'type',
+            'items',
+            'allOf',
+            'properties',
+            'additionalProperties',
+            'example',
+            'discriminator',
+            'xml',
+            'schemaPath'
           ],
           setParameterFields: function setParameterFields(source, target) {
             for (var prop in source) {
@@ -40433,12 +39571,15 @@
               }
             }
             return target;
+          },
+          isExtension: function isExtension(id) {
+            return id.substring(0, 2) === 'x-';
           }
         };
       },
       {}
     ],
-    232: [
+    228: [
       function (require, module, exports) {
         'use strict';
         var _createClass = function () {
@@ -40488,12 +39629,9 @@
         }
         var fs = require('fs'), _ = require('lodash'), Formats = require('../formats'), Importer = require('./importer'), urlHelper = require('../utils/url');
         var importers = {
-            Postman: require('./postman'),
             RAML08: require('./raml08'),
             RAML10: require('./raml10'),
-            Swagger: require('./swagger'),
-            StopLight: require('./stoplight'),
-            StopLightX: require('./stoplightx')
+            Swagger: require('./swagger')
           };
         var Auto = function (_Importer) {
             _inherits(Auto, _Importer);
@@ -40502,16 +39640,9 @@
               _classCallCheck(this, Auto);
               var _this = _possibleConstructorReturn(this, (Auto.__proto__ || Object.getPrototypeOf(Auto)).call(this));
               _this.importer = null;
-              _this.detectedFormat = null;
               return _this;
             }
             _createClass(Auto, [
-              {
-                key: 'getDetectedFormat',
-                value: function getDetectedFormat() {
-                  return this.detectedFormat;
-                }
-              },
               {
                 key: 'loadData',
                 value: function loadData(data, options, url) {
@@ -40538,17 +39669,22 @@
                       return _this3.loadData(body, options, filePath);
                     });
                   } else {
-                    // Local file
-                    var fileContent = fs.readFileSync(filePath, 'utf8');
-                    return this.loadData(fileContent, options);
+                    if (options && options.fsResolver) {
+                      return options.fsResolver.contentAsync(filePath).then(function (fileContent) {
+                        return _this3.loadData(fileContent, options, filePath);
+                      });
+                    } else {
+                      // Local file
+                      var fileContent = fs.readFileSync(filePath, 'utf8');
+                      return this.loadData(fileContent, options);
+                    }
                   }
                 }
               },
               {
                 key: '_import',
                 value: function _import() {
-                  this.importer._import();
-                  this.project = this.importer.project;
+                  return this.importer._import();
                 }
               },
               {
@@ -40558,7 +39694,6 @@
                   var importer = new importers[detectedFormat.className]();
                   var promise = url ? importer.loadFile(url, options) : importer.loadData(data, options);
                   promise.then(function () {
-                    _this4.detectedFormat = detectedFormat;
                     _this4.data = importer.data;
                     _this4.importer = importer;
                     resolve();
@@ -40571,19 +39706,12 @@
                   if (!data)
                     return;
                   data = _.trim(data);
-                  try {
-                    var json = JSON.parse(data);
-                    // found a json
-                    return json.swagger ? Formats.STOPLIGHTX : Formats.POSTMAN;
-                  } catch (err) {
-                    // assume a yaml
-                    if (/#%RAML[\s]*1\.?0?/.test(data))
-                      return Formats.RAML10;
-                    if (/#%RAML[\s]*0\.?8?/.test(data))
-                      return Formats.RAML08;
-                    if (/swagger:[\s'"]*\d\.?\d?/.test(data))
-                      return Formats.SWAGGER;
-                  }
+                  if (/#%RAML[\s]*1\.?0?/.test(data))
+                    return Formats.RAML10;
+                  if (/#%RAML[\s]*0\.?8?/.test(data))
+                    return Formats.RAML08;
+                  if (/swagger:[\s'"]*\d\.?\d?/.test(data) || /{"swagger":[\s'"]*\d\.?\d?/.test(data))
+                    return Formats.SWAGGER;
                 }
               }]);
             return Auto;
@@ -40591,20 +39719,17 @@
         module.exports = Auto;
       },
       {
-        '../formats': 229,
-        '../utils/url': 245,
-        './importer': 234,
-        './postman': 236,
-        './raml08': 237,
-        './raml10': 238,
-        './stoplight': 239,
-        './stoplightx': 240,
-        './swagger': 241,
+        '../formats': 225,
+        '../utils/url': 238,
+        './importer': 230,
+        './raml08': 232,
+        './raml10': 233,
+        './swagger': 234,
         'fs': 4,
         'lodash': 204
       }
     ],
-    233: [
+    229: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -40668,401 +39793,24 @@
               _this.schemas = [];
               return _this;
             }
+            // _getSecuritySchemeSettingsByName(schemeName) {
+            // 	const securitySchemes = this.data.securitySchemes;
+            // 	for (const i in securitySchemes) {
+            // 		if (!securitySchemes.hasOwnProperty(i)) continue;
+            //
+            // 		const entries = _.entries(securitySchemes[i]);
+            // 		for (let index = 0; index < entries.length; index++) {
+            // 			const entry = entries[index];
+            // 			const key = entry[0];
+            // 			const value = entry[1];
+            //
+            // 			if (schemeName === key) {
+            // 				return value;
+            // 			}
+            // 		}
+            // 	}
+            // }
             _createClass(RAMLImporter, [
-              {
-                key: '_getSecuritySchemeSettingsByName',
-                value: function _getSecuritySchemeSettingsByName(schemeName) {
-                  var securitySchemes = this.data.securitySchemes;
-                  for (var i in securitySchemes) {
-                    if (!securitySchemes.hasOwnProperty(i))
-                      continue;
-                    var entries = _.entries(securitySchemes[i]);
-                    for (var index = 0; index < entries.length; index++) {
-                      var entry = entries[index];
-                      var key = entry[0];
-                      var value = entry[1];
-                      if (schemeName === key) {
-                        return value;
-                      }
-                    }
-                  }
-                }
-              },
-              {
-                key: '_mapRequestBody',
-                value: function _mapRequestBody(methodBody, checkEmptyType) {
-                  return this.mapRequestBody(methodBody, checkEmptyType);
-                }
-              },
-              {
-                key: '_mapQueryString',
-                value: function _mapQueryString(queryString) {
-                  var result = queryString;
-                  delete result.typePropertyKind;
-                  if (queryString.type) {
-                    result['x-raml-type'] = _.isArray(queryString.type) && queryString.type.length == 1 ? queryString.type[0] : queryString.type;
-                    queryString.type = 'string';
-                  }
-                  if (queryString.properties) {
-                    queryString.required = [];
-                  }
-                  for (var paramId in queryString.properties) {
-                    if (!queryString.properties.hasOwnProperty(paramId))
-                      continue;
-                    var param = queryString.properties[paramId];
-                    RAMLImporter._convertRequiredToArray(param, paramId, queryString.required);
-                  }
-                  return result;
-                }
-              },
-              {
-                key: '_mapRequestHeaders',
-                value: function _mapRequestHeaders(data) {
-                  return RAMLImporter._mapQueryParameters(data);
-                }
-              },
-              {
-                key: '_mapURIParams',
-                value: function _mapURIParams(uriParams) {
-                  var pathParams = {
-                      type: 'object',
-                      properties: {},
-                      required: []
-                    };
-                  for (var i in uriParams) {
-                    if (!uriParams.hasOwnProperty(i))
-                      continue;
-                    var key = uriParams[i];
-                    pathParams.properties[key.name] = {
-                      description: key.displayName || key.description || '',
-                      type: key.type || 'string'
-                    };
-                    RAMLImporter._convertRequiredToArray(key, key.name, pathParams.required);
-                    RAMLImporter._addAnnotations(key, pathParams.properties[key.name]);
-                  }
-                  return pathParams;
-                }
-              },
-              {
-                key: '_mapResponseBody',
-                value: function _mapResponseBody(responses) {
-                  var data = [];
-                  for (var code in responses) {
-                    if (!responses.hasOwnProperty(code))
-                      continue;
-                    var response = responses[code];
-                    var result = this._mapRequestBody(response.body, false);
-                    result.codes = [response.code];
-                    if (result.body) {
-                      result.body = jsonHelper.cleanSchema(result.body);
-                    }
-                    if (response.headers) {
-                      var r = {};
-                      for (var index in response.headers) {
-                        if (!response.headers.hasOwnProperty(index))
-                          continue;
-                        var header = response.headers[index];
-                        r[header.name] = this._mapQueryString(header);
-                        delete r[header.name]['name'];
-                      }
-                      result.headers = r;
-                    }
-                    if (result.example) {
-                      result.example = jsonHelper.stringify(result.example, 4);
-                    }
-                    if (response.description) {
-                      result.description = jsonHelper.stringify(response.description);
-                    }
-                    data.push(result);
-                  }
-                  return data;
-                }
-              },
-              {
-                key: '_mapSchema',
-                value: function _mapSchema(schemData) {
-                  //check if type attribute is abscent and fill with default value (type: string).
-                  RAMLImporter._checkForDefaultType(schemData);
-                  return this.mapSchema(schemData);
-                }
-              },
-              {
-                key: '_mapEndpoint',
-                value: function _mapEndpoint(resource, baseURI, pathParams) {
-                  if (resource.uriParameters) {
-                    pathParams = this._mapURIParams(resource.uriParameters);
-                  }
-                  var mResource = {
-                      path: baseURI + resource.relativeUri,
-                      endpoints: [],
-                      annotations: {}
-                    };
-                  if (resource.hasOwnProperty('is')) {
-                    mResource.is = resource.is;
-                  }
-                  if (resource.displayName) {
-                    mResource.displayName = resource.displayName;
-                  }
-                  if (resource.description) {
-                    mResource.description = resource.description;
-                  }
-                  RAMLImporter._addAnnotations(resource, mResource.annotations);
-                  var methods = resource.methods;
-                  for (var i in methods) {
-                    if (!methods.hasOwnProperty(i))
-                      continue;
-                    var method = methods[i];
-                    var summary = method.summary ? method.summary : '';
-                    var endpoint = new Endpoint(summary);
-                    endpoint.Method = method.method;
-                    endpoint.Path = baseURI + resource.relativeUri;
-                    endpoint.Description = method.description ? jsonHelper.stringify(method.description) : '';
-                    endpoint.SetOperationId(method.displayName, endpoint.Method, endpoint.Path);
-                    if (method.body) {
-                      var c = RAMLImporter.mapMimeTypes(method.body, this.data.mediaType);
-                      endpoint.Consumes = c.length > 0 ? c : null;
-                      endpoint.Body = this._mapRequestBody(method.body, true);
-                    }
-                    if (method.queryParameters) {
-                      endpoint.QueryString = RAMLImporter._mapQueryParameters(method.queryParameters);
-                    } else if (method.queryString) {
-                      endpoint.QueryString = this._mapQueryString(method.queryString);
-                    }
-                    if (method.headers) {
-                      endpoint.Headers = this._mapRequestHeaders(method.headers);
-                    }
-                    if (method.responses) {
-                      var produces = [];
-                      for (var code in method.responses) {
-                        if (!method.responses.hasOwnProperty(code))
-                          continue;
-                        if (!method.responses[code] || !method.responses[code].body) {
-                          continue;
-                        }
-                        produces = produces.concat(RAMLImporter.mapMimeTypes(method.responses[code].body, this.data.mediaType));
-                      }
-                      var p = _.uniq(produces);
-                      endpoint.Produces = p.length > 0 ? p : null;
-                      endpoint.Responses = this._mapResponseBody(method.responses);
-                    }
-                    endpoint.traits = [];
-                    var isMethod = method.is || resource.is;
-                    if (isMethod) {
-                      if (isMethod instanceof Array) {
-                        endpoint.traits = isMethod;
-                      } else if (isMethod instanceof Object) {
-                        endpoint.traits = Object.keys(isMethod);
-                      }
-                    }
-                    endpoint.PathParams = pathParams;
-                    //endpoint security
-                    var securedBy = method.securedBy;
-                    if (Array.isArray(securedBy)) {
-                      endpoint.securedBy = [];
-                      for (var si in securedBy) {
-                        if (!securedBy.hasOwnProperty(si))
-                          continue;
-                        if (typeof securedBy[si] === 'string') {
-                          endpoint.securedBy.push(securedBy[si]);
-                        } else {
-                          for (var index in securedBy[si]) {
-                            if (!securedBy[si].hasOwnProperty(index))
-                              continue;
-                            var current = securedBy[si][index];
-                            if (current.scopes) {
-                              var elem = {};
-                              elem[index] = current.scopes;
-                              endpoint.securedBy.push(elem);
-                            } else {
-                              endpoint.securedBy.push(index);
-                            }
-                          }
-                        }
-                      }
-                    }
-                    //add annotations
-                    RAMLImporter._addAnnotations(method, endpoint);
-                    //TODO endpoint security
-                    mResource.endpoints.push(endpoint);
-                  }
-                  this.project.addResource(mResource);
-                  var resources = resource.resources;
-                  if (resources && resources.length > 0) {
-                    for (var j = 0; j < resources.length; j++) {
-                      this._mapEndpoint(resources[j], baseURI + resource.relativeUri, pathParams);
-                    }
-                  }
-                }
-              },
-              {
-                key: 'loadFile',
-                value: function loadFile(filePath, options) {
-                  var _this2 = this;
-                  return new Promise(function (resolve, reject) {
-                    parser.loadApi(filePath, RAMLImporter._options(options)).then(function (api) {
-                      try {
-                        _this2.data = api.expand(false).toJSON(toJSONOptions);
-                        resolve();
-                      } catch (e) {
-                        reject(e);
-                      }
-                    }).catch(reject);
-                  });
-                }
-              },
-              {
-                key: 'loadData',
-                value: function loadData(data, options) {
-                  var _this3 = this;
-                  return new Promise(function (resolve, reject) {
-                    try {
-                      var parsedData = parser.parseRAMLSync(data, RAMLImporter._options(options));
-                      if (parsedData.name === 'Error') {
-                        reject(error);
-                      } else {
-                        _this3.data = parsedData.expand(true).toJSON(toJSONOptions);
-                        resolve();
-                      }
-                    } catch (e) {
-                      reject(e);
-                    }
-                  });
-                }
-              },
-              {
-                key: '_mapHost',
-                value: function _mapHost() {
-                  var parsedURL = url.parse(this.data.baseUri || '');
-                  this.project.Environment.Host = parsedURL.protocol && parsedURL.host ? parsedURL.protocol + '//' + parsedURL.host : null;
-                  this.project.Environment.BasePath = parsedURL.path;
-                }
-              },
-              {
-                key: '_mapTraits',
-                value: function _mapTraits(traitGroups) {
-                  var slTraits = [];
-                  for (var i in traitGroups) {
-                    if (!traitGroups.hasOwnProperty(i))
-                      continue;
-                    var traitGroup = traitGroups[i];
-                    for (var k in traitGroup) {
-                      if (!traitGroup.hasOwnProperty(k))
-                        continue;
-                      var trait = traitGroup[k];
-                      var slTrait = {
-                          _id: k,
-                          name: k,
-                          description: '',
-                          request: {},
-                          responses: []
-                        };
-                      if (!_.isEmpty(trait.usage)) {
-                        slTrait.description = jsonHelper.stringify(trait.usage);
-                      } else {
-                        delete slTrait.description;
-                      }
-                      if (trait.queryParameters) {
-                        slTrait.request.queryString = RAMLImporter._mapQueryParameters(trait.queryParameters);
-                      }
-                      if (trait.headers) {
-                        slTrait.request.headers = this._mapRequestHeaders(trait.headers);
-                      }
-                      if (trait.responses) {
-                        slTrait.responses = this._mapResponseBody(trait.responses);
-                      } else {
-                        delete slTrait.responses;
-                      }
-                      slTraits.push(slTrait);
-                    }
-                  }
-                  return slTraits;
-                }
-              },
-              {
-                key: '_import',
-                value: function _import() {
-                  try {
-                    this.project = new Project(this.data.title);
-                    this.project.Environment.Version = this.data.version;
-                    if (!this.project.Environment.Version) {
-                      delete this.project.Environment.Version;
-                    }
-                    // TODO set project description from documentation
-                    // How to know which documentation describes the project briefly?
-                    this.description(this.project, this.data);
-                    this._mapHost();
-                    if (!_.isEmpty(this.data.protocols)) {
-                      this.project.Environment.Protocols = this.data.protocols;
-                      for (var i in this.project.Environment.Protocols) {
-                        if (!this.project.Environment.Protocols.hasOwnProperty(i))
-                          continue;
-                        this.project.Environment.Protocols[i] = this.project.Environment.Protocols[i].toLowerCase();
-                      }
-                    }
-                    var mimeTypes = [];
-                    var mediaType = this.data.mediaType;
-                    if (mediaType) {
-                      if (!_.isArray(mediaType)) {
-                        mediaType = [mediaType];
-                      }
-                      for (var _i in mediaType) {
-                        if (!mediaType.hasOwnProperty(_i))
-                          continue;
-                        if (mediaType[_i]) {
-                          mimeTypes.push(mediaType[_i]);
-                        }
-                      }
-                    }
-                    if (mimeTypes.length) {
-                      this.project.Environment.Produces = mimeTypes;
-                      this.project.Environment.Consumes = mimeTypes;
-                    }
-                    this.project.Environment.SecuritySchemes = RAMLImporter._mapSecuritySchemes(this.data.securitySchemes);
-                    var resources = this.data.resources;
-                    if (!_.isEmpty(resources)) {
-                      for (var _i2 = 0; _i2 < resources.length; _i2++) {
-                        this._mapEndpoint(resources[_i2], '', {});
-                      }
-                    }
-                    var schemas = this._mapSchema(this.getSchema(this.data));
-                    for (var s in schemas) {
-                      if (!schemas.hasOwnProperty(s))
-                        continue;
-                      this.project.addSchema(schemas[s]);
-                    }
-                    this.project.traits = this._mapTraits(this.data.traits);
-                    this.project.uses = this.data.uses;
-                  } catch (e) {
-                    console.error('raml#import', e);
-                    throw e;
-                  }
-                }  //noinspection JSMethodCanBeStatic
-              },
-              {
-                key: 'description',
-                value: function description() {
-                  throw new Error('description method not implemented');
-                }  //noinspection JSMethodCanBeStatic
-              },
-              {
-                key: 'mapRequestBody',
-                value: function mapRequestBody() {
-                  throw new Error('mapRequestBody method not implemented');
-                }  //noinspection JSMethodCanBeStatic
-              },
-              {
-                key: 'mapSchema',
-                value: function mapSchema() {
-                  throw new Error('mapSchema method not implemented');
-                }  //noinspection JSMethodCanBeStatic
-              },
-              {
-                key: 'getSchema',
-                value: function getSchema() {
-                  throw new Error('getSchema method not implemented');
-                }
-              }
-            ], [
               {
                 key: '_mapSecuritySchemes',
                 value: function _mapSecuritySchemes(securitySchemes) {
@@ -41129,20 +39877,7 @@
                           }
                           //authorizationGrants are flow, only one supported in stoplight
                           var flow = !_.isEmpty(scheme.settings.authorizationGrants) ? scheme.settings.authorizationGrants[0] : 'code';
-                          switch (flow) {
-                          case 'authorization_code':
-                            oauth.flow = 'accessCode';
-                            break;
-                          case 'implicit':
-                            oauth.flow = 'implicit';
-                            break;
-                          case 'client_credentials':
-                            oauth.flow = 'application';
-                            break;
-                          case 'password':
-                            oauth.flow = 'password';
-                            break;
-                          }
+                          oauth = this.mapAuthorizationGrants(oauth, flow);
                           if (scheme.description) {
                             oauth.description = scheme.description;
                           }
@@ -41167,8 +39902,30 @@
                 }
               },
               {
+                key: '_mapRequestBody',
+                value: function _mapRequestBody(methodBody, checkEmptyType) {
+                  return this.mapRequestBody(methodBody, checkEmptyType);
+                }
+              },
+              {
+                key: '_mapHeadersParameters',
+                value: function _mapHeadersParameters(queryParameters, traits) {
+                  return this._mapParameters(queryParameters, traits, 'headers');
+                }
+              },
+              {
                 key: '_mapQueryParameters',
-                value: function _mapQueryParameters(queryParameters) {
+                value: function _mapQueryParameters(queryParameters, traits) {
+                  return this._mapParameters(queryParameters, traits, 'queryParameters');
+                }
+              },
+              {
+                key: '_mapParameters',
+                value: function _mapParameters(queryParameters, traits, parameterName) {
+                  //avoid queryParameters from expand option.
+                  if (traits) {
+                    RAMLImporter._filterPropertiesFromTraits(queryParameters, traits, parameterName);
+                  }
                   var queryString = {
                       type: 'object',
                       properties: {},
@@ -41178,10 +39935,541 @@
                     if (!queryParameters.hasOwnProperty(key))
                       continue;
                     var qp = queryParameters[key];
-                    queryString.properties[key] = RAMLImporter.convertRefToModel(ramlHelper.setParameterFields(qp, {}));
+                    var parameterFields = ramlHelper.setParameterFields(qp, {});
+                    queryString.properties[key] = this.convertRefToModel(parameterFields, false);
                     RAMLImporter._convertRequiredToArray(qp, key, queryString.required);
                   }
                   return queryString;
+                }
+              },
+              {
+                key: '_mapQueryString',
+                value: function _mapQueryString(queryString) {
+                  var result = queryString;
+                  delete result.typePropertyKind;
+                  RAMLImporter._mapTypesFormats(queryString, false);
+                  if (queryString.properties) {
+                    queryString.required = [];
+                  }
+                  for (var paramId in queryString.properties) {
+                    if (!queryString.properties.hasOwnProperty(paramId))
+                      continue;
+                    var param = queryString.properties[paramId];
+                    RAMLImporter._convertRequiredToArray(param, paramId, queryString.required);
+                  }
+                  return result;
+                }
+              },
+              {
+                key: '_mapRequestHeaders',
+                value: function _mapRequestHeaders(data, traits) {
+                  return this._mapHeadersParameters(data, traits);
+                }
+              },
+              {
+                key: '_mapURIParams',
+                value: function _mapURIParams(uriParams, path) {
+                  var pathParams = {
+                      type: 'object',
+                      properties: {},
+                      required: []
+                    };
+                  for (var i in uriParams) {
+                    if (!uriParams.hasOwnProperty(i))
+                      continue;
+                    var key = uriParams[i];
+                    if (!_.includes(path, key.name))
+                      continue;
+                    pathParams.properties[key.name] = { type: key.type || 'string' };
+                    var description = key.displayName || key.description;
+                    if (description) {
+                      pathParams.properties[key.name]['description'] = description;
+                    }
+                    RAMLImporter._convertRequiredToArray(key, key.name, pathParams.required);
+                    RAMLImporter._addAnnotations(key, pathParams.properties[key.name]);
+                  }
+                  return pathParams;
+                }
+              },
+              {
+                key: '_mapResponseBody',
+                value: function _mapResponseBody(responses) {
+                  var data = [];
+                  for (var code in responses) {
+                    if (!responses.hasOwnProperty(code))
+                      continue;
+                    var response = responses[code];
+                    var result = {};
+                    if (response.hasOwnProperty('body') && !_.isEmpty(response.body)) {
+                      var mimeType = Object.keys(response.body)[0];
+                      if (response.body[mimeType].hasOwnProperty('displayName')) {
+                        //unnecessary property added after change to expand(true).
+                        delete response.body[mimeType]['displayName'];
+                      }
+                      result = this.mapRequestBody(response.body[mimeType], false, mimeType);
+                    }
+                    result.codes = [response.code];
+                    if (result.body) {
+                      result.body = jsonHelper.cleanSchema(result.body);
+                    }
+                    if (response.headers) {
+                      var r = {};
+                      for (var index in response.headers) {
+                        if (!response.headers.hasOwnProperty(index))
+                          continue;
+                        var header = response.headers[index];
+                        if (!header.hasOwnProperty('type'))
+                          header.type = 'string';
+                        else
+                          RAMLImporter._mapTypesFormats(header, false);
+                        r[header.name] = this._mapQueryString(header);
+                        header = RAMLImporter._mapExamples(header);
+                        delete r[header.name]['name'];
+                      }
+                      result.headers = r;
+                    }
+                    if (result.example) {
+                      result.example = jsonHelper.stringify(result.example, 4);
+                    }
+                    if (response.description) {
+                      result.description = jsonHelper.stringify(response.description);
+                    }
+                    data.push(result);
+                  }
+                  return data;
+                }
+              },
+              {
+                key: '_mapSchemas',
+                value: function _mapSchemas(schemData) {
+                  //check if type attribute is abscent and fill with default value (type: string).
+                  RAMLImporter._checkForDefaultType(schemData);
+                  return this.mapSchemas(schemData);
+                }
+              },
+              {
+                key: 'isValidRefValues',
+                value: function isValidRefValues(values) {
+                  if (!_.isArray(values)) {
+                    return this.isValidRefValue(values);
+                  }
+                  var result = true;
+                  for (var index = 0; index < values.length && result == true; index++) {
+                    result = this.isValidRefValue(values[index]);
+                  }
+                  return result;
+                }
+              },
+              {
+                key: 'isValidRefValue',
+                value: function isValidRefValue(value) {
+                  return typeof value === 'string' && this.isDefinedAsSchema(this.getSchemas(this.data), value);
+                }  // from type=type1 & schema=type1 to ref=type1
+              },
+              {
+                key: 'convertRefToModel',
+                value: function convertRefToModel(object, isSchema, isProperty) {
+                  if (jsonHelper.isJson(object)) {
+                    return object;
+                  }
+                  // if the object is a string, that means it's a direct ref/type
+                  if (typeof object === 'string') {
+                    if (this.isValidRefValue(object)) {
+                      return { $ref: '#/definitions/' + object };
+                    } else {
+                      return object;
+                    }
+                  }
+                  delete object.typePropertyKind;
+                  for (var id in object) {
+                    if (!object.hasOwnProperty(id))
+                      continue;
+                    var val = object[id];
+                    if (!val)
+                      continue;
+                    if (id === 'type') {
+                      if (_.isArray(object[id]) && object[id].length == 1)
+                        object[id] = object[id][0];
+                      val = object[id];
+                      if (val !== 'object' && typeof val === 'string' && !xmlHelper.isXml(val)) {
+                        object[id] = RAMLImporter._modifyUnionType(val);
+                        val = object[id];
+                      }
+                      if (jsonHelper.isJson(val)) {
+                        object = val;
+                        delete object[id];
+                      } else if (xmlHelper.isXml(val)) {
+                        object.type = 'object';
+                      } else if (this.isValidRefValues(val)) {
+                        object.ref = val;
+                        delete object[id];
+                      }
+                      if (!isProperty) {
+                        RAMLImporter._mapTypesFormats(object, isSchema);
+                      }
+                    }
+                    if (id === 'example' || id === 'examples') {
+                      object = RAMLImporter._mapExamples(object);
+                    } else if ((typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object') {
+                      if (id === 'items' && !val.hasOwnProperty('type') && !val.hasOwnProperty('properties')) {
+                        if (!_.isArray(val))
+                          val.type = 'string';
+                        else {
+                          object.items = { ref: val[0] };
+                          return object;
+                        }
+                      }
+                      if (id == 'fixedFacets') {
+                        //delete garbage
+                        delete object[id];
+                      } else {
+                        if (id == 'xml') {
+                          //no process xml object
+                          object[id] = val;
+                        } else {
+                          object[id] = this.convertRefToModel(val, isSchema, id === 'properties' && !isProperty);
+                        }
+                      }
+                    } else if (id == 'name') {
+                      //delete garbage
+                      delete object[id];
+                    }
+                  }
+                  return object;
+                }
+              },
+              {
+                key: '_mapEndpoint',
+                value: function _mapEndpoint(project, resource, baseURI, pathParams) {
+                  var resultParams = JSON.parse(JSON.stringify(pathParams));
+                  var path = baseURI + resource.relativeUri;
+                  if (resource.uriParameters) {
+                    if (_.isEmpty(resultParams))
+                      resultParams = this._mapURIParams(resource.uriParameters, path);
+                    else {
+                      var newParams = this._mapURIParams(resource.uriParameters, path);
+                      _.merge(resultParams.properties, newParams.properties);
+                      resultParams.required = _.concat(resultParams.required, newParams.required);
+                    }
+                  }
+                  var mResource = {
+                      path: path,
+                      endpoints: [],
+                      annotations: {}
+                    };
+                  if (resource.hasOwnProperty('is')) {
+                    mResource.is = resource.is;
+                  }
+                  if (resource.displayName) {
+                    mResource.displayName = resource.displayName;
+                  }
+                  if (resource.description) {
+                    mResource.description = resource.description;
+                  }
+                  RAMLImporter._addAnnotations(resource, mResource.annotations);
+                  var methods = resource.methods;
+                  for (var i in methods) {
+                    if (!methods.hasOwnProperty(i))
+                      continue;
+                    var method = methods[i];
+                    var summary = method.summary ? method.summary : '';
+                    var endpoint = new Endpoint(summary);
+                    endpoint.Method = method.method;
+                    endpoint.Path = baseURI + resource.relativeUri;
+                    endpoint.Description = method.description ? jsonHelper.stringify(method.description) : '';
+                    endpoint.SetOperationId(method.displayName, endpoint.Method, endpoint.Path);
+                    if (method.body) {
+                      var c = RAMLImporter.mapMimeTypes(method.body, this.data.mediaType);
+                      endpoint.Consumes = c.length > 0 ? c : null;
+                      this.mapRequestBodies(endpoint, method.body, true);
+                    }
+                    if (method.queryParameters) {
+                      endpoint.QueryString = this._mapQueryParameters(method.queryParameters, this.data.traits);
+                    } else if (method.queryString) {
+                      endpoint.QueryString = this._mapQueryString(method.queryString);
+                    }
+                    if (method.headers) {
+                      endpoint.Headers = this._mapRequestHeaders(method.headers, this.data.traits);
+                    }
+                    if (method.responses) {
+                      var produces = [];
+                      for (var code in method.responses) {
+                        if (!method.responses.hasOwnProperty(code))
+                          continue;
+                        if (!method.responses[code] || !method.responses[code].body) {
+                          continue;
+                        }
+                        produces = produces.concat(RAMLImporter.mapMimeTypes(method.responses[code].body, this.data.mediaType));
+                      }
+                      var p = _.uniq(produces);
+                      endpoint.Produces = p.length > 0 ? p : null;
+                      endpoint.Responses = this._mapResponseBody(method.responses);
+                    }
+                    endpoint.traits = [];
+                    var isMethod = method.is || resource.is;
+                    if (isMethod) {
+                      if (isMethod instanceof Array) {
+                        endpoint.traits = isMethod;
+                      } else if (isMethod instanceof Object) {
+                        endpoint.traits = Object.keys(isMethod);
+                      }
+                    }
+                    endpoint.PathParams = resultParams;
+                    //endpoint security
+                    var securedBy = method.securedBy;
+                    if (Array.isArray(securedBy)) {
+                      endpoint.securedBy = [];
+                      for (var si in securedBy) {
+                        if (!securedBy.hasOwnProperty(si))
+                          continue;
+                        if (typeof securedBy[si] === 'string') {
+                          endpoint.securedBy.push(securedBy[si]);
+                        } else {
+                          for (var index in securedBy[si]) {
+                            if (!securedBy[si].hasOwnProperty(index))
+                              continue;
+                            var current = securedBy[si][index];
+                            if (current.scopes) {
+                              var elem = {};
+                              elem[index] = current.scopes;
+                              endpoint.securedBy.push(elem);
+                            } else {
+                              endpoint.securedBy.push(index);
+                            }
+                          }
+                        }
+                      }
+                    }
+                    //add annotations
+                    RAMLImporter._addAnnotations(method, endpoint);
+                    //TODO endpoint security
+                    mResource.endpoints.push(endpoint);
+                  }
+                  project.addResource(mResource);
+                  var resources = resource.resources;
+                  if (resources && resources.length > 0) {
+                    for (var j = 0; j < resources.length; j++) {
+                      this._mapEndpoint(project, resources[j], baseURI + resource.relativeUri, resultParams);
+                    }
+                  }
+                }
+              },
+              {
+                key: 'loadFile',
+                value: function loadFile(filePath, options) {
+                  var _this2 = this;
+                  return new Promise(function (resolve, reject) {
+                    parser.loadApi(filePath, RAMLImporter._options(options)).then(function (api) {
+                      try {
+                        _this2.data = api.expand(true).toJSON(toJSONOptions);
+                        resolve();
+                      } catch (e) {
+                        reject(e);
+                      }
+                    }).catch(reject);
+                  });
+                }
+              },
+              {
+                key: 'loadData',
+                value: function loadData(data, options) {
+                  var _this3 = this;
+                  return new Promise(function (resolve, reject) {
+                    try {
+                      var parsedData = parser.parseRAMLSync(data, RAMLImporter._options(options));
+                      if (parsedData.name === 'Error') {
+                        reject(error);
+                      } else {
+                        _this3.data = parsedData.expand(true).toJSON(toJSONOptions);
+                        resolve();
+                      }
+                    } catch (e) {
+                      reject(e);
+                    }
+                  });
+                }
+              },
+              {
+                key: '_mapHost',
+                value: function _mapHost(project) {
+                  var parsedURL = url.parse(this.data.baseUri || '');
+                  project.Environment.Host = parsedURL.protocol && parsedURL.host ? parsedURL.protocol + '//' + parsedURL.host : null;
+                  project.Environment.BasePath = parsedURL.path;
+                }
+              },
+              {
+                key: '_mapTraits',
+                value: function _mapTraits(traitGroups) {
+                  var slTraits = [];
+                  for (var i in traitGroups) {
+                    if (!traitGroups.hasOwnProperty(i))
+                      continue;
+                    var traitGroup = traitGroups[i];
+                    for (var k in traitGroup) {
+                      if (!traitGroup.hasOwnProperty(k))
+                        continue;
+                      var trait = traitGroup[k];
+                      var slTrait = {
+                          _id: k,
+                          name: k,
+                          description: '',
+                          request: {},
+                          responses: []
+                        };
+                      if (!_.isEmpty(trait.usage)) {
+                        slTrait.description = jsonHelper.stringify(trait.usage);
+                      } else {
+                        delete slTrait.description;
+                      }
+                      if (trait.queryParameters) {
+                        slTrait.request.queryString = this._mapQueryParameters(trait.queryParameters);
+                      }
+                      if (trait.headers) {
+                        slTrait.request.headers = this._mapRequestHeaders(trait.headers);
+                      }
+                      if (trait.responses) {
+                        slTrait.responses = this._mapResponseBody(trait.responses);
+                      } else {
+                        delete slTrait.responses;
+                      }
+                      slTraits.push(slTrait);
+                    }
+                  }
+                  return slTraits;
+                }
+              },
+              {
+                key: '_import',
+                value: function _import() {
+                  try {
+                    var project = new Project(this.data.title);
+                    project.Environment.Version = this.data.version;
+                    if (!project.Environment.Version) {
+                      delete project.Environment.Version;
+                    }
+                    // TODO set project description from documentation
+                    // How to know which documentation describes the project briefly?
+                    this.description(project, this.data);
+                    this._mapHost(project);
+                    if (!_.isEmpty(this.data.protocols)) {
+                      project.Environment.Protocols = this.data.protocols;
+                      for (var i in project.Environment.Protocols) {
+                        if (!project.Environment.Protocols.hasOwnProperty(i))
+                          continue;
+                        project.Environment.Protocols[i] = project.Environment.Protocols[i].toLowerCase();
+                      }
+                    }
+                    var mimeTypes = [];
+                    var mediaType = this.data.mediaType;
+                    if (mediaType) {
+                      if (!_.isArray(mediaType)) {
+                        mediaType = [mediaType];
+                      }
+                      for (var _i in mediaType) {
+                        if (!mediaType.hasOwnProperty(_i))
+                          continue;
+                        if (mediaType[_i]) {
+                          mimeTypes.push(mediaType[_i]);
+                        }
+                      }
+                    }
+                    if (mimeTypes.length) {
+                      project.Environment.Produces = mimeTypes;
+                      project.Environment.Consumes = mimeTypes;
+                    }
+                    project.Environment.SecuritySchemes = this._mapSecuritySchemes(this.data.securitySchemes);
+                    var resources = this.data.resources;
+                    if (!_.isEmpty(resources)) {
+                      for (var _i2 = 0; _i2 < resources.length; _i2++) {
+                        this._mapEndpoint(project, resources[_i2], '', {});
+                      }
+                    }
+                    var schemas = this._mapSchemas(this.getSchemas(this.data));
+                    for (var s in schemas) {
+                      if (!schemas.hasOwnProperty(s))
+                        continue;
+                      project.addSchema(schemas[s]);
+                    }
+                    project.traits = this._mapTraits(this.data.traits);
+                    project.uses = this.data.uses;
+                    return project;
+                  } catch (e) {
+                    console.error('raml#import', e);
+                    throw e;
+                  }
+                }
+              },
+              {
+                key: 'mapRequestBodies',
+                value: function mapRequestBodies(endpoint, methodBodies, checkEmptyType) {
+                  for (var mimeType in methodBodies) {
+                    if (!methodBodies.hasOwnProperty(mimeType))
+                      continue;
+                    var methodBody = methodBodies[mimeType];
+                    endpoint.Body = this.mapRequestBody(methodBody, checkEmptyType, mimeType);
+                  }
+                }  //noinspection JSMethodCanBeStatic
+              },
+              {
+                key: 'description',
+                value: function description() {
+                  throw new Error('description method not implemented');
+                }  //noinspection JSMethodCanBeStatic
+              },
+              {
+                key: 'mapRequestBody',
+                value: function mapRequestBody() {
+                  throw new Error('mapRequestBody method not implemented');
+                }  //noinspection JSMethodCanBeStatic
+              },
+              {
+                key: 'mapSchemas',
+                value: function mapSchemas() {
+                  throw new Error('mapSchema method not implemented');
+                }  //noinspection JSMethodCanBeStatic
+              },
+              {
+                key: 'getSchemas',
+                value: function getSchemas() {
+                  throw new Error('getSchema method not implemented');
+                }  //noinspection JSMethodCanBeStatic
+              },
+              {
+                key: 'mapAuthorizationGrants',
+                value: function mapAuthorizationGrants() {
+                  throw new Error('convertAuthorizationGrants method not implemented');
+                }
+              },
+              {
+                key: 'isDefinedAsSchema',
+                value: function isDefinedAsSchema() {
+                  throw new Error('isDefinedAsSchema method not implemented');
+                }
+              }
+            ], [
+              {
+                key: '_filterPropertiesFromTraits',
+                value: function _filterPropertiesFromTraits(params, traits, propertyName) {
+                  for (var i in traits) {
+                    if (!traits.hasOwnProperty(i))
+                      continue;
+                    for (var j in traits[i]) {
+                      if (!traits[i].hasOwnProperty(j))
+                        continue;
+                      var param = traits[i][j];
+                      if (param.hasOwnProperty(propertyName)) {
+                        for (var k in param[propertyName]) {
+                          if (!param[propertyName].hasOwnProperty(k))
+                            continue;
+                          var p = param[propertyName][k];
+                          var found = _.find(params, { name: p.name });
+                          if (found) {
+                            delete params[k];
+                          }
+                        }
+                      }
+                    }
+                  }
                 }
               },
               {
@@ -41191,6 +40479,56 @@
                     required.push(key);
                   }
                   delete object.required;
+                }
+              },
+              {
+                key: '_mapTypesFormats',
+                value: function _mapTypesFormats(object, isSchema) {
+                  if (!object.hasOwnProperty('type') || object.type === 'object')
+                    return object;
+                  var type = _.isArray(object.type) && object.type.length == 1 ? object.type[0] : object.type;
+                  object.type = type;
+                  switch (type) {
+                  case 'date-only':
+                    object.type = 'string';
+                    object.format = 'date';
+                    break;
+                  case 'time-only':
+                    object.type = 'string';
+                    object['x-raml-format'] = 'time-only';
+                    break;
+                  case 'datetime-only':
+                    object.type = 'string';
+                    object['x-raml-format'] = 'datetime-only';
+                    break;
+                  case 'datetime':
+                    object.type = 'string';
+                    if (object.format == 'rfc3339' || !object.hasOwnProperty('format')) {
+                      object.format = 'date-time';
+                    } else {
+                      object['x-raml-format'] = object.format;
+                      delete object.format;
+                    }
+                    break;
+                  case 'file':
+                    if (isSchema) {
+                      object.type = 'string';
+                      object['x-raml-type'] = 'file';
+                    }
+                    if (object.hasOwnProperty('fileTypes')) {
+                      object['x-raml-fileTypes'] = object['fileTypes'];
+                      delete object['fileTypes'];
+                    }
+                    break;
+                  default:
+                    if (typeof type === 'string' && (type.includes('|') || type.includes('?'))) {
+                      object.type = 'object';
+                    } else if ((typeof type === 'undefined' ? 'undefined' : _typeof(type)) !== 'object' && ramlHelper.getRAML10ScalarTypes.indexOf(type) < 0) {
+                      object['x-raml-type'] = type;
+                      object.type = 'string';
+                    }
+                    break;
+                  }
                 }
               },
               {
@@ -41220,112 +40558,17 @@
                     }
                   } else {
                     if ((typeof object === 'undefined' ? 'undefined' : _typeof(object)) === 'object' && !object.hasOwnProperty('type') && !object.hasOwnProperty('schema')) {
-                      object['type'] = ['string'];
+                      object.type = ['string'];
                     }
                   }
                 }
               },
               {
-                key: 'isValidRefValues',
-                value: function isValidRefValues(values) {
-                  if (!_.isArray(values)) {
-                    return RAMLImporter.isValidRefValue(values);
-                  }
-                  var result = true;
-                  for (var index = 0; index < values.length && result == true; index++) {
-                    result = RAMLImporter.isValidRefValue(values[index]);
-                  }
-                  return result;
-                }
-              },
-              {
-                key: 'isValidRefValue',
-                value: function isValidRefValue(value) {
-                  return typeof value === 'string' && ramlHelper.getScalarTypes.indexOf(value) < 0 && value !== 'object';
-                }  // from type=type1 & schema=type1 to ref=type1
-              },
-              {
-                key: 'convertRefToModel',
-                value: function convertRefToModel(object) {
-                  if (jsonHelper.isJson(object)) {
-                    return object;
-                  }
-                  // if the object is a string, that means it's a direct ref/type
-                  if (typeof object === 'string') {
-                    if (RAMLImporter.isValidRefValue(object)) {
-                      return { $ref: '#/definitions/' + object };
-                    } else {
-                      return object;
-                    }
-                  }
-                  delete object.typePropertyKind;
-                  for (var id in object) {
-                    if (!object.hasOwnProperty(id))
-                      continue;
-                    var isType = id == 'type';
-                    if (isType && _.isArray(object[id]) && object[id].length == 1) {
-                      object[id] = object[id][0];
-                    }
-                    var val = object[id];
-                    if (!val)
-                      continue;
-                    if (isType) {
-                      if (jsonHelper.isJson(val)) {
-                        object = val;
-                        delete object[id];
-                      } else if (xmlHelper.isXml(val)) {
-                        object.type = 'object';
-                      } else if (RAMLImporter.isValidRefValues(val)) {
-                        object.ref = val;
-                        delete object[id];
-                      }
-                    }
-                    if (isType && typeof val === 'string') {
-                      if (val == 'date-only') {
-                        object.type = 'string';
-                        object.format = 'date';
-                      } else if (val == 'time-only') {
-                        object.type = 'string';
-                        object['x-raml-format'] = 'time-only';
-                      } else if (val == 'datetime-only') {
-                        object.type = 'string';
-                        object['x-raml-format'] = 'datetime-only';
-                      } else if (val == 'datetime') {
-                        object.type = 'string';
-                        if (object.format == 'rfc3339') {
-                          object.format = 'date-time';
-                        } else {
-                          object['x-raml-format'] = object.format;
-                          delete object.format;
-                        }
-                      } else if (val === 'file') {
-                        object.type = 'string';
-                        object['x-raml-type'] = 'file';
-                        if (object.hasOwnProperty('fileTypes')) {
-                          object['x-raml-fileTypes'] = object['fileTypes'];
-                          delete object['fileTypes'];
-                        }
-                      }
-                    } else if ((typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object') {
-                      if (id == 'structuredExample' || id == 'fixedFacets') {
-                        //delete garbage
-                        delete object[id];
-                      } else if (id === 'items' && !val.type && val.hasOwnProperty('0')) {
-                        object.items = { ref: val[0] };
-                      } else {
-                        if (id == 'xml' || id === 'example') {
-                          //no process xml object
-                          object[id] = val;
-                        } else {
-                          object[id] = RAMLImporter.convertRefToModel(val);
-                        }
-                      }
-                    } else if (id == 'name') {
-                      //delete garbage
-                      delete object[id];
-                    }
-                  }
-                  return object;
+                key: '_modifyUnionType',
+                value: function _modifyUnionType(type) {
+                  if (type.includes('|') || type.includes('?'))
+                    type = 'object';
+                  return type;
                 }
               },
               {
@@ -41357,9 +40600,10 @@
               {
                 key: '_options',
                 value: function _options(options) {
+                  var validate = options && (options.validate === true || options.validateImport === true);
                   var parseOptions = {
                       attributeDefaults: false,
-                      rejectOnErrors: options && options.validate === true
+                      rejectOnErrors: validate
                     };
                   return !options ? parseOptions : _.merge(parseOptions, options);
                 }
@@ -41373,12 +40617,56 @@
                   for (var i in annotations) {
                     if (!annotations.hasOwnProperty(i))
                       continue;
+                    if (_.startsWith(i, 'oas-'))
+                      continue;
                     var value = annotations[i];
                     var key = 'x-raml-annotation-' + i;
                     target[key] = value.structuredValue || '';
                   }
                   if (target.annotations)
                     delete target.annotations;
+                }
+              },
+              {
+                key: '_mapExamples',
+                value: function _mapExamples(object) {
+                  if (object.hasOwnProperty('example')) {
+                    var example = object.example;
+                    if (object.hasOwnProperty('structuredExample')) {
+                      example = object.structuredExample;
+                      delete object.structuredExample;
+                    }
+                    if (example.hasOwnProperty('structuredValue')) {
+                      object.example = example.structuredValue;
+                    } else if (example.hasOwnProperty('value')) {
+                      object.example = JSON.parse(example.value);
+                    }
+                    if (example.hasOwnProperty('strict') && !example.strict) {
+                      object.example.strict = false;
+                    }
+                    if (example.hasOwnProperty('name') && example.name) {
+                      object.example['x-raml-example-name'] = example.name;
+                    }
+                  } else if (object.hasOwnProperty('examples')) {
+                    var examples = object.examples;
+                    for (var id in examples) {
+                      if (!examples.hasOwnProperty(id))
+                        continue;
+                      var _example = examples[id];
+                      if (_example.hasOwnProperty('structuredValue')) {
+                        object.examples[id] = _example.structuredValue;
+                      } else if (_example.hasOwnProperty('value')) {
+                        object.examples[id] = JSON.parse(_example.value);
+                      }
+                      if (_example.hasOwnProperty('strict') && !_example.strict) {
+                        object.examples[id].strict = false;
+                      }
+                      if (_example.hasOwnProperty('name') && _example.name) {
+                        object.examples[id]['x-raml-example-name'] = _example.name;
+                      }
+                    }
+                  }
+                  return object;
                 }
               }
             ]);
@@ -41389,15 +40677,15 @@
       {
         '../entities/endpoint': 212,
         '../entities/project': 214,
-        '../helpers/raml': 230,
-        '../utils/json': 243,
-        '../utils/xml': 246,
-        './importer': 234,
+        '../helpers/raml': 226,
+        '../utils/json': 236,
+        '../utils/xml': 239,
+        './importer': 230,
         'lodash': 204,
-        'url': 284
+        'url': 277
       }
     ],
-    234: [
+    230: [
       function (require, module, exports) {
         'use strict';
         var _createClass = function () {
@@ -41428,8 +40716,6 @@
             function Importer() {
               _classCallCheck(this, Importer);
               this.data = null;
-              this.project = null;
-              this.mapped = false;
             }
             _createClass(Importer, [
               {
@@ -41460,11 +40746,7 @@
                   if (!this.IsDataLoaded) {
                     throw new Error('data not loaded for ' + this.constructor.name.toString());
                   }
-                  if (!this.Mapped) {
-                    this._import();
-                    this.mapped = true;
-                  }
-                  return this.project;
+                  return this._import();
                 }
               },
               {
@@ -41510,13 +40792,6 @@
                 }
               },
               {
-                key: 'Mapped',
-                get: function get() {
-                  //noinspection JSConstructorReturnsPrimitive
-                  return this.mapped;
-                }
-              },
-              {
                 key: 'IsDataLoaded',
                 get: function get() {
                   //noinspection JSConstructorReturnsPrimitive
@@ -41530,16 +40805,13 @@
       },
       {}
     ],
-    235: [
+    231: [
       function (require, module, exports) {
         'use strict';
         var importers = {
-            Postman: require('./postman'),
             RAML08: require('./raml08'),
             RAML10: require('./raml10'),
             Swagger: require('./swagger'),
-            StopLight: require('./stoplight'),
-            StopLightX: require('./stoplightx'),
             Auto: require('./auto')
           };
         function doesSupportFormat(format) {
@@ -41556,18 +40828,20 @@
         };
       },
       {
-        './auto': 232,
-        './postman': 236,
-        './raml08': 237,
-        './raml10': 238,
-        './stoplight': 239,
-        './stoplightx': 240,
-        './swagger': 241
+        './auto': 228,
+        './raml08': 232,
+        './raml10': 233,
+        './swagger': 234
       }
     ],
-    236: [
+    232: [
       function (require, module, exports) {
         'use strict';
+        var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
+            return typeof obj;
+          } : function (obj) {
+            return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
+          };
         var _createClass = function () {
             function defineProperties(target, props) {
               for (var i = 0; i < props.length; i++) {
@@ -41613,377 +40887,7 @@
           if (superClass)
             Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
         }
-        var fs = require('fs'), Endpoint = require('../entities/endpoint'), SavedEntry = require('../entities/savedEntry'), Importer = require('./importer'), Project = require('../entities/project'), urlHelper = require('../utils/url'), jsonHelper = require('../utils/json'), arrayHelper = require('../utils/array'), _ = require('lodash');
-        var Postman = function (_Importer) {
-            _inherits(Postman, _Importer);
-            function Postman() {
-              _classCallCheck(this, Postman);
-              return _possibleConstructorReturn(this, (Postman.__proto__ || Object.getPrototypeOf(Postman)).call(this));
-            }
-            _createClass(Postman, [
-              {
-                key: '_mapURIParams',
-                value: function _mapURIParams(data) {
-                  var pathParams = {};
-                  for (var key in data) {
-                    if (!data.hasOwnProperty(key))
-                      continue;
-                    pathParams[key] = Postman.transformVariableFormat(data[key]);
-                  }
-                  return pathParams;
-                }
-              },
-              {
-                key: '_mapRequestHeaders',
-                value: function _mapRequestHeaders(data) {
-                  var headerObj = {
-                      type: 'object',
-                      properties: {},
-                      required: []
-                    }, headers = void 0;
-                  headers = data.split('\n');
-                  for (var j in headers) {
-                    if (!headers.hasOwnProperty(j))
-                      continue;
-                    var header = headers[j];
-                    if (!header) {
-                      continue;
-                    }
-                    var keyValueParts = header.split(':');
-                    headerObj['properties'][keyValueParts[0]] = {
-                      type: 'string',
-                      default: Postman.transformVariableFormat(keyValueParts[1])
-                    };
-                  }
-                  return headerObj;
-                }
-              },
-              {
-                key: '_mapRequestBody',
-                value: function _mapRequestBody(requestData) {
-                  var data = {
-                      body: {
-                        type: 'object',
-                        properties: {},
-                        required: []
-                      }
-                    };
-                  for (var j in requestData) {
-                    if (!requestData.hasOwnProperty(j))
-                      continue;
-                    var type = null;
-                    switch (requestData[j].type) {
-                    case 'text':
-                      type = 'string';
-                      break;
-                    default:
-                      type = 'binary';
-                    }
-                    data.body.properties[requestData[j].key] = {
-                      'type': type,
-                      'default': Postman.transformVariableFormat(requestData[j].value)
-                    };
-                  }
-                  return data;
-                }
-              },
-              {
-                key: '_mapEndpoint',
-                value: function _mapEndpoint(pmr) {
-                  var endpoint = void 0, urlParts = void 0;
-                  endpoint = new Endpoint(pmr.name);
-                  endpoint.Id = pmr.id;
-                  urlParts = pmr.url.split('?');
-                  endpoint.QueryString = Postman.parseQuery(urlParts[1]);
-                  endpoint.Path = Postman.transformVariableFormat(urlParts[0]);
-                  endpoint.Method = pmr.method;
-                  endpoint.Before = pmr.preRequestScript;
-                  endpoint.PathParams = this._mapURIParams(pmr.pathVariables);
-                  //parse headers
-                  endpoint.Headers = this._mapRequestHeaders(pmr.headers);
-                  //TODO map Body
-                  endpoint.Consumes = Postman.mapConsumes(pmr.dataMode);
-                  endpoint.Body = this._mapRequestBody(pmr.data);
-                  return endpoint;
-                }
-              },
-              {
-                key: 'loadData',
-                value: function loadData(data) {
-                  var me = this;
-                  return new Promise(function (resolve, reject) {
-                    me._parseData(data, function (err) {
-                      if (err) {
-                        reject(err);
-                      } else {
-                        resolve();
-                      }
-                    });
-                  });
-                }
-              },
-              {
-                key: '_parseData',
-                value: function _parseData(data, cb) {
-                  try {
-                    this.data = JSON.parse(data);
-                    cb();
-                  } catch (err) {
-                    cb(err);
-                  }
-                }
-              },
-              {
-                key: 'loadFile',
-                value: function loadFile(filePath, cb) {
-                  var me = this;
-                  if (urlHelper.isURL(filePath)) {
-                    urlHelper.get(filePath).then(function (body) {
-                      me._parseData(body, cb);
-                    }).catch(cb);
-                  } else {
-                    var data = fs.readFileSync(filePath, 'utf8');
-                    me._parseData(data, cb);
-                  }
-                }
-              },
-              {
-                key: '_mergeEndpointHeaders',
-                value: function _mergeEndpointHeaders(endpoints) {
-                  return jsonHelper.stringify({
-                    type: 'object',
-                    properties: endpoints.reduce(function (result, endpoint) {
-                      return _.merge(result, jsonHelper.parse(endpoint.Headers).properties);
-                    }, {}),
-                    required: []
-                  }, 4);
-                }
-              },
-              {
-                key: '_mergeEndpointQueryString',
-                value: function _mergeEndpointQueryString(endpoints) {
-                  return jsonHelper.stringify({
-                    type: 'object',
-                    properties: endpoints.reduce(function (result, endpoint) {
-                      return _.merge(result, jsonHelper.parse(endpoint.QueryString).properties);
-                    }, {}),
-                    required: []
-                  }, 4);
-                }
-              },
-              {
-                key: '_mergeEndpointGroups',
-                value: function _mergeEndpointGroups(endpoints) {
-                  var endpoint = endpoints[0];
-                  if (endpoints.length <= 1) {
-                    return endpoint;
-                  }
-                  var headers = this._mergeEndpointHeaders(endpoints);
-                  var queryString = this._mergeEndpointQueryString(endpoints);
-                  endpoint.Name = endpoint.Path;
-                  endpoint.Headers = headers;
-                  endpoint.QueryString = queryString;
-                  // TODO maybe we should also merge pathParams and body
-                  return endpoint;
-                }
-              },
-              {
-                key: '_mergeEndpoints',
-                value: function _mergeEndpoints(endpoints) {
-                  var self = this;
-                  var groups = arrayHelper.groupBy(endpoints, function (endpoint) {
-                      return [
-                        endpoint.Path,
-                        endpoint.Method
-                      ];
-                    });
-                  return groups.map(function (group) {
-                    return self._mergeEndpointGroups(group);
-                  });
-                }
-              },
-              {
-                key: '_mapSavedEntry',
-                value: function _mapSavedEntry(pmr) {
-                  var savedEntry = new SavedEntry(pmr.name);
-                  var urlParts = pmr.url.split('?');
-                  savedEntry.Id = pmr.id;
-                  savedEntry.QueryString = Postman.parseQuery(urlParts[1]);
-                  savedEntry.Path = Postman.transformVariableFormat(urlParts[0]);
-                  savedEntry.Method = pmr.method;
-                  savedEntry.PathParams = this._mapURIParams(pmr.pathVariables);
-                  savedEntry.Headers = this._mapRequestHeaders(pmr.headers);
-                  savedEntry.Consumes = Postman.mapConsumes(pmr.dataMode);
-                  if (savedEntry.Method.toLowerCase() !== 'get' && savedEntry.Method.toLowerCase() !== 'head') {
-                    savedEntry.Body = this._mapRequestBody(pmr.data);
-                  }
-                  return savedEntry;
-                }
-              },
-              {
-                key: '_import',
-                value: function _import() {
-                  var self = this;
-                  this.project = new Project(this.data.name || '');
-                  this.project.Description = this.data.description || '';
-                  var requests = this.data.requests || [];
-                  var folders = this.data.folders || [];
-                  // TODO process only unique requests
-                  var endpoints = requests.map(function (request) {
-                      return self._mapEndpoint(request);
-                    });
-                  this._mergeEndpoints(endpoints).forEach(function (endpoint) {
-                    self.project.addEndpoint(endpoint);
-                  });
-                  requests.map(function (request) {
-                    self.project.addSavedEntry(self._mapSavedEntry(request));
-                  });
-                  folders.forEach(function (folder) {
-                    self.project.environment.resourcesOrder.savedEntries.push({
-                      _id: folder.id,
-                      name: folder.name,
-                      items: folder.order.map(function (item) {
-                        return {
-                          type: 'savedEntries',
-                          _id: item
-                        };
-                      })
-                    });
-                  });  //disable temporarily
-                       //TODO
-                       /*for (let i = 0; i < this.data.folders.length; i++) {
-    this.project.addEndpointGroup(mapEndpointGroup(this.data.folders[i]));
-    }*/
-                }
-              }
-            ], [
-              {
-                key: 'transformVariableFormat',
-                value: function transformVariableFormat(val) {
-                  if (!val)
-                    return null;
-                  return val.replace(/\{\{(.*)\}\}/i, '<<$1>>');
-                }
-              },
-              {
-                key: 'parseQuery',
-                value: function parseQuery(qstr) {
-                  var query = {};
-                  if (qstr && qstr.length > 0) {
-                    var a = qstr.split('&');
-                    for (var i in a) {
-                      if (!a.hasOwnProperty(i))
-                        continue;
-                      var b = a[i].split('=');
-                      if (!Array.isArray(b) || b.length <= 0)
-                        continue;
-                      query[decodeURIComponent(b[0])] = {
-                        type: 'string',
-                        default: Postman.transformVariableFormat(decodeURIComponent(b[1] || ''))
-                      };
-                    }
-                  }
-                  return {
-                    type: 'object',
-                    properties: query,
-                    required: []
-                  };
-                }
-              },
-              {
-                key: 'mapConsumes',
-                value: function mapConsumes(mode) {
-                  var consumes = [];
-                  switch (mode) {
-                  case 'urlencoded':
-                    consumes.push('application/x-www-form-urlencoded');
-                    break;
-                  case 'params':
-                    //check for best suitability
-                    consumes.push('multipart/form-data');
-                    break;
-                  default:
-                    consumes.push('text/plain');
-                    break;
-                  }
-                  return consumes;
-                }
-              },
-              {
-                key: 'mapEndpointGroup',
-                value: function mapEndpointGroup(folder) {
-                  return {
-                    name: folder.name,
-                    items: folder.order
-                  };
-                }
-              }
-            ]);
-            return Postman;
-          }(Importer);
-        module.exports = Postman;
-      },
-      {
-        '../entities/endpoint': 212,
-        '../entities/project': 214,
-        '../entities/savedEntry': 215,
-        '../utils/array': 242,
-        '../utils/json': 243,
-        '../utils/url': 245,
-        './importer': 234,
-        'fs': 4,
-        'lodash': 204
-      }
-    ],
-    237: [
-      function (require, module, exports) {
-        'use strict';
-        var _createClass = function () {
-            function defineProperties(target, props) {
-              for (var i = 0; i < props.length; i++) {
-                var descriptor = props[i];
-                descriptor.enumerable = descriptor.enumerable || false;
-                descriptor.configurable = true;
-                if ('value' in descriptor)
-                  descriptor.writable = true;
-                Object.defineProperty(target, descriptor.key, descriptor);
-              }
-            }
-            return function (Constructor, protoProps, staticProps) {
-              if (protoProps)
-                defineProperties(Constructor.prototype, protoProps);
-              if (staticProps)
-                defineProperties(Constructor, staticProps);
-              return Constructor;
-            };
-          }();
-        function _classCallCheck(instance, Constructor) {
-          if (!(instance instanceof Constructor)) {
-            throw new TypeError('Cannot call a class as a function');
-          }
-        }
-        function _possibleConstructorReturn(self, call) {
-          if (!self) {
-            throw new ReferenceError('this hasn\'t been initialised - super() hasn\'t been called');
-          }
-          return call && (typeof call === 'object' || typeof call === 'function') ? call : self;
-        }
-        function _inherits(subClass, superClass) {
-          if (typeof superClass !== 'function' && superClass !== null) {
-            throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass);
-          }
-          subClass.prototype = Object.create(superClass && superClass.prototype, {
-            constructor: {
-              value: subClass,
-              enumerable: false,
-              writable: true,
-              configurable: true
-            }
-          });
-          if (superClass)
-            Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
-        }
-        var RAMLImporter = require('./baseraml'), Schema = require('../entities/schema'), jsonHelper = require('../utils/json'), Text = require('../entities/text');
+        var RAMLImporter = require('./baseraml'), Schema = require('../entities/schema'), jsonHelper = require('../utils/json'), ramlHelper = require('../helpers/raml'), Text = require('../entities/text'), _ = require('lodash');
         var RAML08Importer = function (_RAMLImporter) {
             _inherits(RAML08Importer, _RAMLImporter);
             function RAML08Importer() {
@@ -41993,41 +40897,35 @@
             _createClass(RAML08Importer, [
               {
                 key: 'mapRequestBody',
-                value: function mapRequestBody(methodBody) {
+                value: function mapRequestBody(methodBody, checkEmptyType, mimeType) {
                   var data = {
                       mimeType: '',
                       body: {},
                       example: ''
                     };
-                  //TODO: only one, the latest is in effect in stoplight!
-                  for (var i in methodBody) {
-                    if (!methodBody.hasOwnProperty(i))
-                      continue;
-                    var mimeType = methodBody[i];
-                    data.mimeType = mimeType.name;
-                    if (mimeType.example) {
-                      data.example = mimeType.example;
-                    }
-                    if (mimeType.schema) {
-                      data.body = RAMLImporter.convertRefToModel(jsonHelper.parse(mimeType.schema));
-                    } else if (mimeType.formParameters) {
-                      data.body = {
-                        type: 'object',
-                        'properties': {},
-                        'required': []
-                      };
-                      var formParams = mimeType.formParameters;
-                      for (var j in formParams) {
-                        if (!formParams.hasOwnProperty(j))
-                          continue;
-                        var param = formParams[j];
-                        data.body.properties[param.name] = { type: param.type };
-                        if (param.description) {
-                          data.body.properties[param.name].description = param.description;
-                        }
-                        if (param.required) {
-                          data.body.required.push(param.name);
-                        }
+                  data.mimeType = mimeType;
+                  if (methodBody.example) {
+                    data.example = methodBody.example;
+                  }
+                  if (methodBody.schema) {
+                    data.body = RAML08Importer._mapSchema(this.convertRefToModel(jsonHelper.parse(methodBody.schema), false));
+                  } else if (methodBody.formParameters) {
+                    data.body = {
+                      type: 'object',
+                      'properties': {},
+                      'required': []
+                    };
+                    var formParams = methodBody.formParameters;
+                    for (var j in formParams) {
+                      if (!formParams.hasOwnProperty(j))
+                        continue;
+                      var param = formParams[j];
+                      data.body.properties[param.name] = { type: param.type };
+                      if (param.description) {
+                        data.body.properties[param.name].description = param.description;
+                      }
+                      if (param.required) {
+                        data.body.required.push(param.name);
                       }
                     }
                   }
@@ -42035,8 +40933,24 @@
                 }
               },
               {
-                key: 'mapSchema',
-                value: function mapSchema(schemData) {
+                key: 'isDefinedAsSchema',
+                value: function isDefinedAsSchema(schemas, schemaId) {
+                  for (var i in schemas) {
+                    if (!schemas.hasOwnProperty(i))
+                      continue;
+                    for (var schemaName in schemas[i]) {
+                      if (!schemas[i].hasOwnProperty(schemaName))
+                        continue;
+                      if (schemaName === schemaId)
+                        return true;
+                    }
+                  }
+                  return false;
+                }
+              },
+              {
+                key: 'mapSchemas',
+                value: function mapSchemas(schemData) {
                   var schemas = [];
                   for (var i in schemData) {
                     if (!schemData.hasOwnProperty(i))
@@ -42046,17 +40960,38 @@
                         continue;
                       var sd = new Schema(schemaName);
                       sd.Name = schemaName;
-                      sd.Definition = jsonHelper.cleanSchema(schemData[i][schemaName]);
+                      var definition = RAML08Importer._mapSchema(schemData[i][schemaName], true);
+                      sd.Definition = jsonHelper.cleanSchema(definition);
                       schemas.push(sd);
                     }
                   }
                   return schemas;
-                }  //noinspection JSMethodCanBeStatic
+                }
               },
               {
-                key: 'getSchema',
-                value: function getSchema(data) {
+                key: 'getSchemas',
+                value: function getSchemas(data) {
                   return data.schemas;
+                }
+              },
+              {
+                key: 'mapAuthorizationGrants',
+                value: function mapAuthorizationGrants(oauth, flow) {
+                  switch (flow) {
+                  case 'code':
+                    oauth.flow = 'accessCode';
+                    break;
+                  case 'token':
+                    oauth.flow = 'implicit';
+                    break;
+                  case 'credentials':
+                    oauth.flow = 'application';
+                    break;
+                  case 'owner':
+                    oauth.flow = 'password';
+                    break;
+                  }
+                  return oauth;
                 }
               },
               {
@@ -42076,9 +41011,83 @@
                       var txt = new Text(doc.title);
                       txt.Public = true;
                       txt.Content = doc.content;
-                      this.project.addText(txt);
+                      project.addText(txt);
                     }
                   }
+                }
+              }
+            ], [
+              {
+                key: 'convertObjectProperty',
+                value: function convertObjectProperty(source) {
+                  var target = Object.assign({}, source);
+                  target.properties = {};
+                  target.required = source.hasOwnProperty('required') && _.isArray(source.required) ? source.required : [];
+                  for (var paramName in source.properties) {
+                    if (!source.properties.hasOwnProperty(paramName))
+                      continue;
+                    var parameter = source.properties[paramName];
+                    var param = _.isArray(parameter) ? parameter[0] : parameter;
+                    target.properties[paramName] = param;
+                    if (param.properties && !_.isEmpty(param.properties)) {
+                      target.properties[paramName] = RAML08Importer.convertObjectProperty(param);
+                    } else if (paramName === 'items' && (typeof param === 'undefined' ? 'undefined' : _typeof(param)) === 'object') {
+                      target[paramName] = RAML08Importer.convertObjectProperty(param);
+                    } else if (param.hasOwnProperty('required')) {
+                      //required
+                      if (param.required === true) {
+                        target['required'].push(paramName);
+                      }
+                      delete param.required;
+                    }
+                  }
+                  if (target.required && target.required.length == 0) {
+                    delete target.required;
+                  }
+                  if (target.properties && _.isEmpty(target.properties)) {
+                    delete target.properties;
+                  }
+                  return target;
+                }
+              },
+              {
+                key: '_mapSchema',
+                value: function _mapSchema(definition, isSchema) {
+                  definition = jsonHelper.parse(definition);
+                  if (definition.properties && !_.isEmpty(definition.properties)) {
+                    definition = RAML08Importer.convertObjectProperty(definition);
+                  }
+                  for (var id in definition) {
+                    if (!definition.hasOwnProperty(id))
+                      continue;
+                    var val = definition[id];
+                    if (id === 'items') {
+                      if (_.isArray(val) && val.length == 0)
+                        definition[id] = { type: 'string' };
+                      else if (!_.isArray(val) && (typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object')
+                        val = RAML08Importer._mapSchema(val);
+                    }
+                    if (id === 'type') {
+                      if (_.isArray(val)) {
+                        if (val.length == 1)
+                          val = val[0];
+                        else if (val.length == 0) {
+                          definition[id] = 'array';
+                          definition['items'] = { type: 'string' };
+                          val = 'array';
+                        }
+                      }
+                      if (typeof val === 'string' && val != 'object' && ramlHelper.getRAML08ScalarTypes.indexOf(val) < 0) {
+                        definition['x-raml-type'] = val;
+                        definition.type = 'string';
+                      }
+                      if (typeof val === 'string' && val === 'array' && !definition.hasOwnProperty('items'))
+                        definition['items'] = { type: 'string' };
+                    } else if ((typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object') {
+                      RAML08Importer._mapSchema(val, isSchema);
+                    }
+                  }
+                  return definition;
                 }
               }
             ]);
@@ -42087,13 +41096,15 @@
         module.exports = RAML08Importer;
       },
       {
-        '../entities/schema': 216,
-        '../entities/text': 220,
-        '../utils/json': 243,
-        './baseraml': 233
+        '../entities/schema': 215,
+        '../entities/text': 218,
+        '../helpers/raml': 226,
+        '../utils/json': 236,
+        './baseraml': 229,
+        'lodash': 204
       }
     ],
-    238: [
+    233: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -42156,128 +41167,228 @@
             _createClass(RAML10Importer, [
               {
                 key: 'mapRequestBody',
-                value: function mapRequestBody(methodBody, checkEmptyType) {
+                value: function mapRequestBody(methodBody, checkEmptyType, mimeType) {
                   var data = { mimeType: '' };
-                  //TODO: only one, the latest is in effect in stoplight!
-                  for (var i in methodBody) {
-                    if (!methodBody.hasOwnProperty(i))
-                      continue;
-                    var mimeType = methodBody[i];
-                    if (checkEmptyType) {
-                      RAMLImporter._fillDefaultType(mimeType);
-                    }
-                    data.mimeType = i;
-                    if (mimeType.example) {
-                      data.example = mimeType.example;
-                      delete mimeType.example;
-                    }
-                    if (mimeType.description) {
-                      data.description = mimeType.description;
-                    }
-                    if (mimeType.properties && !_.isEmpty(mimeType.properties)) {
-                      switch (data.mimeType) {
-                      case 'application/json':
-                        data.body = RAML10Importer.convertObjectProperty(mimeType);
-                        delete data.body.description;
-                        // delete data.body.type;
-                        break;
-                      case 'multipart/form-data':
-                      case 'application/x-www-form-urlencoded': {
-                          data.body = {
-                            type: 'object',
-                            'properties': {},
-                            'required': []
-                          };
-                          var formParams = mimeType.properties;
-                          for (var j in formParams) {
-                            if (!formParams.hasOwnProperty(j))
-                              continue;
-                            var param = formParams[j];
-                            var bodyType = !_.isEmpty(param.type) ? param.type[0] : param.type;
-                            data.body.properties[param.name] = { type: bodyType };
-                            if (param.description) {
-                              data.body.properties[param.name].description = param.description;
-                            }
-                            if (param.format) {
-                              data.body.properties[param.name].format = param.format;
-                            }
-                            RAMLImporter._convertRequiredToArray(param, param.name, data.body.required);
+                  if (checkEmptyType) {
+                    RAMLImporter._fillDefaultType(methodBody);
+                  }
+                  data.mimeType = mimeType;
+                  if (methodBody.description) {
+                    data.description = methodBody.description;
+                    delete methodBody.description;
+                  }
+                  if (methodBody.properties && !_.isEmpty(methodBody.properties)) {
+                    switch (data.mimeType) {
+                    case 'application/json':
+                      data.body = this._mapSchema(methodBody, true);
+                      // data.body = RAML10Importer.convertObjectProperty(mimeType);
+                      delete data.body.description;
+                      // delete data.body.type;
+                      break;
+                    case 'multipart/form-data':
+                    case 'application/x-www-form-urlencoded': {
+                        data.body = {
+                          type: 'object',
+                          'properties': {},
+                          'required': []
+                        };
+                        var formParams = methodBody.properties;
+                        for (var j in formParams) {
+                          if (!formParams.hasOwnProperty(j))
+                            continue;
+                          var param = formParams[j];
+                          var bodyType = !_.isEmpty(param.type) ? param.type[0] : param.type;
+                          data.body.properties[param.name] = { type: bodyType };
+                          if (param.description) {
+                            data.body.properties[param.name].description = param.description;
                           }
-                          break;
+                          if (param.format) {
+                            data.body.properties[param.name].format = param.format;
+                          }
+                          RAMLImporter._convertRequiredToArray(param, param.name, data.body.required);
                         }
-                      default:
+                        break;
                       }
-                    } else if (RAML10Importer.isArray(mimeType)) {
-                      data.body = RAMLImporter.convertRefToModel(RAML10Importer.convertArray(mimeType));
-                    } else if (mimeType.schema && !_.isEmpty(mimeType.schema)) {
-                      data.body = RAMLImporter.convertRefToModel({ type: mimeType.schema[0] });
-                    } else if (mimeType.type && !_.isEmpty(mimeType.type) && mimeType.type[0] !== 'object') {
-                      data.body = RAMLImporter.convertRefToModel({ type: mimeType.type[0] });
+                    default:
                     }
+                  } else if (RAML10Importer.isArray(methodBody)) {
+                    data.body = this.convertRefToModel(this.convertArray(methodBody), false);
+                  } else if (methodBody.schema && !_.isEmpty(methodBody.schema)) {
+                    var schema = _.isArray(methodBody.schema) ? methodBody.schema[0] : methodBody.schema;
+                    if ((typeof schema === 'undefined' ? 'undefined' : _typeof(schema)) !== 'object')
+                      schema = jsonHelper.parse(schema);
+                    data.body = this._mapSchema(this.convertRefToModel({ type: schema }, false), false);
+                  } else if (methodBody.type && !_.isEmpty(methodBody.type) && methodBody.type[0] !== 'object') {
+                    data.body = this._mapSchema(methodBody, false);  // data.body = RAMLImporter.convertRefToModel({
+                                                                     // 	type: mimeType.type[0]
+                                                                     // });
                   }
                   return data;
                 }
               },
               {
-                key: 'mapSchema',
-                value: function mapSchema(schemData) {
-                  var schemas = [];
-                  for (var i in schemData) {
-                    if (!schemData.hasOwnProperty(i))
+                key: 'convertArrayTypeExpression',
+                value: function convertArrayTypeExpression(param) {
+                  var valid = true;
+                  var result = {};
+                  var types = [];
+                  for (var i = 0; i < param.length; i++) {
+                    var key = param[i];
+                    if ((typeof key === 'undefined' ? 'undefined' : _typeof(key)) === 'object') {
+                      if (key.hasOwnProperty('type') && typeof key.type[0] === 'string' && this.isValidRefValue(key.type[0])) {
+                        types.push(key.type[0]);
+                      } else {
+                        valid = false;
+                        break;
+                      }
+                    }
+                  }
+                  if (valid) {
+                    result['name'] = param[0].name;
+                    result['type'] = types;
+                    result['typePropertyKind'] = 'TYPE_EXPRESSION';
+                    return result;
+                  }
+                  return param;
+                }
+              },
+              {
+                key: 'convertObjectProperty',
+                value: function convertObjectProperty(source) {
+                  var target = Object.assign({}, source);
+                  target.properties = {};
+                  if (source.type !== 'array')
+                    target.type = 'object';
+                  target.required = [];
+                  if (source.description) {
+                    target.description = jsonHelper.stringify(source.description);
+                  }
+                  for (var paramName in source.properties) {
+                    var skipRequired = false;
+                    if (!source.properties.hasOwnProperty(paramName))
                       continue;
-                    for (var schemaName in schemData[i]) {
-                      if (!schemData[i].hasOwnProperty(schemaName))
+                    var parameter = source.properties[paramName];
+                    var param = _.isArray(parameter) ? this.convertArrayTypeExpression(parameter) : parameter;
+                    if (RAML10Importer.isArray(param)) {
+                      target.properties[paramName] = this.convertArray(param);
+                    } else if (RAML10Importer.isFacet(param)) {
+                      //check for facets
+                      target.properties[paramName] = RAML10Importer.convertFacet(param);
+                    } else if (RAML10Importer.isAdditionalProperties(param)) {
+                      RAML10Importer.convertAdditionalProperties(target, param);
+                      skipRequired = true;
+                    } else {
+                      if (_.isArray(param.type) && param.type.length > 1) {
+                        RAML10Importer._removeHarmlessChars(param.type);
+                        RAML10Importer._modifyUnionType(param);
+                        param.allOf = param.type;
+                        delete param.type;
+                      }
+                      target.properties[paramName] = param;
+                    }
+                    if (skipRequired)
+                      continue;
+                    //add annotations
+                    RAMLImporter._addAnnotations(param, target.properties[paramName]);
+                    //required
+                    RAMLImporter._convertRequiredToArray(param, paramName, target['required']);
+                    if (param.properties && !_.isEmpty(param.properties))
+                      target.properties[paramName] = this.convertObjectProperty(param);
+                  }
+                  if (target.required && target.required.length == 0) {
+                    delete target.required;
+                  }
+                  if (target.properties && _.isEmpty(target.properties)) {
+                    delete target.properties;
+                  }
+                  // RAMLImporter.convertRefToModel(target);
+                  return target;
+                }
+              },
+              {
+                key: '_mapSchema',
+                value: function _mapSchema(definition, isSchema) {
+                  var properties = null;
+                  var result = definition;
+                  if (definition.properties && !_.isEmpty(definition.properties)) {
+                    properties = this.convertObjectProperty(definition);
+                  }
+                  if (definition.hasOwnProperty('type') && definition.type != 'object') {
+                    //type
+                    if (_.isArray(definition.type)) {
+                      RAML10Importer._removeHarmlessChars(definition.type);
+                      //remove ( and )
+                      RAML10Importer._modifyUnionType(definition);
+                    }
+                    if (properties) {
+                      //type and properties
+                      result.allOf = definition.type;
+                      result.allOf.push(properties);
+                      delete result.type;
+                      delete result.properties;
+                    } else {
+                      result = this._convertCustomTypes(definition);
+                      if (_.isArray(definition.type) && definition.type.length > 1) {
+                        result.allOf = definition.type;
+                        delete result.type;
+                      } else {
+                        //definition.type is json string value. or type=object
+                        var jsonObject = jsonHelper.parse(_.isArray(definition.type) ? definition.type[0] : definition.type);
+                        if ((typeof jsonObject === 'undefined' ? 'undefined' : _typeof(jsonObject)) === 'object') {
+                          jsonObject = this.convertObjectProperty(jsonObject);
+                          result = jsonObject;
+                        }
+                      }
+                    }
+                  } else {
+                    //only properties
+                    if (!properties) {
+                      if (definition.hasOwnProperty('schema')) {
+                        definition = jsonHelper.parse(_.isArray(definition.schema) ? definition.schema[0] : definition.schema);
+                        result = this.convertObjectProperty(definition);
+                      } else if (definition.type == 'object') {
+                        result = definition;
+                      }
+                    } else {
+                      //type = object with properties
+                      result = properties;
+                    }
+                  }
+                  //add annotations
+                  RAMLImporter._addAnnotations(definition, result);
+                  result = this._convertCustomTypes(result);
+                  return this.convertRefToModel(result, isSchema);
+                }
+              },
+              {
+                key: 'isDefinedAsSchema',
+                value: function isDefinedAsSchema(schemas, schemaId) {
+                  for (var index in schemas) {
+                    if (!schemas.hasOwnProperty(index))
+                      continue;
+                    for (var schemaName in schemas[index]) {
+                      if (!schemas[index].hasOwnProperty(schemaName))
+                        continue;
+                      if (schemaName === schemaId)
+                        return true;
+                    }
+                  }
+                  return false;
+                }
+              },
+              {
+                key: 'mapSchemas',
+                value: function mapSchemas(schemData) {
+                  var schemas = [];
+                  for (var index in schemData) {
+                    if (!schemData.hasOwnProperty(index))
+                      continue;
+                    for (var schemaName in schemData[index]) {
+                      if (!schemData[index].hasOwnProperty(schemaName))
                         continue;
                       var sd = new Schema(schemaName);
                       sd.Name = schemaName;
-                      var definition = schemData[i][schemaName];
-                      var properties = null;
-                      var result = definition;
-                      if (definition.properties && !_.isEmpty(definition.properties)) {
-                        properties = RAML10Importer.convertObjectProperty(definition);
-                      }
-                      if (definition.type && definition.type != 'object') {
-                        //type
-                        RAML10Importer._removeHarmlessChars(definition.type);
-                        //remove ( and )
-                        RAML10Importer._modifyUnionType(definition.type);
-                        if (properties) {
-                          //type and properties
-                          result.allOf = definition.type;
-                          result.allOf.push(properties);
-                          delete result.type;
-                          delete result.properties;
-                        } else {
-                          result = RAML10Importer._convertCustomTypes(definition);
-                          if (_.isArray(definition.type) && definition.type.length > 1) {
-                            result.allOf = definition.type;
-                            delete result.type;
-                          } else {
-                            //definition.type is json string value. or type=object
-                            var jsonObject = jsonHelper.parse(_.isArray(definition.type) ? definition.type[0] : definition.type);
-                            if ((typeof jsonObject === 'undefined' ? 'undefined' : _typeof(jsonObject)) === 'object') {
-                              result = jsonObject;
-                            }
-                          }
-                        }
-                      } else {
-                        //only properties
-                        if (!properties) {
-                          if (definition.hasOwnProperty('schema')) {
-                            definition = jsonHelper.parse(_.isArray(definition.schema) ? definition.schema[0] : definition.schema);
-                            result = RAML10Importer.convertObjectProperty(definition);
-                          } else if (definition.type == 'object') {
-                            result = definition;
-                          }
-                        } else {
-                          //type = object with properties
-                          result = properties;
-                        }
-                      }
-                      //add annotations
-                      RAMLImporter._addAnnotations(definition, result);
-                      result = RAML10Importer._convertCustomTypes(result);
-                      sd.Definition = RAMLImporter.convertRefToModel(result);
+                      sd.Definition = this._mapSchema(schemData[index][schemaName], true);
                       schemas.push(sd);
                     }
                   }
@@ -42285,9 +41396,71 @@
                 }
               },
               {
-                key: 'getSchema',
-                value: function getSchema(data) {
+                key: '_convertCustomTypes',
+                value: function _convertCustomTypes(result) {
+                  if (RAML10Importer.isArray(result)) {
+                    //check for array
+                    //convert array
+                    result = this.convertArray(result);
+                  } else if (RAML10Importer.isFacet(result)) {
+                    //check for facets
+                    result = RAML10Importer.convertFacet(result);
+                  } else if (RAML10Importer.isFixedFacet(result)) {
+                    result = RAML10Importer.convertFixedFacet(result);
+                  }
+                  return result;
+                }
+              },
+              {
+                key: 'convertArray',
+                value: function convertArray(definition) {
+                  if (definition.hasOwnProperty('items')) {
+                    if (definition.items.hasOwnProperty('type')) {
+                      definition.items.type = _.isArray(definition.items.type) ? definition.items.type[0] : definition.items.type;
+                      if (definition.items.type === 'object' && definition.items.hasOwnProperty('properties'))
+                        definition['items'] = this.convertObjectProperty(definition.items);
+                    } else {
+                      var items = definition.items;
+                      if (RAML10Importer.isRamlArray(items)) {
+                        definition.items = this.convertArray(RAML10Importer.convertRamlArray(definition.items));
+                      } else {
+                        if ((typeof items === 'undefined' ? 'undefined' : _typeof(items)) !== 'object' || _.isArray(items)) {
+                          definition.items = { type: items };
+                        }
+                      }
+                    }
+                  } else {
+                    var type = _.isArray(definition.type) ? definition.type[0] : definition.type;
+                    definition = RAML10Importer.convertRamlArray(type);
+                  }
+                  definition.type = 'array';
+                  return definition;
+                }
+              },
+              {
+                key: 'getSchemas',
+                value: function getSchemas(data) {
                   return data.types || data.schemas;
+                }
+              },
+              {
+                key: 'mapAuthorizationGrants',
+                value: function mapAuthorizationGrants(oauth, flow) {
+                  switch (flow) {
+                  case 'authorization_code':
+                    oauth.flow = 'accessCode';
+                    break;
+                  case 'implicit':
+                    oauth.flow = 'implicit';
+                    break;
+                  case 'client_credentials':
+                    oauth.flow = 'application';
+                    break;
+                  case 'password':
+                    oauth.flow = 'password';
+                    break;
+                  }
+                  return oauth;
                 }
               },
               {
@@ -42300,64 +41473,12 @@
               }
             ], [
               {
-                key: 'convertObjectProperty',
-                value: function convertObjectProperty(source) {
-                  var target = Object.assign({}, source);
-                  target.properties = {};
-                  target.type = 'object';
-                  target.required = [];
-                  if (source.description) {
-                    target.description = jsonHelper.stringify(source.description);
-                  }
-                  for (var paramName in source.properties) {
-                    var skipRequired = false;
-                    if (!source.properties.hasOwnProperty(paramName))
-                      continue;
-                    var param = source.properties[paramName];
-                    if (RAML10Importer.isArray(param)) {
-                      target.properties[paramName] = RAML10Importer.convertArray(param);
-                    } else if (RAML10Importer.isFacet(param)) {
-                      //check for facets
-                      target.properties[paramName] = RAML10Importer.convertFacet(param);
-                    } else if (RAML10Importer.isAdditionalProperties(param)) {
-                      target.additionalProperties = RAML10Importer.convertAdditionalProperties(param);
-                      skipRequired = true;
-                    } else {
-                      target.properties[paramName] = param;
-                    }
-                    //add annotations
-                    RAMLImporter._addAnnotations(param, target.properties[paramName]);
-                    if (skipRequired)
-                      continue;
-                    //required
-                    RAMLImporter._convertRequiredToArray(param, paramName, target['required']);
-                  }
-                  if (target.required && target.required.length == 0) {
-                    delete target.required;
-                  }
-                  RAMLImporter.convertRefToModel(target);
-                  return target;
-                }
-              },
-              {
-                key: '_convertCustomTypes',
-                value: function _convertCustomTypes(result) {
-                  if (RAML10Importer.isArray(result)) {
-                    //check for array
-                    //convert array
-                    result = RAML10Importer.convertArray(result);
-                  } else if (RAML10Importer.isFacet(result)) {
-                    //check for facets
-                    result = RAML10Importer.convertFacet(result);
-                  } else if (RAML10Importer.isFixedFacet(result)) {
-                    result = RAML10Importer.convertFixedFacet(result);
-                  }
-                  return result;
-                }
-              },
-              {
                 key: '_modifyUnionType',
-                value: function _modifyUnionType(type) {
+                value: function _modifyUnionType(definition) {
+                  var type = definition.type;
+                  if (type.length > 1) {
+                    definition['x-raml-union-type-definition'] = '[' + _.join(type, ',') + ']';
+                  }
                   for (var index in type) {
                     if (!type.hasOwnProperty(index))
                       continue;
@@ -42365,7 +41486,7 @@
                       type[index] = { type: 'object' };
                     }
                   }
-                  return type;
+                  return definition;
                 }
               },
               {
@@ -42405,28 +41526,6 @@
                 }
               },
               {
-                key: 'convertArray',
-                value: function convertArray(definition) {
-                  if (definition.hasOwnProperty('items')) {
-                    if (definition.items.hasOwnProperty('type')) {
-                      definition.items.type = _.isArray(definition.items.type) ? definition.items.type[0] : definition.items.type;
-                    } else {
-                      var items = definition.items;
-                      if (RAML10Importer.isRamlArray(items)) {
-                        definition.items = RAML10Importer.convertArray(RAML10Importer.convertRamlArray(definition.items));
-                      } else {
-                        definition.items = { type: items };
-                      }
-                    }
-                  } else {
-                    var type = _.isArray(definition.type) ? definition.type[0] : definition.type;
-                    definition = RAML10Importer.convertRamlArray(type);
-                  }
-                  definition.type = 'array';
-                  return definition;
-                }
-              },
-              {
                 key: 'isRamlArray',
                 value: function isRamlArray(object) {
                   return _.endsWith(object, '[]');
@@ -42443,13 +41542,29 @@
               },
               {
                 key: 'convertAdditionalProperties',
-                value: function convertAdditionalProperties(definition) {
+                value: function convertAdditionalProperties(target, definition) {
+                  var type = definition.type;
                   var pattern = definition.name;
-                  if (pattern !== '//') {
-                    definition['x-raml-pattern'] = pattern;
+                  var info = {};
+                  if (_.isArray(type) && type.length == 1) {
+                    info.type = type[0];
                   }
-                  delete definition.name;
-                  return definition;
+                  if (pattern !== '//') {
+                    info.pattern = pattern;
+                  }
+                  if (info.hasOwnProperty('pattern')) {
+                    if (!target.hasOwnProperty('additionalProperties')) {
+                      target.additionalProperties = { 'x-raml-additional-properties-info': [] };
+                    }
+                    if (!target.additionalProperties.type)
+                      target.additionalProperties.type = info.type;
+                    else
+                      target.additionalProperties.type = 'object';
+                    target.additionalProperties['x-raml-additional-properties-info'].push(info);
+                  } else {
+                    target.additionalProperties = {};
+                    target.additionalProperties.type = info.type;
+                  }
                 }
               },
               {
@@ -42482,7 +41597,7 @@
                     if (definition.hasOwnProperty(key)) {
                       definition[key] = fixedFacets[key];
                     } else {
-                      definition['x-' + key] = fixedFacets[key];
+                      definition['x-raml-facets-' + key] = fixedFacets[key];
                     }
                   }
                   delete definition.fixedFacets;
@@ -42495,368 +41610,13 @@
         module.exports = RAML10Importer;
       },
       {
-        '../entities/schema': 216,
-        '../utils/json': 243,
-        './baseraml': 233,
+        '../entities/schema': 215,
+        '../utils/json': 236,
+        './baseraml': 229,
         'lodash': 204
       }
     ],
-    239: [
-      function (require, module, exports) {
-        'use strict';
-        var _createClass = function () {
-            function defineProperties(target, props) {
-              for (var i = 0; i < props.length; i++) {
-                var descriptor = props[i];
-                descriptor.enumerable = descriptor.enumerable || false;
-                descriptor.configurable = true;
-                if ('value' in descriptor)
-                  descriptor.writable = true;
-                Object.defineProperty(target, descriptor.key, descriptor);
-              }
-            }
-            return function (Constructor, protoProps, staticProps) {
-              if (protoProps)
-                defineProperties(Constructor.prototype, protoProps);
-              if (staticProps)
-                defineProperties(Constructor, staticProps);
-              return Constructor;
-            };
-          }();
-        function _classCallCheck(instance, Constructor) {
-          if (!(instance instanceof Constructor)) {
-            throw new TypeError('Cannot call a class as a function');
-          }
-        }
-        function _possibleConstructorReturn(self, call) {
-          if (!self) {
-            throw new ReferenceError('this hasn\'t been initialised - super() hasn\'t been called');
-          }
-          return call && (typeof call === 'object' || typeof call === 'function') ? call : self;
-        }
-        function _inherits(subClass, superClass) {
-          if (typeof superClass !== 'function' && superClass !== null) {
-            throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass);
-          }
-          subClass.prototype = Object.create(superClass && superClass.prototype, {
-            constructor: {
-              value: subClass,
-              enumerable: false,
-              writable: true,
-              configurable: true
-            }
-          });
-          if (superClass)
-            Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
-        }
-        var Endpoint = require('../entities/endpoint'), Project = require('../entities/project'), Schema = require('../entities/schema'), UtilityFunction = require('../entities/utilityFunction'), Text = require('../entities/text'), Importer = require('./importer'), fs = require('fs');
-        var StopLight = function (_Importer) {
-            _inherits(StopLight, _Importer);
-            function StopLight() {
-              _classCallCheck(this, StopLight);
-              var _this = _possibleConstructorReturn(this, (StopLight.__proto__ || Object.getPrototypeOf(StopLight)).call(this));
-              _this.metadata = null;
-              return _this;
-            }
-            _createClass(StopLight, [
-              {
-                key: 'loadFile',
-                value: function loadFile(path, cb) {
-                  try {
-                    this.data = JSON.parse(fs.readFileSync(path, 'utf8'));
-                    cb();
-                  } catch (err) {
-                    cb(err);
-                  }
-                }
-              },
-              {
-                key: '_mapSchema',
-                value: function _mapSchema() {
-                  for (var i in this.data.project.schemas) {
-                    if (!this.data.project.schemas.hasOwnProperty(i))
-                      continue;
-                    var schemaData = this.data.project.schemas[i];
-                    schemaData.namespace = schemaData.namespace.replace('#/definitions/', '');
-                    var schema = new Schema(schemaData.namespace);
-                    schema.SLData = schemaData;
-                    this.project.addSchema(schema);
-                  }
-                }
-              },
-              {
-                key: 'mapEndpoint',
-                value: function mapEndpoint() {
-                  //all formats are going throught stoplight endpoint, no need to map itself
-                  for (var i in this.data.project.endpoints) {
-                    if (!this.data.project.endpoints.hasOwnProperty(i))
-                      continue;
-                    var endpointData = this.data.project.endpoints[i];
-                    var endpoint = new Endpoint('');
-                    endpoint.SLData = endpointData;
-                    this.project.addEndpoint(endpoint);
-                  }
-                }
-              },
-              {
-                key: 'mapUtilityFunctions',
-                value: function mapUtilityFunctions() {
-                  for (var i in this.data.project.utilityFunctions) {
-                    var ufData = this.data.project.utilityFunctions[i];
-                    var uf = new UtilityFunction(ufData.name);
-                    uf.Description = ufData.description;
-                    uf.Script = ufData.script;
-                    this.project.addUtilityFunction(uf);
-                  }
-                }
-              },
-              {
-                key: 'mapTexts',
-                value: function mapTexts() {
-                  for (var i in this.data.project.texts) {
-                    var txt = this.data.project.texts[i];
-                    var text = new Text(txt.name);
-                    text.Id = txt._id;
-                    text.Name = txt.name;
-                    text.Content = txt.content;
-                    text.Public = txt.public;
-                    this.project.addText(text);
-                  }
-                }
-              },
-              {
-                key: 'mapTraits',
-                value: function mapTraits() {
-                  this.project.traits = this.data.project.traits;
-                }
-              },
-              {
-                key: 'mapSecuritySchemes',
-                value: function mapSecuritySchemes() {
-                  this.project.SecuritySchemes = this.data.project.securitySchemes;
-                }
-              },
-              {
-                key: '_import',
-                value: function _import() {
-                  if (!this.data.project) {
-                    throw new Error('Invalid formatted stoplight data');
-                  }
-                  this.project = new Project(this.data.project.name);
-                  this.project.loadSLData(this.data.project);
-                  this.project.Environment.loadSLData(this.data.project.environment);
-                  this.mapEndpoint();
-                  this._mapSchema();
-                  this.mapUtilityFunctions();
-                  this.mapSecuritySchemes();
-                  this.mapTexts();
-                  this.mapTraits();
-                  if (this.data.project.resourcesOrder) {
-                    this.project.GroupsOrder = this.data.project.resourcesOrder;
-                  }
-                }
-              }
-            ]);
-            return StopLight;
-          }(Importer);
-        module.exports = StopLight;
-      },
-      {
-        '../entities/endpoint': 212,
-        '../entities/project': 214,
-        '../entities/schema': 216,
-        '../entities/text': 220,
-        '../entities/utilityFunction': 221,
-        './importer': 234,
-        'fs': 4
-      }
-    ],
-    240: [
-      function (require, module, exports) {
-        'use strict';
-        var _createClass = function () {
-            function defineProperties(target, props) {
-              for (var i = 0; i < props.length; i++) {
-                var descriptor = props[i];
-                descriptor.enumerable = descriptor.enumerable || false;
-                descriptor.configurable = true;
-                if ('value' in descriptor)
-                  descriptor.writable = true;
-                Object.defineProperty(target, descriptor.key, descriptor);
-              }
-            }
-            return function (Constructor, protoProps, staticProps) {
-              if (protoProps)
-                defineProperties(Constructor.prototype, protoProps);
-              if (staticProps)
-                defineProperties(Constructor, staticProps);
-              return Constructor;
-            };
-          }();
-        function _classCallCheck(instance, Constructor) {
-          if (!(instance instanceof Constructor)) {
-            throw new TypeError('Cannot call a class as a function');
-          }
-        }
-        function _possibleConstructorReturn(self, call) {
-          if (!self) {
-            throw new ReferenceError('this hasn\'t been initialised - super() hasn\'t been called');
-          }
-          return call && (typeof call === 'object' || typeof call === 'function') ? call : self;
-        }
-        function _inherits(subClass, superClass) {
-          if (typeof superClass !== 'function' && superClass !== null) {
-            throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass);
-          }
-          subClass.prototype = Object.create(superClass && superClass.prototype, {
-            constructor: {
-              value: subClass,
-              enumerable: false,
-              writable: true,
-              configurable: true
-            }
-          });
-          if (superClass)
-            Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
-        }
-        var Swagger = require('./swagger'), Importer = require('./importer'), UtilityFunction = require('../entities/utilityFunction'), Text = require('../entities/text'), Test = require('../entities/test'), _ = require('lodash');
-        var prefix = 'x-stoplight';
-        var testsPrefix = 'x-tests';
-        var StopLightX = function (_Importer) {
-            _inherits(StopLightX, _Importer);
-            function StopLightX() {
-              _classCallCheck(this, StopLightX);
-              var _this = _possibleConstructorReturn(this, (StopLightX.__proto__ || Object.getPrototypeOf(StopLightX)).call(this));
-              _this.importer = new Swagger();
-              return _this;
-            }
-            _createClass(StopLightX, [
-              {
-                key: 'loadFile',
-                value: function loadFile(path) {
-                  var me = this;
-                  return this.importer.loadFile(path).then(function () {
-                    me.data = me.importer.data;
-                  });
-                }
-              },
-              {
-                key: 'loadData',
-                value: function loadData(path, options) {
-                  var me = this;
-                  return new Promise(function (resolve, reject) {
-                    me.importer.loadData(path, options).then(function () {
-                      me.data = me.importer.data;
-                      resolve();
-                    }).catch(function (err) {
-                      reject(err);
-                    });
-                  });
-                }
-              },
-              {
-                key: '_import',
-                value: function _import() {
-                  this.project = this.importer.import();
-                  var data = this.importer.data;
-                  if (!data.hasOwnProperty(prefix)) {
-                    return;
-                  }
-                  var environment = this.project.Environment;
-                  var stoplightData = data[prefix];
-                  if (stoplightData.hasOwnProperty('version')) {
-                    environment.loadSLData(data[prefix].version);
-                    //property names are different from db name
-                    environment.GroupsOrder = data[prefix].version.groups;
-                    environment.MiddlewareBefore = data[prefix].beforeScript;
-                    environment.MiddlewareAfter = data[prefix].afterScript;
-                    this.project.Environment = environment;
-                  }
-                  for (var name in data[prefix].functions) {
-                    if (!data[prefix].functions.hasOwnProperty(name))
-                      continue;
-                    var ufData = data[prefix].functions[name];
-                    var uf = new UtilityFunction(ufData.name);
-                    uf.Description = ufData.description;
-                    uf.Script = ufData.script;
-                    this.project.addUtilityFunction(uf);
-                  }
-                  for (var _name in data[prefix].textSections) {
-                    if (!data[prefix].textSections.hasOwnProperty(_name))
-                      continue;
-                    var txtData = data[prefix].textSections[_name];
-                    var txt = new Text(txtData.name);
-                    txt.Id = txtData.id;
-                    txt.Content = txtData.content;
-                    txt.Public = txtData.public;
-                    this.project.addText(txt);
-                  }
-                  for (var i in this.project.Endpoints) {
-                    if (!this.project.Endpoints.hasOwnProperty(i))
-                      continue;
-                    var endpoint = this.project.Endpoints[i];
-                    var method = data.paths[endpoint.Path][endpoint.Method][prefix];
-                    if (method) {
-                      endpoint.Before = method['beforeScript'];
-                      endpoint.After = method['afterScript'];
-                      endpoint.Mock = method['mock'];
-                      endpoint.Id = method['id'];
-                    }
-                  }
-                  for (var _i in this.project.Schemas) {
-                    if (!this.project.Schemas.hasOwnProperty(_i))
-                      continue;
-                    var schema = this.project.Schemas[_i];
-                    var schemaData = data.definitions[schema.NameSpace][prefix];
-                    if (schemaData) {
-                      schema.Id = schemaData.id;
-                      schema.Name = schemaData.name;
-                      if (!_.isEmpty(schemaData.summary)) {
-                        schema.Summary = schemaData.summary;
-                      }
-                      schema.Description = schemaData.description;
-                      schema.Public = schemaData.public;
-                    }
-                  }
-                  if (data.hasOwnProperty(testsPrefix)) {
-                    for (var id in data[testsPrefix]) {
-                      if (!data[testsPrefix].hasOwnProperty(id))
-                        continue;
-                      var testData = data[testsPrefix][id];
-                      var test = new Test(testData.name);
-                      test.Id = testData.id;
-                      if (!_.isEmpty(testData.summary)) {
-                        test.Summary = testData.summary;
-                      }
-                      test.InitialVariables = testData.initialVariables;
-                      test.Steps = testData.steps.map(function (step) {
-                        if (step.$ref) {
-                          var parts = step.$ref.split('/');
-                          var stepId = _.last(parts);
-                          return { test: stepId };
-                        }
-                        return step;
-                      });
-                      this.project.addTest(test);
-                    }
-                  }
-                }
-              }
-            ]);
-            return StopLightX;
-          }(Importer);
-        module.exports = StopLightX;
-      },
-      {
-        '../entities/test': 219,
-        '../entities/text': 220,
-        '../entities/utilityFunction': 221,
-        './importer': 234,
-        './swagger': 241,
-        'lodash': 204
-      }
-    ],
-    241: [
+    234: [
       function (require, module, exports) {
         'use strict';
         var _createClass = function () {
@@ -43054,7 +41814,8 @@
                         body: {},
                         example: '',
                         codes: []
-                      }, description = '';
+                      };
+                    var description = '';
                     var response = responses[code];
                     if (skipParameterRefs && Swagger.needDeReferenced(response) && (response.$ref.match(/trait/) || _.includes($refs, response.$ref))) {
                       continue;
@@ -43141,9 +41902,10 @@
                   var _this2 = this;
                   return new Promise(function (resolve, reject) {
                     var validateOptions = _.cloneDeep(options || {});
+                    var validate = options && (options.validate === true || options.validateImport === true);
                     validateOptions.validate = {
-                      schema: options && options.validate === true,
-                      spec: options && options.validate === true
+                      schema: validate,
+                      spec: validate
                     };
                     // with validation
                     //in case of data, if not cloned, referenced to resolved data
@@ -43227,7 +41989,7 @@
               },
               {
                 key: '_mapEndpoints',
-                value: function _mapEndpoints(consumes, produces) {
+                value: function _mapEndpoints(project, consumes, produces) {
                   var _this5 = this;
                   for (var path in this.data.paths) {
                     if (!this.data.paths.hasOwnProperty(path))
@@ -43245,7 +42007,7 @@
                       globalParamsURI = this._mapURIParams(methods.parameters, resolvedPathParames);
                       pathParamRef = Swagger._mapEndpointTrait(methods.parameters, this.dereferencedAPI.parameters);
                       if (!_.isEmpty(pathParamRef)) {
-                        this.project.addPathParamRef(path, pathParamRef);
+                        project.addPathParamRef(path, pathParamRef);
                       }
                       globalParamsNonURI = Swagger._getParams(methods.parameters, resolvedPathParames, function (param) {
                         return !(param.in && param.in == 'path');
@@ -43391,7 +42153,7 @@
                           }
                         }
                       }
-                      _this5.project.addEndpoint(endpoint);
+                      project.addEndpoint(endpoint);
                     };
                     for (var method in methods) {
                       var _ret = _loop(method);
@@ -43408,7 +42170,9 @@
                   for (var k in parameters) {
                     if (!parameters.hasOwnProperty(k))
                       continue;
-                    var param = parameters[k], parts = k.split(':'), name = k;
+                    var param = parameters[k];
+                    var parts = k.split(':');
+                    var name = k;
                     if (parts[0] === 'trait') {
                       name = parts[1];
                     }
@@ -43514,37 +42278,37 @@
               },
               {
                 key: '_createExtensions',
-                value: function _createExtensions() {
-                  this.project.extensions = Swagger._getExtensionsFrom(this.data);
+                value: function _createExtensions(project) {
+                  project.extensions = Swagger._getExtensionsFrom(this.data);
                   if (this.data.info) {
                     var infoExtensions = Swagger._getExtensionsFrom(this.data.info);
                     if (!_.isEmpty(infoExtensions)) {
-                      this.project.Environment.extensions = infoExtensions;
+                      project.Environment.extensions = infoExtensions;
                     }
                   }
                   if (this.data.info.contact) {
                     var contactExtensions = Swagger._getExtensionsFrom(this.data.info.contact);
                     if (!_.isEmpty(contactExtensions)) {
-                      this.project.Environment.contactInfo.extensions = contactExtensions;
+                      project.Environment.contactInfo.extensions = contactExtensions;
                     }
                   }
                   if (this.data.info.license) {
                     var licenseExtensions = Swagger._getExtensionsFrom(this.data.info.license);
                     if (!_.isEmpty(licenseExtensions)) {
-                      this.project.Environment.license.extensions = licenseExtensions;
+                      project.Environment.license.extensions = licenseExtensions;
                     }
                   }
                   if (this.data.externalDocs) {
                     var externalDocsExtensions = Swagger._getExtensionsFrom(this.data.externalDocs);
                     if (!_.isEmpty(externalDocsExtensions)) {
-                      this.project.Environment.ExternalDocs.extensions = externalDocsExtensions;
+                      project.Environment.ExternalDocs.extensions = externalDocsExtensions;
                     }
                   }
                   if (this.data.paths) {
                     var endpointExtensions = Swagger._getExtensionsFrom(this.data.paths);
                     if (!_.isEmpty(endpointExtensions)) {
-                      this.project.endpointExtensions = {};
-                      this.project.endpointExtensions = endpointExtensions;
+                      project.endpointExtensions = {};
+                      project.endpointExtensions = endpointExtensions;
                     }
                   }
                 }
@@ -43552,68 +42316,69 @@
               {
                 key: '_import',
                 value: function _import() {
-                  this.project = new Project(this.data.info.title);
-                  this.project.Description = this.data.info.description || '';
-                  this.project.tags = this.data.tags;
+                  var project = new Project(this.data.info.title);
+                  project.Description = this.data.info.description || '';
+                  project.tags = this.data.tags;
                   var protocol = 'http';
                   if (this.data.schemes && this.data.schemes.length > 0) {
-                    this.project.Environment.Protocols = this.data.schemes;
+                    project.Environment.Protocols = this.data.schemes;
                     protocol = this.data.schemes[0];
                   }
-                  this._mapEndpoints(this.data.consumes, this.data.produces);
-                  this.project.Environment.summary = this.data.info.description || '';
-                  this.project.Environment.BasePath = this.data.basePath || '';
-                  this.project.Environment.Host = this.data.host ? protocol + '://' + this.data.host : '';
-                  this.project.Environment.Version = this.data.info.version;
+                  this._mapEndpoints(project, this.data.consumes, this.data.produces);
+                  project.Environment.summary = this.data.info.description || '';
+                  project.Environment.BasePath = this.data.basePath || '';
+                  project.Environment.Host = this.data.host ? protocol + '://' + this.data.host : '';
+                  project.Environment.Version = this.data.info.version;
                   if (this.data.externalDocs) {
-                    this.project.Environment.ExternalDocs = {
+                    project.Environment.ExternalDocs = {
                       description: this.data.externalDocs.description,
                       url: this.data.externalDocs.url
                     };
                   }
                   if (this.data.info.contact) {
-                    this.project.Environment.contactInfo = {};
+                    project.Environment.contactInfo = {};
                     if (this.data.info.contact.name) {
-                      this.project.Environment.contactInfo.name = this.data.info.contact.name;
+                      project.Environment.contactInfo.name = this.data.info.contact.name;
                     }
                     if (this.data.info.contact.url) {
-                      this.project.Environment.contactInfo.url = this.data.info.contact.url;
+                      project.Environment.contactInfo.url = this.data.info.contact.url;
                     }
                     if (this.data.info.contact.email) {
-                      this.project.Environment.contactInfo.email = this.data.info.contact.email;
+                      project.Environment.contactInfo.email = this.data.info.contact.email;
                     }
                   }
                   if (this.data.info.termsOfService) {
-                    this.project.Environment.termsOfService = this.data.info.termsOfService;
+                    project.Environment.termsOfService = this.data.info.termsOfService;
                   }
                   if (this.data.info.license) {
-                    this.project.Environment.license = {};
+                    project.Environment.license = {};
                     if (this.data.info.license.name) {
-                      this.project.Environment.license.name = this.data.info.license.name;
+                      project.Environment.license.name = this.data.info.license.name;
                     }
                     if (this.data.info.license.url) {
-                      this.project.Environment.license.url = this.data.info.license.url;
+                      project.Environment.license.url = this.data.info.license.url;
                     }
                   }
                   if (this.data.produces) {
                     //taking the first as default one
-                    this.project.Environment.Produces = this.data.produces;
+                    project.Environment.Produces = this.data.produces;
                   }
                   if (this.data.consumes) {
                     //taking the first as default one
-                    this.project.Environment.Consumes = this.data.consumes;
+                    project.Environment.Consumes = this.data.consumes;
                   }
                   if (this.data.securityDefinitions) {
-                    this.project.Environment.SecuritySchemes = Swagger._mapSecurityDefinitions(this.data.securityDefinitions, this.dereferencedAPI.securityDefinitions);
+                    project.Environment.SecuritySchemes = Swagger._mapSecurityDefinitions(this.data.securityDefinitions, this.dereferencedAPI.securityDefinitions);
                   }
-                  this.project.traits = this._mapTraits(this.data.parameters, this.data.responses, this.dereferencedAPI.parameters);
+                  project.traits = this._mapTraits(this.data.parameters, this.data.responses, this.dereferencedAPI.parameters);
                   var schemas = this._mapSchema(this.data.definitions);
                   for (var i in schemas) {
                     if (!schemas.hasOwnProperty(i))
                       continue;
-                    this.project.addSchema(schemas[i]);
+                    project.addSchema(schemas[i]);
                   }
-                  this._createExtensions();
+                  this._createExtensions(project);
+                  return project;
                 }
               }
             ], [
@@ -43755,7 +42520,9 @@
                     if (!Swagger.needDeReferenced(param) || Swagger._isFilePath(param)) {
                       continue;
                     }
-                    var parts = param.$ref.split('/'), traitParts = parts[parts.length - 1].split(':'), name = traitParts[0];
+                    var parts = param.$ref.split('/');
+                    var traitParts = parts[parts.length - 1].split(':');
+                    var name = traitParts[0];
                     if (traitParts[0] === 'trait') {
                       name = traitParts[1];
                     }
@@ -43832,36 +42599,31 @@
       {
         '../entities/endpoint': 212,
         '../entities/project': 214,
-        '../entities/schema': 216,
-        '../entities/swagger/method': 218,
-        '../helpers/swagger': 231,
-        '../utils/json': 243,
-        './importer': 234,
+        '../entities/schema': 215,
+        '../entities/swagger/method': 217,
+        '../helpers/swagger': 227,
+        '../utils/json': 236,
+        './importer': 230,
         'js-yaml': 21,
         'lodash': 204,
-        'swagger-parser': 276
+        'swagger-parser': 269
       }
     ],
-    242: [
+    235: [
       function (require, module, exports) {
         'use strict';
+        var _ = require('lodash');
         module.exports = {
-          groupBy: function groupBy(array, f) {
-            var groups = {};
-            array.forEach(function (o) {
-              var group = JSON.stringify(f(o));
-              groups[group] = groups[group] || [];
-              groups[group].push(o);
-            });
-            return Object.keys(groups).map(function (group) {
-              return groups[group];
+          allEqual: function allEqual(array) {
+            return !!array.reduce(function (a, b) {
+              return _.isEqual(a, b) ? a : NaN;
             });
           }
         };
       },
-      {}
+      { 'lodash': 204 }
     ],
-    243: [
+    236: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -43972,9 +42734,6 @@
             if (!parsed || !Object.keys(parsed).length || parsed.properties && !Object.keys(parsed.properties).length) {
               return true;
             }
-            if (parsed.type === 'object' && _.isEmpty(parsed.properties)) {
-              return true;
-            }
             return parsed.type === 'array' && _.isEmpty(parsed.items);
           },
           cleanSchema: function cleanSchema(schema) {
@@ -44000,7 +42759,7 @@
         'lodash': 204
       }
     ],
-    244: [
+    237: [
       function (require, module, exports) {
         'use strict';
         var _ = require('lodash');
@@ -44033,7 +42792,7 @@
       },
       { 'lodash': 204 }
     ],
-    245: [
+    238: [
       function (require, module, exports) {
         'use strict';
         var request = require('request');
@@ -44068,7 +42827,7 @@
         'request': 2
       }
     ],
-    246: [
+    239: [
       function (require, module, exports) {
         'use strict';
         var parseString = require('xml2js').parseString;
@@ -44083,9 +42842,9 @@
           }
         };
       },
-      { 'xml2js': 355 }
+      { 'xml2js': 348 }
     ],
-    247: [
+    240: [
       function (require, module, exports) {
         'use strict';
         // modified from https://github.com/es-shims/es5-shim
@@ -44227,9 +42986,9 @@
         };
         module.exports = keysShim;
       },
-      { './isArguments': 248 }
+      { './isArguments': 241 }
     ],
-    248: [
+    241: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -44249,7 +43008,7 @@
       },
       {}
     ],
-    249: [
+    242: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -44453,9 +43212,9 @@
           }
         }
       },
-      { 'util': 288 }
+      { 'util': 281 }
     ],
-    250: [
+    243: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -44499,9 +43258,9 @@
           }
         }.call(this, require('_process')));
       },
-      { '_process': 251 }
+      { '_process': 244 }
     ],
-    251: [
+    244: [
       function (require, module, exports) {
         // shim for using process in browser
         var process = module.exports = {};
@@ -44675,7 +43434,7 @@
       },
       {}
     ],
-    252: [
+    245: [
       function (require, module, exports) {
         (function (global) {
           /*! https://mths.be/punycode v1.4.1 by @mathias */
@@ -45093,7 +43852,7 @@
       },
       {}
     ],
-    253: [
+    246: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -45170,7 +43929,7 @@
       },
       {}
     ],
-    254: [
+    247: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -45255,18 +44014,18 @@
       },
       {}
     ],
-    255: [
+    248: [
       function (require, module, exports) {
         'use strict';
         exports.decode = exports.parse = require('./decode');
         exports.encode = exports.stringify = require('./encode');
       },
       {
-        './decode': 253,
-        './encode': 254
+        './decode': 246,
+        './encode': 247
       }
     ],
-    256: [
+    249: [
       function (require, module, exports) {
         (function (Buffer) {
           'use strict';
@@ -46756,11 +45515,11 @@
       },
       {
         'buffer': 6,
-        'stream': 257,
-        'string_decoder': 274
+        'stream': 250,
+        'string_decoder': 267
       }
     ],
-    257: [
+    250: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -46866,26 +45625,26 @@
       {
         'events': 14,
         'inherits': 19,
-        'readable-stream/duplex.js': 259,
-        'readable-stream/passthrough.js': 266,
-        'readable-stream/readable.js': 267,
-        'readable-stream/transform.js': 268,
-        'readable-stream/writable.js': 269
+        'readable-stream/duplex.js': 252,
+        'readable-stream/passthrough.js': 259,
+        'readable-stream/readable.js': 260,
+        'readable-stream/transform.js': 261,
+        'readable-stream/writable.js': 262
       }
     ],
-    258: [
+    251: [
       function (require, module, exports) {
         arguments[4][7][0].apply(exports, arguments);
       },
       { 'dup': 7 }
     ],
-    259: [
+    252: [
       function (require, module, exports) {
         module.exports = require('./lib/_stream_duplex.js');
       },
-      { './lib/_stream_duplex.js': 260 }
+      { './lib/_stream_duplex.js': 253 }
     ],
-    260: [
+    253: [
       function (require, module, exports) {
         // a duplex stream is just a stream that is both readable and writable.
         // Since JS doesn't have multiple prototypal inheritance, this class
@@ -46952,14 +45711,14 @@
         }
       },
       {
-        './_stream_readable': 262,
-        './_stream_writable': 264,
+        './_stream_readable': 255,
+        './_stream_writable': 257,
         'core-util-is': 10,
         'inherits': 19,
-        'process-nextick-args': 250
+        'process-nextick-args': 243
       }
     ],
-    261: [
+    254: [
       function (require, module, exports) {
         // a passthrough stream.
         // basically just the most minimal sort of Transform stream.
@@ -46982,12 +45741,12 @@
         };
       },
       {
-        './_stream_transform': 263,
+        './_stream_transform': 256,
         'core-util-is': 10,
         'inherits': 19
       }
     ],
-    262: [
+    255: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -47894,21 +46653,21 @@
         }.call(this, require('_process')));
       },
       {
-        './_stream_duplex': 260,
-        './internal/streams/BufferList': 265,
-        '_process': 251,
+        './_stream_duplex': 253,
+        './internal/streams/BufferList': 258,
+        '_process': 244,
         'buffer': 6,
         'buffer-shims': 5,
         'core-util-is': 10,
         'events': 14,
         'inherits': 19,
-        'isarray': 258,
-        'process-nextick-args': 250,
-        'string_decoder/': 274,
+        'isarray': 251,
+        'process-nextick-args': 243,
+        'string_decoder/': 267,
         'util': 3
       }
     ],
-    263: [
+    256: [
       function (require, module, exports) {
         // a transform stream is a readable/writable stream where you do
         // something with the data.  Sometimes it's called a "filter",
@@ -48073,12 +46832,12 @@
         }
       },
       {
-        './_stream_duplex': 260,
+        './_stream_duplex': 253,
         'core-util-is': 10,
         'inherits': 19
       }
     ],
-    264: [
+    257: [
       function (require, module, exports) {
         (function (process) {
           // A bit simpler than readable streams.
@@ -48581,18 +47340,18 @@
         }.call(this, require('_process')));
       },
       {
-        './_stream_duplex': 260,
-        '_process': 251,
+        './_stream_duplex': 253,
+        '_process': 244,
         'buffer': 6,
         'buffer-shims': 5,
         'core-util-is': 10,
         'events': 14,
         'inherits': 19,
-        'process-nextick-args': 250,
-        'util-deprecate': 285
+        'process-nextick-args': 243,
+        'util-deprecate': 278
       }
     ],
-    265: [
+    258: [
       function (require, module, exports) {
         'use strict';
         var Buffer = require('buffer').Buffer;
@@ -48673,13 +47432,13 @@
         'buffer-shims': 5
       }
     ],
-    266: [
+    259: [
       function (require, module, exports) {
         module.exports = require('./lib/_stream_passthrough.js');
       },
-      { './lib/_stream_passthrough.js': 261 }
+      { './lib/_stream_passthrough.js': 254 }
     ],
-    267: [
+    260: [
       function (require, module, exports) {
         (function (process) {
           var Stream = function () {
@@ -48701,27 +47460,27 @@
         }.call(this, require('_process')));
       },
       {
-        './lib/_stream_duplex.js': 260,
-        './lib/_stream_passthrough.js': 261,
-        './lib/_stream_readable.js': 262,
-        './lib/_stream_transform.js': 263,
-        './lib/_stream_writable.js': 264,
-        '_process': 251
+        './lib/_stream_duplex.js': 253,
+        './lib/_stream_passthrough.js': 254,
+        './lib/_stream_readable.js': 255,
+        './lib/_stream_transform.js': 256,
+        './lib/_stream_writable.js': 257,
+        '_process': 244
       }
     ],
-    268: [
+    261: [
       function (require, module, exports) {
         module.exports = require('./lib/_stream_transform.js');
       },
-      { './lib/_stream_transform.js': 263 }
+      { './lib/_stream_transform.js': 256 }
     ],
-    269: [
+    262: [
       function (require, module, exports) {
         module.exports = require('./lib/_stream_writable.js');
       },
-      { './lib/_stream_writable.js': 264 }
+      { './lib/_stream_writable.js': 257 }
     ],
-    270: [
+    263: [
       function (require, module, exports) {
         var ClientRequest = require('./lib/request');
         var extend = require('xtend');
@@ -48789,13 +47548,13 @@
         ];
       },
       {
-        './lib/request': 272,
+        './lib/request': 265,
         'builtin-status-codes': 8,
-        'url': 284,
-        'xtend': 373
+        'url': 277,
+        'xtend': 366
       }
     ],
-    271: [
+    264: [
       function (require, module, exports) {
         (function (global) {
           'use strict';
@@ -48837,7 +47596,7 @@
       },
       {}
     ],
-    272: [
+    265: [
       function (require, module, exports) {
         (function (process, global, Buffer) {
           'use strict';
@@ -49088,18 +47847,18 @@
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}, require('buffer').Buffer));
       },
       {
-        './capability': 271,
-        './response': 273,
-        '_process': 251,
+        './capability': 264,
+        './response': 266,
+        '_process': 244,
         'buffer': 6,
         'foreach': 15,
         'indexof': 18,
         'inherits': 19,
-        'object-keys': 247,
-        'stream': 257
+        'object-keys': 240,
+        'stream': 250
       }
     ],
-    273: [
+    266: [
       function (require, module, exports) {
         (function (process, global, Buffer) {
           'use strict';
@@ -49272,15 +48031,15 @@
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}, require('buffer').Buffer));
       },
       {
-        './capability': 271,
-        '_process': 251,
+        './capability': 264,
+        '_process': 244,
         'buffer': 6,
         'foreach': 15,
         'inherits': 19,
-        'stream': 257
+        'stream': 250
       }
     ],
-    274: [
+    267: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -49484,7 +48243,7 @@
       },
       { 'buffer': 6 }
     ],
-    275: [
+    268: [
       function (require, module, exports) {
         'use strict';
         module.exports = [
@@ -49499,7 +48258,7 @@
       },
       {}
     ],
-    276: [
+    269: [
       function (require, module, exports) {
         /** !
  * Swagger Parser v4.0.0-beta.2
@@ -49680,18 +48439,18 @@
         }
       },
       {
-        './options': 277,
-        './promise': 278,
-        './util': 279,
-        './validate-schema': 280,
-        './validate-spec': 281,
+        './options': 270,
+        './promise': 271,
+        './util': 272,
+        './validate-schema': 273,
+        './validate-spec': 274,
         'call-me-maybe': 9,
         'json-schema-ref-parser': 54,
         'json-schema-ref-parser/lib/dereference': 53,
-        'ono': 249
+        'ono': 242
       }
     ],
-    277: [
+    270: [
       function (require, module, exports) {
         'use strict';
         var $RefParserOptions = require('json-schema-ref-parser/lib/options'), util = require('util');
@@ -49717,10 +48476,10 @@
       },
       {
         'json-schema-ref-parser/lib/options': 55,
-        'util': 288
+        'util': 281
       }
     ],
-    278: [
+    271: [
       function (require, module, exports) {
         arguments[4][69][0].apply(exports, arguments);
       },
@@ -49729,7 +48488,7 @@
         'es6-promise': 13
       }
     ],
-    279: [
+    272: [
       function (require, module, exports) {
         'use strict';
         var debug = require('debug'), util = require('util');
@@ -49748,10 +48507,10 @@
       },
       {
         'debug': 11,
-        'util': 288
+        'util': 281
       }
     ],
-    280: [
+    273: [
       function (require, module, exports) {
         'use strict';
         var util = require('./util'), ono = require('ono'), ZSchema = require('z-schema'), swaggerSchema = require('swagger-schema-official/schema');
@@ -49806,13 +48565,13 @@
         }
       },
       {
-        './util': 279,
-        'ono': 249,
-        'swagger-schema-official/schema': 282,
-        'z-schema': 383
+        './util': 272,
+        'ono': 242,
+        'swagger-schema-official/schema': 275,
+        'z-schema': 376
       }
     ],
-    281: [
+    274: [
       function (require, module, exports) {
         'use strict';
         var util = require('./util'), ono = require('ono'), swaggerMethods = require('swagger-methods'), primitiveTypes = [
@@ -50057,12 +48816,12 @@
         }
       },
       {
-        './util': 279,
-        'ono': 249,
-        'swagger-methods': 275
+        './util': 272,
+        'ono': 242,
+        'swagger-methods': 268
       }
     ],
-    282: [
+    275: [
       function (require, module, exports) {
         module.exports = {
           'title': 'A JSON Schema for Swagger 2.0 API.',
@@ -51040,7 +49799,7 @@
       },
       {}
     ],
-    283: [
+    276: [
       function (require, module, exports) {
         var nextTick = require('process/browser.js').nextTick;
         var apply = Function.prototype.apply;
@@ -51109,9 +49868,9 @@
           delete immediateIds[id];
         };
       },
-      { 'process/browser.js': 251 }
+      { 'process/browser.js': 244 }
     ],
-    284: [
+    277: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -51746,11 +50505,11 @@
         }
       },
       {
-        'punycode': 252,
-        'querystring': 255
+        'punycode': 245,
+        'querystring': 248
       }
     ],
-    285: [
+    278: [
       function (require, module, exports) {
         (function (global) {
           'use strict';
@@ -51819,7 +50578,7 @@
       },
       {}
     ],
-    286: [
+    279: [
       function (require, module, exports) {
         if (typeof Object.create === 'function') {
           // implementation from standard node.js 'util' module
@@ -51848,7 +50607,7 @@
       },
       {}
     ],
-    287: [
+    280: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -51862,7 +50621,7 @@
       },
       {}
     ],
-    288: [
+    281: [
       function (require, module, exports) {
         (function (process, global) {
           // Copyright Joyent, Inc. and other Node contributors.
@@ -52421,12 +51180,12 @@
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
       },
       {
-        './support/isBuffer': 287,
-        '_process': 251,
-        'inherits': 286
+        './support/isBuffer': 280,
+        '_process': 244,
+        'inherits': 279
       }
     ],
-    289: [
+    282: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52621,69 +51380,69 @@
         module.exports = exports['default'];
       },
       {
-        './lib/blacklist': 291,
-        './lib/contains': 292,
-        './lib/equals': 293,
-        './lib/escape': 294,
-        './lib/isAfter': 295,
-        './lib/isAlpha': 296,
-        './lib/isAlphanumeric': 297,
-        './lib/isAscii': 298,
-        './lib/isBase64': 299,
-        './lib/isBefore': 300,
-        './lib/isBoolean': 301,
-        './lib/isByteLength': 302,
-        './lib/isCreditCard': 303,
-        './lib/isCurrency': 304,
-        './lib/isDataURI': 305,
-        './lib/isDate': 306,
-        './lib/isDecimal': 307,
-        './lib/isDivisibleBy': 308,
-        './lib/isEmail': 309,
-        './lib/isFQDN': 310,
-        './lib/isFloat': 311,
-        './lib/isFullWidth': 312,
-        './lib/isHalfWidth': 313,
-        './lib/isHexColor': 314,
-        './lib/isHexadecimal': 315,
-        './lib/isIP': 316,
-        './lib/isISBN': 317,
-        './lib/isISIN': 318,
-        './lib/isISO8601': 319,
-        './lib/isIn': 320,
-        './lib/isInt': 321,
-        './lib/isJSON': 322,
-        './lib/isLength': 323,
-        './lib/isLowercase': 324,
-        './lib/isMACAddress': 325,
-        './lib/isMD5': 326,
-        './lib/isMobilePhone': 327,
-        './lib/isMongoId': 328,
-        './lib/isMultibyte': 329,
-        './lib/isNull': 330,
-        './lib/isNumeric': 331,
-        './lib/isSurrogatePair': 332,
-        './lib/isURL': 333,
-        './lib/isUUID': 334,
-        './lib/isUppercase': 335,
-        './lib/isVariableWidth': 336,
-        './lib/isWhitelisted': 337,
-        './lib/ltrim': 338,
-        './lib/matches': 339,
-        './lib/normalizeEmail': 340,
-        './lib/rtrim': 341,
-        './lib/stripLow': 342,
-        './lib/toBoolean': 343,
-        './lib/toDate': 344,
-        './lib/toFloat': 345,
-        './lib/toInt': 346,
-        './lib/trim': 347,
-        './lib/unescape': 348,
-        './lib/util/toString': 351,
-        './lib/whitelist': 352
+        './lib/blacklist': 284,
+        './lib/contains': 285,
+        './lib/equals': 286,
+        './lib/escape': 287,
+        './lib/isAfter': 288,
+        './lib/isAlpha': 289,
+        './lib/isAlphanumeric': 290,
+        './lib/isAscii': 291,
+        './lib/isBase64': 292,
+        './lib/isBefore': 293,
+        './lib/isBoolean': 294,
+        './lib/isByteLength': 295,
+        './lib/isCreditCard': 296,
+        './lib/isCurrency': 297,
+        './lib/isDataURI': 298,
+        './lib/isDate': 299,
+        './lib/isDecimal': 300,
+        './lib/isDivisibleBy': 301,
+        './lib/isEmail': 302,
+        './lib/isFQDN': 303,
+        './lib/isFloat': 304,
+        './lib/isFullWidth': 305,
+        './lib/isHalfWidth': 306,
+        './lib/isHexColor': 307,
+        './lib/isHexadecimal': 308,
+        './lib/isIP': 309,
+        './lib/isISBN': 310,
+        './lib/isISIN': 311,
+        './lib/isISO8601': 312,
+        './lib/isIn': 313,
+        './lib/isInt': 314,
+        './lib/isJSON': 315,
+        './lib/isLength': 316,
+        './lib/isLowercase': 317,
+        './lib/isMACAddress': 318,
+        './lib/isMD5': 319,
+        './lib/isMobilePhone': 320,
+        './lib/isMongoId': 321,
+        './lib/isMultibyte': 322,
+        './lib/isNull': 323,
+        './lib/isNumeric': 324,
+        './lib/isSurrogatePair': 325,
+        './lib/isURL': 326,
+        './lib/isUUID': 327,
+        './lib/isUppercase': 328,
+        './lib/isVariableWidth': 329,
+        './lib/isWhitelisted': 330,
+        './lib/ltrim': 331,
+        './lib/matches': 332,
+        './lib/normalizeEmail': 333,
+        './lib/rtrim': 334,
+        './lib/stripLow': 335,
+        './lib/toBoolean': 336,
+        './lib/toDate': 337,
+        './lib/toFloat': 338,
+        './lib/toInt': 339,
+        './lib/trim': 340,
+        './lib/unescape': 341,
+        './lib/util/toString': 344,
+        './lib/whitelist': 345
       }
     ],
-    290: [
+    283: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52763,7 +51522,7 @@
       },
       {}
     ],
-    291: [
+    284: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52779,9 +51538,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    292: [
+    285: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52800,11 +51559,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 349,
-        './util/toString': 351
+        './util/assertString': 342,
+        './util/toString': 344
       }
     ],
-    293: [
+    286: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52820,9 +51579,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    294: [
+    287: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52838,9 +51597,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    295: [
+    288: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52862,11 +51621,11 @@
         module.exports = exports['default'];
       },
       {
-        './toDate': 344,
-        './util/assertString': 349
+        './toDate': 337,
+        './util/assertString': 342
       }
     ],
-    296: [
+    289: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52888,11 +51647,11 @@
         module.exports = exports['default'];
       },
       {
-        './alpha': 290,
-        './util/assertString': 349
+        './alpha': 283,
+        './util/assertString': 342
       }
     ],
-    297: [
+    290: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52914,11 +51673,11 @@
         module.exports = exports['default'];
       },
       {
-        './alpha': 290,
-        './util/assertString': 349
+        './alpha': 283,
+        './util/assertString': 342
       }
     ],
-    298: [
+    291: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52937,9 +51696,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    299: [
+    292: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52961,9 +51720,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    300: [
+    293: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52985,11 +51744,11 @@
         module.exports = exports['default'];
       },
       {
-        './toDate': 344,
-        './util/assertString': 349
+        './toDate': 337,
+        './util/assertString': 342
       }
     ],
-    301: [
+    294: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53010,9 +51769,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    302: [
+    295: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -53050,9 +51809,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    303: [
+    296: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53094,9 +51853,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    304: [
+    297: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53168,11 +51927,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 349,
-        './util/merge': 350
+        './util/assertString': 342,
+        './util/merge': 343
       }
     ],
-    305: [
+    298: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53190,9 +51949,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    306: [
+    299: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53281,11 +52040,11 @@
         module.exports = exports['default'];
       },
       {
-        './isISO8601': 319,
-        './util/assertString': 349
+        './isISO8601': 312,
+        './util/assertString': 342
       }
     ],
-    307: [
+    300: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53302,9 +52061,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    308: [
+    301: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53323,11 +52082,11 @@
         module.exports = exports['default'];
       },
       {
-        './toFloat': 345,
-        './util/assertString': 349
+        './toFloat': 338,
+        './util/assertString': 342
       }
     ],
-    309: [
+    302: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53395,13 +52154,13 @@
         module.exports = exports['default'];
       },
       {
-        './isByteLength': 302,
-        './isFQDN': 310,
-        './util/assertString': 349,
-        './util/merge': 350
+        './isByteLength': 295,
+        './isFQDN': 303,
+        './util/assertString': 342,
+        './util/merge': 343
       }
     ],
-    310: [
+    303: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53453,11 +52212,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 349,
-        './util/merge': 350
+        './util/assertString': 342,
+        './util/merge': 343
       }
     ],
-    311: [
+    304: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53478,9 +52237,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    312: [
+    305: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53497,9 +52256,9 @@
           return fullWidth.test(str);
         }
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    313: [
+    306: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53516,9 +52275,9 @@
           return halfWidth.test(str);
         }
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    314: [
+    307: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53535,9 +52294,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    315: [
+    308: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53554,9 +52313,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    316: [
+    309: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53629,9 +52388,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    317: [
+    310: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53687,9 +52446,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    318: [
+    311: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53731,9 +52490,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    319: [
+    312: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53751,9 +52510,9 @@
         // from http://goo.gl/0ejHHW
         var iso8601 = exports.iso8601 = /^([\+-]?\d{4}(?!\d{2}\b))((-?)((0[1-9]|1[0-2])(\3([12]\d|0[1-9]|3[01]))?|W([0-4]\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\d|[12]\d{2}|3([0-5]\d|6[1-6])))([T\s]((([01]\d|2[0-3])((:?)[0-5]\d)?|24:?00)([\.,]\d+(?!:))?)?(\17[0-5]\d([\.,]\d+)?)?([zZ]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?)?)?$/;  /* eslint-enable max-len */
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    320: [
+    313: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -53796,11 +52555,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 349,
-        './util/toString': 351
+        './util/assertString': 342,
+        './util/toString': 344
       }
     ],
-    321: [
+    314: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53825,9 +52584,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    322: [
+    315: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -53858,9 +52617,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    323: [
+    316: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -53899,9 +52658,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    324: [
+    317: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53917,9 +52676,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    325: [
+    318: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53936,9 +52695,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    326: [
+    319: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53955,9 +52714,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    327: [
+    320: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54017,9 +52776,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    328: [
+    321: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54038,11 +52797,11 @@
         module.exports = exports['default'];
       },
       {
-        './isHexadecimal': 315,
-        './util/assertString': 349
+        './isHexadecimal': 308,
+        './util/assertString': 342
       }
     ],
-    329: [
+    322: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54061,9 +52820,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    330: [
+    323: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54079,9 +52838,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    331: [
+    324: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54098,9 +52857,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    332: [
+    325: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54117,9 +52876,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    333: [
+    326: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54235,13 +52994,13 @@
         module.exports = exports['default'];
       },
       {
-        './isFQDN': 310,
-        './isIP': 316,
-        './util/assertString': 349,
-        './util/merge': 350
+        './isFQDN': 303,
+        './isIP': 309,
+        './util/assertString': 342,
+        './util/merge': 343
       }
     ],
-    334: [
+    327: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54265,9 +53024,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    335: [
+    328: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54283,9 +53042,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    336: [
+    329: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54304,12 +53063,12 @@
         module.exports = exports['default'];
       },
       {
-        './isFullWidth': 312,
-        './isHalfWidth': 313,
-        './util/assertString': 349
+        './isFullWidth': 305,
+        './isHalfWidth': 306,
+        './util/assertString': 342
       }
     ],
-    337: [
+    330: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54330,9 +53089,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    338: [
+    331: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54349,9 +53108,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    339: [
+    332: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54370,9 +53129,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    340: [
+    333: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54416,11 +53175,11 @@
         module.exports = exports['default'];
       },
       {
-        './isEmail': 309,
-        './util/merge': 350
+        './isEmail': 302,
+        './util/merge': 343
       }
     ],
-    341: [
+    334: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54441,9 +53200,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    342: [
+    335: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54463,11 +53222,11 @@
         module.exports = exports['default'];
       },
       {
-        './blacklist': 291,
-        './util/assertString': 349
+        './blacklist': 284,
+        './util/assertString': 342
       }
     ],
-    343: [
+    336: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54486,9 +53245,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    344: [
+    337: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54505,9 +53264,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    345: [
+    338: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54523,9 +53282,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    346: [
+    339: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54541,9 +53300,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    347: [
+    340: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54561,11 +53320,11 @@
         module.exports = exports['default'];
       },
       {
-        './ltrim': 338,
-        './rtrim': 341
+        './ltrim': 331,
+        './rtrim': 334
       }
     ],
-    348: [
+    341: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54581,9 +53340,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    349: [
+    342: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54597,7 +53356,7 @@
       },
       {}
     ],
-    350: [
+    343: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54616,7 +53375,7 @@
       },
       {}
     ],
-    351: [
+    344: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -54647,7 +53406,7 @@
       },
       {}
     ],
-    352: [
+    345: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54663,9 +53422,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 349 }
+      { './util/assertString': 342 }
     ],
-    353: [
+    346: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.10.0
@@ -54682,7 +53441,7 @@
       },
       {}
     ],
-    354: [
+    347: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.10.0
@@ -54715,7 +53474,7 @@
       },
       {}
     ],
-    355: [
+    348: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -55256,15 +54015,15 @@
         }.call(undefined));
       },
       {
-        './bom': 353,
-        './processors': 354,
+        './bom': 346,
+        './processors': 347,
         'events': 14,
-        'sax': 256,
-        'timers': 283,
-        'xmlbuilder': 372
+        'sax': 249,
+        'timers': 276,
+        'xmlbuilder': 365
       }
     ],
-    356: [
+    349: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -55295,7 +54054,7 @@
       },
       { 'lodash/create': 186 }
     ],
-    357: [
+    350: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -55358,13 +54117,13 @@
         }.call(undefined));
       },
       {
-        './XMLDeclaration': 364,
-        './XMLDocType': 365,
-        './XMLElement': 366,
-        './XMLStringifier': 370
+        './XMLDeclaration': 357,
+        './XMLDocType': 358,
+        './XMLElement': 359,
+        './XMLStringifier': 363
       }
     ],
-    358: [
+    351: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -55419,11 +54178,11 @@
         }.call(undefined));
       },
       {
-        './XMLNode': 367,
+        './XMLNode': 360,
         'lodash/create': 186
       }
     ],
-    359: [
+    352: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -55478,11 +54237,11 @@
         }.call(undefined));
       },
       {
-        './XMLNode': 367,
+        './XMLNode': 360,
         'lodash/create': 186
       }
     ],
-    360: [
+    353: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -55550,7 +54309,7 @@
       },
       { 'lodash/create': 186 }
     ],
-    361: [
+    354: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -55596,7 +54355,7 @@
       },
       { 'lodash/create': 186 }
     ],
-    362: [
+    355: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -55682,7 +54441,7 @@
         'lodash/isObject': 199
       }
     ],
-    363: [
+    356: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -55738,7 +54497,7 @@
       },
       { 'lodash/create': 186 }
     ],
-    364: [
+    357: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -55809,12 +54568,12 @@
         }.call(undefined));
       },
       {
-        './XMLNode': 367,
+        './XMLNode': 360,
         'lodash/create': 186,
         'lodash/isObject': 199
       }
     ],
-    365: [
+    358: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -55976,18 +54735,18 @@
         }.call(undefined));
       },
       {
-        './XMLCData': 358,
-        './XMLComment': 359,
-        './XMLDTDAttList': 360,
-        './XMLDTDElement': 361,
-        './XMLDTDEntity': 362,
-        './XMLDTDNotation': 363,
-        './XMLProcessingInstruction': 368,
+        './XMLCData': 351,
+        './XMLComment': 352,
+        './XMLDTDAttList': 353,
+        './XMLDTDElement': 354,
+        './XMLDTDEntity': 355,
+        './XMLDTDNotation': 356,
+        './XMLProcessingInstruction': 361,
         'lodash/create': 186,
         'lodash/isObject': 199
       }
     ],
-    366: [
+    359: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -56197,16 +54956,16 @@
         }.call(undefined));
       },
       {
-        './XMLAttribute': 356,
-        './XMLNode': 367,
-        './XMLProcessingInstruction': 368,
+        './XMLAttribute': 349,
+        './XMLNode': 360,
+        './XMLProcessingInstruction': 361,
         'lodash/create': 186,
         'lodash/every': 188,
         'lodash/isFunction': 197,
         'lodash/isObject': 199
       }
     ],
-    367: [
+    360: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -56504,19 +55263,19 @@
         }.call(undefined));
       },
       {
-        './XMLCData': 358,
-        './XMLComment': 359,
-        './XMLDeclaration': 364,
-        './XMLDocType': 365,
-        './XMLElement': 366,
-        './XMLRaw': 369,
-        './XMLText': 371,
+        './XMLCData': 351,
+        './XMLComment': 352,
+        './XMLDeclaration': 357,
+        './XMLDocType': 358,
+        './XMLElement': 359,
+        './XMLRaw': 362,
+        './XMLText': 364,
         'lodash/isEmpty': 196,
         'lodash/isFunction': 197,
         'lodash/isObject': 199
       }
     ],
-    368: [
+    361: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -56566,7 +55325,7 @@
       },
       { 'lodash/create': 186 }
     ],
-    369: [
+    362: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -56621,11 +55380,11 @@
         }.call(undefined));
       },
       {
-        './XMLNode': 367,
+        './XMLNode': 360,
         'lodash/create': 186
       }
     ],
-    370: [
+    363: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -56772,7 +55531,7 @@
       },
       {}
     ],
-    371: [
+    364: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -56827,11 +55586,11 @@
         }.call(undefined));
       },
       {
-        './XMLNode': 367,
+        './XMLNode': 360,
         'lodash/create': 186
       }
     ],
-    372: [
+    365: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -56846,11 +55605,11 @@
         }.call(undefined));
       },
       {
-        './XMLBuilder': 357,
+        './XMLBuilder': 350,
         'lodash/assign': 184
       }
     ],
-    373: [
+    366: [
       function (require, module, exports) {
         'use strict';
         module.exports = extend;
@@ -56870,7 +55629,7 @@
       },
       {}
     ],
-    374: [
+    367: [
       function (require, module, exports) {
         'use strict';
         module.exports = {
@@ -56919,7 +55678,7 @@
       },
       {}
     ],
-    375: [
+    368: [
       function (require, module, exports) {
         'use strict';
         /*jshint maxlen: false*/
@@ -57050,9 +55809,9 @@
           };
         module.exports = FormatValidators;
       },
-      { 'validator': 289 }
+      { 'validator': 282 }
     ],
-    376: [
+    369: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -57594,12 +56353,12 @@
         };
       },
       {
-        './FormatValidators': 375,
-        './Report': 378,
-        './Utils': 382
+        './FormatValidators': 368,
+        './Report': 371,
+        './Utils': 375
       }
     ],
-    377: [
+    370: [
       function (require, module, exports) {
         'use strict';
         // Number.isFinite polyfill
@@ -57621,7 +56380,7 @@
       },
       {}
     ],
-    378: [
+    371: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -57798,13 +56557,13 @@
         }.call(this, require('_process')));
       },
       {
-        './Errors': 374,
-        './Utils': 382,
-        '_process': 251,
+        './Errors': 367,
+        './Utils': 375,
+        '_process': 244,
         'lodash.get': 73
       }
     ],
-    379: [
+    372: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -57951,13 +56710,13 @@
         exports.getRemotePath = getRemotePath;
       },
       {
-        './Report': 378,
-        './SchemaCompilation': 380,
-        './SchemaValidation': 381,
-        './Utils': 382
+        './Report': 371,
+        './SchemaCompilation': 373,
+        './SchemaValidation': 374,
+        './Utils': 375
       }
     ],
-    380: [
+    373: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -58209,12 +56968,12 @@
         };
       },
       {
-        './Report': 378,
-        './SchemaCache': 379,
-        './Utils': 382
+        './Report': 371,
+        './SchemaCache': 372,
+        './Utils': 375
       }
     ],
-    381: [
+    374: [
       function (require, module, exports) {
         'use strict';
         var FormatValidators = require('./FormatValidators'), JsonValidation = require('./JsonValidation'), Report = require('./Report'), Utils = require('./Utils');
@@ -58980,13 +57739,13 @@
         };
       },
       {
-        './FormatValidators': 375,
-        './JsonValidation': 376,
-        './Report': 378,
-        './Utils': 382
+        './FormatValidators': 368,
+        './JsonValidation': 369,
+        './Report': 371,
+        './Utils': 375
       }
     ],
-    382: [
+    375: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -59197,7 +57956,7 @@
       },
       {}
     ],
-    383: [
+    376: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -59499,21 +58258,21 @@
         }.call(this, require('_process')));
       },
       {
-        './FormatValidators': 375,
-        './JsonValidation': 376,
-        './Polyfills': 377,
-        './Report': 378,
-        './SchemaCache': 379,
-        './SchemaCompilation': 380,
-        './SchemaValidation': 381,
-        './Utils': 382,
-        './schemas/hyper-schema.json': 384,
-        './schemas/schema.json': 385,
-        '_process': 251,
+        './FormatValidators': 368,
+        './JsonValidation': 369,
+        './Polyfills': 370,
+        './Report': 371,
+        './SchemaCache': 372,
+        './SchemaCompilation': 373,
+        './SchemaValidation': 374,
+        './Utils': 375,
+        './schemas/hyper-schema.json': 377,
+        './schemas/schema.json': 378,
+        '_process': 244,
         'lodash.get': 73
       }
     ],
-    384: [
+    377: [
       function (require, module, exports) {
         module.exports = {
           '$schema': 'http://json-schema.org/draft-04/hyper-schema#',
@@ -59631,7 +58390,7 @@
       },
       {}
     ],
-    385: [
+    378: [
       function (require, module, exports) {
         module.exports = {
           'id': 'http://json-schema.org/draft-04/schema#',
@@ -68870,16 +67629,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
     'autoFocus',
     'rightClick',
     'dragAndDrop'
-  ]).run([
-    '$window',
-    '$location',
-    function ($window, $location) {
-      // Adding proxy settings for api console
-      var disableProxy = $location.search().xDisableProxy === 'true';
-      $window.RAML.Settings.proxy = disableProxy ? '' : '/proxy/';
-    }
   ]);
-  ;
 }());
 'use strict';
 if (!Array.prototype.find) {
@@ -69778,20 +68528,13 @@ if (!String.prototype.endsWith) {
           'Shift-Tab': 'indentLess',
           'Shift-Ctrl-T': 'toggleTheme'
         };
-      var autocomplete = function onChange(cm) {
-        if (cm.getLine(cm.getCursor().line).trim()) {
-          cm.execCommand('autocomplete');
-        }
-      };
       service.configureEditor = function (editor, extension) {
         var mode = MODES[extension] || MODES.raml;
         editor.setOption('mode', mode);
         if (mode.name === 'raml') {
           editor.setOption('extraKeys', ramlKeys);
-          editor.on('change', autocomplete);
         } else {
           editor.setOption('extraKeys', defaultKeys);
-          editor.off('change', autocomplete);
         }
       };
       service.enterKey = function (cm) {
@@ -70809,7 +69552,7 @@ if (!String.prototype.endsWith) {
         }
         return promise.then(modifyFile, handleErrorFor(file));
       };
-      service.loadFile = function loadFile(file) {
+      service.loadFile = function loadFile(file, nativeTimeout) {
         function modifyFile(data) {
           file.dirty = false;
           file.persisted = true;
@@ -70817,7 +69560,7 @@ if (!String.prototype.endsWith) {
           file.contents = data;
           return file;
         }
-        return fileSystem.load(file.path).then(modifyFile, handleErrorFor(file));
+        return fileSystem.load(file.path, nativeTimeout).then(modifyFile, handleErrorFor(file));
         ;
       };
       service.removeFile = function removeFile(file) {
@@ -70859,6 +69602,19 @@ if (!String.prototype.endsWith) {
           }
           $rootScope.$broadcast('event:raml-editor-file-generated', file);
           return file;
+        });
+      };
+      // Gets a promise of the ramlDirectory/ramlFile object by path from the memory, loading the content if not loaded yet
+      service.getContentByPath = function getByPath(path, nativeTimeout) {
+        var file = service.getByPath(path);
+        if (!file) {
+          return $q.reject('getByPathLoaded: ' + path + ': no such path');
+        }
+        if (file.loaded) {
+          return $q.when(file.contents);
+        }
+        return service.loadFile(file, nativeTimeout).then(function mapContent(file) {
+          return file.contents;
         });
       };
       // Gets the ramlDirectory/ramlFile object by path from the memory
@@ -70992,7 +69748,7 @@ var FSResolver = function (homeDirectory, ramlRepository) {
     var getFileContent = function (file) {
       return file.contents;
     };
-    return ramlRepository.loadFile(file).then(getFileContent);
+    return ramlRepository.loadFile(file, true).then(getFileContent);
   };
   this.contentAsync = function (path) {
     var element = this.getElement(path);
@@ -71014,7 +69770,7 @@ var FSResolver = function (homeDirectory, ramlRepository) {
     return Promise.resolve(this.list(path));
   };
   this.exists = function (path) {
-    return this.getElement(path) ? true : false;
+    return !!this.getElement(path);
   };
   this.existsAsync = function (path) {
     return Promise.resolve(this.exists(path));
@@ -71050,7 +69806,7 @@ var FSResolver = function (homeDirectory, ramlRepository) {
   };
   this.isDirectory = function (path) {
     var element = this.getElement(path);
-    return element && element.isDirectory ? true : false;
+    return !!(element && element.isDirectory);
   };
   this.isDirectoryAsync = function (path) {
     return Promise.resolve(this.isDirectory(path));
@@ -71592,9 +70348,9 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     /**
      * Loads the content of a file.
      */
-    service.load = function (path) {
+    service.load = function (path, nativeTimeout) {
       var deferred = $q.defer();
-      $timeout(function () {
+      (nativeTimeout ? setTimeout : $timeout)(function () {
         var entry = localStorageHelper.get(path);
         if (entry && entry.type === 'file') {
           deferred.resolve(localStorageHelper.get(path).content);
@@ -71767,14 +70523,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       // ---
       function read$Ref($ref) {
         var path = $ref.path[0] === '/' ? $ref.path : '/' + $ref.path;
-        var file = ramlRepository.getByPath(path);
-        if (file) {
-          return file.loaded ? $q.when(file) : ramlRepository.loadFile({ path: path }).then(function (file) {
-            return file.contents;
-          });
-          ;
-        }
-        return $q.reject('File with path "' + path + '" does not exist');
+        return ramlRepository.getContentByPath(path, true);
       }
     }
   ]);
@@ -72352,7 +71101,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         return defer.promise;
       }
       function loadFile(file, defer) {
-        (file.loaded ? $q.when(file) : ramlRepository.loadFile({ path: file.path })).then(function (loadedFile) {
+        (file.loaded ? $q.when(file) : ramlRepository.loadFile(file)).then(function (loadedFile) {
           if (ramlEditorMainHelpers.isApiDefinition(loadedFile.contents)) {
             defer.resolve(loadedFile);
           }
@@ -72380,13 +71129,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
                 throw new Error('ramlParser: loadPath: loadApi: content: ' + path + ': no such path');
               },
               contentAsync: function contentAsync(path) {
-                var file = ramlRepository.getByPath(path);
-                if (!file) {
-                  return $q.reject('ramlEditorMain: loadRaml: contentAsync: ' + path + ': no such path');
-                }
-                return (file.loaded ? $q.when(file) : ramlRepository.loadFile({ path: path })).then(function (file) {
-                  return file.contents;
-                });
+                return ramlRepository.getContentByPath(path);
               }
             }
           };
@@ -72939,6 +71682,111 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
   ]);
   ;
 }());
+'use strict';
+angular.module('ramlEditorApp').factory('ramlWorker', [
+  'ramlRepository',
+  'ramlParser',
+  '$q',
+  '$window',
+  function (ramlRepository, ramlParser, $q, $window) {
+    // default parse method on same thread
+    var ramlParse = function oldParse(data) {
+      return ramlParser.loadPath(data.path, function contentAsync(path) {
+        return ramlRepository.getContentByPath(path);
+      });
+    };
+    // use worker if available
+    var worker = $window.RAML.worker;
+    if (worker) {
+      var currentParse = null;
+      var parsingPending = null;
+      ramlParse = function ramlParse(data) {
+        var deferred = $q.defer();
+        var path = data.path;
+        if (currentParse) {
+          // if we already have a parse request pending, reject it as aborted
+          if (parsingPending) {
+            parsingPending.deferred.reject('aborted');
+          }
+          // leave the parser request as pending
+          parsingPending = {
+            deferred: deferred,
+            data: data
+          };
+        } else {
+          currentParse = data;
+          _postAndExpect('ramlParse', data).then(function parseOk(result) {
+            result.path = path;
+            deferred.resolve(result);
+            parsePending();
+          }).catch(function parseFail(error) {
+            error.path = path;
+            deferred.reject(error);
+            parsePending();
+          });
+        }
+        return deferred.promise;
+      };
+      var parsePending = function parsePending() {
+        currentParse = null;
+        if (parsingPending) {
+          ramlParse(parsingPending.data).then(parsingPending.deferred.resolve).catch(parsingPending.deferred.reject);
+          parsingPending = null;
+        }
+      };
+      var _listen = function _listen(type, fn) {
+        worker.addEventListener('message', function workerMessage(e) {
+          if (e.data.type === type) {
+            fn(e.data.payload);
+          }
+        }, false);
+      };
+      var _post = function _post(type, payload) {
+        worker.postMessage({
+          type: type,
+          payload: payload
+        });
+      };
+      var _postAndExpect = function _postAndExpect(type, payload) {
+        var deferred = $q.defer();
+        const listener = function postListener(e) {
+          if (e.data.type === type + '-resolve') {
+            worker.removeEventListener('message', listener, false);
+            deferred.resolve(e.data.payload);
+          } else if (e.data.type === type + '-reject') {
+            worker.removeEventListener('message', listener, false);
+            deferred.reject(e.data.payload);
+          }
+        };
+        worker.addEventListener('message', listener, false);
+        _post(type, payload);
+        return deferred.promise;
+      };
+      _listen('requestFile', function requestFile(request) {
+        if (request.path === currentParse.path) {
+          _post('requestFile', {
+            path: request.path,
+            content: currentParse.contents
+          });
+        } else {
+          ramlRepository.getContentByPath(request.path, true).then(function (contents) {
+            _post('requestFile', {
+              path: request.path,
+              content: contents
+            });
+          }).catch(function (err) {
+            console.error(err);
+            _post('requestFile', {
+              path: request.path,
+              error: err
+            });
+          });
+        }
+      });
+    }
+    return { ramlParse: ramlParse };
+  }
+]);
 (function () {
   'use strict';
   angular.module('stringFilters', []).filter('dasherize', function () {
@@ -72959,7 +71807,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     'safeApply',
     'safeApplyWrapper',
     'debounce',
-    'ramlParser',
+    'ramlWorker',
     'ramlRepository',
     'codeMirror',
     'codeMirrorErrors',
@@ -72970,7 +71818,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     'mockingServiceClient',
     '$q',
     'ramlEditorMainHelpers',
-    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, ramlParser, ramlRepository, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q, ramlEditorMainHelpers) {
+    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, ramlWorker, ramlRepository, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q, ramlEditorMainHelpers) {
       var editor, lineOfCurrentError, currentFile;
       function extractCurrentFileLabel(file) {
         var label = '';
@@ -73056,57 +71904,67 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         $scope.fileParsable = $scope.getIsFileParsable(selectedFile);
         updateFile();
       };
-      $scope.loadRaml = function loadRaml(definition, location) {
-        return ramlParser.loadPath(location, function contentAsync(path) {
-          var file = ramlRepository.getByPath(path);
-          if (file) {
-            return (file.loaded ? $q.when(file) : ramlRepository.loadFile({ path: path })).then(function (file) {
-              return file.contents;
-            });
-            ;
-          }
-          return $q.reject('ramlEditorMain: loadRaml: contentAsync: ' + path + ': no such path');
+      $scope.loadRaml = function loadRaml(definition, path) {
+        return ramlWorker.ramlParse({
+          path: path,
+          contents: definition
         }).then(function (raml) {
           return ramlEditorMainHelpers.isApiDefinitionLike(definition) ? raml : null;
         });
-        ;
       };
       $scope.clearErrorMarks = function clearErrorMarks() {
         codeMirrorErrors.clearAnnotations();
         $scope.hasErrors = false;
         $scope.currentErrorCount = 0;
         $scope.currentWarningCount = 0;
-      };
-      $scope.$on('event:file-updated', function onFileUpdated() {
-        $scope.clearErrorMarks();
-        var file = $scope.fileBrowser.selectedFile;
-        if (!file || !$scope.fileParsable || file.contents.trim() === '') {
+        if (!currentFile || !$scope.fileParsable || currentFile.doc.getValue().trim() === '') {
           $scope.currentError = undefined;
           lineOfCurrentError = undefined;
-          return;
         }
-        $scope.loadRaml(file.contents, file.path).then(safeApplyWrapper($scope, function completeParse(api) {
-          var issues = api.errors;
-          // errors and warnings
-          if (issues && issues.length > 0) {
-            $rootScope.$broadcast('event:raml-parser-error', issues);
-            $scope.currentWarningCount = issues.reduce(function (count, issue) {
-              return issue.isWarning ? count + 1 : count;
-            }, 0);
-            $scope.currentErrorCount = issues.reduce(function (count, issue) {
-              return !issue.isWarning ? count + 1 : count;
-            }, 0);
+      };
+      var parseTimer;
+      $scope.parsing = 0;
+      $scope.$on('event:file-updated', function onFileUpdated() {
+        $scope.clearErrorMarks();
+        $timeout.cancel(parseTimer);
+        parseTimer = $timeout(function defer() {
+          $scope.clearErrorMarks();
+          if (!currentFile || !$scope.fileParsable || currentFile.doc.getValue().trim() === '') {
+            return;
           }
-          if ($scope.currentErrorCount === 0) {
-            var raml = api.specification;
-            $scope.fileBrowser.selectedFile.raml = raml;
-            $rootScope.$broadcast('event:raml-parsed', raml);
-          }
-        }), safeApplyWrapper($scope, function failureParse(error) {
-          $rootScope.$broadcast('event:raml-parser-error', error.parserErrors || error);
-        }));
+          $scope.parsing++;
+          $scope.loadRaml(currentFile.doc.getValue(), currentFile.path).then(safeApplyWrapper($scope, function completeParse(api) {
+            $scope.parsing--;
+            $scope.clearErrorMarks();
+            if (api && api.path === currentFile.path && $scope.parsing === 0) {
+              var issues = api.errors;
+              // errors and warnings
+              if (issues && issues.length > 0) {
+                $rootScope.$broadcast('event:raml-parser-error', issues);
+                $scope.currentWarningCount = issues.reduce(function (count, issue) {
+                  return issue.isWarning ? count + 1 : count;
+                }, 0);
+                $scope.currentErrorCount = issues.reduce(function (count, issue) {
+                  return !issue.isWarning ? count + 1 : count;
+                }, 0);
+              }
+              if ($scope.currentErrorCount === 0) {
+                var raml = api.specification;
+                $rootScope.$broadcast('event:raml-parsed', raml);
+              }
+            }
+          })).catch(safeApplyWrapper($scope, function failureParse(error) {
+            $scope.parsing--;
+            if (error !== 'aborted' && error.path === currentFile.path && $scope.parsing === 0) {
+              $scope.currentErrorCount = 0;
+              $scope.currentWarningCount = 0;
+              $rootScope.$broadcast('event:raml-parser-error', error.parserErrors || error);
+            }
+          }));
+        }, 700);
       });
       $scope.$on('event:raml-parsed', safeApplyWrapper($scope, function onRamlParser(event, raml) {
+        $scope.fileBrowser.selectedFile.raml = raml;
         $scope.raml = raml;
         $scope.title = raml && raml.title;
         $scope.version = raml && raml.version;
@@ -73208,16 +72066,10 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         return ramlEditorMainHelpers.isRamlFile(file.extension) && ramlEditorMainHelpers.isApiDefinitionLike(file.contents);
       };
       $scope.getIsMockingServiceVisible = function getIsMockingServiceVisible() {
-        if ($scope.mockingServiceDisabled || !$scope.fileParsable) {
-          return false;
-        }
-        return true;
+        return !($scope.mockingServiceDisabled || !$scope.fileParsable);
       };
       $scope.getIsShelfVisible = function getIsShelfVisible() {
-        if (!$scope.fileParsable) {
-          return false;
-        }
-        return true;
+        return $scope.fileParsable;
       };
       $scope.getIsConsoleVisible = function getIsConsoleVisible() {
         return $scope.fileParsable && $scope.raml;
@@ -73227,13 +72079,26 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         config.set('shelf.collapsed', $scope.shelf.collapsed);
       };
       $scope.getSelectedFileAbsolutePath = function getSelectedFileAbsolutePath() {
-        var result = extractCurrentFileLabel(currentFile);
-        if ($scope.currentErrorCount) {
-          result += ' (' + $scope.currentErrorCount + ' ' + ($scope.currentErrorCount > 1 ? 'errors' : 'error') + ')';
-        } else if ($scope.currentWarningCount) {
-          result += ' (' + $scope.currentWarningCount + ' ' + ($scope.currentWarningCount > 1 ? 'warnings' : 'warning') + ')';
+        if (!currentFile) {
+          return '';
         }
-        return result;
+        var status = '';
+        if ($scope.fileParsable) {
+          if ($scope.parsing > 0) {
+            status = 'validating...';
+          } else if ($scope.currentErrorCount || $scope.currentWarningCount) {
+            if ($scope.currentErrorCount) {
+              status += $scope.currentErrorCount + ' ' + ($scope.currentErrorCount > 1 ? 'errors' : 'error');
+            }
+            if ($scope.currentErrorCount && $scope.currentWarningCount) {
+              status += ', ';
+            }
+            if ($scope.currentWarningCount) {
+              status += $scope.currentWarningCount + ' ' + ($scope.currentWarningCount > 1 ? 'warnings' : 'warning');
+            }
+          }
+        }
+        return extractCurrentFileLabel(currentFile) + (!status ? '' : ' (' + status + ')');
       };
       $scope.$on('event:toggle-theme', function onToggleTheme() {
         $window.setTheme($scope.theme === 'dark' ? 'light' : 'dark');
@@ -73387,7 +72252,11 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         $scope.$digest();
       }
       $scope.cursorMoved = safeApplyWrapper(null, function cursorMoved() {
-        newSuggestions($scope.homeDirectory, $scope.fileBrowser.selectedFile, editor).then(updateModel);
+        if ($scope.shelf.collapsed) {
+          $scope.model = [];
+        } else {
+          newSuggestions($scope.homeDirectory, $scope.fileBrowser.selectedFile, editor).then(updateModel);
+        }
       });
       $scope.orderSections = function orderSections(section) {
         var index = [
@@ -73694,7 +72563,6 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
          * means collapse target is shown
          */
       function toggleCollapseTarget(splitter, collapse) {
-        collapse = arguments.length > 1 ? collapse : !loadIsCollapsed(splitter);
         splitter.toggleClass('collapsed', collapse);
         getCollapseTargetEl(splitter).toggleClass('hide-display', collapse);
         saveIsCollapsed(splitter, collapse);
@@ -73716,6 +72584,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
           // from last session
           resizeCollapseTarget(splitter, lastSize);
           toggleCollapseTarget(splitter, lastCollapsed);
+          scope['splitterCollapsed_' + splitter.attr('id')] = lastCollapsed;
           // Configure UI events
           splitter.on('mousedown', function onMouseDown(event) {
             // Only respond to left mouse button
@@ -73740,6 +72609,9 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
               // that reason we compare current state with last one
               if (collapsed !== lastCollapsed) {
                 toggleCollapseTarget(splitter, collapsed);
+                scope.$apply(function toogleCollapseState() {
+                  scope['splitterCollapsed_' + splitter.attr('id')] = collapsed;
+                });
               }
               lastPos = event[posAttr];
               lastCollapsed = collapsed;
@@ -73754,6 +72626,9 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
                 // when users try to expand it in current or next session
                 toggleCollapseTarget(splitter, true);
                 resizeCollapseTarget(splitter, lastSize);
+                scope.$apply(function toogleCollapseState() {
+                  scope['splitterCollapsed_' + splitter.attr('id')] = true;
+                });
               } else {
                 saveSize(splitter, sizeAttr);
               }
@@ -73769,7 +72644,11 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
           splitter.children('.split').on('mouseup', function onClick() {
             // Need to make sure that the user is clicking, not dragging:
             if (!userIsDragging) {
-              toggleCollapseTarget(splitter);
+              var collapsed = !loadIsCollapsed(splitter);
+              toggleCollapseTarget(splitter, collapsed);
+              scope.$apply(function toogleCollapseState() {
+                scope['splitterCollapsed_' + splitter.attr('id')] = collapsed;
+              });
               userIsDragging = true;
               isActive = false;
             }
@@ -74034,7 +72913,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
             }, 0);
           }
           function close(e) {
-            if (e && e.target.firstChild.nodeValue.match('New File')) {
+            if (e && e.target.firstChild.nodeValue && e.target.firstChild.nodeValue.match('New File')) {
               return;
             }
             scroll.enable();
@@ -75066,7 +73945,7 @@ angular.module('ramlEditorApp').run([
     $templateCache.put('views/new-name-modal.html', '<form name="form" novalidate ng-submit="submit(form)">\n' + '  <div class="modal-header">\n' + '    <h3>{{input.title}}</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    <!-- name -->\n' + '    <div class="form-group" ng-class="{\'has-error\': form.$submitted && form.name.$invalid}">\n' + '      <p>\n' + '        {{input.message}}\n' + '      </p>\n' + '      <p ng-if="input.link">\n' + '        Learn more\n' + '        <a target="_blank" href="{{input.link}}">\n' + '          <i class="fa fa-external-link"></i>\n' + '        </a>\n' + '      </p>\n' + '      <!-- label -->\n' + '      <label for="name" class="control-label required-field-label">Name</label>\n' + '\n' + '      <!-- input -->\n' + '      <input id="name" name="name" type="text"\n' + '             ng-model="input.newName" class="form-control"\n' + '             ng-validate="isValid($value)"\n' + '             ng-maxlength="64" ng-auto-focus="true" value="{{input.suggestedName}}" required>\n' + '\n' + '      <!-- error -->\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.required">Please provide a name.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.maxlength">Name must be shorter than 64 characters.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.validate">{{validationErrorMessage}}</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n' + '    <button type="submit" class="btn btn-primary">OK</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/raml-editor-context-menu.tmpl.html', '<ul role="context-menu" ng-show="opened">\n' + '  <li role="context-menu-item" ng-mouseenter="openFileMenu(action)" ng-mouseleave="closeFileMenu()" ng-repeat="action in actions" ng-click="action.execute()">\n' + '    {{ action.label }}\n' + '    <i class="submenu-icon fa fa-caret-right" ng-if="action.fragments !== undefined"></i>\n' + '    <raml-editor-new-file-menu ng-if="action.fragments !== undefined" target="target" show-file-menu="showFileMenu" show-fragment-menu="showFragmentMenu" open-file-menu-condition="showFragmentMenu" menu-role="context-menu"></raml-editor-new-file-menu>\n' + '  </li>\n' + '</ul>\n');
     $templateCache.put('views/raml-editor-file-browser.tmpl.html', '<raml-editor-context-menu></raml-editor-context-menu>\n' + '\n' + '<script type="text/ng-template" id="file-item.html">\n' + '  <div ui-tree-handle class="file-item" ng-right-click="fileBrowser.showContextMenu($event, node)" ng-click="fileBrowser.select(node)"\n' + '    ng-class="{currentfile: fileBrowser.currentTarget.path === node.path && !isDragging,\n' + '      dirty: node.dirty,\n' + '      geared: fileBrowser.contextMenuOpenedFor(node),\n' + '      directory: node.isDirectory,\n' + '      \'no-drop\': fileBrowser.cursorState === \'no\',\n' + '      copy: fileBrowser.cursorState === \'ok\'}"\n' + '    ng-drop="node.isDirectory && fileBrowser.dropFile($event, node)">\n' + '    <span class="file-name" ng-click="toggleFolderCollapse(node)">\n' + '      <i class="fa icon fa-caret-right fa-fw" ng-if="node.isDirectory" ng-class="{\'fa-rotate-90\': !collapsed}"></i>\n' + '      <i class="fa icon fa-fw" ng-class="{\'fa-folder-o\': node.isDirectory, \'fa-file-text-o\': !node.isDirectory}"></i>\n' + '      &nbsp;{{node.name}}\n' + '    </span>\n' + '    <i class="fa fa-cog" ng-click="fileBrowser.showContextMenu($event, node)" ng-class="{hidden: isDragging}" data-nodrag></i>\n' + '  </div>\n' + '\n' + '  <ul ui-tree-nodes ng-if="node.isDirectory" ng-class="{hidden: collapsed}" ng-model="node.children">\n' + '    <li ui-tree-node ng-repeat="node in node.children" ng-include="\'file-item.html\'" data-collapsed="node.collapsed" data-path="{{node.path}}">\n' + '    </li>\n' + '  </ul>\n' + '</script>\n' + '\n' + '<div ui-tree="fileTreeOptions" ng-model="homeDirectory" class="file-list" data-drag-delay="300" data-empty-place-holder-enabled="false" ng-drop="fileBrowser.dropFile($event, homeDirectory)" ng-right-click="fileBrowser.showContextMenu($event, homeDirectory)">\n' + '  <ul ui-tree-nodes ng-model="homeDirectory.children" id="tree-root">\n' + '    <ui-tree-dummy-node class="top"></ui-tree-dummy-node>\n' + '    <li ui-tree-node ng-repeat="node in homeDirectory.children" ng-include="\'file-item.html\'" data-collapsed="node.collapsed"\n' + '     data-path="{{node.path}}"\n' + '     ng-drag-enter="node.collapsed = false"\n' + '     ng-drag-leave="node.collapsed = true"></li>\n' + '    <ui-tree-dummy-node class="bottom" ng-click="fileBrowser.select(homeDirectory)"></ui-tree-dummy-node>\n' + '  </ul>\n' + '</div>\n');
-    $templateCache.put('views/raml-editor-main.tmpl.html', '<div role="raml-editor" class="{{theme}}">\n' + '  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications, error: level === \'error\'}">\n' + '    {{message}}\n' + '    <i class="fa" ng-class="{\'fa-check\': level === \'info\', \'fa-warning\': level === \'error\'}" ng-click="hideNotifications()"></i>\n' + '  </div>\n' + '\n' + '  <header>\n' + '    <h1>\n' + '      <strong>API</strong> Designer\n' + '    </h1>\n' + '\n' + '    <a role="logo" target="_blank" href="http://mulesoft.com"></a>\n' + '  </header>\n' + '\n' + '  <ul class="menubar">\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-project-button></raml-editor-project-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-view-button></raml-editor-view-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-help-button></raml-editor-help-button>\n' + '    </li>\n' + '    <li class="spacer file-absolute-path">{{getSelectedFileAbsolutePath()}}</li>\n' + '    <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">\n' + '      <div class="title">Mocking Service</div>\n' + '      <div class="field-wrapper" ng-class="{loading: loading}">\n' + '        <i class="fa fa-spin fa-spinner" ng-if="loading"></i>\n' + '        <div class="field" ng-if="!loading">\n' + '          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />\n' + '          <label for="mockingServiceEnabled"></label>\n' + '        </div>\n' + '      </div>\n' + '    </li>\n' + '  </ul>\n' + '\n' + '  <div role="flexColumns">\n' + '    <raml-editor-file-browser role="browser"></raml-editor-file-browser>\n' + '\n' + '    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev"><div class="split split-left">&nbsp;</div></div>\n' + '\n' + '    <div role="editor" ng-class="{error: currentError}">\n' + '      <div id="code" role="code"></div>\n' + '\n' + '      <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">\n' + '        <div role="shelf-tab" ng-click="toggleShelf()">\n' + '          <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? \'fa-caret-up\' : \'fa-caret-down\'"></i>\n' + '        </div>\n' + '\n' + '        <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="\'views/raml-editor-shelf.tmpl.html\'"></div>\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="470"><div class="split split-right">&nbsp;</div></div>\n' + '\n' + '    <div ng-show="getIsConsoleVisible()" role="preview-wrapper" class="raml-console-embedded">\n' + '      <raml-console\n' + '        raml="raml"\n' + '        options="{\n' + '          singleView: true,\n' + '          disableThemeSwitcher: true,\n' + '          disableRamlClientGenerator: true,\n' + '          disableTitle: true\n' + '        }"\n' + '        style="padding: 0; margin-top: 0;"></raml-console>\n' + '    </div>\n' + '  </div>\n' + '</div>\n');
+    $templateCache.put('views/raml-editor-main.tmpl.html', '<div role="raml-editor" class="{{theme}}">\n' + '  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications, error: level === \'error\'}">\n' + '    {{message}}\n' + '    <i class="fa" ng-class="{\'fa-check\': level === \'info\', \'fa-warning\': level === \'error\'}" ng-click="hideNotifications()"></i>\n' + '  </div>\n' + '\n' + '  <header>\n' + '    <h1>\n' + '      <strong>API</strong> Designer\n' + '    </h1>\n' + '\n' + '    <a role="logo" target="_blank" href="http://mulesoft.com"></a>\n' + '  </header>\n' + '\n' + '  <ul class="menubar">\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-project-button></raml-editor-project-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-view-button></raml-editor-view-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-help-button></raml-editor-help-button>\n' + '    </li>\n' + '    <li class="spacer file-absolute-path">{{getSelectedFileAbsolutePath()}}</li>\n' + '    <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">\n' + '      <div class="title">Mocking Service</div>\n' + '      <div class="field-wrapper" ng-class="{loading: loading}">\n' + '        <i class="fa fa-spin fa-spinner" ng-if="loading"></i>\n' + '        <div class="field" ng-if="!loading">\n' + '          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />\n' + '          <label for="mockingServiceEnabled"></label>\n' + '        </div>\n' + '      </div>\n' + '    </li>\n' + '  </ul>\n' + '\n' + '  <div role="flexColumns">\n' + '    <raml-editor-file-browser role="browser"></raml-editor-file-browser>\n' + '\n' + '    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev"><div class="split split-left">&nbsp;</div></div>\n' + '\n' + '    <div role="editor" ng-class="{error: currentError}">\n' + '      <div id="code" role="code"></div>\n' + '\n' + '      <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">\n' + '        <div role="shelf-tab" ng-click="toggleShelf()">\n' + '          <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? \'fa-caret-up\' : \'fa-caret-down\'"></i>\n' + '        </div>\n' + '\n' + '        <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="\'views/raml-editor-shelf.tmpl.html\'"></div>\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="470"><div class="split split-right">&nbsp;</div></div>\n' + '\n' + '    <div ng-show="getIsConsoleVisible()" role="preview-wrapper" class="raml-console-embedded">\n' + '      <div ng-if="!splitterCollapsed_consoleAndEditor && getIsConsoleVisible()">\n' + '        <raml-console raml="raml"\n' + '            options="{ singleView: true, disableThemeSwitcher: true, disableRamlClientGenerator: true, disableTitle: true}"\n' + '            style="padding: 0; margin-top: 0;"></raml-console>\n' + '      </div>\n' + '    </div>\n' + '  </div>\n' + '</div>\n');
     $templateCache.put('views/raml-editor-shelf.tmpl.html', '<ul role="sections" ng-controller="ramlEditorShelf">\n' + '  <li role="section" ng-repeat="category in model.categories | orderBy:orderSections" class="{{category.name | dasherize}}">\n' + '    {{category.name}}&nbsp;({{category.items.length}})\n' + '    <ul role="items">\n' + '      <li ng-repeat="item in category.items" ng-click="itemClick(item)"><i class="fa fa-reply"></i><span>{{item.title}}</span></li>\n' + '    </ul>\n' + '  </li>\n' + '</ul>\n');
   }
 ]);

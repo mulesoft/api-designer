@@ -16,6 +16,20 @@
         <raml-editor></raml-editor>
     </div>
 
+    <script src="scripts/api-designer-parser.js"></script>
+
+    <script>
+      (function (w) {
+        if (!w.Worker) return;
+        var proxy = location.search.indexOf('bypassProxy=true') > -1 ? '' : '/proxy/';
+        try {
+          w.RAML.worker = new Worker('scripts/api-designer-worker.js#parser=./api-designer-parser.js&proxy=' + proxy);
+        } catch (e) {
+          console.error('Failed to create worker, defaulting to main thread', e);
+        }
+      })(window);
+    </script>
+
     <script src="scripts/api-designer-vendor.js"></script>
 
     <script src="scripts/api-designer.js"></script>

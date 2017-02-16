@@ -314,7 +314,7 @@
         return promise.then(modifyFile, handleErrorFor(file));
       };
 
-      service.loadFile = function loadFile(file) {
+      service.loadFile = function loadFile(file, nativeTimeout) {
         function modifyFile(data) {
           file.dirty     = false;
           file.persisted = true;
@@ -325,7 +325,7 @@
         }
 
         return fileSystem
-          .load(file.path)
+          .load(file.path, nativeTimeout)
           .then(modifyFile, handleErrorFor(file))
         ;
       };
@@ -386,6 +386,22 @@
 
             return file;
           });
+      };
+
+      // Gets a promise of the ramlDirectory/ramlFile object by path from the memory, loading the content if not loaded yet
+      service.getContentByPath = function getByPath(path, nativeTimeout) {
+        var file = service.getByPath(path);
+        if (!file) {
+          return $q.reject('getByPathLoaded: ' + path + ': no such path');
+        }
+
+        if (file.loaded) {
+          return $q.when(file.contents);
+        }
+
+        return service.loadFile(file, nativeTimeout).then(function mapContent(file) {
+          return file.contents;
+        });
       };
 
       // Gets the ramlDirectory/ramlFile object by path from the memory
