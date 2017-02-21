@@ -1,41 +1,5 @@
 'use strict';
 
-var workerParameters = (function getQueryParams(qs) {
-  if (qs.indexOf('#') === 0) {
-    qs = qs.substring(1);
-  }
-  qs = qs.split('+').join(' ');
-
-  var params = {},
-    tokens,
-    re = /[?&]?([^=]+)=([^&]*)/g;
-
-  tokens = re.exec(qs);
-  while (tokens) {
-    params[decodeURIComponent(tokens[1])] = decodeURIComponent(tokens[2]);
-    tokens = re.exec(qs);
-  }
-
-  return params;
-})(self.location.hash || '');
-
-console.log('Worker initialed with parameter:', workerParameters);
-if (!workerParameters) {
-  console.error('Missing Worker parameters in url hash');
-}
-
-if (self.location.host.indexOf('localhost:9013') > -1) {
-  // dev dependencies to parser
-  self.importScripts(
-    '/bower_components/raml-1-parser/raml-json-validation.js',
-    '/bower_components/raml-1-parser/raml-xml-validation.js',
-    '/bower_components/raml-1-parser/raml-1-parser.js',
-    '/.tmp/js-traverse/js-traverse.js'
-  );
-} else {
-  self.importScripts(workerParameters.parser);
-}
-
 function RamlExpander() {
 
   function retrieveType(raml, typeName) {
@@ -159,7 +123,7 @@ function RamlExpander() {
 }
 
 
-function RamlParser(onFileRequest) {
+function RamlParser(onFileRequest, proxyUrl) {
   var ramlExpander = new RamlExpander();
   var options = {
     attributeDefaults: true,
@@ -172,12 +136,12 @@ function RamlParser(onFileRequest) {
     }
   };
 
-  if (workerParameters.proxy) {
+  if (proxyUrl) {
     options.httpResolver = {
       getResourceAsync: function (url) {
         return new Promise(function (resolve, reject) {
           var xhr = new XMLHttpRequest();
-          xhr.open('GET', workerParameters.proxy + url);
+          xhr.open('GET', proxyUrl + url);
           xhr.setRequestHeader('Accept', 'application/raml+yaml');
           xhr.onload = function() {
             if (xhr.status === 200) {
@@ -215,87 +179,122 @@ function RamlParser(onFileRequest) {
   };
 }
 
+if (self.importScripts && self.location.hash) {
 
-var requestFileCallbacks = {};
-
-var post = function (type, payload) {
-  try {
-    self.postMessage({type: type, payload: payload});
-  } catch (e) {
-    console.error('Error when trying to post back from worker', e);
-    self.postMessage({type: type}); // send just the type, so the flow can continue
-  }
-};
-
-var listen = function (type, fn) {
-  self.addEventListener('message', function (e) {
-    if (e.data.type === type) {
-      fn(e.data.payload);
+  var workerParameters = (function getQueryParams(qs) {
+    if (qs.indexOf('#') === 0) {
+      qs = qs.substring(1);
     }
-  }, false);
-};
+    qs = qs.split('+').join(' ');
 
-var postReject = function (type, error) {
-  console.timeEnd(type);
-  // js exceptions cant be serialized as normal strings, so just post the error message in that case
-  var serializableError = error.stack ? {message: error.message} : error;
-  return post(type + '-reject', serializableError);
-};
+    var params = {},
+      tokens,
+      re = /[?&]?([^=]+)=([^&]*)/g;
 
-var listenThenPost = function (type, fn) {
-  listen(type, function (data) {
-    console.time(type);
+    tokens = re.exec(qs);
+    while (tokens) {
+      params[decodeURIComponent(tokens[1])] = decodeURIComponent(tokens[2]);
+      tokens = re.exec(qs);
+    }
+
+    return params;
+  })(self.location.hash);
+
+  // console.log('Worker initialed with parameter:', workerParameters);
+
+  if (self.location.host.indexOf('localhost:9013') > -1) {
+    // dev dependencies to parser
+    self.importScripts(
+      '/bower_components/raml-1-parser/raml-json-validation.js',
+      '/bower_components/raml-1-parser/raml-xml-validation.js',
+      '/bower_components/raml-1-parser/raml-1-parser.js',
+      '/.tmp/js-traverse/js-traverse.js'
+    );
+  } else {
+    self.importScripts(workerParameters.parser);
+  }
+
+  var requestFileCallbacks = {};
+
+  var post = function (type, payload) {
     try {
-      fn(data)
-        .then(function (result) {
-          console.timeEnd(type);
-          return post(type + '-resolve', result);
-        })
-        .catch(function(error) {
-          postReject(type, error);
-        });
+      self.postMessage({type: type, payload: payload});
     } catch (e) {
-      postReject(type, e);
+      console.error('Error when trying to post back from worker', e);
+      self.postMessage({type: type}); // send just the type, so the flow can continue
     }
-  });
-};
+  };
 
-var requestFile = function (path, callback) {
-  var callbackList = requestFileCallbacks[path] || [];
-  callbackList.push(callback);
-  requestFileCallbacks[path] = callbackList;
-  post('requestFile', {path: path});
-};
-
-var responseFile = function (path, error, content) {
-  var callbacks = requestFileCallbacks[path];
-  if (callbacks) {
-    callbacks.forEach(function (callback) {
-      callback(error, content);
-    });
-    delete requestFileCallbacks[path];
-  }
-};
-
-var requestFilePromise = function (path) {
-  return new Promise(function (resolve, reject) {
-    requestFile(path, function (err, content) {
-      if (err) {
-        reject(err);
+  var listen = function (type, fn) {
+    self.addEventListener('message', function (e) {
+      if (e.data.type === type) {
+        fn(e.data.payload);
       }
-      else {
-        resolve(content);
+    }, false);
+  };
+
+  var postReject = function (type, error) {
+    // console.timeEnd(type);
+    // js exceptions cant be serialized as normal strings, so just post the error message in that case
+    var serializableError = error.stack ? {message: error.message} : error;
+    return post(type + '-reject', serializableError);
+  };
+
+  var listenThenPost = function (type, fn) {
+    listen(type, function (data) {
+      // console.time(type);
+      try {
+        fn(data)
+          .then(function (result) {
+            // console.timeEnd(type);
+            return post(type + '-resolve', result);
+          })
+          .catch(function(error) {
+            postReject(type, error);
+          });
+      } catch (e) {
+        postReject(type, e);
       }
     });
+  };
+
+  var requestFile = function (path, callback) {
+    var callbackList = requestFileCallbacks[path] || [];
+    callbackList.push(callback);
+    requestFileCallbacks[path] = callbackList;
+    post('requestFile', {path: path});
+  };
+
+  var responseFile = function (path, error, content) {
+    var callbacks = requestFileCallbacks[path];
+    if (callbacks) {
+      callbacks.forEach(function (callback) {
+        callback(error, content);
+      });
+      delete requestFileCallbacks[path];
+    }
+  };
+
+  var requestFilePromise = function (path) {
+    return new Promise(function (resolve, reject) {
+      requestFile(path, function (err, content) {
+        if (err) {
+          reject(err);
+        }
+        else {
+          resolve(content);
+        }
+      });
+    });
+  };
+
+  var ramlParser = new RamlParser(requestFilePromise, workerParameters.proxy );
+
+  listenThenPost('ramlParse', function (data) {
+    return ramlParser.parse(data.path);
   });
-};
 
-var ramlParser = new RamlParser(requestFilePromise);
-
-listenThenPost('ramlParse', function (data) {
-  return ramlParser.parse(data.path);
-});
-
-listen('requestFile', function (data) {
-  return responseFile(data.path, data.error, data.content);
-});
+  listen('requestFile', function (data) {
+    return responseFile(data.path, data.error, data.content);
+  });
+}
