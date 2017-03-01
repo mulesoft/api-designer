@@ -71742,10 +71742,15 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
         }, false);
       };
       var _post = function _post(type, payload) {
-        worker.postMessage({
-          type: type,
-          payload: payload
-        });
+        try {
+          worker.postMessage({
+            type: type,
+            payload: payload
+          });
+        } catch (e) {
+          console.error('Error when trying to post to worker', e);
+          worker.postMessage({ type: type });  // send just the type, so the flow can continue
+        }
       };
       var _postAndExpect = function _postAndExpect(type, payload) {
         var deferred = $q.defer();
@@ -71775,10 +71780,11 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
               content: contents
             });
           }).catch(function (err) {
-            console.error(err);
+            //console.error('requestFile failed', err);
+            var message = typeof err === 'string' ? err : err.message || 'File not found ' + request.path;
             _post('requestFile', {
               path: request.path,
-              error: err
+              error: message
             });
           });
         }
