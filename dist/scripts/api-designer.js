@@ -11408,7 +11408,7 @@
         'use strict';
         var common = require('../common');
         var Type = require('../type');
-        var YAML_FLOAT_PATTERN = new RegExp('^(?:[-+]?(?:[0-9][0-9_]*)\\.[0-9_]*(?:[eE][-+][0-9]+)?' + '|\\.[0-9_]+(?:[eE][-+][0-9]+)?' + '|[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]*' + '|[-+]?\\.(?:inf|Inf|INF)' + '|\\.(?:nan|NaN|NAN))$');
+        var YAML_FLOAT_PATTERN = new RegExp('^(?:[-+]?(?:0|[1-9][0-9_]*)(?:\\.[0-9_]*)?(?:[eE][-+]?[0-9]+)?' + '|\\.[0-9_]+(?:[eE][-+]?[0-9]+)?' + '|[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]*' + '|[-+]?\\.(?:inf|Inf|INF)' + '|\\.(?:nan|NaN|NAN))$');
         function resolveYamlFloat(data) {
           if (data === null)
             return false;
@@ -35071,7 +35071,8 @@
             throw new TypeError('Cannot call a class as a function');
           }
         }
-        var Importers = require('./importers/index'), Exporters = require('./exporters/index');
+        var Importers = require('./importers/index');
+        var Exporters = require('./exporters/index');
         var Converter = function () {
             function Converter(fromFormat, toFormat) {
               _classCallCheck(this, Converter);
@@ -35182,7 +35183,6 @@
             throw new TypeError('Cannot call a class as a function');
           }
         }
-        var jsonHelper = require('../utils/json');
         var stringHelper = require('../utils/strings');
         var Endpoint = function () {
             function Endpoint(name) {
@@ -35282,10 +35282,10 @@
               {
                 key: 'Headers',
                 get: function get() {
-                  return jsonHelper.parse(this.request.headers);
+                  return this.request.headers;
                 },
                 set: function set(headers) {
-                  this.request.headers = jsonHelper.stringify(headers, 4);
+                  this.request.headers = headers;
                 }
               },
               {
@@ -35309,7 +35309,6 @@
               {
                 key: 'Body',
                 set: function set(body) {
-                  body.body = jsonHelper.stringify(body.body, 4);
                   this.request.bodies.push(body);
                 },
                 get: function get() {
@@ -35322,26 +35321,25 @@
               {
                 key: 'QueryString',
                 set: function set(queryString) {
-                  queryString = jsonHelper.stringify(queryString, 4);
                   this.request.queryString = queryString;
                 },
                 get: function get() {
                   if (!this.request.queryString) {
-                    this.request.queryString = '{}';
+                    this.request.queryString = {};
                   }
-                  return jsonHelper.parse(this.request.queryString);
+                  return this.request.queryString;
                 }
               },
               {
                 key: 'PathParams',
                 set: function set(uriParams) {
-                  this.request.pathParams = jsonHelper.stringify(uriParams, 4);
+                  this.request.pathParams = uriParams;
                 },
                 get: function get() {
                   if (!this.request.pathParams) {
-                    this.request.pathParams = '{}';
+                    this.request.pathParams = {};
                   }
-                  return jsonHelper.parse(this.request.pathParams);
+                  return this.request.pathParams;
                 }
               },
               {
@@ -35433,10 +35431,7 @@
           }();
         module.exports = Endpoint;
       },
-      {
-        '../utils/json': 236,
-        '../utils/strings': 237
-      }
+      { '../utils/strings': 237 }
     ],
     213: [
       function (require, module, exports) {
@@ -37446,6 +37441,7 @@
               _classCallCheck(this, Exporter);
               this.data = null;
               this.project = null;
+              this.options = null;
             }
             _createClass(Exporter, [
               {
@@ -37467,6 +37463,7 @@
                   return new Promise(function (resolve, reject) {
                     try {
                       (function () {
+                        _this.options = options;
                         _this._export();
                         var exportedData = _this._getData(format);
                         if (options && (options.validate === true || options.validateExport === true)) {
@@ -38360,7 +38357,7 @@
                   for (var paramName in queryStringParams.properties) {
                     if (!queryStringParams.properties.hasOwnProperty(paramName))
                       continue;
-                    var param = Swagger._convertExamples(queryStringParams.properties[paramName], false);
+                    var param = this._convertExamples(queryStringParams.properties[paramName], false);
                     param = swaggerHelper.setParameterFields(param, {});
                     param.name = paramName;
                     param.in = 'query';
@@ -38391,16 +38388,44 @@
                     item.examples[mimeType] = jsonHelper.parse(res.example);
                   }
                   if (res.headers) {
-                    Swagger.mapHeaderProperties(res.headers);
+                    this.mapHeaderProperties(res.headers);
                     item.headers = res.headers;
                     var headers = item.headers;
                     for (var id in headers) {
                       if (!headers.hasOwnProperty(id))
                         continue;
-                      headers[id] = Swagger._convertExamples(headers[id], false);
+                      headers[id] = this._convertExamples(headers[id], false);
                     }
                   }
+                  Swagger._addPatternedObjects(res, item);
                   return item;
+                }
+              },
+              {
+                key: 'mapHeaderProperties',
+                value: function mapHeaderProperties(headers) {
+                  for (var i in headers) {
+                    if (!headers.hasOwnProperty(i))
+                      continue;
+                    var header = headers[i];
+                    if (header.hasOwnProperty('required')) {
+                      this.addExtension(header, 'x-raml-required', header['required']);
+                      delete header.required;
+                    }
+                    if (header.hasOwnProperty('repeat')) {
+                      this.addExtension(header, 'x-raml-repeat', header['repeat']);
+                      delete header.repeat;
+                    }
+                  }
+                }
+              },
+              {
+                key: 'addExtension',
+                value: function addExtension(object, id, value) {
+                  if (_.isEmpty(this.options) || !this.options.hasOwnProperty('noExtension') || this.options.noExtension === true)
+                    return;
+                  // if (!_.isEmpty(this.options) && this.options.hasOwnProperty('noExtension') && this.options['noExtension'] === true) return;
+                  object[id] = value;
                 }
               },
               {
@@ -38416,7 +38441,8 @@
                     // if (!mimeType && env.Produces && env.Produces.length) {
                     //   mimeType = env.Produces[0];
                     // }
-                    result[res.codes && res.codes.length > 0 && parseInt(res.codes[0]) ? res.codes[0] : 'default'] = this.mapResponseBody(res, mimeType);
+                    var code = res.codes && res.codes.length > 0 && parseInt(res.codes[0]) ? res.codes[0] : 'default';
+                    result[code] = this.mapResponseBody(res, mimeType);
                   }
                   return result;
                 }
@@ -38429,7 +38455,7 @@
                     if (!slRequestBodies.hasOwnProperty(id))
                       continue;
                     var requestBody = slRequestBodies[id];
-                    result['x-raml-body-' + requestBody.mimeType] = this._mapRequestBody(requestBody, mimeTypes, false);
+                    this.addExtension(result, 'x-raml-body-' + requestBody.mimeType, this._mapRequestBody(requestBody, mimeTypes, false));
                   }
                   return result;
                 }
@@ -38450,7 +38476,7 @@
                     //make sure body isn't empty
                     var regex = /\"type\":[ ]*\"file\"|\"type\":[ ]*\"binary\"/;
                     //export as formData only if schema includes file type property
-                    if (slRequestBody.body.match(regex) || !_.isEmpty(requestTypes) && [
+                    if (jsonHelper.stringify(slRequestBody.body, 4).match(regex) || !_.isEmpty(requestTypes) && [
                         'multipart/form-data',
                         'application/x-www-form-urlencoded'
                       ].indexOf(requestTypes[0]) !== -1) {
@@ -38464,16 +38490,16 @@
                           if (body.required && body.required.indexOf(prop) >= 0) {
                             param.required = true;
                           }
-                          if (param.hasOwnProperty('type')) {
-                            param.type = multipleBodies ? { type: 'object' } : param.type;
-                          }
+                          // if (param.hasOwnProperty('type')) {
+                          // 	param.type = multipleBodies ? {type: 'object'} : param.type;
+                          // }
                           result.push(param);
                         }
                       } else {
                         param.in = 'formData';
                         param.name = 'formData';
                         if (body.ref) {
-                          param['x-raml-type'] = body.ref;
+                          this.addExtension(param, 'x-raml-type', body.ref);
                         }
                         if (param.hasOwnProperty('type')) {
                           param.type = multipleBodies ? { type: 'object' } : param.type;
@@ -38491,7 +38517,7 @@
                       param.schema = multipleBodies ? { type: 'object' } : this.convertRefFromModel(body, false);
                       if (!_.isEmpty(slRequestBody.example)) {
                         if (!xmlHelper.isXml(slRequestBody.example))
-                          param.schema.example = JSON.parse(slRequestBody.example);
+                          param.schema.example = jsonHelper.parse(slRequestBody.example);
                         else
                           param.schema.example = slRequestBody.example;
                       }
@@ -38509,7 +38535,7 @@
                     for (var property in slHeaders.properties) {
                       if (!slHeaders.properties.hasOwnProperty(property))
                         continue;
-                      var param = Swagger._convertExamples(slHeaders.properties[property], false);
+                      var param = this._convertExamples(slHeaders.properties[property], false);
                       param = swaggerHelper.setParameterFields(param, {});
                       param.name = property;
                       param.in = 'header';
@@ -38519,7 +38545,7 @@
                         param.description = slHeaders.properties[property].description;
                       }
                       //check if parameter contains pattern or example attributes.
-                      param = Swagger._hasAttributes(param, [
+                      param = this._hasAttributes(param, [
                         'example',
                         'pattern'
                       ]);
@@ -38527,6 +38553,25 @@
                     }
                   }
                   return result;
+                }
+              },
+              {
+                key: '_hasAttributes',
+                value: function _hasAttributes(object, atts) {
+                  for (var id in object) {
+                    if (!object.hasOwnProperty(id))
+                      continue;
+                    var val = object[id];
+                    if (atts.indexOf(id) >= 0) {
+                      this.addExtension(object, 'x-raml-' + id, val);
+                      delete object[id];
+                    } else {
+                      if ((typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object') {
+                        object[id] = this._hasAttributes(val, atts);
+                      }
+                    }
+                  }
+                  return object;
                 }
               },
               {
@@ -38546,16 +38591,34 @@
                     result[schema.NameSpace] = definition;
                   }
                   return result;
+                }
+              },
+              {
+                key: 'replaceCustomProperties',
+                value: function replaceCustomProperties(object) {
+                  var oldId = '__custom-';
+                  var newId = 'x-raml-';
+                  for (var id in object) {
+                    if (!object.hasOwnProperty(id))
+                      continue;
+                    if (_typeof(object[id]) === 'object') {
+                      this.replaceCustomProperties(object[id]);
+                    }
+                    if (_.startsWith(id, oldId)) {
+                      var replaceId = _.replace(id, new RegExp(oldId, 'g'), newId);
+                      this.addExtension(object, replaceId, object[id]);
+                      delete object[id];
+                    }
+                  }
                 }  // from ref=type1 to $ref=#/definitions/type1
               },
               {
                 key: 'convertRefFromModel',
                 value: function convertRefFromModel(object, isSchema, isProperty) {
                   if (xmlHelper.isXml(object)) {
-                    object = {
-                      type: 'object',
-                      'x-raml-xsd-definition': object
-                    };
+                    var o = object;
+                    object = { type: 'object' };
+                    this.addExtension(object, 'x-raml-xsd-definition', o);
                   }
                   if (object.hasOwnProperty('definitions') && object.hasOwnProperty('items') && object.type == 'array') {
                     object = Swagger.convertDefinitions(object);
@@ -38582,7 +38645,7 @@
                         delete object.allOf;
                       }
                     } else if (id === 'schemaPath') {
-                      object['x-raml-xsd-definition'] = val;
+                      this.addExtension(object, 'x-raml-xsd-definition', val);
                       delete object[id];
                     } else if (typeof val === 'string') {
                       if (id == 'ref') {
@@ -38596,16 +38659,51 @@
                       }
                     } else if (val && (typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object') {
                       if (id === 'example' || id === 'examples') {
-                        object = Swagger._convertExamples(object, isSchema);
+                        object = this._convertExamples(object, isSchema);
                         id = 'example';
                       } else if (id !== 'xml') {
                         object[id] = this.convertRefFromModel(val, isSchema, id == 'properties' && !isProperty);
                       }
                     }
-                    if (!_.isArray(object) && (typeof object === 'undefined' ? 'undefined' : _typeof(object)) == 'object' && !isProperty && swaggerHelper.getSupportedSchemaFields.indexOf(id) < 0) {
-                      object['x-raml-' + id] = val;
+                    if (!_.isArray(object) && (typeof object === 'undefined' ? 'undefined' : _typeof(object)) == 'object' && !isProperty && swaggerHelper.getSupportedSchemaFields.indexOf(id) < 0 && !_.startsWith(id, 'x-raml')) {
+                      this.addExtension(object, 'x-raml-' + id, val);
                       delete object[id];
                     }
+                  }
+                  return object;
+                }
+              },
+              {
+                key: '_convertExamples',
+                value: function _convertExamples(object, isSchema) {
+                  if (isSchema) {
+                    if (object.hasOwnProperty('examples')) {
+                      var val = object.examples;
+                      if (!_.isArray(val))
+                        return val;
+                      object.example = val[0];
+                      if (val.length > 1) {
+                        var additionalExamples = [];
+                        for (var i = 1; i < val.length; i++) {
+                          additionalExamples.push(val[i]);
+                        }
+                        this.addExtension(object, 'x-raml-additional-examples', additionalExamples);
+                      }
+                      delete object.examples;
+                    }
+                  } else if (object.hasOwnProperty('example')) {
+                    this.addExtension(object, 'x-raml-example', object.example);
+                    delete object.example;
+                  } else if (object.hasOwnProperty('examples')) {
+                    var _val = object.examples;
+                    if (!_.isArray(_val))
+                      return _val;
+                    var examples = [];
+                    for (var _i = 0; _i < _val.length; _i++) {
+                      examples.push(_val[_i]);
+                    }
+                    this.addExtension(object, 'x-raml-example', examples);
+                    delete object.examples;
                   }
                   return object;
                 }
@@ -38620,13 +38718,18 @@
                   for (var i in endpoint.traits) {
                     if (!endpoint.traits.hasOwnProperty(i))
                       continue;
+                    var traitName = endpoint.traits[i];
+                    if (_.isObject(traitName) && !_.isEmpty(traitName)) {
+                      traitName = Object.keys(traitName)[0];
+                    }
                     var trait = _.find(this.project.Traits, [
                         '_id',
-                        endpoint.traits[i]
+                        traitName
                       ]);
                     if (!trait) {
                       continue;
                     }
+                    //if trait has parameters, copy to method and declare it as x-raml-traits
                     try {
                       var schema = jsonHelper.parse(trait.request.queryString);
                       for (var p in schema.properties) {
@@ -38637,6 +38740,7 @@
                             name: p,
                             in: 'query'
                           })) {
+                          //check if trait is parametric.
                           params.push({ $ref: '#/parameters/' + stringHelper.computeTraitName(trait.name, p) });
                         }
                       }
@@ -38682,8 +38786,8 @@
                     if (!trait) {
                       continue;
                     }
-                    for (var _i in trait.responses) {
-                      var res = trait.responses[_i], code = res.codes && res.codes.length > 0 && parseInt(res.codes[0]) ? res.codes[0] : 'default';
+                    for (var _i2 in trait.responses) {
+                      var res = trait.responses[_i2], code = res.codes && res.codes.length > 0 && parseInt(res.codes[0]) ? res.codes[0] : 'default';
                       result[code] = { $ref: '#/responses/' + stringHelper.computeTraitName(trait.name, code) };
                     }
                   }
@@ -38701,7 +38805,7 @@
                       var resource = resources[index];
                       this._mapEndpoints(swaggerDef, env, resource.endpoints);
                       if (resource.hasOwnProperty('is')) {
-                        swaggerDef.paths[resource.path]['x-raml-is'] = resource.is;
+                        this.addExtension(swaggerDef.paths[resource.path], 'x-raml-is', resource.is);
                       }
                       if (!_.isEmpty(resource.annotations) || resource.displayName || resource.description) {
                         if (!swaggerDef.paths[resource.path]) {
@@ -38715,10 +38819,10 @@
                         swaggerDef.paths[resource.path][id] = annotation || '';
                       }
                       if (resource.displayName) {
-                        swaggerDef.paths[resource.path]['x-raml-resource-displayName'] = resource.displayName;
+                        this.addExtension(swaggerDef.paths[resource.path], 'x-raml-resource-displayName', resource.displayName);
                       }
                       if (resource.description) {
-                        swaggerDef.paths[resource.path]['x-raml-resource-description'] = resource.description;
+                        this.addExtension(swaggerDef.paths[resource.path], 'x-raml-resource-description', resource.description);
                       }
                     }
                   } else {
@@ -38781,6 +38885,9 @@
                       _.merge(swaggerDef.paths[endpoint.Path][endpoint.Method], bodies);
                     }
                     //Is it OK to include produces/consumes in all cases?
+                    if (endpoint.hasOwnProperty('is')) {
+                      this.addExtension(swaggerDef.paths[endpoint.Path][endpoint.Method], 'x-raml-is', endpoint.is);
+                    }
                     if (endpoint.SecuredBy) {
                       var security = Swagger._mapEndpointSecurity(endpoint.SecuredBy, this.project.Environment.SecuritySchemes);
                       if (!_.isEmpty(security)) {
@@ -38830,12 +38937,12 @@
                     if (!traits.hasOwnProperty(i))
                       continue;
                     var trait = traits[i];
-                    for (var _i2 in trait.responses) {
-                      var res = trait.responses[_i2];
+                    for (var _i3 in trait.responses) {
+                      var res = trait.responses[_i3];
                       var responseName = stringHelper.computeTraitName(trait.name, res.codes && res.codes.length > 0 && parseInt(res.codes[0]) ? res.codes[0] : 'default');
                       var response = this.mapResponseBody(res);
                       if (response.hasOwnProperty('schema') && response['schema'].hasOwnProperty('$ref') && _.includes(response['schema']['$ref'], '<<')) {
-                        response['schema']['x-raml-type'] = response['schema']['$ref'];
+                        this.addExtension(response['schema'], 'x-raml-type', response['schema']['$ref']);
                         delete response['schema']['$ref'];
                       }
                       responses[responseName] = response;
@@ -38889,6 +38996,7 @@
                 value: function _export() {
                   //TODO
                   var swaggerDef = new SwaggerDefinition(this.project.Name, this.project.Description);
+                  this.replaceCustomProperties(this.project);
                   var env = this.project.Environment;
                   swaggerDef.info.version = env.Version;
                   swaggerDef.BasePath = env.BasePath || '';
@@ -38913,6 +39021,12 @@
                   } else {
                     delete swaggerDef.parameters;
                   }
+                  var parametricParameters = this._mapTraitParameters(this.project.parametricTraits);
+                  if (!_.isEmpty(parametricParameters)) {
+                    this.addExtension(swaggerDef, 'x-raml-traits', parametricParameters);
+                  } else {
+                    delete swaggerDef['x-raml-traits'];
+                  }
                   var responses = this._mapTraitResponses(this.project.Traits);
                   if (!_.isEmpty(responses)) {
                     swaggerDef.responses = responses;
@@ -38925,22 +39039,12 @@
                   if (swaggerDef.securityDefinitions && _.isEmpty(swaggerDef.securityDefinitions)) {
                     delete swaggerDef.securityDefinitions;
                   }
-                  swaggerDef['x-raml-uses'] = this.project.uses;
+                  this.addExtension(swaggerDef, 'x-raml-uses', this.project.uses);
+                  Swagger._addPatternedObjects(this.project, swaggerDef);
                   this.data = jsonHelper.toJSON(swaggerDef);
                 }
               }
             ], [
-              {
-                key: 'mapExample',
-                value: function mapExample(data, target) {
-                  if (!_.isEmpty(data.example)) {
-                    var example = jsonHelper.parse(data.example);
-                    if (!_.isEmpty(example)) {
-                      target.example = example;
-                    }
-                  }
-                }
-              },
               {
                 key: '_validateParameters',
                 value: function _validateParameters(parameters) {
@@ -39064,10 +39168,10 @@
                           }
                         }
                         if (current.hasOwnProperty('queryString') && current.queryString.length > 0) {
-                          for (var _i3 in current.queryString) {
-                            if (!current.queryString.hasOwnProperty(_i3))
+                          for (var _i4 in current.queryString) {
+                            if (!current.queryString.hasOwnProperty(_i4))
                               continue;
-                            var _header = current.queryString[_i3];
+                            var _header = current.queryString[_i4];
                             result[current.name] = {
                               name: _header.name,
                               type: type,
@@ -39087,10 +39191,10 @@
                           var _current3 = sd[_index4];
                           var slScopes = _current3.scopes;
                           var swaggerScopes = {};
-                          for (var _i4 in slScopes) {
-                            if (!slScopes.hasOwnProperty(_i4))
+                          for (var _i5 in slScopes) {
+                            if (!slScopes.hasOwnProperty(_i5))
                               continue;
-                            var scope = slScopes[_i4];
+                            var scope = slScopes[_i5];
                             swaggerScopes[scope.name] = scope.value;
                           }
                           var oauth2 = {
@@ -39136,93 +39240,23 @@
                 }
               },
               {
-                key: 'mapHeaderProperties',
-                value: function mapHeaderProperties(headers) {
-                  for (var i in headers) {
-                    if (!headers.hasOwnProperty(i))
-                      continue;
-                    var header = headers[i];
-                    if (header.hasOwnProperty('required')) {
-                      header['x-raml-required'] = header['required'];
-                      delete header.required;
-                    }
-                    if (header.hasOwnProperty('repeat')) {
-                      header['x-raml-repeat'] = header['repeat'];
-                      delete header.repeat;
-                    }
-                  }
-                }
-              },
-              {
-                key: '_hasAttributes',
-                value: function _hasAttributes(object, atts) {
-                  for (var id in object) {
-                    if (!object.hasOwnProperty(id))
-                      continue;
-                    var val = object[id];
-                    if (atts.indexOf(id) >= 0) {
-                      object['x-raml-' + id] = val;
-                      delete object[id];
-                    } else {
-                      if ((typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object') {
-                        object[id] = Swagger._hasAttributes(val, atts);
-                      }
-                    }
-                  }
-                  return object;
-                }
-              },
-              {
                 key: 'convertDefinitions',
                 value: function convertDefinitions(object) {
-                  var ref = object.items.$ref.split('/');
-                  var item = ref[ref.length - 1];
-                  var definitions = object.definitions;
-                  for (var id in definitions) {
-                    if (!definitions.hasOwnProperty(id))
-                      continue;
-                    if (id === item) {
-                      object['items'] = definitions[id];
-                      delete definitions[id];
-                      if (_.isEmpty(object.definitions))
-                        delete object['definitions'];
-                      break;
-                    }
-                  }
-                  return object;
-                }
-              },
-              {
-                key: '_convertExamples',
-                value: function _convertExamples(object, isSchema) {
-                  if (isSchema) {
-                    if (object.hasOwnProperty('examples')) {
-                      var val = object.examples;
-                      if (!_.isArray(val))
-                        return val;
-                      object.example = val[0];
-                      if (val.length > 1) {
-                        var additionalExamples = [];
-                        for (var i = 1; i < val.length; i++) {
-                          additionalExamples.push(val[i]);
-                        }
-                        object['x-raml-additional-examples'] = additionalExamples;
+                  if (object.items.hasOwnProperty('$ref')) {
+                    var ref = object.items.$ref.split('/');
+                    var item = ref[ref.length - 1];
+                    var definitions = object.definitions;
+                    for (var id in definitions) {
+                      if (!definitions.hasOwnProperty(id))
+                        continue;
+                      if (id === item) {
+                        object['items'] = definitions[id];
+                        delete definitions[id];
+                        if (_.isEmpty(object.definitions))
+                          delete object['definitions'];
+                        break;
                       }
-                      delete object.examples;
                     }
-                  } else if (object.hasOwnProperty('example')) {
-                    object['x-raml-example'] = object.example;
-                    delete object.example;
-                  } else if (object.hasOwnProperty('examples')) {
-                    var _val = object.examples;
-                    if (!_.isArray(_val))
-                      return _val;
-                    var examples = [];
-                    for (var _i5 = 0; _i5 < _val.length; _i5++) {
-                      examples.push(_val[_i5]);
-                    }
-                    object['x-raml-example'] = examples;
-                    delete object.examples;
                   }
                   return object;
                 }
@@ -39782,7 +39816,7 @@
           if (superClass)
             Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
         }
-        var parser = window.RAML.Parser, Endpoint = require('../entities/endpoint'), Importer = require('./importer'), Project = require('../entities/project'), jsonHelper = require('../utils/json'), xmlHelper = require('../utils/xml'), ramlHelper = require('../helpers/raml'), url = require('url'), _ = require('lodash');
+        var Endpoint = require('../entities/endpoint'), Importer = require('./importer'), Project = require('../entities/project'), jsonHelper = require('../utils/json'), xmlHelper = require('../utils/xml'), ramlHelper = require('../helpers/raml'), url = require('url'), _ = require('lodash');
         var toJSONOptions = { serializeMetadata: false };
         //TODO multi file support isn't justified
         var RAMLImporter = function (_Importer) {
@@ -39793,23 +39827,6 @@
               _this.schemas = [];
               return _this;
             }
-            // _getSecuritySchemeSettingsByName(schemeName) {
-            // 	const securitySchemes = this.data.securitySchemes;
-            // 	for (const i in securitySchemes) {
-            // 		if (!securitySchemes.hasOwnProperty(i)) continue;
-            //
-            // 		const entries = _.entries(securitySchemes[i]);
-            // 		for (let index = 0; index < entries.length; index++) {
-            // 			const entry = entries[index];
-            // 			const key = entry[0];
-            // 			const value = entry[1];
-            //
-            // 			if (schemeName === key) {
-            // 				return value;
-            // 			}
-            // 		}
-            // 	}
-            // }
             _createClass(RAMLImporter, [
               {
                 key: '_mapSecuritySchemes',
@@ -40010,7 +40027,7 @@
                     }
                     result.codes = [response.code];
                     if (result.body) {
-                      result.body = jsonHelper.cleanSchema(result.body);
+                      result.body = jsonHelper.parse(jsonHelper.cleanSchema(result.body));
                     }
                     if (response.headers) {
                       var r = {};
@@ -40028,12 +40045,10 @@
                       }
                       result.headers = r;
                     }
-                    if (result.example) {
-                      result.example = jsonHelper.stringify(result.example, 4);
-                    }
                     if (response.description) {
                       result.description = jsonHelper.stringify(response.description);
                     }
+                    RAMLImporter._addAnnotations(response, result);
                     data.push(result);
                   }
                   return data;
@@ -40206,13 +40221,16 @@
                       endpoint.Responses = this._mapResponseBody(method.responses);
                     }
                     endpoint.traits = [];
-                    var isMethod = method.is || resource.is;
+                    var isMethod = _.union(resource.is, method.is);
                     if (isMethod) {
                       if (isMethod instanceof Array) {
                         endpoint.traits = isMethod;
                       } else if (isMethod instanceof Object) {
                         endpoint.traits = Object.keys(isMethod);
                       }
+                    }
+                    if (method.hasOwnProperty('is')) {
+                      endpoint.is = method.is;
                     }
                     endpoint.PathParams = resultParams;
                     //endpoint security
@@ -40259,6 +40277,7 @@
                 value: function loadFile(filePath, options) {
                   var _this2 = this;
                   return new Promise(function (resolve, reject) {
+                    var parser = window.RAML.Parser;
                     parser.loadApi(filePath, RAMLImporter._options(options)).then(function (api) {
                       try {
                         _this2.data = api.expand(true).toJSON(toJSONOptions);
@@ -40276,6 +40295,7 @@
                   var _this3 = this;
                   return new Promise(function (resolve, reject) {
                     try {
+                      var parser = window.RAML.Parser;
                       var parsedData = parser.parseRAMLSync(data, RAMLImporter._options(options));
                       if (parsedData.name === 'Error') {
                         reject(error);
@@ -40299,7 +40319,7 @@
               },
               {
                 key: '_mapTraits',
-                value: function _mapTraits(traitGroups) {
+                value: function _mapTraits(traitGroups, parametric) {
                   var slTraits = [];
                   for (var i in traitGroups) {
                     if (!traitGroups.hasOwnProperty(i))
@@ -40322,10 +40342,14 @@
                         delete slTrait.description;
                       }
                       if (trait.queryParameters) {
-                        slTrait.request.queryString = this._mapQueryParameters(trait.queryParameters);
+                        var queryString = RAMLImporter._filterParametricTraits(this._mapQueryParameters(trait.queryParameters), parametric);
+                        if (!_.isEmpty(queryString.properties))
+                          slTrait.request.queryString = queryString;
                       }
                       if (trait.headers) {
-                        slTrait.request.headers = this._mapRequestHeaders(trait.headers);
+                        var headers = RAMLImporter._filterParametricTraits(this._mapRequestHeaders(trait.headers), parametric);
+                        if (!_.isEmpty(headers.properties))
+                          slTrait.request.headers = headers;
                       }
                       if (trait.responses) {
                         slTrait.responses = this._mapResponseBody(trait.responses);
@@ -40390,8 +40414,10 @@
                         continue;
                       project.addSchema(schemas[s]);
                     }
-                    project.traits = this._mapTraits(this.data.traits);
+                    project.traits = this._mapTraits(this.data.traits, false);
+                    project.parametricTraits = this._mapTraits(this.data.traits, true);
                     project.uses = this.data.uses;
+                    RAMLImporter._addAnnotations(this.data, project);
                     return project;
                   } catch (e) {
                     console.error('raml#import', e);
@@ -40448,6 +40474,12 @@
               }
             ], [
               {
+                key: 'getCustomProperty',
+                value: function getCustomProperty(propName) {
+                  return '__custom-' + propName;
+                }
+              },
+              {
                 key: '_filterPropertiesFromTraits',
                 value: function _filterPropertiesFromTraits(params, traits, propertyName) {
                   for (var i in traits) {
@@ -40462,14 +40494,33 @@
                           if (!param[propertyName].hasOwnProperty(k))
                             continue;
                           var p = param[propertyName][k];
+                          var isParametricTrait = RAMLImporter._isParametricTrait(p);
                           var found = _.find(params, { name: p.name });
-                          if (found) {
+                          if (found && !isParametricTrait) {
                             delete params[k];
                           }
                         }
                       }
                     }
                   }
+                }
+              },
+              {
+                key: '_isParametricTrait',
+                value: function _isParametricTrait(trait) {
+                  var result = false;
+                  for (var id in trait) {
+                    if (!trait.hasOwnProperty(id))
+                      continue;
+                    var prop = trait[id];
+                    if ((typeof prop === 'undefined' ? 'undefined' : _typeof(prop)) === 'object' && id !== 'required') {
+                      result = this._isParametricTrait(prop);
+                    } else {
+                      if (_.includes(prop, '<<') && _.includes(prop, '>>'))
+                        result = true;
+                    }
+                  }
+                  return result;
                 }
               },
               {
@@ -40495,28 +40546,28 @@
                     break;
                   case 'time-only':
                     object.type = 'string';
-                    object['x-raml-format'] = 'time-only';
+                    object[RAMLImporter.getCustomProperty('format')] = 'time-only';
                     break;
                   case 'datetime-only':
                     object.type = 'string';
-                    object['x-raml-format'] = 'datetime-only';
+                    object[RAMLImporter.getCustomProperty('format')] = 'datetime-only';
                     break;
                   case 'datetime':
                     object.type = 'string';
                     if (object.format == 'rfc3339' || !object.hasOwnProperty('format')) {
                       object.format = 'date-time';
                     } else {
-                      object['x-raml-format'] = object.format;
+                      object[RAMLImporter.getCustomProperty('format')] = object.format;
                       delete object.format;
                     }
                     break;
                   case 'file':
                     if (isSchema) {
                       object.type = 'string';
-                      object['x-raml-type'] = 'file';
+                      object[RAMLImporter.getCustomProperty('type')] = 'file';
                     }
                     if (object.hasOwnProperty('fileTypes')) {
-                      object['x-raml-fileTypes'] = object['fileTypes'];
+                      object[RAMLImporter.getCustomProperty('fileTypes')] = object['fileTypes'];
                       delete object['fileTypes'];
                     }
                     break;
@@ -40524,7 +40575,7 @@
                     if (typeof type === 'string' && (type.includes('|') || type.includes('?'))) {
                       object.type = 'object';
                     } else if ((typeof type === 'undefined' ? 'undefined' : _typeof(type)) !== 'object' && ramlHelper.getRAML10ScalarTypes.indexOf(type) < 0) {
-                      object['x-raml-type'] = type;
+                      object[RAMLImporter.getCustomProperty('type')] = type;
                       object.type = 'string';
                     }
                     break;
@@ -40609,6 +40660,30 @@
                 }
               },
               {
+                key: '_filterParametricTraits',
+                value: function _filterParametricTraits(traits, parametric) {
+                  var result = {
+                      properties: {},
+                      required: []
+                    };
+                  for (var id in traits.properties) {
+                    if (!traits.properties.hasOwnProperty(id))
+                      continue;
+                    var trait = traits.properties[id];
+                    var isParametric = RAMLImporter._isParametricTrait(trait);
+                    if (isParametric && !parametric)
+                      continue;
+                    if (!isParametric && parametric)
+                      continue;
+                    result.properties[id] = trait;
+                    if (_.indexOf(traits.required, id) >= 0) {
+                      result.required.push(id);
+                    }
+                  }
+                  return result;
+                }
+              },
+              {
                 key: '_addAnnotations',
                 value: function _addAnnotations(source, target) {
                   if (!source.annotations)
@@ -40620,7 +40695,7 @@
                     if (_.startsWith(i, 'oas-'))
                       continue;
                     var value = annotations[i];
-                    var key = 'x-raml-annotation-' + i;
+                    var key = 'x-annotation-' + i;
                     target[key] = value.structuredValue || '';
                   }
                   if (target.annotations)
@@ -40645,7 +40720,7 @@
                       object.example.strict = false;
                     }
                     if (example.hasOwnProperty('name') && example.name) {
-                      object.example['x-raml-example-name'] = example.name;
+                      object.example[RAMLImporter.getCustomProperty('example-name')] = example.name;
                     }
                   } else if (object.hasOwnProperty('examples')) {
                     var examples = object.examples;
@@ -40662,7 +40737,7 @@
                         object.examples[id].strict = false;
                       }
                       if (_example.hasOwnProperty('name') && _example.name) {
-                        object.examples[id]['x-raml-example-name'] = _example.name;
+                        object.examples[id][RAMLImporter.getCustomProperty('example-name')] = _example.name;
                       }
                     }
                   }
@@ -40908,7 +40983,11 @@
                     data.example = methodBody.example;
                   }
                   if (methodBody.schema) {
-                    data.body = RAML08Importer._mapSchema(this.convertRefToModel(jsonHelper.parse(methodBody.schema), false));
+                    if (methodBody.schema.hasOwnProperty('definitions')) {
+                      this.data.types = _.concat(this.data.types, methodBody.schema.definitions);
+                      delete methodBody.schema.definitions;
+                    }
+                    data.body = this._mapSchema(this.convertRefToModel(jsonHelper.parse(methodBody.schema), false));
                   } else if (methodBody.formParameters) {
                     data.body = {
                       type: 'object',
@@ -40960,13 +41039,53 @@
                         continue;
                       var sd = new Schema(schemaName);
                       sd.Name = schemaName;
-                      var definition = RAML08Importer._mapSchema(schemData[i][schemaName], true);
-                      sd.Definition = jsonHelper.cleanSchema(definition);
+                      var definition = this._mapSchema(schemData[i][schemaName], true);
+                      sd.Definition = jsonHelper.parse(jsonHelper.cleanSchema(definition));
                       schemas.push(sd);
                     }
                   }
                   return schemas;
                 }
+              },
+              {
+                key: '_mapSchema',
+                value: function _mapSchema(definition, isSchema) {
+                  definition = jsonHelper.parse(definition);
+                  if (definition.properties && !_.isEmpty(definition.properties)) {
+                    definition = RAML08Importer.convertObjectProperty(definition);
+                  }
+                  for (var id in definition) {
+                    if (!definition.hasOwnProperty(id))
+                      continue;
+                    var val = definition[id];
+                    if (id === 'items') {
+                      if (_.isArray(val) && val.length == 0)
+                        definition[id] = { type: 'string' };
+                      else if (!_.isArray(val) && (typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object')
+                        val = this._mapSchema(val);
+                    }
+                    if (id === 'type') {
+                      if (_.isArray(val)) {
+                        if (val.length == 1)
+                          val = val[0];
+                        else if (val.length == 0) {
+                          definition[id] = 'array';
+                          definition['items'] = { type: 'string' };
+                          val = 'array';
+                        }
+                      }
+                      if (typeof val === 'string' && val != 'object' && ramlHelper.getRAML08ScalarTypes.indexOf(val) < 0) {
+                        definition[RAMLImporter.getCustomProperty('type')] = val;
+                        definition.type = 'string';
+                      }
+                      if (typeof val === 'string' && val === 'array' && !definition.hasOwnProperty('items'))
+                        definition['items'] = { type: 'string' };
+                    } else if ((typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object') {
+                      this._mapSchema(val, isSchema);
+                    }
+                  }
+                  return definition;
+                }  //noinspection JSMethodCanBeStatic
               },
               {
                 key: 'getSchemas',
@@ -41016,8 +41135,7 @@
                   }
                 }
               }
-            ], [
-              {
+            ], [{
                 key: 'convertObjectProperty',
                 value: function convertObjectProperty(source) {
                   var target = Object.assign({}, source);
@@ -41035,7 +41153,7 @@
                       target[paramName] = RAML08Importer.convertObjectProperty(param);
                     } else if (param.hasOwnProperty('required')) {
                       //required
-                      if (param.required === true) {
+                      if (param.required === true && target.required.indexOf(paramName) < 0) {
                         target['required'].push(paramName);
                       }
                       delete param.required;
@@ -41049,48 +41167,7 @@
                   }
                   return target;
                 }
-              },
-              {
-                key: '_mapSchema',
-                value: function _mapSchema(definition, isSchema) {
-                  definition = jsonHelper.parse(definition);
-                  if (definition.properties && !_.isEmpty(definition.properties)) {
-                    definition = RAML08Importer.convertObjectProperty(definition);
-                  }
-                  for (var id in definition) {
-                    if (!definition.hasOwnProperty(id))
-                      continue;
-                    var val = definition[id];
-                    if (id === 'items') {
-                      if (_.isArray(val) && val.length == 0)
-                        definition[id] = { type: 'string' };
-                      else if (!_.isArray(val) && (typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object')
-                        val = RAML08Importer._mapSchema(val);
-                    }
-                    if (id === 'type') {
-                      if (_.isArray(val)) {
-                        if (val.length == 1)
-                          val = val[0];
-                        else if (val.length == 0) {
-                          definition[id] = 'array';
-                          definition['items'] = { type: 'string' };
-                          val = 'array';
-                        }
-                      }
-                      if (typeof val === 'string' && val != 'object' && ramlHelper.getRAML08ScalarTypes.indexOf(val) < 0) {
-                        definition['x-raml-type'] = val;
-                        definition.type = 'string';
-                      }
-                      if (typeof val === 'string' && val === 'array' && !definition.hasOwnProperty('items'))
-                        definition['items'] = { type: 'string' };
-                    } else if ((typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object') {
-                      RAML08Importer._mapSchema(val, isSchema);
-                    }
-                  }
-                  return definition;
-                }
-              }
-            ]);
+              }]);
             return RAML08Importer;
           }(RAMLImporter);
         module.exports = RAML08Importer;
@@ -41217,6 +41294,10 @@
                     var schema = _.isArray(methodBody.schema) ? methodBody.schema[0] : methodBody.schema;
                     if ((typeof schema === 'undefined' ? 'undefined' : _typeof(schema)) !== 'object')
                       schema = jsonHelper.parse(schema);
+                    if (schema.hasOwnProperty('definitions')) {
+                      this.data.types = _.concat(this.data.types, schema.definitions);
+                      delete schema.definitions;
+                    }
                     data.body = this._mapSchema(this.convertRefToModel({ type: schema }, false), false);
                   } else if (methodBody.type && !_.isEmpty(methodBody.type) && methodBody.type[0] !== 'object') {
                     data.body = this._mapSchema(methodBody, false);  // data.body = RAMLImporter.convertRefToModel({
@@ -41280,7 +41361,7 @@
                     } else {
                       if (_.isArray(param.type) && param.type.length > 1) {
                         RAML10Importer._removeHarmlessChars(param.type);
-                        RAML10Importer._modifyUnionType(param);
+                        RAML10Importer._modifyUnionTypeDef(param);
                         param.allOf = param.type;
                         delete param.type;
                       }
@@ -41318,7 +41399,7 @@
                     if (_.isArray(definition.type)) {
                       RAML10Importer._removeHarmlessChars(definition.type);
                       //remove ( and )
-                      RAML10Importer._modifyUnionType(definition);
+                      RAML10Importer._modifyUnionTypeDef(definition);
                     }
                     if (properties) {
                       //type and properties
@@ -41473,11 +41554,11 @@
               }
             ], [
               {
-                key: '_modifyUnionType',
-                value: function _modifyUnionType(definition) {
+                key: '_modifyUnionTypeDef',
+                value: function _modifyUnionTypeDef(definition) {
                   var type = definition.type;
                   if (type.length > 1) {
-                    definition['x-raml-union-type-definition'] = '[' + _.join(type, ',') + ']';
+                    definition[RAMLImporter.getCustomProperty('union-type-definition')] = '[' + _.join(type, ',') + ']';
                   }
                   for (var index in type) {
                     if (!type.hasOwnProperty(index))
@@ -41554,13 +41635,14 @@
                   }
                   if (info.hasOwnProperty('pattern')) {
                     if (!target.hasOwnProperty('additionalProperties')) {
-                      target.additionalProperties = { 'x-raml-additional-properties-info': [] };
+                      target.additionalProperties = {};
+                      target.additionalProperties[RAMLImporter.getCustomProperty('additional-properties-info')] = [];
                     }
                     if (!target.additionalProperties.type)
                       target.additionalProperties.type = info.type;
                     else
                       target.additionalProperties.type = 'object';
-                    target.additionalProperties['x-raml-additional-properties-info'].push(info);
+                    target.additionalProperties[RAMLImporter.getCustomProperty('additional-properties-info')].push(info);
                   } else {
                     target.additionalProperties = {};
                     target.additionalProperties.type = info.type;
@@ -41582,7 +41664,7 @@
                     delete facet.typePropertyKind;
                     result.push(facet);
                   }
-                  definition['x-raml-facets'] = result;
+                  definition[RAMLImporter.getCustomProperty('facets')] = result;
                   delete definition.facets;
                   return definition;
                 }
@@ -41597,7 +41679,7 @@
                     if (definition.hasOwnProperty(key)) {
                       definition[key] = fixedFacets[key];
                     } else {
-                      definition['x-raml-facets-' + key] = fixedFacets[key];
+                      definition[RAMLImporter.getCustomProperty('facets-' + key)] = fixedFacets[key];
                     }
                   }
                   delete definition.fixedFacets;
@@ -42746,6 +42828,8 @@
           },
           isJson: function isJson(str) {
             try {
+              if (!_.startsWith(str, '{') || !_.endsWith(str, '}'))
+                return false;
               JSON.parse(str);
             } catch (e) {
               return false;
