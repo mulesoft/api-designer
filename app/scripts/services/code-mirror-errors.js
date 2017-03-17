@@ -56,6 +56,10 @@
         };
 
         function isMouseOverElement(element, e) {
+          if (!e) {
+            return false;
+          }
+
           var left = $(element).offset().left;
           var right = left + $(element).outerWidth();
           var mouseOverX = left <= e.clientX && e.clientX <= right + 5;
