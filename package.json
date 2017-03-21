@@ -57,7 +57,9 @@
     "mocha": "~2.0.0",
     "request": "~2.33.0",
     "selenium-webdriver": "2.53.2",
-    "traverse": "~0.6.6"
+    "traverse": "~0.6.6",
+    "sinon-chai": "~2.8.0",
+    "sinon": "~1.12.2"
   },
   "scripts": {
     "build": "grunt build",
