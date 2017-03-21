@@ -211,6 +211,14 @@
         return cm;
       };
 
+      service.setLine = function (editor, lineNumber, text) {
+        editor.replaceRange(text, {line: lineNumber, ch: 0}, {line: lineNumber});
+      };
+
+      service.removeLine = function (editor, lineNumber) {
+        editor.replaceRange('', {line: lineNumber === 0 ? lineNumber : lineNumber - 1}, {line: lineNumber});
+      };
+
       service.getEditor = function () {
         return editor;
       };

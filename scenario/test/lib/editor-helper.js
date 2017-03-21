@@ -65,12 +65,12 @@ EditorHelper.prototype.getErrorLine = function getErrorLine(){
 
 EditorHelper.prototype.setLine = function setLine(line, text){
   line --;
-  return browser.executeScript('window.editor.setLine(' + line + ',"' + text + '")');
+  return browser.executeScript('window.editor.replaceRange("' + text + '", { line:' + line + ', ch: 0}, { line:' + line + '})');
 };
 
 EditorHelper.prototype.removeLine = function removeLine(line){
   line --;
-  return browser.executeScript('window.editor.removeLine(' + line + ')');
+  return browser.executeScript('window.editor.replaceRange("", { line:' + line + ', ch: 0}, { line:' + line + '})');
 };
 
 EditorHelper.prototype.getLine = function getLine(line){

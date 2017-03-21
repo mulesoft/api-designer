@@ -5,11 +5,12 @@
     .controller('mockingServiceController', function mockingServiceControllerFactory(
       $scope,
       mockingService,
+      codeMirror,
       getNode
     ) {
       function addBaseUri() {
         function setLine(lineNumber, line, prefix) {
-          $scope.editor.setLine(lineNumber, (prefix || '') + $scope.editor.getLine(lineNumber) + '\n' + line);
+          codeMirror.setLine($scope.editor, lineNumber, (prefix || '') + $scope.editor.getLine(lineNumber) + '\n' + line);
         }
 
         var baseUri = 'baseUri: ' + $scope.mock.baseUri;
@@ -50,7 +51,7 @@
           line = $scope.editor.getLine(lineNumber).trim();
 
           if (line === baseUriLine) {
-            $scope.editor.removeLine(lineNumber);
+            codeMirror.removeLine($scope.editor, lineNumber);
             break;
           }
         }
@@ -61,7 +62,7 @@
           line = $scope.editor.getLine(lineNumber).trim();
 
           if (line.indexOf('#') === 0 && line.slice(1).trim().indexOf('baseUri: ') === 0) {
-            $scope.editor.setLine(lineNumber, line.slice(1).trim());
+            codeMirror.setLine($scope.editor, lineNumber, line.slice(1).trim());
             break;
           }
         }
