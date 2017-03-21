@@ -56,7 +56,7 @@
 
     <div ng-show="getIsConsoleVisible()" role="preview-wrapper" class="raml-console-embedded">
       <div ng-if="!splitterCollapsed_consoleAndEditor && getIsConsoleVisible()">
-        <raml-console raml="raml"
+        <raml-console raml="raml" disable-description="true"
             options="{ singleView: true, disableThemeSwitcher: true, disableRamlClientGenerator: true, disableTitle: true}"
             style="padding: 0; margin-top: 0;"></raml-console>
       </div>
