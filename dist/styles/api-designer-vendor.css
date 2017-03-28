@@ -3129,20 +3129,6 @@ th {
   -webkit-font-smoothing: antialiased;
 }
 
-.raml-console-show-more-less {
-  cursor: default;
-  color: blue;
-  font-size: small;
-}
-
-.raml-console-root-description {
-  font-size: medium;
-}
-
-.raml-console-root-description p {
-  margin-bottom: 3px;
-}
-
 .raml-console-title {
   font-size: 24px;
   text-align: center;

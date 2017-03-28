@@ -1105,6 +1105,9 @@ div.CodeMirror {
 [role=raml-editor] .raml-console-sidebar-response-item {
   font-size: 14px;
 }
+[role=raml-editor] .raml-console-resource-path-container {
+  padding-bottom: 12px;
+}
 
 * {
   -moz-box-sizing: border-box;
