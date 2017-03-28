@@ -73318,13 +73318,16 @@ if (!String.prototype.endsWith) {
         var tt = document.createElement('div');
         tt.className = 'CodeMirror-lint-tooltip';
         tt.appendChild(content.cloneNode(true));
+        // need to append element to DOM to get its height
+        tt.style.visibility = 'hidden';
+        document.body.appendChild(tt);
         var offset = $(node).offset();
-        tt.style.top = Math.max(0, offset.top - tt.offsetHeight - 5) + 'px';
+        tt.style.top = Math.max(0, offset.top - tt.offsetHeight) + 'px';
         tt.style.left = offset.left + 20 + 'px';
         if (tt.style.opacity !== null) {
           tt.style.opacity = 1;
         }
-        document.body.appendChild(tt);
+        tt.style.visibility = 'visible';
         return tt;
       }
       function rm(elt) {
