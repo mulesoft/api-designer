@@ -7,7 +7,6 @@ before_script:
   - npm install -g bower
   - bower update
   - node_modules/grunt-protractor-runner/node_modules/protractor/bin/webdriver-manager update
-  - grunt build
 before_install:
   - "export DISPLAY=:99.0"
   - "sh -e /etc/init.d/xvfb start"
