@@ -2451,7 +2451,12 @@
             var api = parentNode && parentNode.root && parentNode.root();
             api && api.lowLevel() && api.lowLevel().unit() && visibleScopes.push(api.lowLevel().unit().absolutePath());
             api && api.wrapperNode && api.wrapperNode() && api.wrapperNode().uses && api.wrapperNode().uses().forEach(function (usesDeclaration) {
-              usesDeclaration && usesDeclaration.value && usesDeclaration.value() && visibleScopes.push(api.lowLevel().unit().resolve(usesDeclaration.value()).absolutePath());
+              if (usesDeclaration && usesDeclaration.value && usesDeclaration.value()) {
+                var resolvedUnit = api.lowLevel().unit().resolve(usesDeclaration.value());
+                if (resolvedUnit) {
+                  visibleScopes.push(resolvedUnit.absolutePath());
+                }
+              }
             });
             var definitionNodes = parserApi.search.globalDeclarations(parentNode).filter(function (node) {
                 var nodeLocation = node.lowLevel().unit().absolutePath();
@@ -7309,7 +7314,7 @@
           };
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
       },
-      { '_process': 244 }
+      { '_process': 281 }
     ],
     10: [
       function (require, module, exports) {
@@ -7725,7 +7730,7 @@
           return val;
         }
       },
-      { 'ms': 209 }
+      { 'ms': 216 }
     ],
     13: [
       function (require, module, exports) {
@@ -8551,7 +8556,7 @@
           }));
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
       },
-      { '_process': 244 }
+      { '_process': 281 }
     ],
     14: [
       function (require, module, exports) {
@@ -8846,7 +8851,7 @@
           return http.request.call(this, params, cb);
         };
       },
-      { 'http': 263 }
+      { 'http': 300 }
     ],
     17: [
       function (require, module, exports) {
@@ -9004,12 +9009,2388 @@
     21: [
       function (require, module, exports) {
         'use strict';
+        var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
+            return typeof obj;
+          } : function (obj) {
+            return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
+          };
+        var JsonSchemaCompatability = function () {
+            function convert3to4Type(types, always) {
+              if (!Array.isArray(types)) {
+                types = [types];
+              }
+              var needsReplacement = !!always;
+              var result = [];
+              for (var i = 0; i < types.length; i++) {
+                var entry = types[i];
+                if ((typeof entry === 'undefined' ? 'undefined' : _typeof(entry)) === 'object') {
+                  result.push(entry);
+                  needsReplacement = true;
+                } else {
+                  result.push({ 'type': entry });
+                }
+              }
+              return needsReplacement && result;
+            }
+            function convert3to4(obj) {
+              // Old-style "type"
+              if (obj.type) {
+                if (typeof obj.type !== 'string') {
+                  var anyOf = convert3to4Type(obj.type);
+                  if (anyOf) {
+                    obj.anyOf = anyOf;
+                    delete obj.type;
+                  }
+                } else if (obj.type == 'any') {
+                  delete obj.type;
+                }
+              }
+              if (obj['extends']) {
+                var allOf = obj['extends'];
+                if (!Array.isArray(allOf)) {
+                  allOf = [allOf];
+                }
+                obj.allOf = allOf;
+                delete obj['extends'];
+              }
+              if (obj.disallow) {
+                if (typeof obj.disallow === 'string') {
+                  obj.not = { 'type': obj.disallow };
+                } else {
+                  obj.not = { 'anyOf': convert3to4Type(obj.disallow, true) };
+                }
+                delete obj.disallow;
+              }
+              // Object concerns
+              if (obj.properties) {
+                var required = Array.isArray(obj.required) ? obj.required : [];
+                for (var key in obj.properties) {
+                  var subSchema = obj.properties[key];
+                  if (subSchema && typeof subSchema.required === 'boolean') {
+                    if (subSchema.required) {
+                      required.push(key);
+                    }
+                    delete subSchema.required;
+                  }
+                }
+                if (required.length) {
+                  obj.required = required;
+                }
+              }
+              if (obj.dependencies) {
+                for (var key in obj.dependencies) {
+                  if (typeof obj.dependencies[key] === 'string') {
+                    obj.dependencies[key] = [obj.dependencies[key]];
+                  }
+                }
+              }
+              // This is safe as long as we process our children *after* we collect their "required" properties
+              // - otherwise, they'd delete their "required" booleans before we got a chance to see them
+              if (typeof obj.required === 'boolean') {
+                delete obj.required;
+              }
+              // Numeric concerns
+              if (typeof obj.divisibleBy !== 'undefined') {
+                obj.multipleOf = obj.divisibleBy;
+                delete obj.divisibleBy;
+              }
+              // This MUST happen at the end of the function, otherwise it'll screw up "required" collection
+              for (var key in obj) {
+                if (key === 'properties' || key === 'patternProperties' || key === 'dependencies') {
+                  for (var subKey in obj[key]) {
+                    obj[key][subKey] = convert3to4(obj[key][subKey]);
+                  }
+                } else if (key !== 'enum') {
+                  if (Array.isArray(obj[key])) {
+                    for (var i = 0; i < obj[key].length; i++) {
+                      obj[key][i] = convert3to4(obj[key][i]);
+                    }
+                  } else if (_typeof(obj[key]) === 'object') {
+                    obj[key] = convert3to4(obj[key]);
+                  }
+                }
+              }
+              return obj;
+            }
+            var api = { v4: convert3to4 };
+            if (typeof module !== 'undefined') {
+              module.exports = api;
+            }
+            return api;
+          }();
+      },
+      {}
+    ],
+    22: [
+      function (require, module, exports) {
+        /** !
+ * JSON Schema $Ref Parser v3.1.2
+ *
+ * @link https://github.com/BigstickCarpet/json-schema-ref-parser
+ * @license MIT
+ */
+        'use strict';
+        var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
+            return typeof obj;
+          } : function (obj) {
+            return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
+          };
+        var $Ref = require('./ref'), Pointer = require('./pointer'), debug = require('./util/debug'), url = require('./util/url');
+        module.exports = bundle;
+        /**
+ * Bundles all external JSON references into the main JSON schema, thus resulting in a schema that
+ * only has *internal* references, not any *external* references.
+ * This method mutates the JSON schema object, adding new references and re-mapping existing ones.
+ *
+ * @param {$RefParser} parser
+ * @param {$RefParserOptions} options
+ */
+        function bundle(parser, options) {
+          debug('Bundling $ref pointers in %s', parser.$refs._root$Ref.path);
+          // Build an inventory of all $ref pointers in the JSON Schema
+          var inventory = [];
+          crawl(parser, 'schema', parser.$refs._root$Ref.path + '#', '#', inventory, parser.$refs, options);
+          // Remap all $ref pointers
+          remap(inventory);
+        }
+        /**
+ * Recursively crawls the given value, and inventories all JSON references.
+ *
+ * @param {object} parent - The object containing the value to crawl. If the value is not an object or array, it will be ignored.
+ * @param {string} key - The property key of `parent` to be crawled
+ * @param {string} path - The full path of the property being crawled, possibly with a JSON Pointer in the hash
+ * @param {string} pathFromRoot - The path of the property being crawled, from the schema root
+ * @param {object[]} inventory - An array of already-inventoried $ref pointers
+ * @param {$Refs} $refs
+ * @param {$RefParserOptions} options
+ */
+        function crawl(parent, key, path, pathFromRoot, inventory, $refs, options) {
+          var obj = key === null ? parent : parent[key];
+          if (obj && (typeof obj === 'undefined' ? 'undefined' : _typeof(obj)) === 'object') {
+            if ($Ref.is$Ref(obj)) {
+              inventory$Ref(parent, key, path, pathFromRoot, inventory, $refs, options);
+            } else {
+              var keys = Object.keys(obj);
+              // Most people will expect references to be bundled into the the "definitions" property,
+              // so we always crawl that property first, if it exists.
+              var defs = keys.indexOf('definitions');
+              if (defs > 0) {
+                keys.splice(0, 0, keys.splice(defs, 1)[0]);
+              }
+              keys.forEach(function (key) {
+                var keyPath = Pointer.join(path, key);
+                var keyPathFromRoot = Pointer.join(pathFromRoot, key);
+                var value = obj[key];
+                if ($Ref.is$Ref(value)) {
+                  inventory$Ref(obj, key, path, keyPathFromRoot, inventory, $refs, options);
+                } else {
+                  crawl(obj, key, keyPath, keyPathFromRoot, inventory, $refs, options);
+                }
+              });
+            }
+          }
+        }
+        /**
+ * Inventories the given JSON Reference (i.e. records detailed information about it so we can
+ * optimize all $refs in the schema), and then crawls the resolved value.
+ *
+ * @param {object} $refParent - The object that contains a JSON Reference as one of its keys
+ * @param {string} $refKey - The key in `$refParent` that is a JSON Reference
+ * @param {string} path - The full path of the JSON Reference at `$refKey`, possibly with a JSON Pointer in the hash
+ * @param {string} pathFromRoot - The path of the JSON Reference at `$refKey`, from the schema root
+ * @param {object[]} inventory - An array of already-inventoried $ref pointers
+ * @param {$Refs} $refs
+ * @param {$RefParserOptions} options
+ */
+        function inventory$Ref($refParent, $refKey, path, pathFromRoot, inventory, $refs, options) {
+          if (inventory.some(function (i) {
+              return i.parent === $refParent && i.key === $refKey;
+            })) {
+            // This $Ref has already been inventoried, so we don't need to process it again
+            return;
+          }
+          var $ref = $refKey === null ? $refParent : $refParent[$refKey];
+          var $refPath = url.resolve(path, $ref.$ref);
+          var pointer = $refs._resolve($refPath, options);
+          var depth = Pointer.parse(pathFromRoot).length;
+          var file = url.stripHash(pointer.path);
+          var hash = url.getHash(pointer.path);
+          var external = file !== $refs._root$Ref.path;
+          var extended = $Ref.isExtended$Ref($ref);
+          inventory.push({
+            $ref: $ref,
+            parent: $refParent,
+            key: $refKey,
+            pathFromRoot: pathFromRoot,
+            depth: depth,
+            file: file,
+            hash: hash,
+            value: pointer.value,
+            circular: pointer.circular,
+            extended: extended,
+            external: external
+          });
+          // Recursively crawl the resolved value
+          crawl(pointer.value, null, pointer.path, pathFromRoot, inventory, $refs, options);
+        }
+        /**
+ * Re-maps every $ref pointer, so that they're all relative to the root of the JSON Schema.
+ * Each referenced value is dereferenced EXACTLY ONCE.  All subsequent references to the same
+ * value are re-mapped to point to the first reference.
+ *
+ * @example:
+ *  {
+ *    first: { $ref: somefile.json#/some/part },
+ *    second: { $ref: somefile.json#/another/part },
+ *    third: { $ref: somefile.json },
+ *    fourth: { $ref: somefile.json#/some/part/sub/part }
+ *  }
+ *
+ * In this example, there are four references to the same file, but since the third reference points
+ * to the ENTIRE file, that's the only one we need to dereference.  The other three can just be
+ * remapped to point inside the third one.
+ *
+ * On the other hand, if the third reference DIDN'T exist, then the first and second would both need
+ * to be dereferenced, since they point to different parts of the file. The fourth reference does NOT
+ * need to be dereferenced, because it can be remapped to point inside the first one.
+ *
+ * @param {object[]} inventory
+ */
+        function remap(inventory) {
+          // Group & sort all the $ref pointers, so they're in the order that we need to dereference/remap them
+          inventory.sort(function (a, b) {
+            if (a.file !== b.file) {
+              return a.file < b.file ? -1 : +1;  // Group all the $refs that point to the same file
+            } else if (a.hash !== b.hash) {
+              return a.hash < b.hash ? -1 : +1;  // Group all the $refs that point to the same part of the file
+            } else if (a.circular !== b.circular) {
+              return a.circular ? -1 : +1;  // If the $ref points to itself, then sort it higher than other $refs that point to this $ref
+            } else if (a.extended !== b.extended) {
+              return a.extended ? +1 : -1;  // If the $ref extends the resolved value, then sort it lower than other $refs that don't extend the value
+            } else if (a.depth !== b.depth) {
+              return a.depth - b.depth;  // Sort $refs by how close they are to the JSON Schema root
+            } else {
+              // If all else is equal, use the $ref that's in the "definitions" property
+              return b.pathFromRoot.lastIndexOf('/definitions') - a.pathFromRoot.lastIndexOf('/definitions');
+            }
+          });
+          var file, hash, pathFromRoot;
+          inventory.forEach(function (i) {
+            debug('Re-mapping $ref pointer "%s" at %s', i.$ref.$ref, i.pathFromRoot);
+            if (!i.external) {
+              // This $ref already resolves to the main JSON Schema file
+              i.$ref.$ref = i.hash;
+            } else if (i.file === file && i.hash === hash) {
+              // This $ref points to the same value as the prevous $ref, so remap it to the same path
+              i.$ref.$ref = pathFromRoot;
+            } else if (i.file === file && i.hash.indexOf(hash + '/') === 0) {
+              // This $ref points to the a sub-value as the prevous $ref, so remap it beneath that path
+              i.$ref.$ref = Pointer.join(pathFromRoot, Pointer.parse(i.hash));
+            } else {
+              // We've moved to a new file or new hash
+              file = i.file;
+              hash = i.hash;
+              pathFromRoot = i.pathFromRoot;
+              // This is the first $ref to point to this value, so dereference the value.
+              // Any other $refs that point to the same value will point to this $ref instead
+              i.$ref = i.parent[i.key] = $Ref.dereference(i.$ref, i.value);
+              if (i.circular) {
+                // This $ref points to itself
+                i.$ref.$ref = i.pathFromRoot;
+              }
+            }
+            debug('    new value: %s', i.$ref && i.$ref.$ref ? i.$ref.$ref : '[object Object]');
+          });
+        }
+      },
+      {
+        './pointer': 31,
+        './ref': 32,
+        './util/debug': 37,
+        './util/url': 40
+      }
+    ],
+    23: [
+      function (require, module, exports) {
+        'use strict';
+        var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
+            return typeof obj;
+          } : function (obj) {
+            return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
+          };
+        var $Ref = require('./ref'), Pointer = require('./pointer'), ono = require('ono'), debug = require('./util/debug'), url = require('./util/url');
+        module.exports = dereference;
+        /**
+ * Crawls the JSON schema, finds all JSON references, and dereferences them.
+ * This method mutates the JSON schema object, replacing JSON references with their resolved value.
+ *
+ * @param {$RefParser} parser
+ * @param {$RefParserOptions} options
+ */
+        function dereference(parser, options) {
+          debug('Dereferencing $ref pointers in %s', parser.$refs._root$Ref.path);
+          var dereferenced = crawl(parser.schema, parser.$refs._root$Ref.path, '#', [], parser.$refs, options);
+          parser.$refs.circular = dereferenced.circular;
+          parser.schema = dereferenced.value;
+        }
+        /**
+ * Recursively crawls the given value, and dereferences any JSON references.
+ *
+ * @param {*} obj - The value to crawl. If it's not an object or array, it will be ignored.
+ * @param {string} path - The full path of `obj`, possibly with a JSON Pointer in the hash
+ * @param {string} pathFromRoot - The path of `obj` from the schema root
+ * @param {object[]} parents - An array of the parent objects that have already been dereferenced
+ * @param {$Refs} $refs
+ * @param {$RefParserOptions} options
+ * @returns {{value: object, circular: boolean}}
+ */
+        function crawl(obj, path, pathFromRoot, parents, $refs, options) {
+          var dereferenced;
+          var result = {
+              value: obj,
+              circular: false
+            };
+          if (obj && (typeof obj === 'undefined' ? 'undefined' : _typeof(obj)) === 'object') {
+            parents.push(obj);
+            if ($Ref.isAllowed$Ref(obj, options)) {
+              dereferenced = dereference$Ref(obj, path, pathFromRoot, parents, $refs, options);
+              result.circular = dereferenced.circular;
+              result.value = dereferenced.value;
+            } else {
+              Object.keys(obj).forEach(function (key) {
+                var keyPath = Pointer.join(path, key);
+                var keyPathFromRoot = Pointer.join(pathFromRoot, key);
+                var value = obj[key];
+                var circular = false;
+                if ($Ref.isAllowed$Ref(value, options)) {
+                  dereferenced = dereference$Ref(value, keyPath, keyPathFromRoot, parents, $refs, options);
+                  circular = dereferenced.circular;
+                  obj[key] = dereferenced.value;
+                } else {
+                  if (parents.indexOf(value) === -1) {
+                    dereferenced = crawl(value, keyPath, keyPathFromRoot, parents, $refs, options);
+                    circular = dereferenced.circular;
+                    obj[key] = dereferenced.value;
+                  } else {
+                    circular = foundCircularReference(keyPath, $refs, options);
+                  }
+                }
+                // Set the "isCircular" flag if this or any other property is circular
+                result.circular = result.circular || circular;
+              });
+            }
+            parents.pop();
+          }
+          return result;
+        }
+        /**
+ * Dereferences the given JSON Reference, and then crawls the resulting value.
+ *
+ * @param {{$ref: string}} $ref - The JSON Reference to resolve
+ * @param {string} path - The full path of `$ref`, possibly with a JSON Pointer in the hash
+ * @param {string} pathFromRoot - The path of `$ref` from the schema root
+ * @param {object[]} parents - An array of the parent objects that have already been dereferenced
+ * @param {$Refs} $refs
+ * @param {$RefParserOptions} options
+ * @returns {{value: object, circular: boolean}}
+ */
+        function dereference$Ref($ref, path, pathFromRoot, parents, $refs, options) {
+          debug('Dereferencing $ref pointer "%s" at %s', $ref.$ref, path);
+          var $refPath = url.resolve(path, $ref.$ref);
+          var pointer = $refs._resolve($refPath, options);
+          // Check for circular references
+          var directCircular = pointer.circular;
+          var circular = directCircular || parents.indexOf(pointer.value) !== -1;
+          circular && foundCircularReference(path, $refs, options);
+          // Dereference the JSON reference
+          var dereferencedValue = $Ref.dereference($ref, pointer.value);
+          // Crawl the dereferenced value (unless it's circular)
+          if (!circular) {
+            // Determine if the dereferenced value is circular
+            var dereferenced = crawl(dereferencedValue, pointer.path, pathFromRoot, parents, $refs, options);
+            circular = dereferenced.circular;
+            dereferencedValue = dereferenced.value;
+          }
+          if (circular && !directCircular && options.dereference.circular === 'ignore') {
+            // The user has chosen to "ignore" circular references, so don't change the value
+            dereferencedValue = $ref;
+          }
+          if (directCircular) {
+            // The pointer is a DIRECT circular reference (i.e. it references itself).
+            // So replace the $ref path with the absolute path from the JSON Schema root
+            dereferencedValue.$ref = pathFromRoot;
+          }
+          return {
+            circular: circular,
+            value: dereferencedValue
+          };
+        }
+        /**
+ * Called when a circular reference is found.
+ * It sets the {@link $Refs#circular} flag, and throws an error if options.dereference.circular is false.
+ *
+ * @param {string} keyPath - The JSON Reference path of the circular reference
+ * @param {$Refs} $refs
+ * @param {$RefParserOptions} options
+ * @returns {boolean} - always returns true, to indicate that a circular reference was found
+ */
+        function foundCircularReference(keyPath, $refs, options) {
+          $refs.circular = true;
+          if (!options.dereference.circular) {
+            throw ono.reference('Circular $ref pointer found at %s', keyPath);
+          }
+          return true;
+        }
+      },
+      {
+        './pointer': 31,
+        './ref': 32,
+        './util/debug': 37,
+        './util/url': 40,
+        'ono': 279
+      }
+    ],
+    24: [
+      function (require, module, exports) {
+        (function (Buffer) {
+          'use strict';
+          var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
+              return typeof obj;
+            } : function (obj) {
+              return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
+            };
+          var Promise = require('./util/promise'), Options = require('./options'), $Refs = require('./refs'), parse = require('./parse'), resolveExternal = require('./resolve-external'), bundle = require('./bundle'), dereference = require('./dereference'), url = require('./util/url'), maybe = require('call-me-maybe'), ono = require('ono');
+          module.exports = $RefParser;
+          module.exports.YAML = require('./util/yaml');
+          /**
+ * This class parses a JSON schema, builds a map of its JSON references and their resolved values,
+ * and provides methods for traversing, manipulating, and dereferencing those references.
+ *
+ * @constructor
+ */
+          function $RefParser() {
+            /**
+   * The parsed (and possibly dereferenced) JSON schema object
+   *
+   * @type {object}
+   * @readonly
+   */
+            this.schema = null;
+            /**
+   * The resolved JSON references
+   *
+   * @type {$Refs}
+   * @readonly
+   */
+            this.$refs = new $Refs();
+          }
+          /**
+ * Parses the given JSON schema.
+ * This method does not resolve any JSON references.
+ * It just reads a single file in JSON or YAML format, and parse it as a JavaScript object.
+ *
+ * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
+ * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed
+ * @param {function} [callback] - An error-first callback. The second parameter is the parsed JSON schema object.
+ * @returns {Promise} - The returned promise resolves with the parsed JSON schema object.
+ */
+          $RefParser.parse = function (schema, options, callback) {
+            var Class = this;
+            // eslint-disable-line consistent-this
+            var instance = new Class();
+            return instance.parse.apply(instance, arguments);
+          };
+          /**
+ * Parses the given JSON schema.
+ * This method does not resolve any JSON references.
+ * It just reads a single file in JSON or YAML format, and parse it as a JavaScript object.
+ *
+ * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
+ * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed
+ * @param {function} [callback] - An error-first callback. The second parameter is the parsed JSON schema object.
+ * @returns {Promise} - The returned promise resolves with the parsed JSON schema object.
+ */
+          $RefParser.prototype.parse = function (schema, options, callback) {
+            var args = normalizeArgs(arguments);
+            var promise;
+            if (!args.path && !args.schema) {
+              var err = ono('Expected a file path, URL, or object. Got %s', args.path || args.schema);
+              return maybe(args.callback, Promise.reject(err));
+            }
+            // Reset everything
+            this.schema = null;
+            this.$refs = new $Refs();
+            // If the path is a filesystem path, then convert it to a URL.
+            // NOTE: According to the JSON Reference spec, these should already be URLs,
+            // but, in practice, many people use local filesystem paths instead.
+            // So we're being generous here and doing the conversion automatically.
+            // This is not intended to be a 100% bulletproof solution.
+            // If it doesn't work for your use-case, then use a URL instead.
+            if (url.isFileSystemPath(args.path)) {
+              args.path = url.fromFileSystemPath(args.path);
+            }
+            // Resolve the absolute path of the schema
+            args.path = url.resolve(url.cwd(), args.path);
+            if (args.schema && _typeof(args.schema) === 'object') {
+              // A schema object was passed-in.
+              // So immediately add a new $Ref with the schema object as its value
+              this.$refs._add(args.path, args.schema);
+              promise = Promise.resolve(args.schema);
+            } else {
+              // Parse the schema file/url
+              promise = parse(args.path, this.$refs, args.options);
+            }
+            var me = this;
+            return promise.then(function (result) {
+              if (!result || (typeof result === 'undefined' ? 'undefined' : _typeof(result)) !== 'object' || Buffer.isBuffer(result)) {
+                throw ono.syntax('"%s" is not a valid JSON Schema', me.$refs._root$Ref.path || result);
+              } else {
+                me.schema = result;
+                return maybe(args.callback, Promise.resolve(me.schema));
+              }
+            }).catch(function (e) {
+              return maybe(args.callback, Promise.reject(e));
+            });
+          };
+          /**
+ * Parses the given JSON schema and resolves any JSON references, including references in
+ * externally-referenced files.
+ *
+ * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
+ * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed and resolved
+ * @param {function} [callback]
+ * - An error-first callback. The second parameter is a {@link $Refs} object containing the resolved JSON references
+ *
+ * @returns {Promise}
+ * The returned promise resolves with a {@link $Refs} object containing the resolved JSON references
+ */
+          $RefParser.resolve = function (schema, options, callback) {
+            var Class = this;
+            // eslint-disable-line consistent-this
+            var instance = new Class();
+            return instance.resolve.apply(instance, arguments);
+          };
+          /**
+ * Parses the given JSON schema and resolves any JSON references, including references in
+ * externally-referenced files.
+ *
+ * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
+ * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed and resolved
+ * @param {function} [callback]
+ * - An error-first callback. The second parameter is a {@link $Refs} object containing the resolved JSON references
+ *
+ * @returns {Promise}
+ * The returned promise resolves with a {@link $Refs} object containing the resolved JSON references
+ */
+          $RefParser.prototype.resolve = function (schema, options, callback) {
+            var me = this;
+            var args = normalizeArgs(arguments);
+            return this.parse(args.path, args.schema, args.options).then(function () {
+              return resolveExternal(me, args.options);
+            }).then(function () {
+              return maybe(args.callback, Promise.resolve(me.$refs));
+            }).catch(function (err) {
+              return maybe(args.callback, Promise.reject(err));
+            });
+          };
+          /**
+ * Parses the given JSON schema, resolves any JSON references, and bundles all external references
+ * into the main JSON schema. This produces a JSON schema that only has *internal* references,
+ * not any *external* references.
+ *
+ * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
+ * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed, resolved, and dereferenced
+ * @param {function} [callback] - An error-first callback. The second parameter is the bundled JSON schema object
+ * @returns {Promise} - The returned promise resolves with the bundled JSON schema object.
+ */
+          $RefParser.bundle = function (schema, options, callback) {
+            var Class = this;
+            // eslint-disable-line consistent-this
+            var instance = new Class();
+            return instance.bundle.apply(instance, arguments);
+          };
+          /**
+ * Parses the given JSON schema, resolves any JSON references, and bundles all external references
+ * into the main JSON schema. This produces a JSON schema that only has *internal* references,
+ * not any *external* references.
+ *
+ * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
+ * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed, resolved, and dereferenced
+ * @param {function} [callback] - An error-first callback. The second parameter is the bundled JSON schema object
+ * @returns {Promise} - The returned promise resolves with the bundled JSON schema object.
+ */
+          $RefParser.prototype.bundle = function (schema, options, callback) {
+            var me = this;
+            var args = normalizeArgs(arguments);
+            return this.resolve(args.path, args.schema, args.options).then(function () {
+              bundle(me, args.options);
+              return maybe(args.callback, Promise.resolve(me.schema));
+            }).catch(function (err) {
+              return maybe(args.callback, Promise.reject(err));
+            });
+          };
+          /**
+ * Parses the given JSON schema, resolves any JSON references, and dereferences the JSON schema.
+ * That is, all JSON references are replaced with their resolved values.
+ *
+ * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
+ * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed, resolved, and dereferenced
+ * @param {function} [callback] - An error-first callback. The second parameter is the dereferenced JSON schema object
+ * @returns {Promise} - The returned promise resolves with the dereferenced JSON schema object.
+ */
+          $RefParser.dereference = function (schema, options, callback) {
+            var Class = this;
+            // eslint-disable-line consistent-this
+            var instance = new Class();
+            return instance.dereference.apply(instance, arguments);
+          };
+          /**
+ * Parses the given JSON schema, resolves any JSON references, and dereferences the JSON schema.
+ * That is, all JSON references are replaced with their resolved values.
+ *
+ * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
+ * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed, resolved, and dereferenced
+ * @param {function} [callback] - An error-first callback. The second parameter is the dereferenced JSON schema object
+ * @returns {Promise} - The returned promise resolves with the dereferenced JSON schema object.
+ */
+          $RefParser.prototype.dereference = function (schema, options, callback) {
+            var me = this;
+            var args = normalizeArgs(arguments);
+            return this.resolve(args.path, args.schema, args.options).then(function () {
+              dereference(me, args.options);
+              return maybe(args.callback, Promise.resolve(me.schema));
+            }).catch(function (err) {
+              return maybe(args.callback, Promise.reject(err));
+            });
+          };
+          /**
+ * Normalizes the given arguments, accounting for optional args.
+ *
+ * @param {Arguments} args
+ * @returns {object}
+ */
+          function normalizeArgs(args) {
+            var path, schema, options, callback;
+            args = Array.prototype.slice.call(args);
+            if (typeof args[args.length - 1] === 'function') {
+              // The last parameter is a callback function
+              callback = args.pop();
+            }
+            if (typeof args[0] === 'string') {
+              // The first parameter is the path
+              path = args[0];
+              if (_typeof(args[2]) === 'object') {
+                // The second parameter is the schema, and the third parameter is the options
+                schema = args[1];
+                options = args[2];
+              } else {
+                // The second parameter is the options
+                schema = undefined;
+                options = args[1];
+              }
+            } else {
+              // The first parameter is the schema
+              path = '';
+              schema = args[0];
+              options = args[1];
+            }
+            if (!(options instanceof Options)) {
+              options = new Options(options);
+            }
+            return {
+              path: path,
+              schema: schema,
+              options: options,
+              callback: callback
+            };
+          }
+        }.call(this, { 'isBuffer': require('../../is-buffer/index.js') }));
+      },
+      {
+        '../../is-buffer/index.js': 20,
+        './bundle': 22,
+        './dereference': 23,
+        './options': 25,
+        './parse': 26,
+        './refs': 33,
+        './resolve-external': 34,
+        './util/promise': 39,
+        './util/url': 40,
+        './util/yaml': 41,
+        'call-me-maybe': 9,
+        'ono': 279
+      }
+    ],
+    25: [
+      function (require, module, exports) {
+        /* eslint lines-around-comment: [2, {beforeBlockComment: false}] */
+        'use strict';
+        var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
+            return typeof obj;
+          } : function (obj) {
+            return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
+          };
+        var jsonParser = require('./parsers/json'), yamlParser = require('./parsers/yaml'), textParser = require('./parsers/text'), binaryParser = require('./parsers/binary'), fileResolver = require('./resolvers/file'), httpResolver = require('./resolvers/http'), zschemaValidator = require('./validators/z-schema');
+        module.exports = $RefParserOptions;
+        /**
+ * Options that determine how JSON schemas are parsed, resolved, dereferenced, and validated.
+ *
+ * @param {object|$RefParserOptions} [options] - Overridden options
+ * @constructor
+ */
+        function $RefParserOptions(options) {
+          merge(this, $RefParserOptions.defaults);
+          merge(this, options);
+        }
+        $RefParserOptions.defaults = {
+          parse: {
+            json: jsonParser,
+            yaml: yamlParser,
+            text: textParser,
+            binary: binaryParser
+          },
+          resolve: {
+            file: fileResolver,
+            http: httpResolver,
+            external: true
+          },
+          dereference: { circular: true },
+          validate: { zschema: zschemaValidator }
+        };
+        /**
+ * Merges the properties of the source object into the target object.
+ *
+ * @param {object} target - The object that we're populating
+ * @param {?object} source - The options that are being merged
+ * @returns {object}
+ */
+        function merge(target, source) {
+          if (isMergeable(source)) {
+            var keys = Object.keys(source);
+            for (var i = 0; i < keys.length; i++) {
+              var key = keys[i];
+              var sourceSetting = source[key];
+              var targetSetting = target[key];
+              if (isMergeable(sourceSetting)) {
+                // It's a nested object, so merge it recursively
+                target[key] = merge(targetSetting || {}, sourceSetting);
+              } else if (sourceSetting !== undefined) {
+                // It's a scalar value, function, or array. No merging necessary. Just overwrite the target value.
+                target[key] = sourceSetting;
+              }
+            }
+          }
+          return target;
+        }
+        /**
+ * Determines whether the given value can be merged,
+ * or if it is a scalar value that should just override the target value.
+ *
+ * @param   {*}  val
+ * @returns {Boolean}
+ */
+        function isMergeable(val) {
+          return val && (typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object' && !Array.isArray(val) && !(val instanceof RegExp) && !(val instanceof Date);
+        }
+      },
+      {
+        './parsers/binary': 27,
+        './parsers/json': 28,
+        './parsers/text': 29,
+        './parsers/yaml': 30,
+        './resolvers/file': 35,
+        './resolvers/http': 36,
+        './validators/z-schema': 42
+      }
+    ],
+    26: [
+      function (require, module, exports) {
+        (function (Buffer) {
+          'use strict';
+          var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
+              return typeof obj;
+            } : function (obj) {
+              return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
+            };
+          var ono = require('ono'), debug = require('./util/debug'), url = require('./util/url'), plugins = require('./util/plugins'), Promise = require('./util/promise');
+          module.exports = parse;
+          /**
+ * Reads and parses the specified file path or URL.
+ *
+ * @param {string} path - This path MUST already be resolved, since `read` doesn't know the resolution context
+ * @param {$Refs} $refs
+ * @param {$RefParserOptions} options
+ *
+ * @returns {Promise}
+ * The promise resolves with the parsed file contents, NOT the raw (Buffer) contents.
+ */
+          function parse(path, $refs, options) {
+            try {
+              // Remove the URL fragment, if any
+              path = url.stripHash(path);
+              // Add a new $Ref for this file, even though we don't have the value yet.
+              // This ensures that we don't simultaneously read & parse the same file multiple times
+              var $ref = $refs._add(path);
+              // This "file object" will be passed to all resolvers and parsers.
+              var file = {
+                  url: path,
+                  extension: url.getExtension(path)
+                };
+              // Read the file and then parse the data
+              return readFile(file, options).then(function (resolver) {
+                $ref.pathType = resolver.plugin.name;
+                file.data = resolver.result;
+                return parseFile(file, options);
+              }).then(function (parser) {
+                $ref.value = parser.result;
+                return parser.result;
+              });
+            } catch (e) {
+              return Promise.reject(e);
+            }
+          }
+          /**
+ * Reads the given file, using the configured resolver plugins
+ *
+ * @param {object} file           - An object containing information about the referenced file
+ * @param {string} file.url       - The full URL of the referenced file
+ * @param {string} file.extension - The lowercased file extension (e.g. ".txt", ".html", etc.)
+ * @param {$RefParserOptions} options
+ *
+ * @returns {Promise}
+ * The promise resolves with the raw file contents and the resolver that was used.
+ */
+          function readFile(file, options) {
+            return new Promise(function (resolve, reject) {
+              debug('Reading %s', file.url);
+              // Find the resolvers that can read this file
+              var resolvers = plugins.all(options.resolve);
+              resolvers = plugins.filter(resolvers, 'canRead', file);
+              // Run the resolvers, in order, until one of them succeeds
+              plugins.sort(resolvers);
+              plugins.run(resolvers, 'read', file).then(resolve, onError);
+              function onError(err) {
+                // Throw the original error, if it's one of our own (user-friendly) errors.
+                // Otherwise, throw a generic, friendly error.
+                if (err && !(err instanceof SyntaxError)) {
+                  reject(err);
+                } else {
+                  reject(ono.syntax('Unable to resolve $ref pointer "%s"', file.url));
+                }
+              }
+            });
+          }
+          /**
+ * Parses the given file's contents, using the configured parser plugins.
+ *
+ * @param {object} file           - An object containing information about the referenced file
+ * @param {string} file.url       - The full URL of the referenced file
+ * @param {string} file.extension - The lowercased file extension (e.g. ".txt", ".html", etc.)
+ * @param {*}      file.data      - The file contents. This will be whatever data type was returned by the resolver
+ * @param {$RefParserOptions} options
+ *
+ * @returns {Promise}
+ * The promise resolves with the parsed file contents and the parser that was used.
+ */
+          function parseFile(file, options) {
+            return new Promise(function (resolve, reject) {
+              debug('Parsing %s', file.url);
+              // Find the parsers that can read this file type.
+              // If none of the parsers are an exact match for this file, then we'll try ALL of them.
+              // This handles situations where the file IS a supported type, just with an unknown extension.
+              var allParsers = plugins.all(options.parse);
+              var filteredParsers = plugins.filter(allParsers, 'canParse', file);
+              var parsers = filteredParsers.length > 0 ? filteredParsers : allParsers;
+              // Run the parsers, in order, until one of them succeeds
+              plugins.sort(parsers);
+              plugins.run(parsers, 'parse', file).then(onParsed, onError);
+              function onParsed(parser) {
+                if (!parser.plugin.allowEmpty && isEmpty(parser.result)) {
+                  reject(ono.syntax('Error parsing "%s" as %s. \nParsed value is empty', file.url, parser.plugin.name));
+                } else {
+                  resolve(parser);
+                }
+              }
+              function onError(err) {
+                if (err) {
+                  err = err instanceof Error ? err : new Error(err);
+                  reject(ono.syntax(err, 'Error parsing %s', file.url));
+                } else {
+                  reject(ono.syntax('Unable to parse %s', file.url));
+                }
+              }
+            });
+          }
+          /**
+ * Determines whether the parsed value is "empty".
+ *
+ * @param {*} value
+ * @returns {boolean}
+ */
+          function isEmpty(value) {
+            return value === undefined || (typeof value === 'undefined' ? 'undefined' : _typeof(value)) === 'object' && Object.keys(value).length === 0 || typeof value === 'string' && value.trim().length === 0 || Buffer.isBuffer(value) && value.length === 0;
+          }
+        }.call(this, { 'isBuffer': require('../../is-buffer/index.js') }));
+      },
+      {
+        '../../is-buffer/index.js': 20,
+        './util/debug': 37,
+        './util/plugins': 38,
+        './util/promise': 39,
+        './util/url': 40,
+        'ono': 279
+      }
+    ],
+    27: [
+      function (require, module, exports) {
+        (function (Buffer) {
+          'use strict';
+          var BINARY_REGEXP = /\.(jpeg|jpg|gif|png|bmp|ico)$/i;
+          module.exports = {
+            order: 400,
+            allowEmpty: true,
+            canParse: function isBinary(file) {
+              // Use this parser if the file is a Buffer, and has a known binary extension
+              return Buffer.isBuffer(file.data) && BINARY_REGEXP.test(file.url);
+            },
+            parse: function parseBinary(file) {
+              if (Buffer.isBuffer(file.data)) {
+                return file.data;
+              } else {
+                // This will reject if data is anything other than a string or typed array
+                return new Buffer(file.data);
+              }
+            }
+          };
+        }.call(this, require('buffer').Buffer));
+      },
+      { 'buffer': 6 }
+    ],
+    28: [
+      function (require, module, exports) {
+        (function (Buffer) {
+          'use strict';
+          var Promise = require('../util/promise');
+          module.exports = {
+            order: 100,
+            allowEmpty: true,
+            canParse: '.json',
+            parse: function parseJSON(file) {
+              return new Promise(function (resolve, reject) {
+                var data = file.data;
+                if (Buffer.isBuffer(data)) {
+                  data = data.toString();
+                }
+                if (typeof data === 'string') {
+                  if (data.trim().length === 0) {
+                    resolve(undefined);  // This mirrors the YAML behavior
+                  } else {
+                    resolve(JSON.parse(data));
+                  }
+                } else {
+                  // data is already a JavaScript value (object, array, number, null, NaN, etc.)
+                  resolve(data);
+                }
+              });
+            }
+          };
+        }.call(this, { 'isBuffer': require('../../../is-buffer/index.js') }));
+      },
+      {
+        '../../../is-buffer/index.js': 20,
+        '../util/promise': 39
+      }
+    ],
+    29: [
+      function (require, module, exports) {
+        (function (Buffer) {
+          'use strict';
+          var TEXT_REGEXP = /\.(txt|htm|html|md|xml|js|min|map|css|scss|less|svg)$/i;
+          module.exports = {
+            order: 300,
+            allowEmpty: true,
+            encoding: 'utf8',
+            canParse: function isText(file) {
+              // Use this parser if the file is a string or Buffer, and has a known text-based extension
+              return (typeof file.data === 'string' || Buffer.isBuffer(file.data)) && TEXT_REGEXP.test(file.url);
+            },
+            parse: function parseText(file) {
+              if (typeof file.data === 'string') {
+                return file.data;
+              } else if (Buffer.isBuffer(file.data)) {
+                return file.data.toString(this.encoding);
+              } else {
+                throw new Error('data is not text');
+              }
+            }
+          };
+        }.call(this, { 'isBuffer': require('../../../is-buffer/index.js') }));
+      },
+      { '../../../is-buffer/index.js': 20 }
+    ],
+    30: [
+      function (require, module, exports) {
+        (function (Buffer) {
+          'use strict';
+          var Promise = require('../util/promise'), YAML = require('../util/yaml');
+          module.exports = {
+            order: 200,
+            allowEmpty: true,
+            canParse: [
+              '.yaml',
+              '.yml',
+              '.json'
+            ],
+            parse: function parseYAML(file) {
+              return new Promise(function (resolve, reject) {
+                var data = file.data;
+                if (Buffer.isBuffer(data)) {
+                  data = data.toString();
+                }
+                if (typeof data === 'string') {
+                  resolve(YAML.parse(data));
+                } else {
+                  // data is already a JavaScript value (object, array, number, null, NaN, etc.)
+                  resolve(data);
+                }
+              });
+            }
+          };
+        }.call(this, { 'isBuffer': require('../../../is-buffer/index.js') }));
+      },
+      {
+        '../../../is-buffer/index.js': 20,
+        '../util/promise': 39,
+        '../util/yaml': 41
+      }
+    ],
+    31: [
+      function (require, module, exports) {
+        'use strict';
+        var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
+            return typeof obj;
+          } : function (obj) {
+            return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
+          };
+        module.exports = Pointer;
+        var $Ref = require('./ref'), url = require('./util/url'), ono = require('ono'), slashes = /\//g, tildes = /~/g, escapedSlash = /~1/g, escapedTilde = /~0/g;
+        /**
+ * This class represents a single JSON pointer and its resolved value.
+ *
+ * @param {$Ref} $ref
+ * @param {string} path
+ * @constructor
+ */
+        function Pointer($ref, path) {
+          /**
+   * The {@link $Ref} object that contains this {@link Pointer} object.
+   * @type {$Ref}
+   */
+          this.$ref = $ref;
+          /**
+   * The file path or URL, containing the JSON pointer in the hash.
+   * This path is relative to the path of the main JSON schema file.
+   * @type {string}
+   */
+          this.path = path;
+          /**
+   * The value of the JSON pointer.
+   * Can be any JSON type, not just objects. Unknown file types are represented as Buffers (byte arrays).
+   * @type {?*}
+   */
+          this.value = undefined;
+          /**
+   * Indicates whether the pointer references itself.
+   * @type {boolean}
+   */
+          this.circular = false;
+        }
+        /**
+ * Resolves the value of a nested property within the given object.
+ *
+ * @param {*} obj - The object that will be crawled
+ * @param {$RefParserOptions} options
+ *
+ * @returns {Pointer}
+ * Returns a JSON pointer whose {@link Pointer#value} is the resolved value.
+ * If resolving this value required resolving other JSON references, then
+ * the {@link Pointer#$ref} and {@link Pointer#path} will reflect the resolution path
+ * of the resolved value.
+ */
+        Pointer.prototype.resolve = function (obj, options) {
+          var tokens = Pointer.parse(this.path);
+          // Crawl the object, one token at a time
+          this.value = obj;
+          for (var i = 0; i < tokens.length; i++) {
+            if (resolveIf$Ref(this, options)) {
+              // The $ref path has changed, so append the remaining tokens to the path
+              this.path = Pointer.join(this.path, tokens.slice(i));
+            }
+            var token = tokens[i];
+            if (this.value[token] === undefined) {
+              throw ono.syntax('Error resolving $ref pointer "%s". \nToken "%s" does not exist.', this.path, token);
+            } else {
+              this.value = this.value[token];
+            }
+          }
+          // Resolve the final value
+          resolveIf$Ref(this, options);
+          return this;
+        };
+        /**
+ * Sets the value of a nested property within the given object.
+ *
+ * @param {*} obj - The object that will be crawled
+ * @param {*} value - the value to assign
+ * @param {$RefParserOptions} options
+ *
+ * @returns {*}
+ * Returns the modified object, or an entirely new object if the entire object is overwritten.
+ */
+        Pointer.prototype.set = function (obj, value, options) {
+          var tokens = Pointer.parse(this.path);
+          var token;
+          if (tokens.length === 0) {
+            // There are no tokens, replace the entire object with the new value
+            this.value = value;
+            return value;
+          }
+          // Crawl the object, one token at a time
+          this.value = obj;
+          for (var i = 0; i < tokens.length - 1; i++) {
+            resolveIf$Ref(this, options);
+            token = tokens[i];
+            if (this.value && this.value[token] !== undefined) {
+              // The token exists
+              this.value = this.value[token];
+            } else {
+              // The token doesn't exist, so create it
+              this.value = setValue(this, token, {});
+            }
+          }
+          // Set the value of the final token
+          resolveIf$Ref(this, options);
+          token = tokens[tokens.length - 1];
+          setValue(this, token, value);
+          // Return the updated object
+          return obj;
+        };
+        /**
+ * Parses a JSON pointer (or a path containing a JSON pointer in the hash)
+ * and returns an array of the pointer's tokens.
+ * (e.g. "schema.json#/definitions/person/name" => ["definitions", "person", "name"])
+ *
+ * The pointer is parsed according to RFC 6901
+ * {@link https://tools.ietf.org/html/rfc6901#section-3}
+ *
+ * @param {string} path
+ * @returns {string[]}
+ */
+        Pointer.parse = function (path) {
+          // Get the JSON pointer from the path's hash
+          var pointer = url.getHash(path).substr(1);
+          // If there's no pointer, then there are no tokens,
+          // so return an empty array
+          if (!pointer) {
+            return [];
+          }
+          // Split into an array
+          pointer = pointer.split('/');
+          // Decode each part, according to RFC 6901
+          for (var i = 0; i < pointer.length; i++) {
+            pointer[i] = decodeURI(pointer[i].replace(escapedSlash, '/').replace(escapedTilde, '~'));
+          }
+          if (pointer[0] !== '') {
+            throw ono.syntax('Invalid $ref pointer "%s". Pointers must begin with "#/"', pointer);
+          }
+          return pointer.slice(1);
+        };
+        /**
+ * Creates a JSON pointer path, by joining one or more tokens to a base path.
+ *
+ * @param {string} base - The base path (e.g. "schema.json#/definitions/person")
+ * @param {string|string[]} tokens - The token(s) to append (e.g. ["name", "first"])
+ * @returns {string}
+ */
+        Pointer.join = function (base, tokens) {
+          // Ensure that the base path contains a hash
+          if (base.indexOf('#') === -1) {
+            base += '#';
+          }
+          // Append each token to the base path
+          tokens = Array.isArray(tokens) ? tokens : [tokens];
+          for (var i = 0; i < tokens.length; i++) {
+            var token = tokens[i];
+            // Encode the token, according to RFC 6901
+            base += '/' + encodeURI(token.replace(tildes, '~0').replace(slashes, '~1'));
+          }
+          return base;
+        };
+        /**
+ * If the given pointer's {@link Pointer#value} is a JSON reference,
+ * then the reference is resolved and {@link Pointer#value} is replaced with the resolved value.
+ * In addition, {@link Pointer#path} and {@link Pointer#$ref} are updated to reflect the
+ * resolution path of the new value.
+ *
+ * @param {Pointer} pointer
+ * @param {$RefParserOptions} options
+ * @returns {boolean} - Returns `true` if the resolution path changed
+ */
+        function resolveIf$Ref(pointer, options) {
+          // Is the value a JSON reference? (and allowed?)
+          if ($Ref.isAllowed$Ref(pointer.value, options)) {
+            var $refPath = url.resolve(pointer.path, pointer.value.$ref);
+            if ($refPath === pointer.path) {
+              // The value is a reference to itself, so there's nothing to do.
+              pointer.circular = true;
+            } else {
+              var resolved = pointer.$ref.$refs._resolve($refPath, options);
+              if ($Ref.isExtended$Ref(pointer.value)) {
+                // This JSON reference "extends" the resolved value, rather than simply pointing to it.
+                // So the resolved path does NOT change.  Just the value does.
+                pointer.value = $Ref.dereference(pointer.value, resolved.value);
+              } else {
+                // Resolve the reference
+                pointer.$ref = resolved.$ref;
+                pointer.path = resolved.path;
+                pointer.value = resolved.value;
+              }
+              return true;
+            }
+          }
+        }
+        /**
+ * Sets the specified token value of the {@link Pointer#value}.
+ *
+ * The token is evaluated according to RFC 6901.
+ * {@link https://tools.ietf.org/html/rfc6901#section-4}
+ *
+ * @param {Pointer} pointer - The JSON Pointer whose value will be modified
+ * @param {string} token - A JSON Pointer token that indicates how to modify `obj`
+ * @param {*} value - The value to assign
+ * @returns {*} - Returns the assigned value
+ */
+        function setValue(pointer, token, value) {
+          if (pointer.value && _typeof(pointer.value) === 'object') {
+            if (token === '-' && Array.isArray(pointer.value)) {
+              pointer.value.push(value);
+            } else {
+              pointer.value[token] = value;
+            }
+          } else {
+            throw ono.syntax('Error assigning $ref pointer "%s". \nCannot set "%s" of a non-object.', pointer.path, token);
+          }
+          return value;
+        }
+      },
+      {
+        './ref': 32,
+        './util/url': 40,
+        'ono': 279
+      }
+    ],
+    32: [
+      function (require, module, exports) {
+        'use strict';
+        var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
+            return typeof obj;
+          } : function (obj) {
+            return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
+          };
+        module.exports = $Ref;
+        var Pointer = require('./pointer');
+        /**
+ * This class represents a single JSON reference and its resolved value.
+ *
+ * @constructor
+ */
+        function $Ref() {
+          /**
+   * The file path or URL of the referenced file.
+   * This path is relative to the path of the main JSON schema file.
+   *
+   * This path does NOT contain document fragments (JSON pointers). It always references an ENTIRE file.
+   * Use methods such as {@link $Ref#get}, {@link $Ref#resolve}, and {@link $Ref#exists} to get
+   * specific JSON pointers within the file.
+   *
+   * @type {string}
+   */
+          this.path = undefined;
+          /**
+   * The resolved value of the JSON reference.
+   * Can be any JSON type, not just objects. Unknown file types are represented as Buffers (byte arrays).
+   * @type {?*}
+   */
+          this.value = undefined;
+          /**
+   * The {@link $Refs} object that contains this {@link $Ref} object.
+   * @type {$Refs}
+   */
+          this.$refs = undefined;
+          /**
+   * Indicates the type of {@link $Ref#path} (e.g. "file", "http", etc.)
+   * @type {?string}
+   */
+          this.pathType = undefined;
+        }
+        /**
+ * Determines whether the given JSON reference exists within this {@link $Ref#value}.
+ *
+ * @param {string} path - The full path being resolved, optionally with a JSON pointer in the hash
+ * @param {$RefParserOptions} options
+ * @returns {boolean}
+ */
+        $Ref.prototype.exists = function (path, options) {
+          try {
+            this.resolve(path, options);
+            return true;
+          } catch (e) {
+            return false;
+          }
+        };
+        /**
+ * Resolves the given JSON reference within this {@link $Ref#value} and returns the resolved value.
+ *
+ * @param {string} path - The full path being resolved, optionally with a JSON pointer in the hash
+ * @param {$RefParserOptions} options
+ * @returns {*} - Returns the resolved value
+ */
+        $Ref.prototype.get = function (path, options) {
+          return this.resolve(path, options).value;
+        };
+        /**
+ * Resolves the given JSON reference within this {@link $Ref#value}.
+ *
+ * @param {string} path - The full path being resolved, optionally with a JSON pointer in the hash
+ * @param {$RefParserOptions} options
+ * @returns {Pointer}
+ */
+        $Ref.prototype.resolve = function (path, options) {
+          var pointer = new Pointer(this, path);
+          return pointer.resolve(this.value, options);
+        };
+        /**
+ * Sets the value of a nested property within this {@link $Ref#value}.
+ * If the property, or any of its parents don't exist, they will be created.
+ *
+ * @param {string} path - The full path of the property to set, optionally with a JSON pointer in the hash
+ * @param {*} value - The value to assign
+ */
+        $Ref.prototype.set = function (path, value) {
+          var pointer = new Pointer(this, path);
+          this.value = pointer.set(this.value, value);
+        };
+        /**
+ * Determines whether the given value is a JSON reference.
+ *
+ * @param {*} value - The value to inspect
+ * @returns {boolean}
+ */
+        $Ref.is$Ref = function (value) {
+          return value && (typeof value === 'undefined' ? 'undefined' : _typeof(value)) === 'object' && typeof value.$ref === 'string' && value.$ref.length > 0;
+        };
+        /**
+ * Determines whether the given value is an external JSON reference.
+ *
+ * @param {*} value - The value to inspect
+ * @returns {boolean}
+ */
+        $Ref.isExternal$Ref = function (value) {
+          return $Ref.is$Ref(value) && value.$ref[0] !== '#';
+        };
+        /**
+ * Determines whether the given value is a JSON reference, and whether it is allowed by the options.
+ * For example, if it references an external file, then options.resolve.external must be true.
+ *
+ * @param {*} value - The value to inspect
+ * @param {$RefParserOptions} options
+ * @returns {boolean}
+ */
+        $Ref.isAllowed$Ref = function (value, options) {
+          if ($Ref.is$Ref(value)) {
+            if (value.$ref[0] === '#' || !options || options.resolve.external) {
+              return true;
+            }
+          }
+        };
+        /**
+ * Determines whether the given value is a JSON reference that "extends" its resolved value.
+ * That is, it has extra properties (in addition to "$ref"), so rather than simply pointing to
+ * an existing value, this $ref actually creates a NEW value that is a shallow copy of the resolved
+ * value, plus the extra properties.
+ *
+ * @example:
+ *  {
+ *    person: {
+ *      properties: {
+ *        firstName: { type: string }
+ *        lastName: { type: string }
+ *      }
+ *    }
+ *    employee: {
+ *      properties: {
+ *        $ref: #/person/properties
+ *        salary: { type: number }
+ *      }
+ *    }
+ *  }
+ *
+ *  In this example, "employee" is an extended $ref, since it extends "person" with an additional
+ *  property (salary).  The result is a NEW value that looks like this:
+ *
+ *  {
+ *    properties: {
+ *      firstName: { type: string }
+ *      lastName: { type: string }
+ *      salary: { type: number }
+ *    }
+ *  }
+ *
+ * @param {*} value - The value to inspect
+ * @returns {boolean}
+ */
+        $Ref.isExtended$Ref = function (value) {
+          return $Ref.is$Ref(value) && Object.keys(value).length > 1;
+        };
+        /**
+ * Returns the resolved value of a JSON Reference.
+ * If necessary, the resolved value is merged with the JSON Reference to create a new object
+ *
+ * @example:
+ *  {
+ *    person: {
+ *      properties: {
+ *        firstName: { type: string }
+ *        lastName: { type: string }
+ *      }
+ *    }
+ *    employee: {
+ *      properties: {
+ *        $ref: #/person/properties
+ *        salary: { type: number }
+ *      }
+ *    }
+ *  }
+ *
+ *  When "person" and "employee" are merged, you end up with the following object:
+ *
+ *  {
+ *    properties: {
+ *      firstName: { type: string }
+ *      lastName: { type: string }
+ *      salary: { type: number }
+ *    }
+ *  }
+ *
+ * @param {object} $ref - The JSON reference object (the one with the "$ref" property)
+ * @param {*} resolvedValue - The resolved value, which can be any type
+ * @returns {*} - Returns the dereferenced value
+ */
+        $Ref.dereference = function ($ref, resolvedValue) {
+          if (resolvedValue && (typeof resolvedValue === 'undefined' ? 'undefined' : _typeof(resolvedValue)) === 'object' && $Ref.isExtended$Ref($ref)) {
+            var merged = {};
+            Object.keys($ref).forEach(function (key) {
+              if (key !== '$ref') {
+                merged[key] = $ref[key];
+              }
+            });
+            Object.keys(resolvedValue).forEach(function (key) {
+              if (!(key in merged)) {
+                merged[key] = resolvedValue[key];
+              }
+            });
+            return merged;
+          } else {
+            // Completely replace the original reference with the resolved value
+            return resolvedValue;
+          }
+        };
+      },
+      { './pointer': 31 }
+    ],
+    33: [
+      function (require, module, exports) {
+        'use strict';
+        var ono = require('ono'), $Ref = require('./ref'), url = require('./util/url');
+        module.exports = $Refs;
+        /**
+ * This class is a map of JSON references and their resolved values.
+ */
+        function $Refs() {
+          /**
+   * Indicates whether the schema contains any circular references.
+   *
+   * @type {boolean}
+   */
+          this.circular = false;
+          /**
+   * A map of paths/urls to {@link $Ref} objects
+   *
+   * @type {object}
+   * @protected
+   */
+          this._$refs = {};
+          /**
+   * The {@link $Ref} object that is the root of the JSON schema.
+   *
+   * @type {$Ref}
+   * @protected
+   */
+          this._root$Ref = null;
+        }
+        /**
+ * Returns the paths of all the files/URLs that are referenced by the JSON schema,
+ * including the schema itself.
+ *
+ * @param {...string|string[]} [types] - Only return paths of the given types ("file", "http", etc.)
+ * @returns {string[]}
+ */
+        $Refs.prototype.paths = function (types) {
+          var paths = getPaths(this._$refs, arguments);
+          return paths.map(function (path) {
+            return path.decoded;
+          });
+        };
+        /**
+ * Returns the map of JSON references and their resolved values.
+ *
+ * @param {...string|string[]} [types] - Only return references of the given types ("file", "http", etc.)
+ * @returns {object}
+ */
+        $Refs.prototype.values = function (types) {
+          var $refs = this._$refs;
+          var paths = getPaths($refs, arguments);
+          return paths.reduce(function (obj, path) {
+            obj[path.decoded] = $refs[path.encoded].value;
+            return obj;
+          }, {});
+        };
+        /**
+ * Returns a POJO (plain old JavaScript object) for serialization as JSON.
+ *
+ * @returns {object}
+ */
+        $Refs.prototype.toJSON = $Refs.prototype.values;
+        /**
+ * Determines whether the given JSON reference exists.
+ *
+ * @param {string} path - The path being resolved, optionally with a JSON pointer in the hash
+ * @param {$RefParserOptions} [options]
+ * @returns {boolean}
+ */
+        $Refs.prototype.exists = function (path, options) {
+          try {
+            this._resolve(path, options);
+            return true;
+          } catch (e) {
+            return false;
+          }
+        };
+        /**
+ * Resolves the given JSON reference and returns the resolved value.
+ *
+ * @param {string} path - The path being resolved, with a JSON pointer in the hash
+ * @param {$RefParserOptions} [options]
+ * @returns {*} - Returns the resolved value
+ */
+        $Refs.prototype.get = function (path, options) {
+          return this._resolve(path, options).value;
+        };
+        /**
+ * Sets the value of a nested property within this {@link $Ref#value}.
+ * If the property, or any of its parents don't exist, they will be created.
+ *
+ * @param {string} path - The path of the property to set, optionally with a JSON pointer in the hash
+ * @param {*} value - The value to assign
+ */
+        $Refs.prototype.set = function (path, value) {
+          path = url.resolve(this._root$Ref.path, path);
+          var withoutHash = url.stripHash(path);
+          var $ref = this._$refs[withoutHash];
+          if (!$ref) {
+            throw ono('Error resolving $ref pointer "%s". \n"%s" not found.', path, withoutHash);
+          }
+          $ref.set(path, value);
+        };
+        /**
+ * Creates a new {@link $Ref} object and adds it to this {@link $Refs} object.
+ *
+ * @param {string} path  - The file path or URL of the referenced file
+ * @param {*} [value] - Optional. The value of the $ref.
+ */
+        $Refs.prototype._add = function (path, value) {
+          var withoutHash = url.stripHash(path);
+          var $ref = new $Ref();
+          $ref.path = withoutHash;
+          $ref.value = value;
+          $ref.$refs = this;
+          this._$refs[withoutHash] = $ref;
+          this._root$Ref = this._root$Ref || $ref;
+          return $ref;
+        };
+        /**
+ * Resolves the given JSON reference.
+ *
+ * @param {string} path - The path being resolved, optionally with a JSON pointer in the hash
+ * @param {$RefParserOptions} [options]
+ * @returns {Pointer}
+ * @protected
+ */
+        $Refs.prototype._resolve = function (path, options) {
+          path = url.resolve(this._root$Ref.path, path);
+          var withoutHash = url.stripHash(path);
+          var $ref = this._$refs[withoutHash];
+          if (!$ref) {
+            throw ono('Error resolving $ref pointer "%s". \n"%s" not found.', path, withoutHash);
+          }
+          return $ref.resolve(path, options);
+        };
+        /**
+ * Returns the specified {@link $Ref} object, or undefined.
+ *
+ * @param {string} path - The path being resolved, optionally with a JSON pointer in the hash
+ * @returns {$Ref|undefined}
+ * @protected
+ */
+        $Refs.prototype._get$Ref = function (path) {
+          path = url.resolve(this._root$Ref.path, path);
+          var withoutHash = url.stripHash(path);
+          return this._$refs[withoutHash];
+        };
+        /**
+ * Returns the encoded and decoded paths keys of the given object.
+ *
+ * @param {object} $refs - The object whose keys are URL-encoded paths
+ * @param {...string|string[]} [types] - Only return paths of the given types ("file", "http", etc.)
+ * @returns {object[]}
+ */
+        function getPaths($refs, types) {
+          var paths = Object.keys($refs);
+          // Filter the paths by type
+          types = Array.isArray(types[0]) ? types[0] : Array.prototype.slice.call(types);
+          if (types.length > 0 && types[0]) {
+            paths = paths.filter(function (key) {
+              return types.indexOf($refs[key].pathType) !== -1;
+            });
+          }
+          // Decode local filesystem paths
+          return paths.map(function (path) {
+            return {
+              encoded: path,
+              decoded: $refs[path].pathType === 'file' ? url.toFileSystemPath(path, true) : path
+            };
+          });
+        }
+      },
+      {
+        './ref': 32,
+        './util/url': 40,
+        'ono': 279
+      }
+    ],
+    34: [
+      function (require, module, exports) {
+        'use strict';
+        var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
+            return typeof obj;
+          } : function (obj) {
+            return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
+          };
+        var Promise = require('./util/promise'), $Ref = require('./ref'), Pointer = require('./pointer'), parse = require('./parse'), debug = require('./util/debug'), url = require('./util/url');
+        module.exports = resolveExternal;
+        /**
+ * Crawls the JSON schema, finds all external JSON references, and resolves their values.
+ * This method does not mutate the JSON schema. The resolved values are added to {@link $RefParser#$refs}.
+ *
+ * NOTE: We only care about EXTERNAL references here. INTERNAL references are only relevant when dereferencing.
+ *
+ * @param {$RefParser} parser
+ * @param {$RefParserOptions} options
+ *
+ * @returns {Promise}
+ * The promise resolves once all JSON references in the schema have been resolved,
+ * including nested references that are contained in externally-referenced files.
+ */
+        function resolveExternal(parser, options) {
+          if (!options.resolve.external) {
+            // Nothing to resolve, so exit early
+            return Promise.resolve();
+          }
+          try {
+            debug('Resolving $ref pointers in %s', parser.$refs._root$Ref.path);
+            var promises = crawl(parser.schema, parser.$refs._root$Ref.path + '#', parser.$refs, options);
+            return Promise.all(promises);
+          } catch (e) {
+            return Promise.reject(e);
+          }
+        }
+        /**
+ * Recursively crawls the given value, and resolves any external JSON references.
+ *
+ * @param {*} obj - The value to crawl. If it's not an object or array, it will be ignored.
+ * @param {string} path - The full path of `obj`, possibly with a JSON Pointer in the hash
+ * @param {$Refs} $refs
+ * @param {$RefParserOptions} options
+ *
+ * @returns {Promise[]}
+ * Returns an array of promises. There will be one promise for each JSON reference in `obj`.
+ * If `obj` does not contain any JSON references, then the array will be empty.
+ * If any of the JSON references point to files that contain additional JSON references,
+ * then the corresponding promise will internally reference an array of promises.
+ */
+        function crawl(obj, path, $refs, options) {
+          var promises = [];
+          if (obj && (typeof obj === 'undefined' ? 'undefined' : _typeof(obj)) === 'object') {
+            if ($Ref.isExternal$Ref(obj)) {
+              promises.push(resolve$Ref(obj, path, $refs, options));
+            } else {
+              Object.keys(obj).forEach(function (key) {
+                var keyPath = Pointer.join(path, key);
+                var value = obj[key];
+                if ($Ref.isExternal$Ref(value)) {
+                  promises.push(resolve$Ref(value, keyPath, $refs, options));
+                } else {
+                  promises = promises.concat(crawl(value, keyPath, $refs, options));
+                }
+              });
+            }
+          }
+          return promises;
+        }
+        /**
+ * Resolves the given JSON Reference, and then crawls the resulting value.
+ *
+ * @param {{$ref: string}} $ref - The JSON Reference to resolve
+ * @param {string} path - The full path of `$ref`, possibly with a JSON Pointer in the hash
+ * @param {$Refs} $refs
+ * @param {$RefParserOptions} options
+ *
+ * @returns {Promise}
+ * The promise resolves once all JSON references in the object have been resolved,
+ * including nested references that are contained in externally-referenced files.
+ */
+        function resolve$Ref($ref, path, $refs, options) {
+          debug('Resolving $ref pointer "%s" at %s', $ref.$ref, path);
+          var resolvedPath = url.resolve(path, $ref.$ref);
+          var withoutHash = url.stripHash(resolvedPath);
+          // Do we already have this $ref?
+          $ref = $refs._$refs[withoutHash];
+          if ($ref) {
+            // We've already parsed this $ref, so use the existing value
+            return Promise.resolve($ref.value);
+          }
+          // Parse the $referenced file/url
+          return parse(resolvedPath, $refs, options).then(function (result) {
+            // Crawl the parsed value
+            debug('Resolving $ref pointers in %s', withoutHash);
+            var promises = crawl(result, withoutHash + '#', $refs, options);
+            return Promise.all(promises);
+          });
+        }
+      },
+      {
+        './parse': 26,
+        './pointer': 31,
+        './ref': 32,
+        './util/debug': 37,
+        './util/promise': 39,
+        './util/url': 40
+      }
+    ],
+    35: [
+      function (require, module, exports) {
+        'use strict';
+        var fs = require('fs'), ono = require('ono'), Promise = require('../util/promise'), url = require('../util/url'), debug = require('../util/debug');
+        module.exports = {
+          order: 100,
+          canRead: function isFile(file) {
+            return url.isFileSystemPath(file.url);
+          },
+          read: function readFile(file) {
+            return new Promise(function (resolve, reject) {
+              var path;
+              try {
+                path = url.toFileSystemPath(file.url);
+              } catch (err) {
+                reject(ono.uri(err, 'Malformed URI: %s', file.url));
+              }
+              debug('Opening file: %s', path);
+              try {
+                fs.readFile(path, function (err, data) {
+                  if (err) {
+                    reject(ono(err, 'Error opening file "%s"', path));
+                  } else {
+                    resolve(data);
+                  }
+                });
+              } catch (err) {
+                reject(ono(err, 'Error opening file "%s"', path));
+              }
+            });
+          }
+        };
+      },
+      {
+        '../util/debug': 37,
+        '../util/promise': 39,
+        '../util/url': 40,
+        'fs': 4,
+        'ono': 279
+      }
+    ],
+    36: [
+      function (require, module, exports) {
+        (function (process, Buffer) {
+          'use strict';
+          var http = require('http'), https = require('https'), ono = require('ono'), url = require('../util/url'), debug = require('../util/debug'), Promise = require('../util/promise');
+          module.exports = {
+            order: 200,
+            headers: null,
+            timeout: 5000,
+            redirects: 5,
+            withCredentials: false,
+            canRead: function isHttp(file) {
+              return url.isHttp(file.url);
+            },
+            read: function readHttp(file) {
+              var u = url.parse(file.url);
+              if (process.browser && !u.protocol) {
+                // Use the protocol of the current page
+                u.protocol = url.parse(location.href).protocol;
+              }
+              return download(u, this);
+            }
+          };
+          /**
+ * Downloads the given file.
+ *
+ * @param {Url|string} u        - The url to download (can be a parsed {@link Url} object)
+ * @param {object} httpOptions  - The `options.resolve.http` object
+ * @param {number} [redirects]  - The redirect URLs that have already been followed
+ *
+ * @returns {Promise<Buffer>}
+ * The promise resolves with the raw downloaded data, or rejects if there is an HTTP error.
+ */
+          function download(u, httpOptions, redirects) {
+            return new Promise(function (resolve, reject) {
+              u = url.parse(u);
+              redirects = redirects || [];
+              redirects.push(u.href);
+              get(u, httpOptions).then(function (res) {
+                if (res.statusCode >= 400) {
+                  throw ono({ status: res.statusCode }, 'HTTP ERROR %d', res.statusCode);
+                } else if (res.statusCode >= 300) {
+                  if (redirects.length > httpOptions.redirects) {
+                    reject(ono({ status: res.statusCode }, 'Error downloading %s. \nToo many redirects: \n  %s', redirects[0], redirects.join(' \n  ')));
+                  } else if (!res.headers.location) {
+                    throw ono({ status: res.statusCode }, 'HTTP %d redirect with no location header', res.statusCode);
+                  } else {
+                    debug('HTTP %d redirect %s -> %s', res.statusCode, u.href, res.headers.location);
+                    var redirectTo = url.resolve(u, res.headers.location);
+                    download(redirectTo, httpOptions, redirects).then(resolve, reject);
+                  }
+                } else {
+                  resolve(res.body || new Buffer(0));
+                }
+              }).catch(function (err) {
+                reject(ono(err, 'Error downloading', u.href));
+              });
+            });
+          }
+          /**
+ * Sends an HTTP GET request.
+ *
+ * @param {Url} u - A parsed {@link Url} object
+ * @param {object} httpOptions - The `options.resolve.http` object
+ *
+ * @returns {Promise<Response>}
+ * The promise resolves with the HTTP Response object.
+ */
+          function get(u, httpOptions) {
+            return new Promise(function (resolve, reject) {
+              debug('GET', u.href);
+              var protocol = u.protocol === 'https:' ? https : http;
+              var req = protocol.get({
+                  hostname: u.hostname,
+                  port: u.port,
+                  path: u.path,
+                  auth: u.auth,
+                  headers: httpOptions.headers || {},
+                  withCredentials: httpOptions.withCredentials
+                });
+              if (typeof req.setTimeout === 'function') {
+                req.setTimeout(httpOptions.timeout);
+              }
+              req.on('timeout', function () {
+                req.abort();
+              });
+              req.on('error', reject);
+              req.once('response', function (res) {
+                res.body = new Buffer(0);
+                res.on('data', function (data) {
+                  res.body = Buffer.concat([
+                    res.body,
+                    new Buffer(data)
+                  ]);
+                });
+                res.on('error', reject);
+                res.on('end', function () {
+                  resolve(res);
+                });
+              });
+            });
+          }
+        }.call(this, require('_process'), require('buffer').Buffer));
+      },
+      {
+        '../util/debug': 37,
+        '../util/promise': 39,
+        '../util/url': 40,
+        '_process': 281,
+        'buffer': 6,
+        'http': 300,
+        'https': 16,
+        'ono': 279
+      }
+    ],
+    37: [
+      function (require, module, exports) {
+        'use strict';
+        var debug = require('debug');
+        /**
+ * Writes messages to stdout.
+ * Log messages are suppressed by default, but can be enabled by setting the DEBUG variable.
+ * @type {function}
+ */
+        module.exports = debug('json-schema-ref-parser');
+      },
+      { 'debug': 11 }
+    ],
+    38: [
+      function (require, module, exports) {
+        'use strict';
+        var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
+            return typeof obj;
+          } : function (obj) {
+            return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
+          };
+        var Promise = require('./promise'), debug = require('./debug');
+        /**
+ * Returns the given plugins as an array, rather than an object map.
+ * All other methods in this module expect an array of plugins rather than an object map.
+ *
+ * @param  {object} plugins - A map of plugin objects
+ * @return {object[]}
+ */
+        exports.all = function (plugins) {
+          return Object.keys(plugins).filter(function (key) {
+            return _typeof(plugins[key]) === 'object';
+          }).map(function (key) {
+            plugins[key].name = key;
+            return plugins[key];
+          });
+        };
+        /**
+ * Filters the given plugins, returning only the ones return `true` for the given method.
+ *
+ * @param  {object[]} plugins - An array of plugin objects
+ * @param  {string}   method  - The name of the filter method to invoke for each plugin
+ * @param  {object}   file    - A file info object, which will be passed to each method
+ * @return {object[]}
+ */
+        exports.filter = function (plugins, method, file) {
+          return plugins.filter(function (plugin) {
+            return !!getResult(plugin, method, file);
+          });
+        };
+        /**
+ * Sorts the given plugins, in place, by their `order` property.
+ *
+ * @param {object[]} plugins - An array of plugin objects
+ * @returns {object[]}
+ */
+        exports.sort = function (plugins) {
+          plugins.forEach(function (plugin) {
+            plugin.order = plugin.order || Number.MAX_SAFE_INTEGER;
+          });
+          return plugins.sort(function (a, b) {
+            return a.order - b.order;
+          });
+        };
+        /**
+ * Runs the specified method of the given plugins, in order, until one of them returns a successful result.
+ * Each method can return a synchronous value, a Promise, or call an error-first callback.
+ * If the promise resolves successfully, or the callback is called without an error, then the result
+ * is immediately returned and no further plugins are called.
+ * If the promise rejects, or the callback is called with an error, then the next plugin is called.
+ * If ALL plugins fail, then the last error is thrown.
+ *
+ * @param {object[]}  plugins - An array of plugin objects
+ * @param {string}    method  - The name of the method to invoke for each plugin
+ * @param {object}    file    - A file info object, which will be passed to each method
+ * @returns {Promise}
+ */
+        exports.run = function (plugins, method, file) {
+          var plugin, lastError, index = 0;
+          return new Promise(function (resolve, reject) {
+            runNextPlugin();
+            function runNextPlugin() {
+              plugin = plugins[index++];
+              if (!plugin) {
+                // There are no more functions, so re-throw the last error
+                return reject(lastError);
+              }
+              try {
+                debug('  %s', plugin.name);
+                var result = getResult(plugin, method, file, callback);
+                if (result && typeof result.then === 'function') {
+                  // A promise was returned
+                  result.then(onSuccess, onError);
+                } else if (result !== undefined) {
+                  // A synchronous result was returned
+                  onSuccess(result);
+                }  // else { the callback will be called }
+              } catch (e) {
+                onError(e);
+              }
+            }
+            function callback(err, result) {
+              if (err) {
+                onError(err);
+              } else {
+                onSuccess(result);
+              }
+            }
+            function onSuccess(result) {
+              debug('    success');
+              resolve({
+                plugin: plugin,
+                result: result
+              });
+            }
+            function onError(err) {
+              debug('    %s', err.message || err);
+              lastError = err;
+              runNextPlugin();
+            }
+          });
+        };
+        /**
+ * Returns the value of the given property.
+ * If the property is a function, then the result of the function is returned.
+ * If the value is a RegExp, then it will be tested against the file URL.
+ * If the value is an aray, then it will be compared against the file extension.
+ *
+ * @param   {object}   obj        - The object whose property/method is called
+ * @param   {string}   prop       - The name of the property/method to invoke
+ * @param   {object}   file       - A file info object, which will be passed to the method
+ * @param   {function} [callback] - A callback function, which will be passed to the method
+ * @returns {*}
+ */
+        function getResult(obj, prop, file, callback) {
+          var value = obj[prop];
+          if (typeof value === 'function') {
+            return value.apply(obj, [
+              file,
+              callback
+            ]);
+          }
+          if (!callback) {
+            // The synchronous plugin functions (canParse and canRead)
+            // allow a "shorthand" syntax, where the user can match
+            // files by RegExp or by file extension.
+            if (value instanceof RegExp) {
+              return value.test(file.url);
+            } else if (typeof value === 'string') {
+              return value === file.extension;
+            } else if (Array.isArray(value)) {
+              return value.indexOf(file.extension) !== -1;
+            }
+          }
+          return value;
+        }
+      },
+      {
+        './debug': 37,
+        './promise': 39
+      }
+    ],
+    39: [
+      function (require, module, exports) {
+        'use strict';
+        /** @type {Promise} **/
+        module.exports = typeof Promise === 'function' ? Promise : require('es6-promise').Promise;
+      },
+      { 'es6-promise': 13 }
+    ],
+    40: [
+      function (require, module, exports) {
+        (function (process) {
+          'use strict';
+          var isWindows = /^win/.test(process.platform), forwardSlashPattern = /\//g, protocolPattern = /^([a-z0-9.+-]+):\/\//i, url = module.exports;
+          // RegExp patterns to URL-encode special characters in local filesystem paths
+          var urlEncodePatterns = [
+              /\?/g,
+              '%3F',
+              /\#/g,
+              '%23',
+              isWindows ? /\\/g : /\//,
+              '/'
+            ];
+          // RegExp patterns to URL-decode special characters for local filesystem paths
+          var urlDecodePatterns = [
+              /\%23/g,
+              '#',
+              /\%24/g,
+              '$',
+              /\%26/g,
+              '&',
+              /\%2C/g,
+              ',',
+              /\%40/g,
+              '@'
+            ];
+          exports.parse = require('url').parse;
+          exports.resolve = require('url').resolve;
+          /**
+ * Returns the current working directory (in Node) or the current page URL (in browsers).
+ *
+ * @returns {string}
+ */
+          exports.cwd = function cwd() {
+            return process.browser ? location.href : process.cwd() + '/';
+          };
+          /**
+ * Returns the protocol of the given URL, or `undefined` if it has no protocol.
+ *
+ * @param   {string} path
+ * @returns {?string}
+ */
+          exports.getProtocol = function getProtocol(path) {
+            var match = protocolPattern.exec(path);
+            if (match) {
+              return match[1].toLowerCase();
+            }
+          };
+          /**
+ * Returns the lowercased file extension of the given URL,
+ * or an empty string if it has no extension.
+ *
+ * @param   {string} path
+ * @returns {string}
+ */
+          exports.getExtension = function getExtension(path) {
+            var lastDot = path.lastIndexOf('.');
+            if (lastDot >= 0) {
+              return path.substr(lastDot).toLowerCase();
+            }
+            return '';
+          };
+          /**
+ * Returns the hash (URL fragment), of the given path.
+ * If there is no hash, then the root hash ("#") is returned.
+ *
+ * @param   {string} path
+ * @returns {string}
+ */
+          exports.getHash = function getHash(path) {
+            var hashIndex = path.indexOf('#');
+            if (hashIndex >= 0) {
+              return path.substr(hashIndex);
+            }
+            return '#';
+          };
+          /**
+ * Removes the hash (URL fragment), if any, from the given path.
+ *
+ * @param   {string} path
+ * @returns {string}
+ */
+          exports.stripHash = function stripHash(path) {
+            var hashIndex = path.indexOf('#');
+            if (hashIndex >= 0) {
+              path = path.substr(0, hashIndex);
+            }
+            return path;
+          };
+          /**
+ * Determines whether the given path is an HTTP(S) URL.
+ *
+ * @param   {string} path
+ * @returns {boolean}
+ */
+          exports.isHttp = function isHttp(path) {
+            var protocol = url.getProtocol(path);
+            if (protocol === 'http' || protocol === 'https') {
+              return true;
+            } else if (protocol === undefined) {
+              // There is no protocol.  If we're running in a browser, then assume it's HTTP.
+              return process.browser;
+            } else {
+              // It's some other protocol, such as "ftp://", "mongodb://", etc.
+              return false;
+            }
+          };
+          /**
+ * Determines whether the given path is a filesystem path.
+ * This includes "file://" URLs.
+ *
+ * @param   {string} path
+ * @returns {boolean}
+ */
+          exports.isFileSystemPath = function isFileSystemPath(path) {
+            if (process.browser) {
+              // We're running in a browser, so assume that all paths are URLs.
+              // This way, even relative paths will be treated as URLs rather than as filesystem paths
+              return false;
+            }
+            var protocol = url.getProtocol(path);
+            return protocol === undefined || protocol === 'file';
+          };
+          /**
+ * Converts a filesystem path to a properly-encoded URL.
+ *
+ * This is intended to handle situations where JSON Schema $Ref Parser is called
+ * with a filesystem path that contains characters which are not allowed in URLs.
+ *
+ * @example
+ * The following filesystem paths would be converted to the following URLs:
+ *
+ *    <"!@#$%^&*+=?'>.json              ==>   %3C%22!@%23$%25%5E&*+=%3F\'%3E.json
+ *    C:\\My Documents\\File (1).json   ==>   C:/My%20Documents/File%20(1).json
+ *    file://Project #42/file.json      ==>   file://Project%20%2342/file.json
+ *
+ * @param {string} path
+ * @returns {string}
+ */
+          exports.fromFileSystemPath = function fromFileSystemPath(path) {
+            // Step 1: Manually encode characters that are not encoded by `encodeURI`.
+            // This includes characters such as "#" and "?", which have special meaning in URLs,
+            // but are just normal characters in a filesystem path.
+            // On Windows, this will also replace backslashes with forward slashes,
+            // rather than encoding them as special characters.
+            for (var i = 0; i < urlEncodePatterns.length; i += 2) {
+              path = path.replace(urlEncodePatterns[i], urlEncodePatterns[i + 1]);
+            }
+            // Step 2: `encodeURI` will take care of all other characters
+            return encodeURI(path);
+          };
+          /**
+ * Converts a URL to a local filesystem path.
+ *
+ * @param {string}  path
+ * @param {boolean} [keepFileProtocol] - If true, then "file://" will NOT be stripped
+ * @returns {string}
+ */
+          exports.toFileSystemPath = function toFileSystemPath(path, keepFileProtocol) {
+            // Step 1: `decodeURI` will decode characters such as Cyrillic characters, spaces, etc.
+            path = decodeURI(path);
+            // Step 2: Manually decode characters that are not decoded by `decodeURI`.
+            // This includes characters such as "#" and "?", which have special meaning in URLs,
+            // but are just normal characters in a filesystem path.
+            for (var i = 0; i < urlDecodePatterns.length; i += 2) {
+              path = path.replace(urlDecodePatterns[i], urlDecodePatterns[i + 1]);
+            }
+            // Step 3: If it's a "file://" URL, then format it consistently
+            // or convert it to a local filesystem path
+            var isFileUrl = path.substr(0, 7).toLowerCase() === 'file://';
+            if (isFileUrl) {
+              // Strip-off the protocol, and the initial "/", if there is one
+              path = path[7] === '/' ? path.substr(8) : path.substr(7);
+              // insert a colon (":") after the drive letter on Windows
+              if (isWindows && path[1] === '/') {
+                path = path[0] + ':' + path.substr(1);
+              }
+              if (keepFileProtocol) {
+                // Return the consistently-formatted "file://" URL
+                path = 'file:///' + path;
+              } else {
+                // Convert the "file://" URL to a local filesystem path.
+                // On Windows, it will start with something like "C:/".
+                // On Posix, it will start with "/"
+                isFileUrl = false;
+                path = isWindows ? path : '/' + path;
+              }
+            }
+            // Step 4: On Windows, convert backslashes to forward slashes,
+            // unless it's a "file://" URL
+            if (isWindows && !isFileUrl) {
+              path = path.replace(forwardSlashPattern, '\\');
+            }
+            return path;
+          };
+        }.call(this, require('_process')));
+      },
+      {
+        '_process': 281,
+        'url': 314
+      }
+    ],
+    41: [
+      function (require, module, exports) {
+        /* eslint lines-around-comment: [2, {beforeBlockComment: false}] */
+        'use strict';
+        var yaml = require('js-yaml'), ono = require('ono');
+        /**
+ * Simple YAML parsing functions, similar to {@link JSON.parse} and {@link JSON.stringify}
+ */
+        module.exports = {
+          parse: function yamlParse(text, reviver) {
+            try {
+              return yaml.safeLoad(text);
+            } catch (e) {
+              if (e instanceof Error) {
+                throw e;
+              } else {
+                // https://github.com/nodeca/js-yaml/issues/153
+                throw ono(e, e.message);
+              }
+            }
+          },
+          stringify: function yamlStringify(value, replacer, space) {
+            try {
+              var indent = (typeof space === 'string' ? space.length : space) || 2;
+              return yaml.safeDump(value, { indent: indent });
+            } catch (e) {
+              if (e instanceof Error) {
+                throw e;
+              } else {
+                // https://github.com/nodeca/js-yaml/issues/153
+                throw ono(e, e.message);
+              }
+            }
+          }
+        };
+      },
+      {
+        'js-yaml': 43,
+        'ono': 279
+      }
+    ],
+    42: [
+      function (require, module, exports) {
+        'use strict';
+        module.exports = {
+          order: 100,
+          canValidate: function canValidate(file) {
+            // Z-Schema requires JSON References to already be resolved (but not dereferenced)
+            return !!file.resolved;
+          },
+          validate: function validate(file) {
+          }
+        };
+      },
+      {}
+    ],
+    43: [
+      function (require, module, exports) {
+        'use strict';
         var yaml = require('./lib/js-yaml.js');
         module.exports = yaml;
       },
-      { './lib/js-yaml.js': 22 }
+      { './lib/js-yaml.js': 44 }
     ],
-    22: [
+    44: [
       function (require, module, exports) {
         'use strict';
         var loader = require('./js-yaml/loader');
@@ -9044,31 +11425,26 @@
         module.exports.addConstructor = deprecated('addConstructor');
       },
       {
-        './js-yaml/dumper': 24,
-        './js-yaml/exception': 25,
-        './js-yaml/loader': 26,
-        './js-yaml/schema': 28,
-        './js-yaml/schema/core': 29,
-        './js-yaml/schema/default_full': 30,
-        './js-yaml/schema/default_safe': 31,
-        './js-yaml/schema/failsafe': 32,
-        './js-yaml/schema/json': 33,
-        './js-yaml/type': 34
+        './js-yaml/dumper': 46,
+        './js-yaml/exception': 47,
+        './js-yaml/loader': 48,
+        './js-yaml/schema': 50,
+        './js-yaml/schema/core': 51,
+        './js-yaml/schema/default_full': 52,
+        './js-yaml/schema/default_safe': 53,
+        './js-yaml/schema/failsafe': 54,
+        './js-yaml/schema/json': 55,
+        './js-yaml/type': 56
       }
     ],
-    23: [
+    45: [
       function (require, module, exports) {
         'use strict';
-        var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
-            return typeof obj;
-          } : function (obj) {
-            return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
-          };
         function isNothing(subject) {
           return typeof subject === 'undefined' || subject === null;
         }
         function isObject(subject) {
-          return (typeof subject === 'undefined' ? 'undefined' : _typeof(subject)) === 'object' && subject !== null;
+          return typeof subject === 'object' && subject !== null;
         }
         function toArray(sequence) {
           if (Array.isArray(sequence))
@@ -9107,15 +11483,10 @@
       },
       {}
     ],
-    24: [
+    46: [
       function (require, module, exports) {
         'use strict';
         /*eslint-disable no-use-before-define*/
-        var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
-            return typeof obj;
-          } : function (obj) {
-            return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
-          };
         var common = require('./common');
         var YAMLException = require('./exception');
         var DEFAULT_FULL_SCHEMA = require('./schema/default_full');
@@ -9353,7 +11724,7 @@
               plain = plain && isPlainSafe(char);
             }
             // in case the end is missing a \n
-            hasFoldableLine = hasFoldableLine || shouldTrackWidth && i - previousLineBreak - 1 > lineWidth && string[previousLineBreak + 1] !== ' ';
+            hasFoldableLine = hasFoldableLine || shouldTrackWidth && (i - previousLineBreak - 1 > lineWidth && string[previousLineBreak + 1] !== ' ');
           }
           // Although every style can represent \n without escaping, prefer block styles
           // for multiline, since they're more readable and they don't add empty lines.
@@ -9616,7 +11987,7 @@
           typeList = explicit ? state.explicitTypes : state.implicitTypes;
           for (index = 0, length = typeList.length; index < length; index += 1) {
             type = typeList[index];
-            if ((type.instanceOf || type.predicate) && (!type.instanceOf || (typeof object === 'undefined' ? 'undefined' : _typeof(object)) === 'object' && object instanceof type.instanceOf) && (!type.predicate || type.predicate(object))) {
+            if ((type.instanceOf || type.predicate) && (!type.instanceOf || typeof object === 'object' && object instanceof type.instanceOf) && (!type.predicate || type.predicate(object))) {
               state.tag = explicit ? type.tag : '?';
               if (type.represent) {
                 style = state.styleMap[type.tag] || type.defaultStyle;
@@ -9710,7 +12081,7 @@
         }
         function inspectNode(object, objects, duplicatesIndexes) {
           var objectKeyList, index, length;
-          if (object !== null && (typeof object === 'undefined' ? 'undefined' : _typeof(object)) === 'object') {
+          if (object !== null && typeof object === 'object') {
             index = objects.indexOf(object);
             if (index !== -1) {
               if (duplicatesIndexes.indexOf(index) === -1) {
@@ -9747,13 +12118,13 @@
         module.exports.safeDump = safeDump;
       },
       {
-        './common': 23,
-        './exception': 25,
-        './schema/default_full': 30,
-        './schema/default_safe': 31
+        './common': 45,
+        './exception': 47,
+        './schema/default_full': 52,
+        './schema/default_safe': 53
       }
     ],
-    25: [
+    47: [
       function (require, module, exports) {
         // YAML error class. http://stackoverflow.com/questions/8458984
         //
@@ -9789,7 +12160,7 @@
       },
       {}
     ],
-    26: [
+    48: [
       function (require, module, exports) {
         'use strict';
         /*eslint-disable max-len,no-use-before-define*/
@@ -10911,14 +13282,14 @@
         module.exports.safeLoad = safeLoad;
       },
       {
-        './common': 23,
-        './exception': 25,
-        './mark': 27,
-        './schema/default_full': 30,
-        './schema/default_safe': 31
+        './common': 45,
+        './exception': 47,
+        './mark': 49,
+        './schema/default_full': 52,
+        './schema/default_safe': 53
       }
     ],
-    27: [
+    49: [
       function (require, module, exports) {
         'use strict';
         var common = require('./common');
@@ -10974,9 +13345,9 @@
         };
         module.exports = Mark;
       },
-      { './common': 23 }
+      { './common': 45 }
     ],
-    28: [
+    50: [
       function (require, module, exports) {
         'use strict';
         /*eslint-disable max-len*/
@@ -11000,23 +13371,21 @@
             return exclude.indexOf(index) === -1;
           });
         }
-        function compileMap()
-          /* lists... */
-          {
-            var result = {
-                scalar: {},
-                sequence: {},
-                mapping: {},
-                fallback: {}
-              }, index, length;
-            function collectType(type) {
-              result[type.kind][type.tag] = result['fallback'][type.tag] = type;
-            }
-            for (index = 0, length = arguments.length; index < length; index += 1) {
-              arguments[index].forEach(collectType);
-            }
-            return result;
+        function compileMap() {
+          var result = {
+              scalar: {},
+              sequence: {},
+              mapping: {},
+              fallback: {}
+            }, index, length;
+          function collectType(type) {
+            result[type.kind][type.tag] = result['fallback'][type.tag] = type;
           }
+          for (index = 0, length = arguments.length; index < length; index += 1) {
+            arguments[index].forEach(collectType);
+          }
+          return result;
+        }
         function Schema(definition) {
           this.include = definition.include || [];
           this.implicit = definition.implicit || [];
@@ -11065,12 +13434,12 @@
         module.exports = Schema;
       },
       {
-        './common': 23,
-        './exception': 25,
-        './type': 34
+        './common': 45,
+        './exception': 47,
+        './type': 56
       }
     ],
-    29: [
+    51: [
       function (require, module, exports) {
         // Standard YAML's Core schema.
         // http://www.yaml.org/spec/1.2/spec.html#id2804923
@@ -11082,11 +13451,11 @@
         module.exports = new Schema({ include: [require('./json')] });
       },
       {
-        '../schema': 28,
-        './json': 33
+        '../schema': 50,
+        './json': 55
       }
     ],
-    30: [
+    52: [
       function (require, module, exports) {
         // JS-YAML's default schema for `load` function.
         // It is not described in the YAML specification.
@@ -11107,14 +13476,14 @@
         });
       },
       {
-        '../schema': 28,
-        '../type/js/function': 39,
-        '../type/js/regexp': 40,
-        '../type/js/undefined': 41,
-        './default_safe': 31
+        '../schema': 50,
+        '../type/js/function': 61,
+        '../type/js/regexp': 62,
+        '../type/js/undefined': 63,
+        './default_safe': 53
       }
     ],
-    31: [
+    53: [
       function (require, module, exports) {
         // JS-YAML's default schema for `safeLoad` function.
         // It is not described in the YAML specification.
@@ -11138,17 +13507,17 @@
         });
       },
       {
-        '../schema': 28,
-        '../type/binary': 35,
-        '../type/merge': 43,
-        '../type/omap': 45,
-        '../type/pairs': 46,
-        '../type/set': 48,
-        '../type/timestamp': 50,
-        './core': 29
+        '../schema': 50,
+        '../type/binary': 57,
+        '../type/merge': 65,
+        '../type/omap': 67,
+        '../type/pairs': 68,
+        '../type/set': 70,
+        '../type/timestamp': 72,
+        './core': 51
       }
     ],
-    32: [
+    54: [
       function (require, module, exports) {
         // Standard YAML's Failsafe schema.
         // http://www.yaml.org/spec/1.2/spec.html#id2802346
@@ -11163,13 +13532,13 @@
         });
       },
       {
-        '../schema': 28,
-        '../type/map': 42,
-        '../type/seq': 47,
-        '../type/str': 49
+        '../schema': 50,
+        '../type/map': 64,
+        '../type/seq': 69,
+        '../type/str': 71
       }
     ],
-    33: [
+    55: [
       function (require, module, exports) {
         // Standard YAML's JSON schema.
         // http://www.yaml.org/spec/1.2/spec.html#id2803231
@@ -11190,15 +13559,15 @@
         });
       },
       {
-        '../schema': 28,
-        '../type/bool': 36,
-        '../type/float': 37,
-        '../type/int': 38,
-        '../type/null': 44,
-        './failsafe': 32
+        '../schema': 50,
+        '../type/bool': 58,
+        '../type/float': 59,
+        '../type/int': 60,
+        '../type/null': 66,
+        './failsafe': 54
       }
     ],
-    34: [
+    56: [
       function (require, module, exports) {
         'use strict';
         var YAMLException = require('./exception');
@@ -11255,9 +13624,9 @@
         }
         module.exports = Type;
       },
-      { './exception': 25 }
+      { './exception': 47 }
     ],
-    35: [
+    57: [
       function (require, module, exports) {
         'use strict';
         /*eslint-disable no-bitwise*/
@@ -11364,9 +13733,9 @@
           represent: representYamlBinary
         });
       },
-      { '../type': 34 }
+      { '../type': 56 }
     ],
-    36: [
+    58: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -11388,22 +13757,22 @@
           construct: constructYamlBoolean,
           predicate: isBoolean,
           represent: {
-            lowercase: function lowercase(object) {
+            lowercase: function (object) {
               return object ? 'true' : 'false';
             },
-            uppercase: function uppercase(object) {
+            uppercase: function (object) {
               return object ? 'TRUE' : 'FALSE';
             },
-            camelcase: function camelcase(object) {
+            camelcase: function (object) {
               return object ? 'True' : 'False';
             }
           },
           defaultStyle: 'lowercase'
         });
       },
-      { '../type': 34 }
+      { '../type': 56 }
     ],
-    37: [
+    59: [
       function (require, module, exports) {
         'use strict';
         var common = require('../common');
@@ -11493,11 +13862,11 @@
         });
       },
       {
-        '../common': 23,
-        '../type': 34
+        '../common': 45,
+        '../type': 56
       }
     ],
-    38: [
+    60: [
       function (require, module, exports) {
         'use strict';
         var common = require('../common');
@@ -11621,7 +13990,7 @@
           return sign * parseInt(value, 10);
         }
         function isInteger(object) {
-          return Object.prototype.toString.call(object) === '[object Number]' && object % 1 === 0 && !common.isNegativeZero(object);
+          return Object.prototype.toString.call(object) === '[object Number]' && (object % 1 === 0 && !common.isNegativeZero(object));
         }
         module.exports = new Type('tag:yaml.org,2002:int', {
           kind: 'scalar',
@@ -11629,16 +13998,16 @@
           construct: constructYamlInteger,
           predicate: isInteger,
           represent: {
-            binary: function binary(object) {
+            binary: function (object) {
               return '0b' + object.toString(2);
             },
-            octal: function octal(object) {
+            octal: function (object) {
               return '0' + object.toString(8);
             },
-            decimal: function decimal(object) {
+            decimal: function (object) {
               return object.toString(10);
             },
-            hexadecimal: function hexadecimal(object) {
+            hexadecimal: function (object) {
               return '0x' + object.toString(16).toUpperCase();
             }
           },
@@ -11664,11 +14033,11 @@
         });
       },
       {
-        '../common': 23,
-        '../type': 34
+        '../common': 45,
+        '../type': 56
       }
     ],
-    39: [
+    61: [
       function (require, module, exports) {
         'use strict';
         var esprima;
@@ -11731,9 +14100,9 @@
           represent: representJavascriptFunction
         });
       },
-      { '../../type': 34 }
+      { '../../type': 56 }
     ],
-    40: [
+    62: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../../type');
@@ -11787,9 +14156,9 @@
           represent: representJavascriptRegExp
         });
       },
-      { '../../type': 34 }
+      { '../../type': 56 }
     ],
-    41: [
+    63: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../../type');
@@ -11814,22 +14183,22 @@
           represent: representJavascriptUndefined
         });
       },
-      { '../../type': 34 }
+      { '../../type': 56 }
     ],
-    42: [
+    64: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
         module.exports = new Type('tag:yaml.org,2002:map', {
           kind: 'mapping',
-          construct: function construct(data) {
+          construct: function (data) {
             return data !== null ? data : {};
           }
         });
       },
-      { '../type': 34 }
+      { '../type': 56 }
     ],
-    43: [
+    65: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -11841,9 +14210,9 @@
           resolve: resolveYamlMerge
         });
       },
-      { '../type': 34 }
+      { '../type': 56 }
     ],
-    44: [
+    66: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -11865,25 +14234,25 @@
           construct: constructYamlNull,
           predicate: isNull,
           represent: {
-            canonical: function canonical() {
+            canonical: function () {
               return '~';
             },
-            lowercase: function lowercase() {
+            lowercase: function () {
               return 'null';
             },
-            uppercase: function uppercase() {
+            uppercase: function () {
               return 'NULL';
             },
-            camelcase: function camelcase() {
+            camelcase: function () {
               return 'Null';
             }
           },
           defaultStyle: 'lowercase'
         });
       },
-      { '../type': 34 }
+      { '../type': 56 }
     ],
-    45: [
+    67: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -11924,9 +14293,9 @@
           construct: constructYamlOmap
         });
       },
-      { '../type': 34 }
+      { '../type': 56 }
     ],
-    46: [
+    68: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -11971,22 +14340,22 @@
           construct: constructYamlPairs
         });
       },
-      { '../type': 34 }
+      { '../type': 56 }
     ],
-    47: [
+    69: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
         module.exports = new Type('tag:yaml.org,2002:seq', {
           kind: 'sequence',
-          construct: function construct(data) {
+          construct: function (data) {
             return data !== null ? data : [];
           }
         });
       },
-      { '../type': 34 }
+      { '../type': 56 }
     ],
-    48: [
+    70: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -12012,22 +14381,22 @@
           construct: constructYamlSet
         });
       },
-      { '../type': 34 }
+      { '../type': 56 }
     ],
-    49: [
+    71: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
         module.exports = new Type('tag:yaml.org,2002:str', {
           kind: 'scalar',
-          construct: function construct(data) {
+          construct: function (data) {
             return data !== null ? data : '';
           }
         });
       },
-      { '../type': 34 }
+      { '../type': 56 }
     ],
-    50: [
+    72: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -12097,2383 +14466,7 @@
           represent: representYamlTimestamp
         });
       },
-      { '../type': 34 }
-    ],
-    51: [
-      function (require, module, exports) {
-        'use strict';
-        var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
-            return typeof obj;
-          } : function (obj) {
-            return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
-          };
-        var JsonSchemaCompatability = function () {
-            function convert3to4Type(types, always) {
-              if (!Array.isArray(types)) {
-                types = [types];
-              }
-              var needsReplacement = !!always;
-              var result = [];
-              for (var i = 0; i < types.length; i++) {
-                var entry = types[i];
-                if ((typeof entry === 'undefined' ? 'undefined' : _typeof(entry)) === 'object') {
-                  result.push(entry);
-                  needsReplacement = true;
-                } else {
-                  result.push({ 'type': entry });
-                }
-              }
-              return needsReplacement && result;
-            }
-            function convert3to4(obj) {
-              // Old-style "type"
-              if (obj.type) {
-                if (typeof obj.type !== 'string') {
-                  var anyOf = convert3to4Type(obj.type);
-                  if (anyOf) {
-                    obj.anyOf = anyOf;
-                    delete obj.type;
-                  }
-                } else if (obj.type == 'any') {
-                  delete obj.type;
-                }
-              }
-              if (obj['extends']) {
-                var allOf = obj['extends'];
-                if (!Array.isArray(allOf)) {
-                  allOf = [allOf];
-                }
-                obj.allOf = allOf;
-                delete obj['extends'];
-              }
-              if (obj.disallow) {
-                if (typeof obj.disallow === 'string') {
-                  obj.not = { 'type': obj.disallow };
-                } else {
-                  obj.not = { 'anyOf': convert3to4Type(obj.disallow, true) };
-                }
-                delete obj.disallow;
-              }
-              // Object concerns
-              if (obj.properties) {
-                var required = Array.isArray(obj.required) ? obj.required : [];
-                for (var key in obj.properties) {
-                  var subSchema = obj.properties[key];
-                  if (subSchema && typeof subSchema.required === 'boolean') {
-                    if (subSchema.required) {
-                      required.push(key);
-                    }
-                    delete subSchema.required;
-                  }
-                }
-                if (required.length) {
-                  obj.required = required;
-                }
-              }
-              if (obj.dependencies) {
-                for (var key in obj.dependencies) {
-                  if (typeof obj.dependencies[key] === 'string') {
-                    obj.dependencies[key] = [obj.dependencies[key]];
-                  }
-                }
-              }
-              // This is safe as long as we process our children *after* we collect their "required" properties
-              // - otherwise, they'd delete their "required" booleans before we got a chance to see them
-              if (typeof obj.required === 'boolean') {
-                delete obj.required;
-              }
-              // Numeric concerns
-              if (typeof obj.divisibleBy !== 'undefined') {
-                obj.multipleOf = obj.divisibleBy;
-                delete obj.divisibleBy;
-              }
-              // This MUST happen at the end of the function, otherwise it'll screw up "required" collection
-              for (var key in obj) {
-                if (key === 'properties' || key === 'patternProperties' || key === 'dependencies') {
-                  for (var subKey in obj[key]) {
-                    obj[key][subKey] = convert3to4(obj[key][subKey]);
-                  }
-                } else if (key !== 'enum') {
-                  if (Array.isArray(obj[key])) {
-                    for (var i = 0; i < obj[key].length; i++) {
-                      obj[key][i] = convert3to4(obj[key][i]);
-                    }
-                  } else if (_typeof(obj[key]) === 'object') {
-                    obj[key] = convert3to4(obj[key]);
-                  }
-                }
-              }
-              return obj;
-            }
-            var api = { v4: convert3to4 };
-            if (typeof module !== 'undefined') {
-              module.exports = api;
-            }
-            return api;
-          }();
-      },
-      {}
-    ],
-    52: [
-      function (require, module, exports) {
-        /** !
- * JSON Schema $Ref Parser v3.1.2
- *
- * @link https://github.com/BigstickCarpet/json-schema-ref-parser
- * @license MIT
- */
-        'use strict';
-        var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
-            return typeof obj;
-          } : function (obj) {
-            return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
-          };
-        var $Ref = require('./ref'), Pointer = require('./pointer'), debug = require('./util/debug'), url = require('./util/url');
-        module.exports = bundle;
-        /**
- * Bundles all external JSON references into the main JSON schema, thus resulting in a schema that
- * only has *internal* references, not any *external* references.
- * This method mutates the JSON schema object, adding new references and re-mapping existing ones.
- *
- * @param {$RefParser} parser
- * @param {$RefParserOptions} options
- */
-        function bundle(parser, options) {
-          debug('Bundling $ref pointers in %s', parser.$refs._root$Ref.path);
-          // Build an inventory of all $ref pointers in the JSON Schema
-          var inventory = [];
-          crawl(parser, 'schema', parser.$refs._root$Ref.path + '#', '#', inventory, parser.$refs, options);
-          // Remap all $ref pointers
-          remap(inventory);
-        }
-        /**
- * Recursively crawls the given value, and inventories all JSON references.
- *
- * @param {object} parent - The object containing the value to crawl. If the value is not an object or array, it will be ignored.
- * @param {string} key - The property key of `parent` to be crawled
- * @param {string} path - The full path of the property being crawled, possibly with a JSON Pointer in the hash
- * @param {string} pathFromRoot - The path of the property being crawled, from the schema root
- * @param {object[]} inventory - An array of already-inventoried $ref pointers
- * @param {$Refs} $refs
- * @param {$RefParserOptions} options
- */
-        function crawl(parent, key, path, pathFromRoot, inventory, $refs, options) {
-          var obj = key === null ? parent : parent[key];
-          if (obj && (typeof obj === 'undefined' ? 'undefined' : _typeof(obj)) === 'object') {
-            if ($Ref.is$Ref(obj)) {
-              inventory$Ref(parent, key, path, pathFromRoot, inventory, $refs, options);
-            } else {
-              var keys = Object.keys(obj);
-              // Most people will expect references to be bundled into the the "definitions" property,
-              // so we always crawl that property first, if it exists.
-              var defs = keys.indexOf('definitions');
-              if (defs > 0) {
-                keys.splice(0, 0, keys.splice(defs, 1)[0]);
-              }
-              keys.forEach(function (key) {
-                var keyPath = Pointer.join(path, key);
-                var keyPathFromRoot = Pointer.join(pathFromRoot, key);
-                var value = obj[key];
-                if ($Ref.is$Ref(value)) {
-                  inventory$Ref(obj, key, path, keyPathFromRoot, inventory, $refs, options);
-                } else {
-                  crawl(obj, key, keyPath, keyPathFromRoot, inventory, $refs, options);
-                }
-              });
-            }
-          }
-        }
-        /**
- * Inventories the given JSON Reference (i.e. records detailed information about it so we can
- * optimize all $refs in the schema), and then crawls the resolved value.
- *
- * @param {object} $refParent - The object that contains a JSON Reference as one of its keys
- * @param {string} $refKey - The key in `$refParent` that is a JSON Reference
- * @param {string} path - The full path of the JSON Reference at `$refKey`, possibly with a JSON Pointer in the hash
- * @param {string} pathFromRoot - The path of the JSON Reference at `$refKey`, from the schema root
- * @param {object[]} inventory - An array of already-inventoried $ref pointers
- * @param {$Refs} $refs
- * @param {$RefParserOptions} options
- */
-        function inventory$Ref($refParent, $refKey, path, pathFromRoot, inventory, $refs, options) {
-          if (inventory.some(function (i) {
-              return i.parent === $refParent && i.key === $refKey;
-            })) {
-            // This $Ref has already been inventoried, so we don't need to process it again
-            return;
-          }
-          var $ref = $refKey === null ? $refParent : $refParent[$refKey];
-          var $refPath = url.resolve(path, $ref.$ref);
-          var pointer = $refs._resolve($refPath, options);
-          var depth = Pointer.parse(pathFromRoot).length;
-          var file = url.stripHash(pointer.path);
-          var hash = url.getHash(pointer.path);
-          var external = file !== $refs._root$Ref.path;
-          var extended = $Ref.isExtended$Ref($ref);
-          inventory.push({
-            $ref: $ref,
-            parent: $refParent,
-            key: $refKey,
-            pathFromRoot: pathFromRoot,
-            depth: depth,
-            file: file,
-            hash: hash,
-            value: pointer.value,
-            circular: pointer.circular,
-            extended: extended,
-            external: external
-          });
-          // Recursively crawl the resolved value
-          crawl(pointer.value, null, pointer.path, pathFromRoot, inventory, $refs, options);
-        }
-        /**
- * Re-maps every $ref pointer, so that they're all relative to the root of the JSON Schema.
- * Each referenced value is dereferenced EXACTLY ONCE.  All subsequent references to the same
- * value are re-mapped to point to the first reference.
- *
- * @example:
- *  {
- *    first: { $ref: somefile.json#/some/part },
- *    second: { $ref: somefile.json#/another/part },
- *    third: { $ref: somefile.json },
- *    fourth: { $ref: somefile.json#/some/part/sub/part }
- *  }
- *
- * In this example, there are four references to the same file, but since the third reference points
- * to the ENTIRE file, that's the only one we need to dereference.  The other three can just be
- * remapped to point inside the third one.
- *
- * On the other hand, if the third reference DIDN'T exist, then the first and second would both need
- * to be dereferenced, since they point to different parts of the file. The fourth reference does NOT
- * need to be dereferenced, because it can be remapped to point inside the first one.
- *
- * @param {object[]} inventory
- */
-        function remap(inventory) {
-          // Group & sort all the $ref pointers, so they're in the order that we need to dereference/remap them
-          inventory.sort(function (a, b) {
-            if (a.file !== b.file) {
-              return a.file < b.file ? -1 : +1;  // Group all the $refs that point to the same file
-            } else if (a.hash !== b.hash) {
-              return a.hash < b.hash ? -1 : +1;  // Group all the $refs that point to the same part of the file
-            } else if (a.circular !== b.circular) {
-              return a.circular ? -1 : +1;  // If the $ref points to itself, then sort it higher than other $refs that point to this $ref
-            } else if (a.extended !== b.extended) {
-              return a.extended ? +1 : -1;  // If the $ref extends the resolved value, then sort it lower than other $refs that don't extend the value
-            } else if (a.depth !== b.depth) {
-              return a.depth - b.depth;  // Sort $refs by how close they are to the JSON Schema root
-            } else {
-              // If all else is equal, use the $ref that's in the "definitions" property
-              return b.pathFromRoot.lastIndexOf('/definitions') - a.pathFromRoot.lastIndexOf('/definitions');
-            }
-          });
-          var file, hash, pathFromRoot;
-          inventory.forEach(function (i) {
-            debug('Re-mapping $ref pointer "%s" at %s', i.$ref.$ref, i.pathFromRoot);
-            if (!i.external) {
-              // This $ref already resolves to the main JSON Schema file
-              i.$ref.$ref = i.hash;
-            } else if (i.file === file && i.hash === hash) {
-              // This $ref points to the same value as the prevous $ref, so remap it to the same path
-              i.$ref.$ref = pathFromRoot;
-            } else if (i.file === file && i.hash.indexOf(hash + '/') === 0) {
-              // This $ref points to the a sub-value as the prevous $ref, so remap it beneath that path
-              i.$ref.$ref = Pointer.join(pathFromRoot, Pointer.parse(i.hash));
-            } else {
-              // We've moved to a new file or new hash
-              file = i.file;
-              hash = i.hash;
-              pathFromRoot = i.pathFromRoot;
-              // This is the first $ref to point to this value, so dereference the value.
-              // Any other $refs that point to the same value will point to this $ref instead
-              i.$ref = i.parent[i.key] = $Ref.dereference(i.$ref, i.value);
-              if (i.circular) {
-                // This $ref points to itself
-                i.$ref.$ref = i.pathFromRoot;
-              }
-            }
-            debug('    new value: %s', i.$ref && i.$ref.$ref ? i.$ref.$ref : '[object Object]');
-          });
-        }
-      },
-      {
-        './pointer': 61,
-        './ref': 62,
-        './util/debug': 67,
-        './util/url': 70
-      }
-    ],
-    53: [
-      function (require, module, exports) {
-        'use strict';
-        var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
-            return typeof obj;
-          } : function (obj) {
-            return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
-          };
-        var $Ref = require('./ref'), Pointer = require('./pointer'), ono = require('ono'), debug = require('./util/debug'), url = require('./util/url');
-        module.exports = dereference;
-        /**
- * Crawls the JSON schema, finds all JSON references, and dereferences them.
- * This method mutates the JSON schema object, replacing JSON references with their resolved value.
- *
- * @param {$RefParser} parser
- * @param {$RefParserOptions} options
- */
-        function dereference(parser, options) {
-          debug('Dereferencing $ref pointers in %s', parser.$refs._root$Ref.path);
-          var dereferenced = crawl(parser.schema, parser.$refs._root$Ref.path, '#', [], parser.$refs, options);
-          parser.$refs.circular = dereferenced.circular;
-          parser.schema = dereferenced.value;
-        }
-        /**
- * Recursively crawls the given value, and dereferences any JSON references.
- *
- * @param {*} obj - The value to crawl. If it's not an object or array, it will be ignored.
- * @param {string} path - The full path of `obj`, possibly with a JSON Pointer in the hash
- * @param {string} pathFromRoot - The path of `obj` from the schema root
- * @param {object[]} parents - An array of the parent objects that have already been dereferenced
- * @param {$Refs} $refs
- * @param {$RefParserOptions} options
- * @returns {{value: object, circular: boolean}}
- */
-        function crawl(obj, path, pathFromRoot, parents, $refs, options) {
-          var dereferenced;
-          var result = {
-              value: obj,
-              circular: false
-            };
-          if (obj && (typeof obj === 'undefined' ? 'undefined' : _typeof(obj)) === 'object') {
-            parents.push(obj);
-            if ($Ref.isAllowed$Ref(obj, options)) {
-              dereferenced = dereference$Ref(obj, path, pathFromRoot, parents, $refs, options);
-              result.circular = dereferenced.circular;
-              result.value = dereferenced.value;
-            } else {
-              Object.keys(obj).forEach(function (key) {
-                var keyPath = Pointer.join(path, key);
-                var keyPathFromRoot = Pointer.join(pathFromRoot, key);
-                var value = obj[key];
-                var circular = false;
-                if ($Ref.isAllowed$Ref(value, options)) {
-                  dereferenced = dereference$Ref(value, keyPath, keyPathFromRoot, parents, $refs, options);
-                  circular = dereferenced.circular;
-                  obj[key] = dereferenced.value;
-                } else {
-                  if (parents.indexOf(value) === -1) {
-                    dereferenced = crawl(value, keyPath, keyPathFromRoot, parents, $refs, options);
-                    circular = dereferenced.circular;
-                    obj[key] = dereferenced.value;
-                  } else {
-                    circular = foundCircularReference(keyPath, $refs, options);
-                  }
-                }
-                // Set the "isCircular" flag if this or any other property is circular
-                result.circular = result.circular || circular;
-              });
-            }
-            parents.pop();
-          }
-          return result;
-        }
-        /**
- * Dereferences the given JSON Reference, and then crawls the resulting value.
- *
- * @param {{$ref: string}} $ref - The JSON Reference to resolve
- * @param {string} path - The full path of `$ref`, possibly with a JSON Pointer in the hash
- * @param {string} pathFromRoot - The path of `$ref` from the schema root
- * @param {object[]} parents - An array of the parent objects that have already been dereferenced
- * @param {$Refs} $refs
- * @param {$RefParserOptions} options
- * @returns {{value: object, circular: boolean}}
- */
-        function dereference$Ref($ref, path, pathFromRoot, parents, $refs, options) {
-          debug('Dereferencing $ref pointer "%s" at %s', $ref.$ref, path);
-          var $refPath = url.resolve(path, $ref.$ref);
-          var pointer = $refs._resolve($refPath, options);
-          // Check for circular references
-          var directCircular = pointer.circular;
-          var circular = directCircular || parents.indexOf(pointer.value) !== -1;
-          circular && foundCircularReference(path, $refs, options);
-          // Dereference the JSON reference
-          var dereferencedValue = $Ref.dereference($ref, pointer.value);
-          // Crawl the dereferenced value (unless it's circular)
-          if (!circular) {
-            // Determine if the dereferenced value is circular
-            var dereferenced = crawl(dereferencedValue, pointer.path, pathFromRoot, parents, $refs, options);
-            circular = dereferenced.circular;
-            dereferencedValue = dereferenced.value;
-          }
-          if (circular && !directCircular && options.dereference.circular === 'ignore') {
-            // The user has chosen to "ignore" circular references, so don't change the value
-            dereferencedValue = $ref;
-          }
-          if (directCircular) {
-            // The pointer is a DIRECT circular reference (i.e. it references itself).
-            // So replace the $ref path with the absolute path from the JSON Schema root
-            dereferencedValue.$ref = pathFromRoot;
-          }
-          return {
-            circular: circular,
-            value: dereferencedValue
-          };
-        }
-        /**
- * Called when a circular reference is found.
- * It sets the {@link $Refs#circular} flag, and throws an error if options.dereference.circular is false.
- *
- * @param {string} keyPath - The JSON Reference path of the circular reference
- * @param {$Refs} $refs
- * @param {$RefParserOptions} options
- * @returns {boolean} - always returns true, to indicate that a circular reference was found
- */
-        function foundCircularReference(keyPath, $refs, options) {
-          $refs.circular = true;
-          if (!options.dereference.circular) {
-            throw ono.reference('Circular $ref pointer found at %s', keyPath);
-          }
-          return true;
-        }
-      },
-      {
-        './pointer': 61,
-        './ref': 62,
-        './util/debug': 67,
-        './util/url': 70,
-        'ono': 242
-      }
-    ],
-    54: [
-      function (require, module, exports) {
-        (function (Buffer) {
-          'use strict';
-          var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
-              return typeof obj;
-            } : function (obj) {
-              return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
-            };
-          var Promise = require('./util/promise'), Options = require('./options'), $Refs = require('./refs'), parse = require('./parse'), resolveExternal = require('./resolve-external'), bundle = require('./bundle'), dereference = require('./dereference'), url = require('./util/url'), maybe = require('call-me-maybe'), ono = require('ono');
-          module.exports = $RefParser;
-          module.exports.YAML = require('./util/yaml');
-          /**
- * This class parses a JSON schema, builds a map of its JSON references and their resolved values,
- * and provides methods for traversing, manipulating, and dereferencing those references.
- *
- * @constructor
- */
-          function $RefParser() {
-            /**
-   * The parsed (and possibly dereferenced) JSON schema object
-   *
-   * @type {object}
-   * @readonly
-   */
-            this.schema = null;
-            /**
-   * The resolved JSON references
-   *
-   * @type {$Refs}
-   * @readonly
-   */
-            this.$refs = new $Refs();
-          }
-          /**
- * Parses the given JSON schema.
- * This method does not resolve any JSON references.
- * It just reads a single file in JSON or YAML format, and parse it as a JavaScript object.
- *
- * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
- * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed
- * @param {function} [callback] - An error-first callback. The second parameter is the parsed JSON schema object.
- * @returns {Promise} - The returned promise resolves with the parsed JSON schema object.
- */
-          $RefParser.parse = function (schema, options, callback) {
-            var Class = this;
-            // eslint-disable-line consistent-this
-            var instance = new Class();
-            return instance.parse.apply(instance, arguments);
-          };
-          /**
- * Parses the given JSON schema.
- * This method does not resolve any JSON references.
- * It just reads a single file in JSON or YAML format, and parse it as a JavaScript object.
- *
- * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
- * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed
- * @param {function} [callback] - An error-first callback. The second parameter is the parsed JSON schema object.
- * @returns {Promise} - The returned promise resolves with the parsed JSON schema object.
- */
-          $RefParser.prototype.parse = function (schema, options, callback) {
-            var args = normalizeArgs(arguments);
-            var promise;
-            if (!args.path && !args.schema) {
-              var err = ono('Expected a file path, URL, or object. Got %s', args.path || args.schema);
-              return maybe(args.callback, Promise.reject(err));
-            }
-            // Reset everything
-            this.schema = null;
-            this.$refs = new $Refs();
-            // If the path is a filesystem path, then convert it to a URL.
-            // NOTE: According to the JSON Reference spec, these should already be URLs,
-            // but, in practice, many people use local filesystem paths instead.
-            // So we're being generous here and doing the conversion automatically.
-            // This is not intended to be a 100% bulletproof solution.
-            // If it doesn't work for your use-case, then use a URL instead.
-            if (url.isFileSystemPath(args.path)) {
-              args.path = url.fromFileSystemPath(args.path);
-            }
-            // Resolve the absolute path of the schema
-            args.path = url.resolve(url.cwd(), args.path);
-            if (args.schema && _typeof(args.schema) === 'object') {
-              // A schema object was passed-in.
-              // So immediately add a new $Ref with the schema object as its value
-              this.$refs._add(args.path, args.schema);
-              promise = Promise.resolve(args.schema);
-            } else {
-              // Parse the schema file/url
-              promise = parse(args.path, this.$refs, args.options);
-            }
-            var me = this;
-            return promise.then(function (result) {
-              if (!result || (typeof result === 'undefined' ? 'undefined' : _typeof(result)) !== 'object' || Buffer.isBuffer(result)) {
-                throw ono.syntax('"%s" is not a valid JSON Schema', me.$refs._root$Ref.path || result);
-              } else {
-                me.schema = result;
-                return maybe(args.callback, Promise.resolve(me.schema));
-              }
-            }).catch(function (e) {
-              return maybe(args.callback, Promise.reject(e));
-            });
-          };
-          /**
- * Parses the given JSON schema and resolves any JSON references, including references in
- * externally-referenced files.
- *
- * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
- * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed and resolved
- * @param {function} [callback]
- * - An error-first callback. The second parameter is a {@link $Refs} object containing the resolved JSON references
- *
- * @returns {Promise}
- * The returned promise resolves with a {@link $Refs} object containing the resolved JSON references
- */
-          $RefParser.resolve = function (schema, options, callback) {
-            var Class = this;
-            // eslint-disable-line consistent-this
-            var instance = new Class();
-            return instance.resolve.apply(instance, arguments);
-          };
-          /**
- * Parses the given JSON schema and resolves any JSON references, including references in
- * externally-referenced files.
- *
- * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
- * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed and resolved
- * @param {function} [callback]
- * - An error-first callback. The second parameter is a {@link $Refs} object containing the resolved JSON references
- *
- * @returns {Promise}
- * The returned promise resolves with a {@link $Refs} object containing the resolved JSON references
- */
-          $RefParser.prototype.resolve = function (schema, options, callback) {
-            var me = this;
-            var args = normalizeArgs(arguments);
-            return this.parse(args.path, args.schema, args.options).then(function () {
-              return resolveExternal(me, args.options);
-            }).then(function () {
-              return maybe(args.callback, Promise.resolve(me.$refs));
-            }).catch(function (err) {
-              return maybe(args.callback, Promise.reject(err));
-            });
-          };
-          /**
- * Parses the given JSON schema, resolves any JSON references, and bundles all external references
- * into the main JSON schema. This produces a JSON schema that only has *internal* references,
- * not any *external* references.
- *
- * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
- * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed, resolved, and dereferenced
- * @param {function} [callback] - An error-first callback. The second parameter is the bundled JSON schema object
- * @returns {Promise} - The returned promise resolves with the bundled JSON schema object.
- */
-          $RefParser.bundle = function (schema, options, callback) {
-            var Class = this;
-            // eslint-disable-line consistent-this
-            var instance = new Class();
-            return instance.bundle.apply(instance, arguments);
-          };
-          /**
- * Parses the given JSON schema, resolves any JSON references, and bundles all external references
- * into the main JSON schema. This produces a JSON schema that only has *internal* references,
- * not any *external* references.
- *
- * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
- * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed, resolved, and dereferenced
- * @param {function} [callback] - An error-first callback. The second parameter is the bundled JSON schema object
- * @returns {Promise} - The returned promise resolves with the bundled JSON schema object.
- */
-          $RefParser.prototype.bundle = function (schema, options, callback) {
-            var me = this;
-            var args = normalizeArgs(arguments);
-            return this.resolve(args.path, args.schema, args.options).then(function () {
-              bundle(me, args.options);
-              return maybe(args.callback, Promise.resolve(me.schema));
-            }).catch(function (err) {
-              return maybe(args.callback, Promise.reject(err));
-            });
-          };
-          /**
- * Parses the given JSON schema, resolves any JSON references, and dereferences the JSON schema.
- * That is, all JSON references are replaced with their resolved values.
- *
- * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
- * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed, resolved, and dereferenced
- * @param {function} [callback] - An error-first callback. The second parameter is the dereferenced JSON schema object
- * @returns {Promise} - The returned promise resolves with the dereferenced JSON schema object.
- */
-          $RefParser.dereference = function (schema, options, callback) {
-            var Class = this;
-            // eslint-disable-line consistent-this
-            var instance = new Class();
-            return instance.dereference.apply(instance, arguments);
-          };
-          /**
- * Parses the given JSON schema, resolves any JSON references, and dereferences the JSON schema.
- * That is, all JSON references are replaced with their resolved values.
- *
- * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
- * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed, resolved, and dereferenced
- * @param {function} [callback] - An error-first callback. The second parameter is the dereferenced JSON schema object
- * @returns {Promise} - The returned promise resolves with the dereferenced JSON schema object.
- */
-          $RefParser.prototype.dereference = function (schema, options, callback) {
-            var me = this;
-            var args = normalizeArgs(arguments);
-            return this.resolve(args.path, args.schema, args.options).then(function () {
-              dereference(me, args.options);
-              return maybe(args.callback, Promise.resolve(me.schema));
-            }).catch(function (err) {
-              return maybe(args.callback, Promise.reject(err));
-            });
-          };
-          /**
- * Normalizes the given arguments, accounting for optional args.
- *
- * @param {Arguments} args
- * @returns {object}
- */
-          function normalizeArgs(args) {
-            var path, schema, options, callback;
-            args = Array.prototype.slice.call(args);
-            if (typeof args[args.length - 1] === 'function') {
-              // The last parameter is a callback function
-              callback = args.pop();
-            }
-            if (typeof args[0] === 'string') {
-              // The first parameter is the path
-              path = args[0];
-              if (_typeof(args[2]) === 'object') {
-                // The second parameter is the schema, and the third parameter is the options
-                schema = args[1];
-                options = args[2];
-              } else {
-                // The second parameter is the options
-                schema = undefined;
-                options = args[1];
-              }
-            } else {
-              // The first parameter is the schema
-              path = '';
-              schema = args[0];
-              options = args[1];
-            }
-            if (!(options instanceof Options)) {
-              options = new Options(options);
-            }
-            return {
-              path: path,
-              schema: schema,
-              options: options,
-              callback: callback
-            };
-          }
-        }.call(this, { 'isBuffer': require('../../is-buffer/index.js') }));
-      },
-      {
-        '../../is-buffer/index.js': 20,
-        './bundle': 52,
-        './dereference': 53,
-        './options': 55,
-        './parse': 56,
-        './refs': 63,
-        './resolve-external': 64,
-        './util/promise': 69,
-        './util/url': 70,
-        './util/yaml': 71,
-        'call-me-maybe': 9,
-        'ono': 242
-      }
-    ],
-    55: [
-      function (require, module, exports) {
-        /* eslint lines-around-comment: [2, {beforeBlockComment: false}] */
-        'use strict';
-        var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
-            return typeof obj;
-          } : function (obj) {
-            return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
-          };
-        var jsonParser = require('./parsers/json'), yamlParser = require('./parsers/yaml'), textParser = require('./parsers/text'), binaryParser = require('./parsers/binary'), fileResolver = require('./resolvers/file'), httpResolver = require('./resolvers/http'), zschemaValidator = require('./validators/z-schema');
-        module.exports = $RefParserOptions;
-        /**
- * Options that determine how JSON schemas are parsed, resolved, dereferenced, and validated.
- *
- * @param {object|$RefParserOptions} [options] - Overridden options
- * @constructor
- */
-        function $RefParserOptions(options) {
-          merge(this, $RefParserOptions.defaults);
-          merge(this, options);
-        }
-        $RefParserOptions.defaults = {
-          parse: {
-            json: jsonParser,
-            yaml: yamlParser,
-            text: textParser,
-            binary: binaryParser
-          },
-          resolve: {
-            file: fileResolver,
-            http: httpResolver,
-            external: true
-          },
-          dereference: { circular: true },
-          validate: { zschema: zschemaValidator }
-        };
-        /**
- * Merges the properties of the source object into the target object.
- *
- * @param {object} target - The object that we're populating
- * @param {?object} source - The options that are being merged
- * @returns {object}
- */
-        function merge(target, source) {
-          if (isMergeable(source)) {
-            var keys = Object.keys(source);
-            for (var i = 0; i < keys.length; i++) {
-              var key = keys[i];
-              var sourceSetting = source[key];
-              var targetSetting = target[key];
-              if (isMergeable(sourceSetting)) {
-                // It's a nested object, so merge it recursively
-                target[key] = merge(targetSetting || {}, sourceSetting);
-              } else if (sourceSetting !== undefined) {
-                // It's a scalar value, function, or array. No merging necessary. Just overwrite the target value.
-                target[key] = sourceSetting;
-              }
-            }
-          }
-          return target;
-        }
-        /**
- * Determines whether the given value can be merged,
- * or if it is a scalar value that should just override the target value.
- *
- * @param   {*}  val
- * @returns {Boolean}
- */
-        function isMergeable(val) {
-          return val && (typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object' && !Array.isArray(val) && !(val instanceof RegExp) && !(val instanceof Date);
-        }
-      },
-      {
-        './parsers/binary': 57,
-        './parsers/json': 58,
-        './parsers/text': 59,
-        './parsers/yaml': 60,
-        './resolvers/file': 65,
-        './resolvers/http': 66,
-        './validators/z-schema': 72
-      }
-    ],
-    56: [
-      function (require, module, exports) {
-        (function (Buffer) {
-          'use strict';
-          var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
-              return typeof obj;
-            } : function (obj) {
-              return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
-            };
-          var ono = require('ono'), debug = require('./util/debug'), url = require('./util/url'), plugins = require('./util/plugins'), Promise = require('./util/promise');
-          module.exports = parse;
-          /**
- * Reads and parses the specified file path or URL.
- *
- * @param {string} path - This path MUST already be resolved, since `read` doesn't know the resolution context
- * @param {$Refs} $refs
- * @param {$RefParserOptions} options
- *
- * @returns {Promise}
- * The promise resolves with the parsed file contents, NOT the raw (Buffer) contents.
- */
-          function parse(path, $refs, options) {
-            try {
-              // Remove the URL fragment, if any
-              path = url.stripHash(path);
-              // Add a new $Ref for this file, even though we don't have the value yet.
-              // This ensures that we don't simultaneously read & parse the same file multiple times
-              var $ref = $refs._add(path);
-              // This "file object" will be passed to all resolvers and parsers.
-              var file = {
-                  url: path,
-                  extension: url.getExtension(path)
-                };
-              // Read the file and then parse the data
-              return readFile(file, options).then(function (resolver) {
-                $ref.pathType = resolver.plugin.name;
-                file.data = resolver.result;
-                return parseFile(file, options);
-              }).then(function (parser) {
-                $ref.value = parser.result;
-                return parser.result;
-              });
-            } catch (e) {
-              return Promise.reject(e);
-            }
-          }
-          /**
- * Reads the given file, using the configured resolver plugins
- *
- * @param {object} file           - An object containing information about the referenced file
- * @param {string} file.url       - The full URL of the referenced file
- * @param {string} file.extension - The lowercased file extension (e.g. ".txt", ".html", etc.)
- * @param {$RefParserOptions} options
- *
- * @returns {Promise}
- * The promise resolves with the raw file contents and the resolver that was used.
- */
-          function readFile(file, options) {
-            return new Promise(function (resolve, reject) {
-              debug('Reading %s', file.url);
-              // Find the resolvers that can read this file
-              var resolvers = plugins.all(options.resolve);
-              resolvers = plugins.filter(resolvers, 'canRead', file);
-              // Run the resolvers, in order, until one of them succeeds
-              plugins.sort(resolvers);
-              plugins.run(resolvers, 'read', file).then(resolve, onError);
-              function onError(err) {
-                // Throw the original error, if it's one of our own (user-friendly) errors.
-                // Otherwise, throw a generic, friendly error.
-                if (err && !(err instanceof SyntaxError)) {
-                  reject(err);
-                } else {
-                  reject(ono.syntax('Unable to resolve $ref pointer "%s"', file.url));
-                }
-              }
-            });
-          }
-          /**
- * Parses the given file's contents, using the configured parser plugins.
- *
- * @param {object} file           - An object containing information about the referenced file
- * @param {string} file.url       - The full URL of the referenced file
- * @param {string} file.extension - The lowercased file extension (e.g. ".txt", ".html", etc.)
- * @param {*}      file.data      - The file contents. This will be whatever data type was returned by the resolver
- * @param {$RefParserOptions} options
- *
- * @returns {Promise}
- * The promise resolves with the parsed file contents and the parser that was used.
- */
-          function parseFile(file, options) {
-            return new Promise(function (resolve, reject) {
-              debug('Parsing %s', file.url);
-              // Find the parsers that can read this file type.
-              // If none of the parsers are an exact match for this file, then we'll try ALL of them.
-              // This handles situations where the file IS a supported type, just with an unknown extension.
-              var allParsers = plugins.all(options.parse);
-              var filteredParsers = plugins.filter(allParsers, 'canParse', file);
-              var parsers = filteredParsers.length > 0 ? filteredParsers : allParsers;
-              // Run the parsers, in order, until one of them succeeds
-              plugins.sort(parsers);
-              plugins.run(parsers, 'parse', file).then(onParsed, onError);
-              function onParsed(parser) {
-                if (!parser.plugin.allowEmpty && isEmpty(parser.result)) {
-                  reject(ono.syntax('Error parsing "%s" as %s. \nParsed value is empty', file.url, parser.plugin.name));
-                } else {
-                  resolve(parser);
-                }
-              }
-              function onError(err) {
-                if (err) {
-                  err = err instanceof Error ? err : new Error(err);
-                  reject(ono.syntax(err, 'Error parsing %s', file.url));
-                } else {
-                  reject(ono.syntax('Unable to parse %s', file.url));
-                }
-              }
-            });
-          }
-          /**
- * Determines whether the parsed value is "empty".
- *
- * @param {*} value
- * @returns {boolean}
- */
-          function isEmpty(value) {
-            return value === undefined || (typeof value === 'undefined' ? 'undefined' : _typeof(value)) === 'object' && Object.keys(value).length === 0 || typeof value === 'string' && value.trim().length === 0 || Buffer.isBuffer(value) && value.length === 0;
-          }
-        }.call(this, { 'isBuffer': require('../../is-buffer/index.js') }));
-      },
-      {
-        '../../is-buffer/index.js': 20,
-        './util/debug': 67,
-        './util/plugins': 68,
-        './util/promise': 69,
-        './util/url': 70,
-        'ono': 242
-      }
-    ],
-    57: [
-      function (require, module, exports) {
-        (function (Buffer) {
-          'use strict';
-          var BINARY_REGEXP = /\.(jpeg|jpg|gif|png|bmp|ico)$/i;
-          module.exports = {
-            order: 400,
-            allowEmpty: true,
-            canParse: function isBinary(file) {
-              // Use this parser if the file is a Buffer, and has a known binary extension
-              return Buffer.isBuffer(file.data) && BINARY_REGEXP.test(file.url);
-            },
-            parse: function parseBinary(file) {
-              if (Buffer.isBuffer(file.data)) {
-                return file.data;
-              } else {
-                // This will reject if data is anything other than a string or typed array
-                return new Buffer(file.data);
-              }
-            }
-          };
-        }.call(this, require('buffer').Buffer));
-      },
-      { 'buffer': 6 }
-    ],
-    58: [
-      function (require, module, exports) {
-        (function (Buffer) {
-          'use strict';
-          var Promise = require('../util/promise');
-          module.exports = {
-            order: 100,
-            allowEmpty: true,
-            canParse: '.json',
-            parse: function parseJSON(file) {
-              return new Promise(function (resolve, reject) {
-                var data = file.data;
-                if (Buffer.isBuffer(data)) {
-                  data = data.toString();
-                }
-                if (typeof data === 'string') {
-                  if (data.trim().length === 0) {
-                    resolve(undefined);  // This mirrors the YAML behavior
-                  } else {
-                    resolve(JSON.parse(data));
-                  }
-                } else {
-                  // data is already a JavaScript value (object, array, number, null, NaN, etc.)
-                  resolve(data);
-                }
-              });
-            }
-          };
-        }.call(this, { 'isBuffer': require('../../../is-buffer/index.js') }));
-      },
-      {
-        '../../../is-buffer/index.js': 20,
-        '../util/promise': 69
-      }
-    ],
-    59: [
-      function (require, module, exports) {
-        (function (Buffer) {
-          'use strict';
-          var TEXT_REGEXP = /\.(txt|htm|html|md|xml|js|min|map|css|scss|less|svg)$/i;
-          module.exports = {
-            order: 300,
-            allowEmpty: true,
-            encoding: 'utf8',
-            canParse: function isText(file) {
-              // Use this parser if the file is a string or Buffer, and has a known text-based extension
-              return (typeof file.data === 'string' || Buffer.isBuffer(file.data)) && TEXT_REGEXP.test(file.url);
-            },
-            parse: function parseText(file) {
-              if (typeof file.data === 'string') {
-                return file.data;
-              } else if (Buffer.isBuffer(file.data)) {
-                return file.data.toString(this.encoding);
-              } else {
-                throw new Error('data is not text');
-              }
-            }
-          };
-        }.call(this, { 'isBuffer': require('../../../is-buffer/index.js') }));
-      },
-      { '../../../is-buffer/index.js': 20 }
-    ],
-    60: [
-      function (require, module, exports) {
-        (function (Buffer) {
-          'use strict';
-          var Promise = require('../util/promise'), YAML = require('../util/yaml');
-          module.exports = {
-            order: 200,
-            allowEmpty: true,
-            canParse: [
-              '.yaml',
-              '.yml',
-              '.json'
-            ],
-            parse: function parseYAML(file) {
-              return new Promise(function (resolve, reject) {
-                var data = file.data;
-                if (Buffer.isBuffer(data)) {
-                  data = data.toString();
-                }
-                if (typeof data === 'string') {
-                  resolve(YAML.parse(data));
-                } else {
-                  // data is already a JavaScript value (object, array, number, null, NaN, etc.)
-                  resolve(data);
-                }
-              });
-            }
-          };
-        }.call(this, { 'isBuffer': require('../../../is-buffer/index.js') }));
-      },
-      {
-        '../../../is-buffer/index.js': 20,
-        '../util/promise': 69,
-        '../util/yaml': 71
-      }
-    ],
-    61: [
-      function (require, module, exports) {
-        'use strict';
-        var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
-            return typeof obj;
-          } : function (obj) {
-            return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
-          };
-        module.exports = Pointer;
-        var $Ref = require('./ref'), url = require('./util/url'), ono = require('ono'), slashes = /\//g, tildes = /~/g, escapedSlash = /~1/g, escapedTilde = /~0/g;
-        /**
- * This class represents a single JSON pointer and its resolved value.
- *
- * @param {$Ref} $ref
- * @param {string} path
- * @constructor
- */
-        function Pointer($ref, path) {
-          /**
-   * The {@link $Ref} object that contains this {@link Pointer} object.
-   * @type {$Ref}
-   */
-          this.$ref = $ref;
-          /**
-   * The file path or URL, containing the JSON pointer in the hash.
-   * This path is relative to the path of the main JSON schema file.
-   * @type {string}
-   */
-          this.path = path;
-          /**
-   * The value of the JSON pointer.
-   * Can be any JSON type, not just objects. Unknown file types are represented as Buffers (byte arrays).
-   * @type {?*}
-   */
-          this.value = undefined;
-          /**
-   * Indicates whether the pointer references itself.
-   * @type {boolean}
-   */
-          this.circular = false;
-        }
-        /**
- * Resolves the value of a nested property within the given object.
- *
- * @param {*} obj - The object that will be crawled
- * @param {$RefParserOptions} options
- *
- * @returns {Pointer}
- * Returns a JSON pointer whose {@link Pointer#value} is the resolved value.
- * If resolving this value required resolving other JSON references, then
- * the {@link Pointer#$ref} and {@link Pointer#path} will reflect the resolution path
- * of the resolved value.
- */
-        Pointer.prototype.resolve = function (obj, options) {
-          var tokens = Pointer.parse(this.path);
-          // Crawl the object, one token at a time
-          this.value = obj;
-          for (var i = 0; i < tokens.length; i++) {
-            if (resolveIf$Ref(this, options)) {
-              // The $ref path has changed, so append the remaining tokens to the path
-              this.path = Pointer.join(this.path, tokens.slice(i));
-            }
-            var token = tokens[i];
-            if (this.value[token] === undefined) {
-              throw ono.syntax('Error resolving $ref pointer "%s". \nToken "%s" does not exist.', this.path, token);
-            } else {
-              this.value = this.value[token];
-            }
-          }
-          // Resolve the final value
-          resolveIf$Ref(this, options);
-          return this;
-        };
-        /**
- * Sets the value of a nested property within the given object.
- *
- * @param {*} obj - The object that will be crawled
- * @param {*} value - the value to assign
- * @param {$RefParserOptions} options
- *
- * @returns {*}
- * Returns the modified object, or an entirely new object if the entire object is overwritten.
- */
-        Pointer.prototype.set = function (obj, value, options) {
-          var tokens = Pointer.parse(this.path);
-          var token;
-          if (tokens.length === 0) {
-            // There are no tokens, replace the entire object with the new value
-            this.value = value;
-            return value;
-          }
-          // Crawl the object, one token at a time
-          this.value = obj;
-          for (var i = 0; i < tokens.length - 1; i++) {
-            resolveIf$Ref(this, options);
-            token = tokens[i];
-            if (this.value && this.value[token] !== undefined) {
-              // The token exists
-              this.value = this.value[token];
-            } else {
-              // The token doesn't exist, so create it
-              this.value = setValue(this, token, {});
-            }
-          }
-          // Set the value of the final token
-          resolveIf$Ref(this, options);
-          token = tokens[tokens.length - 1];
-          setValue(this, token, value);
-          // Return the updated object
-          return obj;
-        };
-        /**
- * Parses a JSON pointer (or a path containing a JSON pointer in the hash)
- * and returns an array of the pointer's tokens.
- * (e.g. "schema.json#/definitions/person/name" => ["definitions", "person", "name"])
- *
- * The pointer is parsed according to RFC 6901
- * {@link https://tools.ietf.org/html/rfc6901#section-3}
- *
- * @param {string} path
- * @returns {string[]}
- */
-        Pointer.parse = function (path) {
-          // Get the JSON pointer from the path's hash
-          var pointer = url.getHash(path).substr(1);
-          // If there's no pointer, then there are no tokens,
-          // so return an empty array
-          if (!pointer) {
-            return [];
-          }
-          // Split into an array
-          pointer = pointer.split('/');
-          // Decode each part, according to RFC 6901
-          for (var i = 0; i < pointer.length; i++) {
-            pointer[i] = decodeURI(pointer[i].replace(escapedSlash, '/').replace(escapedTilde, '~'));
-          }
-          if (pointer[0] !== '') {
-            throw ono.syntax('Invalid $ref pointer "%s". Pointers must begin with "#/"', pointer);
-          }
-          return pointer.slice(1);
-        };
-        /**
- * Creates a JSON pointer path, by joining one or more tokens to a base path.
- *
- * @param {string} base - The base path (e.g. "schema.json#/definitions/person")
- * @param {string|string[]} tokens - The token(s) to append (e.g. ["name", "first"])
- * @returns {string}
- */
-        Pointer.join = function (base, tokens) {
-          // Ensure that the base path contains a hash
-          if (base.indexOf('#') === -1) {
-            base += '#';
-          }
-          // Append each token to the base path
-          tokens = Array.isArray(tokens) ? tokens : [tokens];
-          for (var i = 0; i < tokens.length; i++) {
-            var token = tokens[i];
-            // Encode the token, according to RFC 6901
-            base += '/' + encodeURI(token.replace(tildes, '~0').replace(slashes, '~1'));
-          }
-          return base;
-        };
-        /**
- * If the given pointer's {@link Pointer#value} is a JSON reference,
- * then the reference is resolved and {@link Pointer#value} is replaced with the resolved value.
- * In addition, {@link Pointer#path} and {@link Pointer#$ref} are updated to reflect the
- * resolution path of the new value.
- *
- * @param {Pointer} pointer
- * @param {$RefParserOptions} options
- * @returns {boolean} - Returns `true` if the resolution path changed
- */
-        function resolveIf$Ref(pointer, options) {
-          // Is the value a JSON reference? (and allowed?)
-          if ($Ref.isAllowed$Ref(pointer.value, options)) {
-            var $refPath = url.resolve(pointer.path, pointer.value.$ref);
-            if ($refPath === pointer.path) {
-              // The value is a reference to itself, so there's nothing to do.
-              pointer.circular = true;
-            } else {
-              var resolved = pointer.$ref.$refs._resolve($refPath, options);
-              if ($Ref.isExtended$Ref(pointer.value)) {
-                // This JSON reference "extends" the resolved value, rather than simply pointing to it.
-                // So the resolved path does NOT change.  Just the value does.
-                pointer.value = $Ref.dereference(pointer.value, resolved.value);
-              } else {
-                // Resolve the reference
-                pointer.$ref = resolved.$ref;
-                pointer.path = resolved.path;
-                pointer.value = resolved.value;
-              }
-              return true;
-            }
-          }
-        }
-        /**
- * Sets the specified token value of the {@link Pointer#value}.
- *
- * The token is evaluated according to RFC 6901.
- * {@link https://tools.ietf.org/html/rfc6901#section-4}
- *
- * @param {Pointer} pointer - The JSON Pointer whose value will be modified
- * @param {string} token - A JSON Pointer token that indicates how to modify `obj`
- * @param {*} value - The value to assign
- * @returns {*} - Returns the assigned value
- */
-        function setValue(pointer, token, value) {
-          if (pointer.value && _typeof(pointer.value) === 'object') {
-            if (token === '-' && Array.isArray(pointer.value)) {
-              pointer.value.push(value);
-            } else {
-              pointer.value[token] = value;
-            }
-          } else {
-            throw ono.syntax('Error assigning $ref pointer "%s". \nCannot set "%s" of a non-object.', pointer.path, token);
-          }
-          return value;
-        }
-      },
-      {
-        './ref': 62,
-        './util/url': 70,
-        'ono': 242
-      }
-    ],
-    62: [
-      function (require, module, exports) {
-        'use strict';
-        var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
-            return typeof obj;
-          } : function (obj) {
-            return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
-          };
-        module.exports = $Ref;
-        var Pointer = require('./pointer');
-        /**
- * This class represents a single JSON reference and its resolved value.
- *
- * @constructor
- */
-        function $Ref() {
-          /**
-   * The file path or URL of the referenced file.
-   * This path is relative to the path of the main JSON schema file.
-   *
-   * This path does NOT contain document fragments (JSON pointers). It always references an ENTIRE file.
-   * Use methods such as {@link $Ref#get}, {@link $Ref#resolve}, and {@link $Ref#exists} to get
-   * specific JSON pointers within the file.
-   *
-   * @type {string}
-   */
-          this.path = undefined;
-          /**
-   * The resolved value of the JSON reference.
-   * Can be any JSON type, not just objects. Unknown file types are represented as Buffers (byte arrays).
-   * @type {?*}
-   */
-          this.value = undefined;
-          /**
-   * The {@link $Refs} object that contains this {@link $Ref} object.
-   * @type {$Refs}
-   */
-          this.$refs = undefined;
-          /**
-   * Indicates the type of {@link $Ref#path} (e.g. "file", "http", etc.)
-   * @type {?string}
-   */
-          this.pathType = undefined;
-        }
-        /**
- * Determines whether the given JSON reference exists within this {@link $Ref#value}.
- *
- * @param {string} path - The full path being resolved, optionally with a JSON pointer in the hash
- * @param {$RefParserOptions} options
- * @returns {boolean}
- */
-        $Ref.prototype.exists = function (path, options) {
-          try {
-            this.resolve(path, options);
-            return true;
-          } catch (e) {
-            return false;
-          }
-        };
-        /**
- * Resolves the given JSON reference within this {@link $Ref#value} and returns the resolved value.
- *
- * @param {string} path - The full path being resolved, optionally with a JSON pointer in the hash
- * @param {$RefParserOptions} options
- * @returns {*} - Returns the resolved value
- */
-        $Ref.prototype.get = function (path, options) {
-          return this.resolve(path, options).value;
-        };
-        /**
- * Resolves the given JSON reference within this {@link $Ref#value}.
- *
- * @param {string} path - The full path being resolved, optionally with a JSON pointer in the hash
- * @param {$RefParserOptions} options
- * @returns {Pointer}
- */
-        $Ref.prototype.resolve = function (path, options) {
-          var pointer = new Pointer(this, path);
-          return pointer.resolve(this.value, options);
-        };
-        /**
- * Sets the value of a nested property within this {@link $Ref#value}.
- * If the property, or any of its parents don't exist, they will be created.
- *
- * @param {string} path - The full path of the property to set, optionally with a JSON pointer in the hash
- * @param {*} value - The value to assign
- */
-        $Ref.prototype.set = function (path, value) {
-          var pointer = new Pointer(this, path);
-          this.value = pointer.set(this.value, value);
-        };
-        /**
- * Determines whether the given value is a JSON reference.
- *
- * @param {*} value - The value to inspect
- * @returns {boolean}
- */
-        $Ref.is$Ref = function (value) {
-          return value && (typeof value === 'undefined' ? 'undefined' : _typeof(value)) === 'object' && typeof value.$ref === 'string' && value.$ref.length > 0;
-        };
-        /**
- * Determines whether the given value is an external JSON reference.
- *
- * @param {*} value - The value to inspect
- * @returns {boolean}
- */
-        $Ref.isExternal$Ref = function (value) {
-          return $Ref.is$Ref(value) && value.$ref[0] !== '#';
-        };
-        /**
- * Determines whether the given value is a JSON reference, and whether it is allowed by the options.
- * For example, if it references an external file, then options.resolve.external must be true.
- *
- * @param {*} value - The value to inspect
- * @param {$RefParserOptions} options
- * @returns {boolean}
- */
-        $Ref.isAllowed$Ref = function (value, options) {
-          if ($Ref.is$Ref(value)) {
-            if (value.$ref[0] === '#' || !options || options.resolve.external) {
-              return true;
-            }
-          }
-        };
-        /**
- * Determines whether the given value is a JSON reference that "extends" its resolved value.
- * That is, it has extra properties (in addition to "$ref"), so rather than simply pointing to
- * an existing value, this $ref actually creates a NEW value that is a shallow copy of the resolved
- * value, plus the extra properties.
- *
- * @example:
- *  {
- *    person: {
- *      properties: {
- *        firstName: { type: string }
- *        lastName: { type: string }
- *      }
- *    }
- *    employee: {
- *      properties: {
- *        $ref: #/person/properties
- *        salary: { type: number }
- *      }
- *    }
- *  }
- *
- *  In this example, "employee" is an extended $ref, since it extends "person" with an additional
- *  property (salary).  The result is a NEW value that looks like this:
- *
- *  {
- *    properties: {
- *      firstName: { type: string }
- *      lastName: { type: string }
- *      salary: { type: number }
- *    }
- *  }
- *
- * @param {*} value - The value to inspect
- * @returns {boolean}
- */
-        $Ref.isExtended$Ref = function (value) {
-          return $Ref.is$Ref(value) && Object.keys(value).length > 1;
-        };
-        /**
- * Returns the resolved value of a JSON Reference.
- * If necessary, the resolved value is merged with the JSON Reference to create a new object
- *
- * @example:
- *  {
- *    person: {
- *      properties: {
- *        firstName: { type: string }
- *        lastName: { type: string }
- *      }
- *    }
- *    employee: {
- *      properties: {
- *        $ref: #/person/properties
- *        salary: { type: number }
- *      }
- *    }
- *  }
- *
- *  When "person" and "employee" are merged, you end up with the following object:
- *
- *  {
- *    properties: {
- *      firstName: { type: string }
- *      lastName: { type: string }
- *      salary: { type: number }
- *    }
- *  }
- *
- * @param {object} $ref - The JSON reference object (the one with the "$ref" property)
- * @param {*} resolvedValue - The resolved value, which can be any type
- * @returns {*} - Returns the dereferenced value
- */
-        $Ref.dereference = function ($ref, resolvedValue) {
-          if (resolvedValue && (typeof resolvedValue === 'undefined' ? 'undefined' : _typeof(resolvedValue)) === 'object' && $Ref.isExtended$Ref($ref)) {
-            var merged = {};
-            Object.keys($ref).forEach(function (key) {
-              if (key !== '$ref') {
-                merged[key] = $ref[key];
-              }
-            });
-            Object.keys(resolvedValue).forEach(function (key) {
-              if (!(key in merged)) {
-                merged[key] = resolvedValue[key];
-              }
-            });
-            return merged;
-          } else {
-            // Completely replace the original reference with the resolved value
-            return resolvedValue;
-          }
-        };
-      },
-      { './pointer': 61 }
-    ],
-    63: [
-      function (require, module, exports) {
-        'use strict';
-        var ono = require('ono'), $Ref = require('./ref'), url = require('./util/url');
-        module.exports = $Refs;
-        /**
- * This class is a map of JSON references and their resolved values.
- */
-        function $Refs() {
-          /**
-   * Indicates whether the schema contains any circular references.
-   *
-   * @type {boolean}
-   */
-          this.circular = false;
-          /**
-   * A map of paths/urls to {@link $Ref} objects
-   *
-   * @type {object}
-   * @protected
-   */
-          this._$refs = {};
-          /**
-   * The {@link $Ref} object that is the root of the JSON schema.
-   *
-   * @type {$Ref}
-   * @protected
-   */
-          this._root$Ref = null;
-        }
-        /**
- * Returns the paths of all the files/URLs that are referenced by the JSON schema,
- * including the schema itself.
- *
- * @param {...string|string[]} [types] - Only return paths of the given types ("file", "http", etc.)
- * @returns {string[]}
- */
-        $Refs.prototype.paths = function (types) {
-          var paths = getPaths(this._$refs, arguments);
-          return paths.map(function (path) {
-            return path.decoded;
-          });
-        };
-        /**
- * Returns the map of JSON references and their resolved values.
- *
- * @param {...string|string[]} [types] - Only return references of the given types ("file", "http", etc.)
- * @returns {object}
- */
-        $Refs.prototype.values = function (types) {
-          var $refs = this._$refs;
-          var paths = getPaths($refs, arguments);
-          return paths.reduce(function (obj, path) {
-            obj[path.decoded] = $refs[path.encoded].value;
-            return obj;
-          }, {});
-        };
-        /**
- * Returns a POJO (plain old JavaScript object) for serialization as JSON.
- *
- * @returns {object}
- */
-        $Refs.prototype.toJSON = $Refs.prototype.values;
-        /**
- * Determines whether the given JSON reference exists.
- *
- * @param {string} path - The path being resolved, optionally with a JSON pointer in the hash
- * @param {$RefParserOptions} [options]
- * @returns {boolean}
- */
-        $Refs.prototype.exists = function (path, options) {
-          try {
-            this._resolve(path, options);
-            return true;
-          } catch (e) {
-            return false;
-          }
-        };
-        /**
- * Resolves the given JSON reference and returns the resolved value.
- *
- * @param {string} path - The path being resolved, with a JSON pointer in the hash
- * @param {$RefParserOptions} [options]
- * @returns {*} - Returns the resolved value
- */
-        $Refs.prototype.get = function (path, options) {
-          return this._resolve(path, options).value;
-        };
-        /**
- * Sets the value of a nested property within this {@link $Ref#value}.
- * If the property, or any of its parents don't exist, they will be created.
- *
- * @param {string} path - The path of the property to set, optionally with a JSON pointer in the hash
- * @param {*} value - The value to assign
- */
-        $Refs.prototype.set = function (path, value) {
-          path = url.resolve(this._root$Ref.path, path);
-          var withoutHash = url.stripHash(path);
-          var $ref = this._$refs[withoutHash];
-          if (!$ref) {
-            throw ono('Error resolving $ref pointer "%s". \n"%s" not found.', path, withoutHash);
-          }
-          $ref.set(path, value);
-        };
-        /**
- * Creates a new {@link $Ref} object and adds it to this {@link $Refs} object.
- *
- * @param {string} path  - The file path or URL of the referenced file
- * @param {*} [value] - Optional. The value of the $ref.
- */
-        $Refs.prototype._add = function (path, value) {
-          var withoutHash = url.stripHash(path);
-          var $ref = new $Ref();
-          $ref.path = withoutHash;
-          $ref.value = value;
-          $ref.$refs = this;
-          this._$refs[withoutHash] = $ref;
-          this._root$Ref = this._root$Ref || $ref;
-          return $ref;
-        };
-        /**
- * Resolves the given JSON reference.
- *
- * @param {string} path - The path being resolved, optionally with a JSON pointer in the hash
- * @param {$RefParserOptions} [options]
- * @returns {Pointer}
- * @protected
- */
-        $Refs.prototype._resolve = function (path, options) {
-          path = url.resolve(this._root$Ref.path, path);
-          var withoutHash = url.stripHash(path);
-          var $ref = this._$refs[withoutHash];
-          if (!$ref) {
-            throw ono('Error resolving $ref pointer "%s". \n"%s" not found.', path, withoutHash);
-          }
-          return $ref.resolve(path, options);
-        };
-        /**
- * Returns the specified {@link $Ref} object, or undefined.
- *
- * @param {string} path - The path being resolved, optionally with a JSON pointer in the hash
- * @returns {$Ref|undefined}
- * @protected
- */
-        $Refs.prototype._get$Ref = function (path) {
-          path = url.resolve(this._root$Ref.path, path);
-          var withoutHash = url.stripHash(path);
-          return this._$refs[withoutHash];
-        };
-        /**
- * Returns the encoded and decoded paths keys of the given object.
- *
- * @param {object} $refs - The object whose keys are URL-encoded paths
- * @param {...string|string[]} [types] - Only return paths of the given types ("file", "http", etc.)
- * @returns {object[]}
- */
-        function getPaths($refs, types) {
-          var paths = Object.keys($refs);
-          // Filter the paths by type
-          types = Array.isArray(types[0]) ? types[0] : Array.prototype.slice.call(types);
-          if (types.length > 0 && types[0]) {
-            paths = paths.filter(function (key) {
-              return types.indexOf($refs[key].pathType) !== -1;
-            });
-          }
-          // Decode local filesystem paths
-          return paths.map(function (path) {
-            return {
-              encoded: path,
-              decoded: $refs[path].pathType === 'file' ? url.toFileSystemPath(path, true) : path
-            };
-          });
-        }
-      },
-      {
-        './ref': 62,
-        './util/url': 70,
-        'ono': 242
-      }
-    ],
-    64: [
-      function (require, module, exports) {
-        'use strict';
-        var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
-            return typeof obj;
-          } : function (obj) {
-            return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
-          };
-        var Promise = require('./util/promise'), $Ref = require('./ref'), Pointer = require('./pointer'), parse = require('./parse'), debug = require('./util/debug'), url = require('./util/url');
-        module.exports = resolveExternal;
-        /**
- * Crawls the JSON schema, finds all external JSON references, and resolves their values.
- * This method does not mutate the JSON schema. The resolved values are added to {@link $RefParser#$refs}.
- *
- * NOTE: We only care about EXTERNAL references here. INTERNAL references are only relevant when dereferencing.
- *
- * @param {$RefParser} parser
- * @param {$RefParserOptions} options
- *
- * @returns {Promise}
- * The promise resolves once all JSON references in the schema have been resolved,
- * including nested references that are contained in externally-referenced files.
- */
-        function resolveExternal(parser, options) {
-          if (!options.resolve.external) {
-            // Nothing to resolve, so exit early
-            return Promise.resolve();
-          }
-          try {
-            debug('Resolving $ref pointers in %s', parser.$refs._root$Ref.path);
-            var promises = crawl(parser.schema, parser.$refs._root$Ref.path + '#', parser.$refs, options);
-            return Promise.all(promises);
-          } catch (e) {
-            return Promise.reject(e);
-          }
-        }
-        /**
- * Recursively crawls the given value, and resolves any external JSON references.
- *
- * @param {*} obj - The value to crawl. If it's not an object or array, it will be ignored.
- * @param {string} path - The full path of `obj`, possibly with a JSON Pointer in the hash
- * @param {$Refs} $refs
- * @param {$RefParserOptions} options
- *
- * @returns {Promise[]}
- * Returns an array of promises. There will be one promise for each JSON reference in `obj`.
- * If `obj` does not contain any JSON references, then the array will be empty.
- * If any of the JSON references point to files that contain additional JSON references,
- * then the corresponding promise will internally reference an array of promises.
- */
-        function crawl(obj, path, $refs, options) {
-          var promises = [];
-          if (obj && (typeof obj === 'undefined' ? 'undefined' : _typeof(obj)) === 'object') {
-            if ($Ref.isExternal$Ref(obj)) {
-              promises.push(resolve$Ref(obj, path, $refs, options));
-            } else {
-              Object.keys(obj).forEach(function (key) {
-                var keyPath = Pointer.join(path, key);
-                var value = obj[key];
-                if ($Ref.isExternal$Ref(value)) {
-                  promises.push(resolve$Ref(value, keyPath, $refs, options));
-                } else {
-                  promises = promises.concat(crawl(value, keyPath, $refs, options));
-                }
-              });
-            }
-          }
-          return promises;
-        }
-        /**
- * Resolves the given JSON Reference, and then crawls the resulting value.
- *
- * @param {{$ref: string}} $ref - The JSON Reference to resolve
- * @param {string} path - The full path of `$ref`, possibly with a JSON Pointer in the hash
- * @param {$Refs} $refs
- * @param {$RefParserOptions} options
- *
- * @returns {Promise}
- * The promise resolves once all JSON references in the object have been resolved,
- * including nested references that are contained in externally-referenced files.
- */
-        function resolve$Ref($ref, path, $refs, options) {
-          debug('Resolving $ref pointer "%s" at %s', $ref.$ref, path);
-          var resolvedPath = url.resolve(path, $ref.$ref);
-          var withoutHash = url.stripHash(resolvedPath);
-          // Do we already have this $ref?
-          $ref = $refs._$refs[withoutHash];
-          if ($ref) {
-            // We've already parsed this $ref, so use the existing value
-            return Promise.resolve($ref.value);
-          }
-          // Parse the $referenced file/url
-          return parse(resolvedPath, $refs, options).then(function (result) {
-            // Crawl the parsed value
-            debug('Resolving $ref pointers in %s', withoutHash);
-            var promises = crawl(result, withoutHash + '#', $refs, options);
-            return Promise.all(promises);
-          });
-        }
-      },
-      {
-        './parse': 56,
-        './pointer': 61,
-        './ref': 62,
-        './util/debug': 67,
-        './util/promise': 69,
-        './util/url': 70
-      }
-    ],
-    65: [
-      function (require, module, exports) {
-        'use strict';
-        var fs = require('fs'), ono = require('ono'), Promise = require('../util/promise'), url = require('../util/url'), debug = require('../util/debug');
-        module.exports = {
-          order: 100,
-          canRead: function isFile(file) {
-            return url.isFileSystemPath(file.url);
-          },
-          read: function readFile(file) {
-            return new Promise(function (resolve, reject) {
-              var path;
-              try {
-                path = url.toFileSystemPath(file.url);
-              } catch (err) {
-                reject(ono.uri(err, 'Malformed URI: %s', file.url));
-              }
-              debug('Opening file: %s', path);
-              try {
-                fs.readFile(path, function (err, data) {
-                  if (err) {
-                    reject(ono(err, 'Error opening file "%s"', path));
-                  } else {
-                    resolve(data);
-                  }
-                });
-              } catch (err) {
-                reject(ono(err, 'Error opening file "%s"', path));
-              }
-            });
-          }
-        };
-      },
-      {
-        '../util/debug': 67,
-        '../util/promise': 69,
-        '../util/url': 70,
-        'fs': 4,
-        'ono': 242
-      }
-    ],
-    66: [
-      function (require, module, exports) {
-        (function (process, Buffer) {
-          'use strict';
-          var http = require('http'), https = require('https'), ono = require('ono'), url = require('../util/url'), debug = require('../util/debug'), Promise = require('../util/promise');
-          module.exports = {
-            order: 200,
-            headers: null,
-            timeout: 5000,
-            redirects: 5,
-            withCredentials: false,
-            canRead: function isHttp(file) {
-              return url.isHttp(file.url);
-            },
-            read: function readHttp(file) {
-              var u = url.parse(file.url);
-              if (process.browser && !u.protocol) {
-                // Use the protocol of the current page
-                u.protocol = url.parse(location.href).protocol;
-              }
-              return download(u, this);
-            }
-          };
-          /**
- * Downloads the given file.
- *
- * @param {Url|string} u        - The url to download (can be a parsed {@link Url} object)
- * @param {object} httpOptions  - The `options.resolve.http` object
- * @param {number} [redirects]  - The redirect URLs that have already been followed
- *
- * @returns {Promise<Buffer>}
- * The promise resolves with the raw downloaded data, or rejects if there is an HTTP error.
- */
-          function download(u, httpOptions, redirects) {
-            return new Promise(function (resolve, reject) {
-              u = url.parse(u);
-              redirects = redirects || [];
-              redirects.push(u.href);
-              get(u, httpOptions).then(function (res) {
-                if (res.statusCode >= 400) {
-                  throw ono({ status: res.statusCode }, 'HTTP ERROR %d', res.statusCode);
-                } else if (res.statusCode >= 300) {
-                  if (redirects.length > httpOptions.redirects) {
-                    reject(ono({ status: res.statusCode }, 'Error downloading %s. \nToo many redirects: \n  %s', redirects[0], redirects.join(' \n  ')));
-                  } else if (!res.headers.location) {
-                    throw ono({ status: res.statusCode }, 'HTTP %d redirect with no location header', res.statusCode);
-                  } else {
-                    debug('HTTP %d redirect %s -> %s', res.statusCode, u.href, res.headers.location);
-                    var redirectTo = url.resolve(u, res.headers.location);
-                    download(redirectTo, httpOptions, redirects).then(resolve, reject);
-                  }
-                } else {
-                  resolve(res.body || new Buffer(0));
-                }
-              }).catch(function (err) {
-                reject(ono(err, 'Error downloading', u.href));
-              });
-            });
-          }
-          /**
- * Sends an HTTP GET request.
- *
- * @param {Url} u - A parsed {@link Url} object
- * @param {object} httpOptions - The `options.resolve.http` object
- *
- * @returns {Promise<Response>}
- * The promise resolves with the HTTP Response object.
- */
-          function get(u, httpOptions) {
-            return new Promise(function (resolve, reject) {
-              debug('GET', u.href);
-              var protocol = u.protocol === 'https:' ? https : http;
-              var req = protocol.get({
-                  hostname: u.hostname,
-                  port: u.port,
-                  path: u.path,
-                  auth: u.auth,
-                  headers: httpOptions.headers || {},
-                  withCredentials: httpOptions.withCredentials
-                });
-              if (typeof req.setTimeout === 'function') {
-                req.setTimeout(httpOptions.timeout);
-              }
-              req.on('timeout', function () {
-                req.abort();
-              });
-              req.on('error', reject);
-              req.once('response', function (res) {
-                res.body = new Buffer(0);
-                res.on('data', function (data) {
-                  res.body = Buffer.concat([
-                    res.body,
-                    new Buffer(data)
-                  ]);
-                });
-                res.on('error', reject);
-                res.on('end', function () {
-                  resolve(res);
-                });
-              });
-            });
-          }
-        }.call(this, require('_process'), require('buffer').Buffer));
-      },
-      {
-        '../util/debug': 67,
-        '../util/promise': 69,
-        '../util/url': 70,
-        '_process': 244,
-        'buffer': 6,
-        'http': 263,
-        'https': 16,
-        'ono': 242
-      }
-    ],
-    67: [
-      function (require, module, exports) {
-        'use strict';
-        var debug = require('debug');
-        /**
- * Writes messages to stdout.
- * Log messages are suppressed by default, but can be enabled by setting the DEBUG variable.
- * @type {function}
- */
-        module.exports = debug('json-schema-ref-parser');
-      },
-      { 'debug': 11 }
-    ],
-    68: [
-      function (require, module, exports) {
-        'use strict';
-        var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
-            return typeof obj;
-          } : function (obj) {
-            return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
-          };
-        var Promise = require('./promise'), debug = require('./debug');
-        /**
- * Returns the given plugins as an array, rather than an object map.
- * All other methods in this module expect an array of plugins rather than an object map.
- *
- * @param  {object} plugins - A map of plugin objects
- * @return {object[]}
- */
-        exports.all = function (plugins) {
-          return Object.keys(plugins).filter(function (key) {
-            return _typeof(plugins[key]) === 'object';
-          }).map(function (key) {
-            plugins[key].name = key;
-            return plugins[key];
-          });
-        };
-        /**
- * Filters the given plugins, returning only the ones return `true` for the given method.
- *
- * @param  {object[]} plugins - An array of plugin objects
- * @param  {string}   method  - The name of the filter method to invoke for each plugin
- * @param  {object}   file    - A file info object, which will be passed to each method
- * @return {object[]}
- */
-        exports.filter = function (plugins, method, file) {
-          return plugins.filter(function (plugin) {
-            return !!getResult(plugin, method, file);
-          });
-        };
-        /**
- * Sorts the given plugins, in place, by their `order` property.
- *
- * @param {object[]} plugins - An array of plugin objects
- * @returns {object[]}
- */
-        exports.sort = function (plugins) {
-          plugins.forEach(function (plugin) {
-            plugin.order = plugin.order || Number.MAX_SAFE_INTEGER;
-          });
-          return plugins.sort(function (a, b) {
-            return a.order - b.order;
-          });
-        };
-        /**
- * Runs the specified method of the given plugins, in order, until one of them returns a successful result.
- * Each method can return a synchronous value, a Promise, or call an error-first callback.
- * If the promise resolves successfully, or the callback is called without an error, then the result
- * is immediately returned and no further plugins are called.
- * If the promise rejects, or the callback is called with an error, then the next plugin is called.
- * If ALL plugins fail, then the last error is thrown.
- *
- * @param {object[]}  plugins - An array of plugin objects
- * @param {string}    method  - The name of the method to invoke for each plugin
- * @param {object}    file    - A file info object, which will be passed to each method
- * @returns {Promise}
- */
-        exports.run = function (plugins, method, file) {
-          var plugin, lastError, index = 0;
-          return new Promise(function (resolve, reject) {
-            runNextPlugin();
-            function runNextPlugin() {
-              plugin = plugins[index++];
-              if (!plugin) {
-                // There are no more functions, so re-throw the last error
-                return reject(lastError);
-              }
-              try {
-                debug('  %s', plugin.name);
-                var result = getResult(plugin, method, file, callback);
-                if (result && typeof result.then === 'function') {
-                  // A promise was returned
-                  result.then(onSuccess, onError);
-                } else if (result !== undefined) {
-                  // A synchronous result was returned
-                  onSuccess(result);
-                }  // else { the callback will be called }
-              } catch (e) {
-                onError(e);
-              }
-            }
-            function callback(err, result) {
-              if (err) {
-                onError(err);
-              } else {
-                onSuccess(result);
-              }
-            }
-            function onSuccess(result) {
-              debug('    success');
-              resolve({
-                plugin: plugin,
-                result: result
-              });
-            }
-            function onError(err) {
-              debug('    %s', err.message || err);
-              lastError = err;
-              runNextPlugin();
-            }
-          });
-        };
-        /**
- * Returns the value of the given property.
- * If the property is a function, then the result of the function is returned.
- * If the value is a RegExp, then it will be tested against the file URL.
- * If the value is an aray, then it will be compared against the file extension.
- *
- * @param   {object}   obj        - The object whose property/method is called
- * @param   {string}   prop       - The name of the property/method to invoke
- * @param   {object}   file       - A file info object, which will be passed to the method
- * @param   {function} [callback] - A callback function, which will be passed to the method
- * @returns {*}
- */
-        function getResult(obj, prop, file, callback) {
-          var value = obj[prop];
-          if (typeof value === 'function') {
-            return value.apply(obj, [
-              file,
-              callback
-            ]);
-          }
-          if (!callback) {
-            // The synchronous plugin functions (canParse and canRead)
-            // allow a "shorthand" syntax, where the user can match
-            // files by RegExp or by file extension.
-            if (value instanceof RegExp) {
-              return value.test(file.url);
-            } else if (typeof value === 'string') {
-              return value === file.extension;
-            } else if (Array.isArray(value)) {
-              return value.indexOf(file.extension) !== -1;
-            }
-          }
-          return value;
-        }
-      },
-      {
-        './debug': 67,
-        './promise': 69
-      }
-    ],
-    69: [
-      function (require, module, exports) {
-        'use strict';
-        /** @type {Promise} **/
-        module.exports = typeof Promise === 'function' ? Promise : require('es6-promise').Promise;
-      },
-      { 'es6-promise': 13 }
-    ],
-    70: [
-      function (require, module, exports) {
-        (function (process) {
-          'use strict';
-          var isWindows = /^win/.test(process.platform), forwardSlashPattern = /\//g, protocolPattern = /^([a-z0-9.+-]+):\/\//i, url = module.exports;
-          // RegExp patterns to URL-encode special characters in local filesystem paths
-          var urlEncodePatterns = [
-              /\?/g,
-              '%3F',
-              /\#/g,
-              '%23',
-              isWindows ? /\\/g : /\//,
-              '/'
-            ];
-          // RegExp patterns to URL-decode special characters for local filesystem paths
-          var urlDecodePatterns = [
-              /\%23/g,
-              '#',
-              /\%24/g,
-              '$',
-              /\%26/g,
-              '&',
-              /\%2C/g,
-              ',',
-              /\%40/g,
-              '@'
-            ];
-          exports.parse = require('url').parse;
-          exports.resolve = require('url').resolve;
-          /**
- * Returns the current working directory (in Node) or the current page URL (in browsers).
- *
- * @returns {string}
- */
-          exports.cwd = function cwd() {
-            return process.browser ? location.href : process.cwd() + '/';
-          };
-          /**
- * Returns the protocol of the given URL, or `undefined` if it has no protocol.
- *
- * @param   {string} path
- * @returns {?string}
- */
-          exports.getProtocol = function getProtocol(path) {
-            var match = protocolPattern.exec(path);
-            if (match) {
-              return match[1].toLowerCase();
-            }
-          };
-          /**
- * Returns the lowercased file extension of the given URL,
- * or an empty string if it has no extension.
- *
- * @param   {string} path
- * @returns {string}
- */
-          exports.getExtension = function getExtension(path) {
-            var lastDot = path.lastIndexOf('.');
-            if (lastDot >= 0) {
-              return path.substr(lastDot).toLowerCase();
-            }
-            return '';
-          };
-          /**
- * Returns the hash (URL fragment), of the given path.
- * If there is no hash, then the root hash ("#") is returned.
- *
- * @param   {string} path
- * @returns {string}
- */
-          exports.getHash = function getHash(path) {
-            var hashIndex = path.indexOf('#');
-            if (hashIndex >= 0) {
-              return path.substr(hashIndex);
-            }
-            return '#';
-          };
-          /**
- * Removes the hash (URL fragment), if any, from the given path.
- *
- * @param   {string} path
- * @returns {string}
- */
-          exports.stripHash = function stripHash(path) {
-            var hashIndex = path.indexOf('#');
-            if (hashIndex >= 0) {
-              path = path.substr(0, hashIndex);
-            }
-            return path;
-          };
-          /**
- * Determines whether the given path is an HTTP(S) URL.
- *
- * @param   {string} path
- * @returns {boolean}
- */
-          exports.isHttp = function isHttp(path) {
-            var protocol = url.getProtocol(path);
-            if (protocol === 'http' || protocol === 'https') {
-              return true;
-            } else if (protocol === undefined) {
-              // There is no protocol.  If we're running in a browser, then assume it's HTTP.
-              return process.browser;
-            } else {
-              // It's some other protocol, such as "ftp://", "mongodb://", etc.
-              return false;
-            }
-          };
-          /**
- * Determines whether the given path is a filesystem path.
- * This includes "file://" URLs.
- *
- * @param   {string} path
- * @returns {boolean}
- */
-          exports.isFileSystemPath = function isFileSystemPath(path) {
-            if (process.browser) {
-              // We're running in a browser, so assume that all paths are URLs.
-              // This way, even relative paths will be treated as URLs rather than as filesystem paths
-              return false;
-            }
-            var protocol = url.getProtocol(path);
-            return protocol === undefined || protocol === 'file';
-          };
-          /**
- * Converts a filesystem path to a properly-encoded URL.
- *
- * This is intended to handle situations where JSON Schema $Ref Parser is called
- * with a filesystem path that contains characters which are not allowed in URLs.
- *
- * @example
- * The following filesystem paths would be converted to the following URLs:
- *
- *    <"!@#$%^&*+=?'>.json              ==>   %3C%22!@%23$%25%5E&*+=%3F\'%3E.json
- *    C:\\My Documents\\File (1).json   ==>   C:/My%20Documents/File%20(1).json
- *    file://Project #42/file.json      ==>   file://Project%20%2342/file.json
- *
- * @param {string} path
- * @returns {string}
- */
-          exports.fromFileSystemPath = function fromFileSystemPath(path) {
-            // Step 1: Manually encode characters that are not encoded by `encodeURI`.
-            // This includes characters such as "#" and "?", which have special meaning in URLs,
-            // but are just normal characters in a filesystem path.
-            // On Windows, this will also replace backslashes with forward slashes,
-            // rather than encoding them as special characters.
-            for (var i = 0; i < urlEncodePatterns.length; i += 2) {
-              path = path.replace(urlEncodePatterns[i], urlEncodePatterns[i + 1]);
-            }
-            // Step 2: `encodeURI` will take care of all other characters
-            return encodeURI(path);
-          };
-          /**
- * Converts a URL to a local filesystem path.
- *
- * @param {string}  path
- * @param {boolean} [keepFileProtocol] - If true, then "file://" will NOT be stripped
- * @returns {string}
- */
-          exports.toFileSystemPath = function toFileSystemPath(path, keepFileProtocol) {
-            // Step 1: `decodeURI` will decode characters such as Cyrillic characters, spaces, etc.
-            path = decodeURI(path);
-            // Step 2: Manually decode characters that are not decoded by `decodeURI`.
-            // This includes characters such as "#" and "?", which have special meaning in URLs,
-            // but are just normal characters in a filesystem path.
-            for (var i = 0; i < urlDecodePatterns.length; i += 2) {
-              path = path.replace(urlDecodePatterns[i], urlDecodePatterns[i + 1]);
-            }
-            // Step 3: If it's a "file://" URL, then format it consistently
-            // or convert it to a local filesystem path
-            var isFileUrl = path.substr(0, 7).toLowerCase() === 'file://';
-            if (isFileUrl) {
-              // Strip-off the protocol, and the initial "/", if there is one
-              path = path[7] === '/' ? path.substr(8) : path.substr(7);
-              // insert a colon (":") after the drive letter on Windows
-              if (isWindows && path[1] === '/') {
-                path = path[0] + ':' + path.substr(1);
-              }
-              if (keepFileProtocol) {
-                // Return the consistently-formatted "file://" URL
-                path = 'file:///' + path;
-              } else {
-                // Convert the "file://" URL to a local filesystem path.
-                // On Windows, it will start with something like "C:/".
-                // On Posix, it will start with "/"
-                isFileUrl = false;
-                path = isWindows ? path : '/' + path;
-              }
-            }
-            // Step 4: On Windows, convert backslashes to forward slashes,
-            // unless it's a "file://" URL
-            if (isWindows && !isFileUrl) {
-              path = path.replace(forwardSlashPattern, '\\');
-            }
-            return path;
-          };
-        }.call(this, require('_process')));
-      },
-      {
-        '_process': 244,
-        'url': 277
-      }
-    ],
-    71: [
-      function (require, module, exports) {
-        /* eslint lines-around-comment: [2, {beforeBlockComment: false}] */
-        'use strict';
-        var yaml = require('js-yaml'), ono = require('ono');
-        /**
- * Simple YAML parsing functions, similar to {@link JSON.parse} and {@link JSON.stringify}
- */
-        module.exports = {
-          parse: function yamlParse(text, reviver) {
-            try {
-              return yaml.safeLoad(text);
-            } catch (e) {
-              if (e instanceof Error) {
-                throw e;
-              } else {
-                // https://github.com/nodeca/js-yaml/issues/153
-                throw ono(e, e.message);
-              }
-            }
-          },
-          stringify: function yamlStringify(value, replacer, space) {
-            try {
-              var indent = (typeof space === 'string' ? space.length : space) || 2;
-              return yaml.safeDump(value, { indent: indent });
-            } catch (e) {
-              if (e instanceof Error) {
-                throw e;
-              } else {
-                // https://github.com/nodeca/js-yaml/issues/153
-                throw ono(e, e.message);
-              }
-            }
-          }
-        };
-      },
-      {
-        'js-yaml': 21,
-        'ono': 242
-      }
-    ],
-    72: [
-      function (require, module, exports) {
-        'use strict';
-        module.exports = {
-          order: 100,
-          canValidate: function canValidate(file) {
-            // Z-Schema requires JSON References to already be resolved (but not dereferenced)
-            return !!file.resolved;
-          },
-          validate: function validate(file) {
-          }
-        };
-      },
-      {}
+      { '../type': 56 }
     ],
     73: [
       function (require, module, exports) {
@@ -15320,6 +15313,1579 @@
     ],
     74: [
       function (require, module, exports) {
+        (function (global) {
+          'use strict';
+          var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
+              return typeof obj;
+            } : function (obj) {
+              return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
+            };
+          /**
+ * Lodash (Custom Build) <https://lodash.com/>
+ * Build: `lodash modularize exports="npm" -o ./`
+ * Copyright JS Foundation and other contributors <https://js.foundation/>
+ * Released under MIT license <https://lodash.com/license>
+ * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
+ * Copyright Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ */
+          /** Used as the size to enable large array optimizations. */
+          var LARGE_ARRAY_SIZE = 200;
+          /** Used to stand-in for `undefined` hash values. */
+          var HASH_UNDEFINED = '__lodash_hash_undefined__';
+          /** Used to compose bitmasks for value comparisons. */
+          var COMPARE_PARTIAL_FLAG = 1, COMPARE_UNORDERED_FLAG = 2;
+          /** Used as references for various `Number` constants. */
+          var MAX_SAFE_INTEGER = 9007199254740991;
+          /** `Object#toString` result references. */
+          var argsTag = '[object Arguments]', arrayTag = '[object Array]', asyncTag = '[object AsyncFunction]', boolTag = '[object Boolean]', dateTag = '[object Date]', errorTag = '[object Error]', funcTag = '[object Function]', genTag = '[object GeneratorFunction]', mapTag = '[object Map]', numberTag = '[object Number]', nullTag = '[object Null]', objectTag = '[object Object]', promiseTag = '[object Promise]', proxyTag = '[object Proxy]', regexpTag = '[object RegExp]', setTag = '[object Set]', stringTag = '[object String]', symbolTag = '[object Symbol]', undefinedTag = '[object Undefined]', weakMapTag = '[object WeakMap]';
+          var arrayBufferTag = '[object ArrayBuffer]', dataViewTag = '[object DataView]', float32Tag = '[object Float32Array]', float64Tag = '[object Float64Array]', int8Tag = '[object Int8Array]', int16Tag = '[object Int16Array]', int32Tag = '[object Int32Array]', uint8Tag = '[object Uint8Array]', uint8ClampedTag = '[object Uint8ClampedArray]', uint16Tag = '[object Uint16Array]', uint32Tag = '[object Uint32Array]';
+          /**
+ * Used to match `RegExp`
+ * [syntax characters](http://ecma-international.org/ecma-262/7.0/#sec-patterns).
+ */
+          var reRegExpChar = /[\\^$.*+?()[\]{}|]/g;
+          /** Used to detect host constructors (Safari). */
+          var reIsHostCtor = /^\[object .+?Constructor\]$/;
+          /** Used to detect unsigned integer values. */
+          var reIsUint = /^(?:0|[1-9]\d*)$/;
+          /** Used to identify `toStringTag` values of typed arrays. */
+          var typedArrayTags = {};
+          typedArrayTags[float32Tag] = typedArrayTags[float64Tag] = typedArrayTags[int8Tag] = typedArrayTags[int16Tag] = typedArrayTags[int32Tag] = typedArrayTags[uint8Tag] = typedArrayTags[uint8ClampedTag] = typedArrayTags[uint16Tag] = typedArrayTags[uint32Tag] = true;
+          typedArrayTags[argsTag] = typedArrayTags[arrayTag] = typedArrayTags[arrayBufferTag] = typedArrayTags[boolTag] = typedArrayTags[dataViewTag] = typedArrayTags[dateTag] = typedArrayTags[errorTag] = typedArrayTags[funcTag] = typedArrayTags[mapTag] = typedArrayTags[numberTag] = typedArrayTags[objectTag] = typedArrayTags[regexpTag] = typedArrayTags[setTag] = typedArrayTags[stringTag] = typedArrayTags[weakMapTag] = false;
+          /** Detect free variable `global` from Node.js. */
+          var freeGlobal = (typeof global === 'undefined' ? 'undefined' : _typeof(global)) == 'object' && global && global.Object === Object && global;
+          /** Detect free variable `self`. */
+          var freeSelf = (typeof self === 'undefined' ? 'undefined' : _typeof(self)) == 'object' && self && self.Object === Object && self;
+          /** Used as a reference to the global object. */
+          var root = freeGlobal || freeSelf || Function('return this')();
+          /** Detect free variable `exports`. */
+          var freeExports = (typeof exports === 'undefined' ? 'undefined' : _typeof(exports)) == 'object' && exports && !exports.nodeType && exports;
+          /** Detect free variable `module`. */
+          var freeModule = freeExports && (typeof module === 'undefined' ? 'undefined' : _typeof(module)) == 'object' && module && !module.nodeType && module;
+          /** Detect the popular CommonJS extension `module.exports`. */
+          var moduleExports = freeModule && freeModule.exports === freeExports;
+          /** Detect free variable `process` from Node.js. */
+          var freeProcess = moduleExports && freeGlobal.process;
+          /** Used to access faster Node.js helpers. */
+          var nodeUtil = function () {
+              try {
+                return freeProcess && freeProcess.binding && freeProcess.binding('util');
+              } catch (e) {
+              }
+            }();
+          /* Node.js helper references. */
+          var nodeIsTypedArray = nodeUtil && nodeUtil.isTypedArray;
+          /**
+ * A specialized version of `_.filter` for arrays without support for
+ * iteratee shorthands.
+ *
+ * @private
+ * @param {Array} [array] The array to iterate over.
+ * @param {Function} predicate The function invoked per iteration.
+ * @returns {Array} Returns the new filtered array.
+ */
+          function arrayFilter(array, predicate) {
+            var index = -1, length = array == null ? 0 : array.length, resIndex = 0, result = [];
+            while (++index < length) {
+              var value = array[index];
+              if (predicate(value, index, array)) {
+                result[resIndex++] = value;
+              }
+            }
+            return result;
+          }
+          /**
+ * Appends the elements of `values` to `array`.
+ *
+ * @private
+ * @param {Array} array The array to modify.
+ * @param {Array} values The values to append.
+ * @returns {Array} Returns `array`.
+ */
+          function arrayPush(array, values) {
+            var index = -1, length = values.length, offset = array.length;
+            while (++index < length) {
+              array[offset + index] = values[index];
+            }
+            return array;
+          }
+          /**
+ * A specialized version of `_.some` for arrays without support for iteratee
+ * shorthands.
+ *
+ * @private
+ * @param {Array} [array] The array to iterate over.
+ * @param {Function} predicate The function invoked per iteration.
+ * @returns {boolean} Returns `true` if any element passes the predicate check,
+ *  else `false`.
+ */
+          function arraySome(array, predicate) {
+            var index = -1, length = array == null ? 0 : array.length;
+            while (++index < length) {
+              if (predicate(array[index], index, array)) {
+                return true;
+              }
+            }
+            return false;
+          }
+          /**
+ * The base implementation of `_.times` without support for iteratee shorthands
+ * or max array length checks.
+ *
+ * @private
+ * @param {number} n The number of times to invoke `iteratee`.
+ * @param {Function} iteratee The function invoked per iteration.
+ * @returns {Array} Returns the array of results.
+ */
+          function baseTimes(n, iteratee) {
+            var index = -1, result = Array(n);
+            while (++index < n) {
+              result[index] = iteratee(index);
+            }
+            return result;
+          }
+          /**
+ * The base implementation of `_.unary` without support for storing metadata.
+ *
+ * @private
+ * @param {Function} func The function to cap arguments for.
+ * @returns {Function} Returns the new capped function.
+ */
+          function baseUnary(func) {
+            return function (value) {
+              return func(value);
+            };
+          }
+          /**
+ * Checks if a `cache` value for `key` exists.
+ *
+ * @private
+ * @param {Object} cache The cache to query.
+ * @param {string} key The key of the entry to check.
+ * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+ */
+          function cacheHas(cache, key) {
+            return cache.has(key);
+          }
+          /**
+ * Gets the value at `key` of `object`.
+ *
+ * @private
+ * @param {Object} [object] The object to query.
+ * @param {string} key The key of the property to get.
+ * @returns {*} Returns the property value.
+ */
+          function getValue(object, key) {
+            return object == null ? undefined : object[key];
+          }
+          /**
+ * Converts `map` to its key-value pairs.
+ *
+ * @private
+ * @param {Object} map The map to convert.
+ * @returns {Array} Returns the key-value pairs.
+ */
+          function mapToArray(map) {
+            var index = -1, result = Array(map.size);
+            map.forEach(function (value, key) {
+              result[++index] = [
+                key,
+                value
+              ];
+            });
+            return result;
+          }
+          /**
+ * Creates a unary function that invokes `func` with its argument transformed.
+ *
+ * @private
+ * @param {Function} func The function to wrap.
+ * @param {Function} transform The argument transform.
+ * @returns {Function} Returns the new function.
+ */
+          function overArg(func, transform) {
+            return function (arg) {
+              return func(transform(arg));
+            };
+          }
+          /**
+ * Converts `set` to an array of its values.
+ *
+ * @private
+ * @param {Object} set The set to convert.
+ * @returns {Array} Returns the values.
+ */
+          function setToArray(set) {
+            var index = -1, result = Array(set.size);
+            set.forEach(function (value) {
+              result[++index] = value;
+            });
+            return result;
+          }
+          /** Used for built-in method references. */
+          var arrayProto = Array.prototype, funcProto = Function.prototype, objectProto = Object.prototype;
+          /** Used to detect overreaching core-js shims. */
+          var coreJsData = root['__core-js_shared__'];
+          /** Used to resolve the decompiled source of functions. */
+          var funcToString = funcProto.toString;
+          /** Used to check objects for own properties. */
+          var hasOwnProperty = objectProto.hasOwnProperty;
+          /** Used to detect methods masquerading as native. */
+          var maskSrcKey = function () {
+              var uid = /[^.]+$/.exec(coreJsData && coreJsData.keys && coreJsData.keys.IE_PROTO || '');
+              return uid ? 'Symbol(src)_1.' + uid : '';
+            }();
+          /**
+ * Used to resolve the
+ * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
+ * of values.
+ */
+          var nativeObjectToString = objectProto.toString;
+          /** Used to detect if a method is native. */
+          var reIsNative = RegExp('^' + funcToString.call(hasOwnProperty).replace(reRegExpChar, '\\$&').replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, '$1.*?') + '$');
+          /** Built-in value references. */
+          var Buffer = moduleExports ? root.Buffer : undefined, _Symbol = root.Symbol, Uint8Array = root.Uint8Array, propertyIsEnumerable = objectProto.propertyIsEnumerable, splice = arrayProto.splice, symToStringTag = _Symbol ? _Symbol.toStringTag : undefined;
+          /* Built-in method references for those with the same name as other `lodash` methods. */
+          var nativeGetSymbols = Object.getOwnPropertySymbols, nativeIsBuffer = Buffer ? Buffer.isBuffer : undefined, nativeKeys = overArg(Object.keys, Object);
+          /* Built-in method references that are verified to be native. */
+          var DataView = getNative(root, 'DataView'), Map = getNative(root, 'Map'), Promise = getNative(root, 'Promise'), Set = getNative(root, 'Set'), WeakMap = getNative(root, 'WeakMap'), nativeCreate = getNative(Object, 'create');
+          /** Used to detect maps, sets, and weakmaps. */
+          var dataViewCtorString = toSource(DataView), mapCtorString = toSource(Map), promiseCtorString = toSource(Promise), setCtorString = toSource(Set), weakMapCtorString = toSource(WeakMap);
+          /** Used to convert symbols to primitives and strings. */
+          var symbolProto = _Symbol ? _Symbol.prototype : undefined, symbolValueOf = symbolProto ? symbolProto.valueOf : undefined;
+          /**
+ * Creates a hash object.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [entries] The key-value pairs to cache.
+ */
+          function Hash(entries) {
+            var index = -1, length = entries == null ? 0 : entries.length;
+            this.clear();
+            while (++index < length) {
+              var entry = entries[index];
+              this.set(entry[0], entry[1]);
+            }
+          }
+          /**
+ * Removes all key-value entries from the hash.
+ *
+ * @private
+ * @name clear
+ * @memberOf Hash
+ */
+          function hashClear() {
+            this.__data__ = nativeCreate ? nativeCreate(null) : {};
+            this.size = 0;
+          }
+          /**
+ * Removes `key` and its value from the hash.
+ *
+ * @private
+ * @name delete
+ * @memberOf Hash
+ * @param {Object} hash The hash to modify.
+ * @param {string} key The key of the value to remove.
+ * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+ */
+          function hashDelete(key) {
+            var result = this.has(key) && delete this.__data__[key];
+            this.size -= result ? 1 : 0;
+            return result;
+          }
+          /**
+ * Gets the hash value for `key`.
+ *
+ * @private
+ * @name get
+ * @memberOf Hash
+ * @param {string} key The key of the value to get.
+ * @returns {*} Returns the entry value.
+ */
+          function hashGet(key) {
+            var data = this.__data__;
+            if (nativeCreate) {
+              var result = data[key];
+              return result === HASH_UNDEFINED ? undefined : result;
+            }
+            return hasOwnProperty.call(data, key) ? data[key] : undefined;
+          }
+          /**
+ * Checks if a hash value for `key` exists.
+ *
+ * @private
+ * @name has
+ * @memberOf Hash
+ * @param {string} key The key of the entry to check.
+ * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+ */
+          function hashHas(key) {
+            var data = this.__data__;
+            return nativeCreate ? data[key] !== undefined : hasOwnProperty.call(data, key);
+          }
+          /**
+ * Sets the hash `key` to `value`.
+ *
+ * @private
+ * @name set
+ * @memberOf Hash
+ * @param {string} key The key of the value to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns the hash instance.
+ */
+          function hashSet(key, value) {
+            var data = this.__data__;
+            this.size += this.has(key) ? 0 : 1;
+            data[key] = nativeCreate && value === undefined ? HASH_UNDEFINED : value;
+            return this;
+          }
+          // Add methods to `Hash`.
+          Hash.prototype.clear = hashClear;
+          Hash.prototype['delete'] = hashDelete;
+          Hash.prototype.get = hashGet;
+          Hash.prototype.has = hashHas;
+          Hash.prototype.set = hashSet;
+          /**
+ * Creates an list cache object.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [entries] The key-value pairs to cache.
+ */
+          function ListCache(entries) {
+            var index = -1, length = entries == null ? 0 : entries.length;
+            this.clear();
+            while (++index < length) {
+              var entry = entries[index];
+              this.set(entry[0], entry[1]);
+            }
+          }
+          /**
+ * Removes all key-value entries from the list cache.
+ *
+ * @private
+ * @name clear
+ * @memberOf ListCache
+ */
+          function listCacheClear() {
+            this.__data__ = [];
+            this.size = 0;
+          }
+          /**
+ * Removes `key` and its value from the list cache.
+ *
+ * @private
+ * @name delete
+ * @memberOf ListCache
+ * @param {string} key The key of the value to remove.
+ * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+ */
+          function listCacheDelete(key) {
+            var data = this.__data__, index = assocIndexOf(data, key);
+            if (index < 0) {
+              return false;
+            }
+            var lastIndex = data.length - 1;
+            if (index == lastIndex) {
+              data.pop();
+            } else {
+              splice.call(data, index, 1);
+            }
+            --this.size;
+            return true;
+          }
+          /**
+ * Gets the list cache value for `key`.
+ *
+ * @private
+ * @name get
+ * @memberOf ListCache
+ * @param {string} key The key of the value to get.
+ * @returns {*} Returns the entry value.
+ */
+          function listCacheGet(key) {
+            var data = this.__data__, index = assocIndexOf(data, key);
+            return index < 0 ? undefined : data[index][1];
+          }
+          /**
+ * Checks if a list cache value for `key` exists.
+ *
+ * @private
+ * @name has
+ * @memberOf ListCache
+ * @param {string} key The key of the entry to check.
+ * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+ */
+          function listCacheHas(key) {
+            return assocIndexOf(this.__data__, key) > -1;
+          }
+          /**
+ * Sets the list cache `key` to `value`.
+ *
+ * @private
+ * @name set
+ * @memberOf ListCache
+ * @param {string} key The key of the value to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns the list cache instance.
+ */
+          function listCacheSet(key, value) {
+            var data = this.__data__, index = assocIndexOf(data, key);
+            if (index < 0) {
+              ++this.size;
+              data.push([
+                key,
+                value
+              ]);
+            } else {
+              data[index][1] = value;
+            }
+            return this;
+          }
+          // Add methods to `ListCache`.
+          ListCache.prototype.clear = listCacheClear;
+          ListCache.prototype['delete'] = listCacheDelete;
+          ListCache.prototype.get = listCacheGet;
+          ListCache.prototype.has = listCacheHas;
+          ListCache.prototype.set = listCacheSet;
+          /**
+ * Creates a map cache object to store key-value pairs.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [entries] The key-value pairs to cache.
+ */
+          function MapCache(entries) {
+            var index = -1, length = entries == null ? 0 : entries.length;
+            this.clear();
+            while (++index < length) {
+              var entry = entries[index];
+              this.set(entry[0], entry[1]);
+            }
+          }
+          /**
+ * Removes all key-value entries from the map.
+ *
+ * @private
+ * @name clear
+ * @memberOf MapCache
+ */
+          function mapCacheClear() {
+            this.size = 0;
+            this.__data__ = {
+              'hash': new Hash(),
+              'map': new (Map || ListCache)(),
+              'string': new Hash()
+            };
+          }
+          /**
+ * Removes `key` and its value from the map.
+ *
+ * @private
+ * @name delete
+ * @memberOf MapCache
+ * @param {string} key The key of the value to remove.
+ * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+ */
+          function mapCacheDelete(key) {
+            var result = getMapData(this, key)['delete'](key);
+            this.size -= result ? 1 : 0;
+            return result;
+          }
+          /**
+ * Gets the map value for `key`.
+ *
+ * @private
+ * @name get
+ * @memberOf MapCache
+ * @param {string} key The key of the value to get.
+ * @returns {*} Returns the entry value.
+ */
+          function mapCacheGet(key) {
+            return getMapData(this, key).get(key);
+          }
+          /**
+ * Checks if a map value for `key` exists.
+ *
+ * @private
+ * @name has
+ * @memberOf MapCache
+ * @param {string} key The key of the entry to check.
+ * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+ */
+          function mapCacheHas(key) {
+            return getMapData(this, key).has(key);
+          }
+          /**
+ * Sets the map `key` to `value`.
+ *
+ * @private
+ * @name set
+ * @memberOf MapCache
+ * @param {string} key The key of the value to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns the map cache instance.
+ */
+          function mapCacheSet(key, value) {
+            var data = getMapData(this, key), size = data.size;
+            data.set(key, value);
+            this.size += data.size == size ? 0 : 1;
+            return this;
+          }
+          // Add methods to `MapCache`.
+          MapCache.prototype.clear = mapCacheClear;
+          MapCache.prototype['delete'] = mapCacheDelete;
+          MapCache.prototype.get = mapCacheGet;
+          MapCache.prototype.has = mapCacheHas;
+          MapCache.prototype.set = mapCacheSet;
+          /**
+ *
+ * Creates an array cache object to store unique values.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [values] The values to cache.
+ */
+          function SetCache(values) {
+            var index = -1, length = values == null ? 0 : values.length;
+            this.__data__ = new MapCache();
+            while (++index < length) {
+              this.add(values[index]);
+            }
+          }
+          /**
+ * Adds `value` to the array cache.
+ *
+ * @private
+ * @name add
+ * @memberOf SetCache
+ * @alias push
+ * @param {*} value The value to cache.
+ * @returns {Object} Returns the cache instance.
+ */
+          function setCacheAdd(value) {
+            this.__data__.set(value, HASH_UNDEFINED);
+            return this;
+          }
+          /**
+ * Checks if `value` is in the array cache.
+ *
+ * @private
+ * @name has
+ * @memberOf SetCache
+ * @param {*} value The value to search for.
+ * @returns {number} Returns `true` if `value` is found, else `false`.
+ */
+          function setCacheHas(value) {
+            return this.__data__.has(value);
+          }
+          // Add methods to `SetCache`.
+          SetCache.prototype.add = SetCache.prototype.push = setCacheAdd;
+          SetCache.prototype.has = setCacheHas;
+          /**
+ * Creates a stack cache object to store key-value pairs.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [entries] The key-value pairs to cache.
+ */
+          function Stack(entries) {
+            var data = this.__data__ = new ListCache(entries);
+            this.size = data.size;
+          }
+          /**
+ * Removes all key-value entries from the stack.
+ *
+ * @private
+ * @name clear
+ * @memberOf Stack
+ */
+          function stackClear() {
+            this.__data__ = new ListCache();
+            this.size = 0;
+          }
+          /**
+ * Removes `key` and its value from the stack.
+ *
+ * @private
+ * @name delete
+ * @memberOf Stack
+ * @param {string} key The key of the value to remove.
+ * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+ */
+          function stackDelete(key) {
+            var data = this.__data__, result = data['delete'](key);
+            this.size = data.size;
+            return result;
+          }
+          /**
+ * Gets the stack value for `key`.
+ *
+ * @private
+ * @name get
+ * @memberOf Stack
+ * @param {string} key The key of the value to get.
+ * @returns {*} Returns the entry value.
+ */
+          function stackGet(key) {
+            return this.__data__.get(key);
+          }
+          /**
+ * Checks if a stack value for `key` exists.
+ *
+ * @private
+ * @name has
+ * @memberOf Stack
+ * @param {string} key The key of the entry to check.
+ * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+ */
+          function stackHas(key) {
+            return this.__data__.has(key);
+          }
+          /**
+ * Sets the stack `key` to `value`.
+ *
+ * @private
+ * @name set
+ * @memberOf Stack
+ * @param {string} key The key of the value to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns the stack cache instance.
+ */
+          function stackSet(key, value) {
+            var data = this.__data__;
+            if (data instanceof ListCache) {
+              var pairs = data.__data__;
+              if (!Map || pairs.length < LARGE_ARRAY_SIZE - 1) {
+                pairs.push([
+                  key,
+                  value
+                ]);
+                this.size = ++data.size;
+                return this;
+              }
+              data = this.__data__ = new MapCache(pairs);
+            }
+            data.set(key, value);
+            this.size = data.size;
+            return this;
+          }
+          // Add methods to `Stack`.
+          Stack.prototype.clear = stackClear;
+          Stack.prototype['delete'] = stackDelete;
+          Stack.prototype.get = stackGet;
+          Stack.prototype.has = stackHas;
+          Stack.prototype.set = stackSet;
+          /**
+ * Creates an array of the enumerable property names of the array-like `value`.
+ *
+ * @private
+ * @param {*} value The value to query.
+ * @param {boolean} inherited Specify returning inherited property names.
+ * @returns {Array} Returns the array of property names.
+ */
+          function arrayLikeKeys(value, inherited) {
+            var isArr = isArray(value), isArg = !isArr && isArguments(value), isBuff = !isArr && !isArg && isBuffer(value), isType = !isArr && !isArg && !isBuff && isTypedArray(value), skipIndexes = isArr || isArg || isBuff || isType, result = skipIndexes ? baseTimes(value.length, String) : [], length = result.length;
+            for (var key in value) {
+              if ((inherited || hasOwnProperty.call(value, key)) && !(skipIndexes && (key == 'length' || isBuff && (key == 'offset' || key == 'parent') || isType && (key == 'buffer' || key == 'byteLength' || key == 'byteOffset') || isIndex(key, length)))) {
+                result.push(key);
+              }
+            }
+            return result;
+          }
+          /**
+ * Gets the index at which the `key` is found in `array` of key-value pairs.
+ *
+ * @private
+ * @param {Array} array The array to inspect.
+ * @param {*} key The key to search for.
+ * @returns {number} Returns the index of the matched value, else `-1`.
+ */
+          function assocIndexOf(array, key) {
+            var length = array.length;
+            while (length--) {
+              if (eq(array[length][0], key)) {
+                return length;
+              }
+            }
+            return -1;
+          }
+          /**
+ * The base implementation of `getAllKeys` and `getAllKeysIn` which uses
+ * `keysFunc` and `symbolsFunc` to get the enumerable property names and
+ * symbols of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @param {Function} keysFunc The function to get the keys of `object`.
+ * @param {Function} symbolsFunc The function to get the symbols of `object`.
+ * @returns {Array} Returns the array of property names and symbols.
+ */
+          function baseGetAllKeys(object, keysFunc, symbolsFunc) {
+            var result = keysFunc(object);
+            return isArray(object) ? result : arrayPush(result, symbolsFunc(object));
+          }
+          /**
+ * The base implementation of `getTag` without fallbacks for buggy environments.
+ *
+ * @private
+ * @param {*} value The value to query.
+ * @returns {string} Returns the `toStringTag`.
+ */
+          function baseGetTag(value) {
+            if (value == null) {
+              return value === undefined ? undefinedTag : nullTag;
+            }
+            return symToStringTag && symToStringTag in Object(value) ? getRawTag(value) : objectToString(value);
+          }
+          /**
+ * The base implementation of `_.isArguments`.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an `arguments` object,
+ */
+          function baseIsArguments(value) {
+            return isObjectLike(value) && baseGetTag(value) == argsTag;
+          }
+          /**
+ * The base implementation of `_.isEqual` which supports partial comparisons
+ * and tracks traversed objects.
+ *
+ * @private
+ * @param {*} value The value to compare.
+ * @param {*} other The other value to compare.
+ * @param {boolean} bitmask The bitmask flags.
+ *  1 - Unordered comparison
+ *  2 - Partial comparison
+ * @param {Function} [customizer] The function to customize comparisons.
+ * @param {Object} [stack] Tracks traversed `value` and `other` objects.
+ * @returns {boolean} Returns `true` if the values are equivalent, else `false`.
+ */
+          function baseIsEqual(value, other, bitmask, customizer, stack) {
+            if (value === other) {
+              return true;
+            }
+            if (value == null || other == null || !isObjectLike(value) && !isObjectLike(other)) {
+              return value !== value && other !== other;
+            }
+            return baseIsEqualDeep(value, other, bitmask, customizer, baseIsEqual, stack);
+          }
+          /**
+ * A specialized version of `baseIsEqual` for arrays and objects which performs
+ * deep comparisons and tracks traversed objects enabling objects with circular
+ * references to be compared.
+ *
+ * @private
+ * @param {Object} object The object to compare.
+ * @param {Object} other The other object to compare.
+ * @param {number} bitmask The bitmask flags. See `baseIsEqual` for more details.
+ * @param {Function} customizer The function to customize comparisons.
+ * @param {Function} equalFunc The function to determine equivalents of values.
+ * @param {Object} [stack] Tracks traversed `object` and `other` objects.
+ * @returns {boolean} Returns `true` if the objects are equivalent, else `false`.
+ */
+          function baseIsEqualDeep(object, other, bitmask, customizer, equalFunc, stack) {
+            var objIsArr = isArray(object), othIsArr = isArray(other), objTag = objIsArr ? arrayTag : getTag(object), othTag = othIsArr ? arrayTag : getTag(other);
+            objTag = objTag == argsTag ? objectTag : objTag;
+            othTag = othTag == argsTag ? objectTag : othTag;
+            var objIsObj = objTag == objectTag, othIsObj = othTag == objectTag, isSameTag = objTag == othTag;
+            if (isSameTag && isBuffer(object)) {
+              if (!isBuffer(other)) {
+                return false;
+              }
+              objIsArr = true;
+              objIsObj = false;
+            }
+            if (isSameTag && !objIsObj) {
+              stack || (stack = new Stack());
+              return objIsArr || isTypedArray(object) ? equalArrays(object, other, bitmask, customizer, equalFunc, stack) : equalByTag(object, other, objTag, bitmask, customizer, equalFunc, stack);
+            }
+            if (!(bitmask & COMPARE_PARTIAL_FLAG)) {
+              var objIsWrapped = objIsObj && hasOwnProperty.call(object, '__wrapped__'), othIsWrapped = othIsObj && hasOwnProperty.call(other, '__wrapped__');
+              if (objIsWrapped || othIsWrapped) {
+                var objUnwrapped = objIsWrapped ? object.value() : object, othUnwrapped = othIsWrapped ? other.value() : other;
+                stack || (stack = new Stack());
+                return equalFunc(objUnwrapped, othUnwrapped, bitmask, customizer, stack);
+              }
+            }
+            if (!isSameTag) {
+              return false;
+            }
+            stack || (stack = new Stack());
+            return equalObjects(object, other, bitmask, customizer, equalFunc, stack);
+          }
+          /**
+ * The base implementation of `_.isNative` without bad shim checks.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a native function,
+ *  else `false`.
+ */
+          function baseIsNative(value) {
+            if (!isObject(value) || isMasked(value)) {
+              return false;
+            }
+            var pattern = isFunction(value) ? reIsNative : reIsHostCtor;
+            return pattern.test(toSource(value));
+          }
+          /**
+ * The base implementation of `_.isTypedArray` without Node.js optimizations.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a typed array, else `false`.
+ */
+          function baseIsTypedArray(value) {
+            return isObjectLike(value) && isLength(value.length) && !!typedArrayTags[baseGetTag(value)];
+          }
+          /**
+ * The base implementation of `_.keys` which doesn't treat sparse arrays as dense.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of property names.
+ */
+          function baseKeys(object) {
+            if (!isPrototype(object)) {
+              return nativeKeys(object);
+            }
+            var result = [];
+            for (var key in Object(object)) {
+              if (hasOwnProperty.call(object, key) && key != 'constructor') {
+                result.push(key);
+              }
+            }
+            return result;
+          }
+          /**
+ * A specialized version of `baseIsEqualDeep` for arrays with support for
+ * partial deep comparisons.
+ *
+ * @private
+ * @param {Array} array The array to compare.
+ * @param {Array} other The other array to compare.
+ * @param {number} bitmask The bitmask flags. See `baseIsEqual` for more details.
+ * @param {Function} customizer The function to customize comparisons.
+ * @param {Function} equalFunc The function to determine equivalents of values.
+ * @param {Object} stack Tracks traversed `array` and `other` objects.
+ * @returns {boolean} Returns `true` if the arrays are equivalent, else `false`.
+ */
+          function equalArrays(array, other, bitmask, customizer, equalFunc, stack) {
+            var isPartial = bitmask & COMPARE_PARTIAL_FLAG, arrLength = array.length, othLength = other.length;
+            if (arrLength != othLength && !(isPartial && othLength > arrLength)) {
+              return false;
+            }
+            // Assume cyclic values are equal.
+            var stacked = stack.get(array);
+            if (stacked && stack.get(other)) {
+              return stacked == other;
+            }
+            var index = -1, result = true, seen = bitmask & COMPARE_UNORDERED_FLAG ? new SetCache() : undefined;
+            stack.set(array, other);
+            stack.set(other, array);
+            // Ignore non-index properties.
+            while (++index < arrLength) {
+              var arrValue = array[index], othValue = other[index];
+              if (customizer) {
+                var compared = isPartial ? customizer(othValue, arrValue, index, other, array, stack) : customizer(arrValue, othValue, index, array, other, stack);
+              }
+              if (compared !== undefined) {
+                if (compared) {
+                  continue;
+                }
+                result = false;
+                break;
+              }
+              // Recursively compare arrays (susceptible to call stack limits).
+              if (seen) {
+                if (!arraySome(other, function (othValue, othIndex) {
+                    if (!cacheHas(seen, othIndex) && (arrValue === othValue || equalFunc(arrValue, othValue, bitmask, customizer, stack))) {
+                      return seen.push(othIndex);
+                    }
+                  })) {
+                  result = false;
+                  break;
+                }
+              } else if (!(arrValue === othValue || equalFunc(arrValue, othValue, bitmask, customizer, stack))) {
+                result = false;
+                break;
+              }
+            }
+            stack['delete'](array);
+            stack['delete'](other);
+            return result;
+          }
+          /**
+ * A specialized version of `baseIsEqualDeep` for comparing objects of
+ * the same `toStringTag`.
+ *
+ * **Note:** This function only supports comparing values with tags of
+ * `Boolean`, `Date`, `Error`, `Number`, `RegExp`, or `String`.
+ *
+ * @private
+ * @param {Object} object The object to compare.
+ * @param {Object} other The other object to compare.
+ * @param {string} tag The `toStringTag` of the objects to compare.
+ * @param {number} bitmask The bitmask flags. See `baseIsEqual` for more details.
+ * @param {Function} customizer The function to customize comparisons.
+ * @param {Function} equalFunc The function to determine equivalents of values.
+ * @param {Object} stack Tracks traversed `object` and `other` objects.
+ * @returns {boolean} Returns `true` if the objects are equivalent, else `false`.
+ */
+          function equalByTag(object, other, tag, bitmask, customizer, equalFunc, stack) {
+            switch (tag) {
+            case dataViewTag:
+              if (object.byteLength != other.byteLength || object.byteOffset != other.byteOffset) {
+                return false;
+              }
+              object = object.buffer;
+              other = other.buffer;
+            case arrayBufferTag:
+              if (object.byteLength != other.byteLength || !equalFunc(new Uint8Array(object), new Uint8Array(other))) {
+                return false;
+              }
+              return true;
+            case boolTag:
+            case dateTag:
+            case numberTag:
+              // Coerce booleans to `1` or `0` and dates to milliseconds.
+              // Invalid dates are coerced to `NaN`.
+              return eq(+object, +other);
+            case errorTag:
+              return object.name == other.name && object.message == other.message;
+            case regexpTag:
+            case stringTag:
+              // Coerce regexes to strings and treat strings, primitives and objects,
+              // as equal. See http://www.ecma-international.org/ecma-262/7.0/#sec-regexp.prototype.tostring
+              // for more details.
+              return object == other + '';
+            case mapTag:
+              var convert = mapToArray;
+            case setTag:
+              var isPartial = bitmask & COMPARE_PARTIAL_FLAG;
+              convert || (convert = setToArray);
+              if (object.size != other.size && !isPartial) {
+                return false;
+              }
+              // Assume cyclic values are equal.
+              var stacked = stack.get(object);
+              if (stacked) {
+                return stacked == other;
+              }
+              bitmask |= COMPARE_UNORDERED_FLAG;
+              // Recursively compare objects (susceptible to call stack limits).
+              stack.set(object, other);
+              var result = equalArrays(convert(object), convert(other), bitmask, customizer, equalFunc, stack);
+              stack['delete'](object);
+              return result;
+            case symbolTag:
+              if (symbolValueOf) {
+                return symbolValueOf.call(object) == symbolValueOf.call(other);
+              }
+            }
+            return false;
+          }
+          /**
+ * A specialized version of `baseIsEqualDeep` for objects with support for
+ * partial deep comparisons.
+ *
+ * @private
+ * @param {Object} object The object to compare.
+ * @param {Object} other The other object to compare.
+ * @param {number} bitmask The bitmask flags. See `baseIsEqual` for more details.
+ * @param {Function} customizer The function to customize comparisons.
+ * @param {Function} equalFunc The function to determine equivalents of values.
+ * @param {Object} stack Tracks traversed `object` and `other` objects.
+ * @returns {boolean} Returns `true` if the objects are equivalent, else `false`.
+ */
+          function equalObjects(object, other, bitmask, customizer, equalFunc, stack) {
+            var isPartial = bitmask & COMPARE_PARTIAL_FLAG, objProps = getAllKeys(object), objLength = objProps.length, othProps = getAllKeys(other), othLength = othProps.length;
+            if (objLength != othLength && !isPartial) {
+              return false;
+            }
+            var index = objLength;
+            while (index--) {
+              var key = objProps[index];
+              if (!(isPartial ? key in other : hasOwnProperty.call(other, key))) {
+                return false;
+              }
+            }
+            // Assume cyclic values are equal.
+            var stacked = stack.get(object);
+            if (stacked && stack.get(other)) {
+              return stacked == other;
+            }
+            var result = true;
+            stack.set(object, other);
+            stack.set(other, object);
+            var skipCtor = isPartial;
+            while (++index < objLength) {
+              key = objProps[index];
+              var objValue = object[key], othValue = other[key];
+              if (customizer) {
+                var compared = isPartial ? customizer(othValue, objValue, key, other, object, stack) : customizer(objValue, othValue, key, object, other, stack);
+              }
+              // Recursively compare objects (susceptible to call stack limits).
+              if (!(compared === undefined ? objValue === othValue || equalFunc(objValue, othValue, bitmask, customizer, stack) : compared)) {
+                result = false;
+                break;
+              }
+              skipCtor || (skipCtor = key == 'constructor');
+            }
+            if (result && !skipCtor) {
+              var objCtor = object.constructor, othCtor = other.constructor;
+              // Non `Object` object instances with different constructors are not equal.
+              if (objCtor != othCtor && 'constructor' in object && 'constructor' in other && !(typeof objCtor == 'function' && objCtor instanceof objCtor && typeof othCtor == 'function' && othCtor instanceof othCtor)) {
+                result = false;
+              }
+            }
+            stack['delete'](object);
+            stack['delete'](other);
+            return result;
+          }
+          /**
+ * Creates an array of own enumerable property names and symbols of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of property names and symbols.
+ */
+          function getAllKeys(object) {
+            return baseGetAllKeys(object, keys, getSymbols);
+          }
+          /**
+ * Gets the data for `map`.
+ *
+ * @private
+ * @param {Object} map The map to query.
+ * @param {string} key The reference key.
+ * @returns {*} Returns the map data.
+ */
+          function getMapData(map, key) {
+            var data = map.__data__;
+            return isKeyable(key) ? data[typeof key == 'string' ? 'string' : 'hash'] : data.map;
+          }
+          /**
+ * Gets the native function at `key` of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @param {string} key The key of the method to get.
+ * @returns {*} Returns the function if it's native, else `undefined`.
+ */
+          function getNative(object, key) {
+            var value = getValue(object, key);
+            return baseIsNative(value) ? value : undefined;
+          }
+          /**
+ * A specialized version of `baseGetTag` which ignores `Symbol.toStringTag` values.
+ *
+ * @private
+ * @param {*} value The value to query.
+ * @returns {string} Returns the raw `toStringTag`.
+ */
+          function getRawTag(value) {
+            var isOwn = hasOwnProperty.call(value, symToStringTag), tag = value[symToStringTag];
+            try {
+              value[symToStringTag] = undefined;
+              var unmasked = true;
+            } catch (e) {
+            }
+            var result = nativeObjectToString.call(value);
+            if (unmasked) {
+              if (isOwn) {
+                value[symToStringTag] = tag;
+              } else {
+                delete value[symToStringTag];
+              }
+            }
+            return result;
+          }
+          /**
+ * Creates an array of the own enumerable symbols of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of symbols.
+ */
+          var getSymbols = !nativeGetSymbols ? stubArray : function (object) {
+              if (object == null) {
+                return [];
+              }
+              object = Object(object);
+              return arrayFilter(nativeGetSymbols(object), function (symbol) {
+                return propertyIsEnumerable.call(object, symbol);
+              });
+            };
+          /**
+ * Gets the `toStringTag` of `value`.
+ *
+ * @private
+ * @param {*} value The value to query.
+ * @returns {string} Returns the `toStringTag`.
+ */
+          var getTag = baseGetTag;
+          // Fallback for data views, maps, sets, and weak maps in IE 11 and promises in Node.js < 6.
+          if (DataView && getTag(new DataView(new ArrayBuffer(1))) != dataViewTag || Map && getTag(new Map()) != mapTag || Promise && getTag(Promise.resolve()) != promiseTag || Set && getTag(new Set()) != setTag || WeakMap && getTag(new WeakMap()) != weakMapTag) {
+            getTag = function getTag(value) {
+              var result = baseGetTag(value), Ctor = result == objectTag ? value.constructor : undefined, ctorString = Ctor ? toSource(Ctor) : '';
+              if (ctorString) {
+                switch (ctorString) {
+                case dataViewCtorString:
+                  return dataViewTag;
+                case mapCtorString:
+                  return mapTag;
+                case promiseCtorString:
+                  return promiseTag;
+                case setCtorString:
+                  return setTag;
+                case weakMapCtorString:
+                  return weakMapTag;
+                }
+              }
+              return result;
+            };
+          }
+          /**
+ * Checks if `value` is a valid array-like index.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @param {number} [length=MAX_SAFE_INTEGER] The upper bounds of a valid index.
+ * @returns {boolean} Returns `true` if `value` is a valid index, else `false`.
+ */
+          function isIndex(value, length) {
+            length = length == null ? MAX_SAFE_INTEGER : length;
+            return !!length && (typeof value == 'number' || reIsUint.test(value)) && value > -1 && value % 1 == 0 && value < length;
+          }
+          /**
+ * Checks if `value` is suitable for use as unique object key.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is suitable, else `false`.
+ */
+          function isKeyable(value) {
+            var type = typeof value === 'undefined' ? 'undefined' : _typeof(value);
+            return type == 'string' || type == 'number' || type == 'symbol' || type == 'boolean' ? value !== '__proto__' : value === null;
+          }
+          /**
+ * Checks if `func` has its source masked.
+ *
+ * @private
+ * @param {Function} func The function to check.
+ * @returns {boolean} Returns `true` if `func` is masked, else `false`.
+ */
+          function isMasked(func) {
+            return !!maskSrcKey && maskSrcKey in func;
+          }
+          /**
+ * Checks if `value` is likely a prototype object.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a prototype, else `false`.
+ */
+          function isPrototype(value) {
+            var Ctor = value && value.constructor, proto = typeof Ctor == 'function' && Ctor.prototype || objectProto;
+            return value === proto;
+          }
+          /**
+ * Converts `value` to a string using `Object.prototype.toString`.
+ *
+ * @private
+ * @param {*} value The value to convert.
+ * @returns {string} Returns the converted string.
+ */
+          function objectToString(value) {
+            return nativeObjectToString.call(value);
+          }
+          /**
+ * Converts `func` to its source code.
+ *
+ * @private
+ * @param {Function} func The function to convert.
+ * @returns {string} Returns the source code.
+ */
+          function toSource(func) {
+            if (func != null) {
+              try {
+                return funcToString.call(func);
+              } catch (e) {
+              }
+              try {
+                return func + '';
+              } catch (e) {
+              }
+            }
+            return '';
+          }
+          /**
+ * Performs a
+ * [`SameValueZero`](http://ecma-international.org/ecma-262/7.0/#sec-samevaluezero)
+ * comparison between two values to determine if they are equivalent.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to compare.
+ * @param {*} other The other value to compare.
+ * @returns {boolean} Returns `true` if the values are equivalent, else `false`.
+ * @example
+ *
+ * var object = { 'a': 1 };
+ * var other = { 'a': 1 };
+ *
+ * _.eq(object, object);
+ * // => true
+ *
+ * _.eq(object, other);
+ * // => false
+ *
+ * _.eq('a', 'a');
+ * // => true
+ *
+ * _.eq('a', Object('a'));
+ * // => false
+ *
+ * _.eq(NaN, NaN);
+ * // => true
+ */
+          function eq(value, other) {
+            return value === other || value !== value && other !== other;
+          }
+          /**
+ * Checks if `value` is likely an `arguments` object.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an `arguments` object,
+ *  else `false`.
+ * @example
+ *
+ * _.isArguments(function() { return arguments; }());
+ * // => true
+ *
+ * _.isArguments([1, 2, 3]);
+ * // => false
+ */
+          var isArguments = baseIsArguments(function () {
+              return arguments;
+            }()) ? baseIsArguments : function (value) {
+              return isObjectLike(value) && hasOwnProperty.call(value, 'callee') && !propertyIsEnumerable.call(value, 'callee');
+            };
+          /**
+ * Checks if `value` is classified as an `Array` object.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an array, else `false`.
+ * @example
+ *
+ * _.isArray([1, 2, 3]);
+ * // => true
+ *
+ * _.isArray(document.body.children);
+ * // => false
+ *
+ * _.isArray('abc');
+ * // => false
+ *
+ * _.isArray(_.noop);
+ * // => false
+ */
+          var isArray = Array.isArray;
+          /**
+ * Checks if `value` is array-like. A value is considered array-like if it's
+ * not a function and has a `value.length` that's an integer greater than or
+ * equal to `0` and less than or equal to `Number.MAX_SAFE_INTEGER`.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is array-like, else `false`.
+ * @example
+ *
+ * _.isArrayLike([1, 2, 3]);
+ * // => true
+ *
+ * _.isArrayLike(document.body.children);
+ * // => true
+ *
+ * _.isArrayLike('abc');
+ * // => true
+ *
+ * _.isArrayLike(_.noop);
+ * // => false
+ */
+          function isArrayLike(value) {
+            return value != null && isLength(value.length) && !isFunction(value);
+          }
+          /**
+ * Checks if `value` is a buffer.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.3.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a buffer, else `false`.
+ * @example
+ *
+ * _.isBuffer(new Buffer(2));
+ * // => true
+ *
+ * _.isBuffer(new Uint8Array(2));
+ * // => false
+ */
+          var isBuffer = nativeIsBuffer || stubFalse;
+          /**
+ * Performs a deep comparison between two values to determine if they are
+ * equivalent.
+ *
+ * **Note:** This method supports comparing arrays, array buffers, booleans,
+ * date objects, error objects, maps, numbers, `Object` objects, regexes,
+ * sets, strings, symbols, and typed arrays. `Object` objects are compared
+ * by their own, not inherited, enumerable properties. Functions and DOM
+ * nodes are compared by strict equality, i.e. `===`.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to compare.
+ * @param {*} other The other value to compare.
+ * @returns {boolean} Returns `true` if the values are equivalent, else `false`.
+ * @example
+ *
+ * var object = { 'a': 1 };
+ * var other = { 'a': 1 };
+ *
+ * _.isEqual(object, other);
+ * // => true
+ *
+ * object === other;
+ * // => false
+ */
+          function isEqual(value, other) {
+            return baseIsEqual(value, other);
+          }
+          /**
+ * Checks if `value` is classified as a `Function` object.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a function, else `false`.
+ * @example
+ *
+ * _.isFunction(_);
+ * // => true
+ *
+ * _.isFunction(/abc/);
+ * // => false
+ */
+          function isFunction(value) {
+            if (!isObject(value)) {
+              return false;
+            }
+            // The use of `Object#toString` avoids issues with the `typeof` operator
+            // in Safari 9 which returns 'object' for typed arrays and other constructors.
+            var tag = baseGetTag(value);
+            return tag == funcTag || tag == genTag || tag == asyncTag || tag == proxyTag;
+          }
+          /**
+ * Checks if `value` is a valid array-like length.
+ *
+ * **Note:** This method is loosely based on
+ * [`ToLength`](http://ecma-international.org/ecma-262/7.0/#sec-tolength).
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a valid length, else `false`.
+ * @example
+ *
+ * _.isLength(3);
+ * // => true
+ *
+ * _.isLength(Number.MIN_VALUE);
+ * // => false
+ *
+ * _.isLength(Infinity);
+ * // => false
+ *
+ * _.isLength('3');
+ * // => false
+ */
+          function isLength(value) {
+            return typeof value == 'number' && value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
+          }
+          /**
+ * Checks if `value` is the
+ * [language type](http://www.ecma-international.org/ecma-262/7.0/#sec-ecmascript-language-types)
+ * of `Object`. (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an object, else `false`.
+ * @example
+ *
+ * _.isObject({});
+ * // => true
+ *
+ * _.isObject([1, 2, 3]);
+ * // => true
+ *
+ * _.isObject(_.noop);
+ * // => true
+ *
+ * _.isObject(null);
+ * // => false
+ */
+          function isObject(value) {
+            var type = typeof value === 'undefined' ? 'undefined' : _typeof(value);
+            return value != null && (type == 'object' || type == 'function');
+          }
+          /**
+ * Checks if `value` is object-like. A value is object-like if it's not `null`
+ * and has a `typeof` result of "object".
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is object-like, else `false`.
+ * @example
+ *
+ * _.isObjectLike({});
+ * // => true
+ *
+ * _.isObjectLike([1, 2, 3]);
+ * // => true
+ *
+ * _.isObjectLike(_.noop);
+ * // => false
+ *
+ * _.isObjectLike(null);
+ * // => false
+ */
+          function isObjectLike(value) {
+            return value != null && (typeof value === 'undefined' ? 'undefined' : _typeof(value)) == 'object';
+          }
+          /**
+ * Checks if `value` is classified as a typed array.
+ *
+ * @static
+ * @memberOf _
+ * @since 3.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a typed array, else `false`.
+ * @example
+ *
+ * _.isTypedArray(new Uint8Array);
+ * // => true
+ *
+ * _.isTypedArray([]);
+ * // => false
+ */
+          var isTypedArray = nodeIsTypedArray ? baseUnary(nodeIsTypedArray) : baseIsTypedArray;
+          /**
+ * Creates an array of the own enumerable property names of `object`.
+ *
+ * **Note:** Non-object values are coerced to objects. See the
+ * [ES spec](http://ecma-international.org/ecma-262/7.0/#sec-object.keys)
+ * for more details.
+ *
+ * @static
+ * @since 0.1.0
+ * @memberOf _
+ * @category Object
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of property names.
+ * @example
+ *
+ * function Foo() {
+ *   this.a = 1;
+ *   this.b = 2;
+ * }
+ *
+ * Foo.prototype.c = 3;
+ *
+ * _.keys(new Foo);
+ * // => ['a', 'b'] (iteration order is not guaranteed)
+ *
+ * _.keys('hi');
+ * // => ['0', '1']
+ */
+          function keys(object) {
+            return isArrayLike(object) ? arrayLikeKeys(object) : baseKeys(object);
+          }
+          /**
+ * This method returns a new empty array.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.13.0
+ * @category Util
+ * @returns {Array} Returns the new empty array.
+ * @example
+ *
+ * var arrays = _.times(2, _.stubArray);
+ *
+ * console.log(arrays);
+ * // => [[], []]
+ *
+ * console.log(arrays[0] === arrays[1]);
+ * // => false
+ */
+          function stubArray() {
+            return [];
+          }
+          /**
+ * This method returns `false`.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.13.0
+ * @category Util
+ * @returns {boolean} Returns `false`.
+ * @example
+ *
+ * _.times(2, _.stubFalse);
+ * // => [false, false]
+ */
+          function stubFalse() {
+            return false;
+          }
+          module.exports = isEqual;
+        }.call(this, typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
+      },
+      {}
+    ],
+    75: [
+      function (require, module, exports) {
         'use strict';
         var getNative = require('./_getNative'), root = require('./_root');
         /* Built-in method references that are verified to be native. */
@@ -15327,11 +16893,11 @@
         module.exports = DataView;
       },
       {
-        './_getNative': 134,
-        './_root': 170
+        './_getNative': 139,
+        './_root': 176
       }
     ],
-    75: [
+    76: [
       function (require, module, exports) {
         'use strict';
         var hashClear = require('./_hashClear'), hashDelete = require('./_hashDelete'), hashGet = require('./_hashGet'), hashHas = require('./_hashHas'), hashSet = require('./_hashSet');
@@ -15359,14 +16925,14 @@
         module.exports = Hash;
       },
       {
-        './_hashClear': 139,
-        './_hashDelete': 140,
-        './_hashGet': 141,
-        './_hashHas': 142,
-        './_hashSet': 143
+        './_hashClear': 145,
+        './_hashDelete': 146,
+        './_hashGet': 147,
+        './_hashHas': 148,
+        './_hashSet': 149
       }
     ],
-    76: [
+    77: [
       function (require, module, exports) {
         'use strict';
         var listCacheClear = require('./_listCacheClear'), listCacheDelete = require('./_listCacheDelete'), listCacheGet = require('./_listCacheGet'), listCacheHas = require('./_listCacheHas'), listCacheSet = require('./_listCacheSet');
@@ -15394,14 +16960,14 @@
         module.exports = ListCache;
       },
       {
-        './_listCacheClear': 151,
-        './_listCacheDelete': 152,
-        './_listCacheGet': 153,
-        './_listCacheHas': 154,
-        './_listCacheSet': 155
+        './_listCacheClear': 157,
+        './_listCacheDelete': 158,
+        './_listCacheGet': 159,
+        './_listCacheHas': 160,
+        './_listCacheSet': 161
       }
     ],
-    77: [
+    78: [
       function (require, module, exports) {
         'use strict';
         var getNative = require('./_getNative'), root = require('./_root');
@@ -15410,11 +16976,11 @@
         module.exports = Map;
       },
       {
-        './_getNative': 134,
-        './_root': 170
+        './_getNative': 139,
+        './_root': 176
       }
     ],
-    78: [
+    79: [
       function (require, module, exports) {
         'use strict';
         var mapCacheClear = require('./_mapCacheClear'), mapCacheDelete = require('./_mapCacheDelete'), mapCacheGet = require('./_mapCacheGet'), mapCacheHas = require('./_mapCacheHas'), mapCacheSet = require('./_mapCacheSet');
@@ -15442,14 +17008,14 @@
         module.exports = MapCache;
       },
       {
-        './_mapCacheClear': 156,
-        './_mapCacheDelete': 157,
-        './_mapCacheGet': 158,
-        './_mapCacheHas': 159,
-        './_mapCacheSet': 160
+        './_mapCacheClear': 162,
+        './_mapCacheDelete': 163,
+        './_mapCacheGet': 164,
+        './_mapCacheHas': 165,
+        './_mapCacheSet': 166
       }
     ],
-    79: [
+    80: [
       function (require, module, exports) {
         'use strict';
         var getNative = require('./_getNative'), root = require('./_root');
@@ -15458,11 +17024,11 @@
         module.exports = Promise;
       },
       {
-        './_getNative': 134,
-        './_root': 170
+        './_getNative': 139,
+        './_root': 176
       }
     ],
-    80: [
+    81: [
       function (require, module, exports) {
         'use strict';
         var getNative = require('./_getNative'), root = require('./_root');
@@ -15471,11 +17037,11 @@
         module.exports = Set;
       },
       {
-        './_getNative': 134,
-        './_root': 170
+        './_getNative': 139,
+        './_root': 176
       }
     ],
-    81: [
+    82: [
       function (require, module, exports) {
         'use strict';
         var MapCache = require('./_MapCache'), setCacheAdd = require('./_setCacheAdd'), setCacheHas = require('./_setCacheHas');
@@ -15500,12 +17066,12 @@
         module.exports = SetCache;
       },
       {
-        './_MapCache': 78,
-        './_setCacheAdd': 171,
-        './_setCacheHas': 172
+        './_MapCache': 79,
+        './_setCacheAdd': 177,
+        './_setCacheHas': 178
       }
     ],
-    82: [
+    83: [
       function (require, module, exports) {
         'use strict';
         var ListCache = require('./_ListCache'), stackClear = require('./_stackClear'), stackDelete = require('./_stackDelete'), stackGet = require('./_stackGet'), stackHas = require('./_stackHas'), stackSet = require('./_stackSet');
@@ -15529,15 +17095,15 @@
         module.exports = Stack;
       },
       {
-        './_ListCache': 76,
-        './_stackClear': 176,
-        './_stackDelete': 177,
-        './_stackGet': 178,
-        './_stackHas': 179,
-        './_stackSet': 180
+        './_ListCache': 77,
+        './_stackClear': 182,
+        './_stackDelete': 183,
+        './_stackGet': 184,
+        './_stackHas': 185,
+        './_stackSet': 186
       }
     ],
-    83: [
+    84: [
       function (require, module, exports) {
         'use strict';
         var root = require('./_root');
@@ -15545,9 +17111,9 @@
         var _Symbol = root.Symbol;
         module.exports = _Symbol;
       },
-      { './_root': 170 }
+      { './_root': 176 }
     ],
-    84: [
+    85: [
       function (require, module, exports) {
         'use strict';
         var root = require('./_root');
@@ -15555,9 +17121,9 @@
         var Uint8Array = root.Uint8Array;
         module.exports = Uint8Array;
       },
-      { './_root': 170 }
+      { './_root': 176 }
     ],
-    85: [
+    86: [
       function (require, module, exports) {
         'use strict';
         var getNative = require('./_getNative'), root = require('./_root');
@@ -15566,11 +17132,11 @@
         module.exports = WeakMap;
       },
       {
-        './_getNative': 134,
-        './_root': 170
+        './_getNative': 139,
+        './_root': 176
       }
     ],
-    86: [
+    87: [
       function (require, module, exports) {
         'use strict';
         /**
@@ -15600,7 +17166,7 @@
       },
       {}
     ],
-    87: [
+    88: [
       function (require, module, exports) {
         'use strict';
         /**
@@ -15626,7 +17192,33 @@
       },
       {}
     ],
-    88: [
+    89: [
+      function (require, module, exports) {
+        'use strict';
+        /**
+ * A specialized version of `_.filter` for arrays without support for
+ * iteratee shorthands.
+ *
+ * @private
+ * @param {Array} [array] The array to iterate over.
+ * @param {Function} predicate The function invoked per iteration.
+ * @returns {Array} Returns the new filtered array.
+ */
+        function arrayFilter(array, predicate) {
+          var index = -1, length = array == null ? 0 : array.length, resIndex = 0, result = [];
+          while (++index < length) {
+            var value = array[index];
+            if (predicate(value, index, array)) {
+              result[resIndex++] = value;
+            }
+          }
+          return result;
+        }
+        module.exports = arrayFilter;
+      },
+      {}
+    ],
+    90: [
       function (require, module, exports) {
         'use strict';
         var baseTimes = require('./_baseTimes'), isArguments = require('./isArguments'), isArray = require('./isArray'), isBuffer = require('./isBuffer'), isIndex = require('./_isIndex'), isTypedArray = require('./isTypedArray');
@@ -15654,15 +17246,15 @@
         module.exports = arrayLikeKeys;
       },
       {
-        './_baseTimes': 117,
-        './_isIndex': 144,
-        './isArguments': 192,
-        './isArray': 193,
-        './isBuffer': 195,
-        './isTypedArray': 202
+        './_baseTimes': 121,
+        './_isIndex': 150,
+        './isArguments': 198,
+        './isArray': 199,
+        './isBuffer': 201,
+        './isTypedArray': 208
       }
     ],
-    89: [
+    91: [
       function (require, module, exports) {
         'use strict';
         /**
@@ -15685,7 +17277,29 @@
       },
       {}
     ],
-    90: [
+    92: [
+      function (require, module, exports) {
+        'use strict';
+        /**
+ * Appends the elements of `values` to `array`.
+ *
+ * @private
+ * @param {Array} array The array to modify.
+ * @param {Array} values The values to append.
+ * @returns {Array} Returns `array`.
+ */
+        function arrayPush(array, values) {
+          var index = -1, length = values.length, offset = array.length;
+          while (++index < length) {
+            array[offset + index] = values[index];
+          }
+          return array;
+        }
+        module.exports = arrayPush;
+      },
+      {}
+    ],
+    93: [
       function (require, module, exports) {
         'use strict';
         /**
@@ -15711,7 +17325,7 @@
       },
       {}
     ],
-    91: [
+    94: [
       function (require, module, exports) {
         'use strict';
         var baseAssignValue = require('./_baseAssignValue'), eq = require('./eq');
@@ -15738,11 +17352,11 @@
         module.exports = assignValue;
       },
       {
-        './_baseAssignValue': 94,
-        './eq': 187
+        './_baseAssignValue': 97,
+        './eq': 193
       }
     ],
-    92: [
+    95: [
       function (require, module, exports) {
         'use strict';
         var eq = require('./eq');
@@ -15765,9 +17379,9 @@
         }
         module.exports = assocIndexOf;
       },
-      { './eq': 187 }
+      { './eq': 193 }
     ],
-    93: [
+    96: [
       function (require, module, exports) {
         'use strict';
         var copyObject = require('./_copyObject'), keys = require('./keys');
@@ -15786,11 +17400,11 @@
         module.exports = baseAssign;
       },
       {
-        './_copyObject': 122,
-        './keys': 203
+        './_copyObject': 126,
+        './keys': 209
       }
     ],
-    94: [
+    97: [
       function (require, module, exports) {
         'use strict';
         var defineProperty = require('./_defineProperty');
@@ -15817,9 +17431,9 @@
         }
         module.exports = baseAssignValue;
       },
-      { './_defineProperty': 127 }
+      { './_defineProperty': 131 }
     ],
-    95: [
+    98: [
       function (require, module, exports) {
         'use strict';
         var isObject = require('./isObject');
@@ -15851,9 +17465,9 @@
           }();
         module.exports = baseCreate;
       },
-      { './isObject': 199 }
+      { './isObject': 205 }
     ],
-    96: [
+    99: [
       function (require, module, exports) {
         'use strict';
         var baseForOwn = require('./_baseForOwn'), createBaseEach = require('./_createBaseEach');
@@ -15869,11 +17483,11 @@
         module.exports = baseEach;
       },
       {
-        './_baseForOwn': 99,
-        './_createBaseEach': 125
+        './_baseForOwn': 102,
+        './_createBaseEach': 129
       }
     ],
-    97: [
+    100: [
       function (require, module, exports) {
         'use strict';
         var baseEach = require('./_baseEach');
@@ -15896,9 +17510,9 @@
         }
         module.exports = baseEvery;
       },
-      { './_baseEach': 96 }
+      { './_baseEach': 99 }
     ],
-    98: [
+    101: [
       function (require, module, exports) {
         'use strict';
         var createBaseFor = require('./_createBaseFor');
@@ -15916,9 +17530,9 @@
         var baseFor = createBaseFor();
         module.exports = baseFor;
       },
-      { './_createBaseFor': 126 }
+      { './_createBaseFor': 130 }
     ],
-    99: [
+    102: [
       function (require, module, exports) {
         'use strict';
         var baseFor = require('./_baseFor'), keys = require('./keys');
@@ -15936,14 +17550,14 @@
         module.exports = baseForOwn;
       },
       {
-        './_baseFor': 98,
-        './keys': 203
+        './_baseFor': 101,
+        './keys': 209
       }
     ],
-    100: [
+    103: [
       function (require, module, exports) {
         'use strict';
-        var castPath = require('./_castPath'), isKey = require('./_isKey'), toKey = require('./_toKey');
+        var castPath = require('./_castPath'), toKey = require('./_toKey');
         /**
  * The base implementation of `_.get` without support for default values.
  *
@@ -15953,7 +17567,7 @@
  * @returns {*} Returns the resolved value.
  */
         function baseGet(object, path) {
-          path = isKey(path, object) ? [path] : castPath(path);
+          path = castPath(path, object);
           var index = 0, length = path.length;
           while (object != null && index < length) {
             object = object[toKey(path[index++])];
@@ -15963,12 +17577,37 @@
         module.exports = baseGet;
       },
       {
-        './_castPath': 121,
-        './_isKey': 146,
-        './_toKey': 182
+        './_castPath': 125,
+        './_toKey': 188
       }
     ],
-    101: [
+    104: [
+      function (require, module, exports) {
+        'use strict';
+        var arrayPush = require('./_arrayPush'), isArray = require('./isArray');
+        /**
+ * The base implementation of `getAllKeys` and `getAllKeysIn` which uses
+ * `keysFunc` and `symbolsFunc` to get the enumerable property names and
+ * symbols of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @param {Function} keysFunc The function to get the keys of `object`.
+ * @param {Function} symbolsFunc The function to get the symbols of `object`.
+ * @returns {Array} Returns the array of property names and symbols.
+ */
+        function baseGetAllKeys(object, keysFunc, symbolsFunc) {
+          var result = keysFunc(object);
+          return isArray(object) ? result : arrayPush(result, symbolsFunc(object));
+        }
+        module.exports = baseGetAllKeys;
+      },
+      {
+        './_arrayPush': 92,
+        './isArray': 199
+      }
+    ],
+    105: [
       function (require, module, exports) {
         'use strict';
         var _Symbol = require('./_Symbol'), getRawTag = require('./_getRawTag'), objectToString = require('./_objectToString');
@@ -15987,18 +17626,17 @@
           if (value == null) {
             return value === undefined ? undefinedTag : nullTag;
           }
-          value = Object(value);
-          return symToStringTag && symToStringTag in value ? getRawTag(value) : objectToString(value);
+          return symToStringTag && symToStringTag in Object(value) ? getRawTag(value) : objectToString(value);
         }
         module.exports = baseGetTag;
       },
       {
-        './_Symbol': 83,
-        './_getRawTag': 135,
-        './_objectToString': 167
+        './_Symbol': 84,
+        './_getRawTag': 140,
+        './_objectToString': 173
       }
     ],
-    102: [
+    106: [
       function (require, module, exports) {
         'use strict';
         /**
@@ -16016,7 +17654,7 @@
       },
       {}
     ],
-    103: [
+    107: [
       function (require, module, exports) {
         'use strict';
         var baseGetTag = require('./_baseGetTag'), isObjectLike = require('./isObjectLike');
@@ -16035,14 +17673,14 @@
         module.exports = baseIsArguments;
       },
       {
-        './_baseGetTag': 101,
-        './isObjectLike': 200
+        './_baseGetTag': 105,
+        './isObjectLike': 206
       }
     ],
-    104: [
+    108: [
       function (require, module, exports) {
         'use strict';
-        var baseIsEqualDeep = require('./_baseIsEqualDeep'), isObject = require('./isObject'), isObjectLike = require('./isObjectLike');
+        var baseIsEqualDeep = require('./_baseIsEqualDeep'), isObjectLike = require('./isObjectLike');
         /**
  * The base implementation of `_.isEqual` which supports partial comparisons
  * and tracks traversed objects.
@@ -16050,37 +17688,35 @@
  * @private
  * @param {*} value The value to compare.
  * @param {*} other The other value to compare.
+ * @param {boolean} bitmask The bitmask flags.
+ *  1 - Unordered comparison
+ *  2 - Partial comparison
  * @param {Function} [customizer] The function to customize comparisons.
- * @param {boolean} [bitmask] The bitmask of comparison flags.
- *  The bitmask may be composed of the following flags:
- *     1 - Unordered comparison
- *     2 - Partial comparison
  * @param {Object} [stack] Tracks traversed `value` and `other` objects.
  * @returns {boolean} Returns `true` if the values are equivalent, else `false`.
  */
-        function baseIsEqual(value, other, customizer, bitmask, stack) {
+        function baseIsEqual(value, other, bitmask, customizer, stack) {
           if (value === other) {
             return true;
           }
-          if (value == null || other == null || !isObject(value) && !isObjectLike(other)) {
+          if (value == null || other == null || !isObjectLike(value) && !isObjectLike(other)) {
             return value !== value && other !== other;
           }
-          return baseIsEqualDeep(value, other, baseIsEqual, customizer, bitmask, stack);
+          return baseIsEqualDeep(value, other, bitmask, customizer, baseIsEqual, stack);
         }
         module.exports = baseIsEqual;
       },
       {
-        './_baseIsEqualDeep': 105,
-        './isObject': 199,
-        './isObjectLike': 200
+        './_baseIsEqualDeep': 109,
+        './isObjectLike': 206
       }
     ],
-    105: [
+    109: [
       function (require, module, exports) {
         'use strict';
         var Stack = require('./_Stack'), equalArrays = require('./_equalArrays'), equalByTag = require('./_equalByTag'), equalObjects = require('./_equalObjects'), getTag = require('./_getTag'), isArray = require('./isArray'), isBuffer = require('./isBuffer'), isTypedArray = require('./isTypedArray');
-        /** Used to compose bitmasks for comparison styles. */
-        var PARTIAL_COMPARE_FLAG = 2;
+        /** Used to compose bitmasks for value comparisons. */
+        var COMPARE_PARTIAL_FLAG = 1;
         /** `Object#toString` result references. */
         var argsTag = '[object Arguments]', arrayTag = '[object Array]', objectTag = '[object Object]';
         /** Used for built-in method references. */
@@ -16095,23 +17731,16 @@
  * @private
  * @param {Object} object The object to compare.
  * @param {Object} other The other object to compare.
+ * @param {number} bitmask The bitmask flags. See `baseIsEqual` for more details.
+ * @param {Function} customizer The function to customize comparisons.
  * @param {Function} equalFunc The function to determine equivalents of values.
- * @param {Function} [customizer] The function to customize comparisons.
- * @param {number} [bitmask] The bitmask of comparison flags. See `baseIsEqual`
- *  for more details.
  * @param {Object} [stack] Tracks traversed `object` and `other` objects.
  * @returns {boolean} Returns `true` if the objects are equivalent, else `false`.
  */
-        function baseIsEqualDeep(object, other, equalFunc, customizer, bitmask, stack) {
-          var objIsArr = isArray(object), othIsArr = isArray(other), objTag = arrayTag, othTag = arrayTag;
-          if (!objIsArr) {
-            objTag = getTag(object);
-            objTag = objTag == argsTag ? objectTag : objTag;
-          }
-          if (!othIsArr) {
-            othTag = getTag(other);
-            othTag = othTag == argsTag ? objectTag : othTag;
-          }
+        function baseIsEqualDeep(object, other, bitmask, customizer, equalFunc, stack) {
+          var objIsArr = isArray(object), othIsArr = isArray(other), objTag = objIsArr ? arrayTag : getTag(object), othTag = othIsArr ? arrayTag : getTag(other);
+          objTag = objTag == argsTag ? objectTag : objTag;
+          othTag = othTag == argsTag ? objectTag : othTag;
           var objIsObj = objTag == objectTag, othIsObj = othTag == objectTag, isSameTag = objTag == othTag;
           if (isSameTag && isBuffer(object)) {
             if (!isBuffer(other)) {
@@ -16122,41 +17751,41 @@
           }
           if (isSameTag && !objIsObj) {
             stack || (stack = new Stack());
-            return objIsArr || isTypedArray(object) ? equalArrays(object, other, equalFunc, customizer, bitmask, stack) : equalByTag(object, other, objTag, equalFunc, customizer, bitmask, stack);
+            return objIsArr || isTypedArray(object) ? equalArrays(object, other, bitmask, customizer, equalFunc, stack) : equalByTag(object, other, objTag, bitmask, customizer, equalFunc, stack);
           }
-          if (!(bitmask & PARTIAL_COMPARE_FLAG)) {
+          if (!(bitmask & COMPARE_PARTIAL_FLAG)) {
             var objIsWrapped = objIsObj && hasOwnProperty.call(object, '__wrapped__'), othIsWrapped = othIsObj && hasOwnProperty.call(other, '__wrapped__');
             if (objIsWrapped || othIsWrapped) {
               var objUnwrapped = objIsWrapped ? object.value() : object, othUnwrapped = othIsWrapped ? other.value() : other;
               stack || (stack = new Stack());
-              return equalFunc(objUnwrapped, othUnwrapped, customizer, bitmask, stack);
+              return equalFunc(objUnwrapped, othUnwrapped, bitmask, customizer, stack);
             }
           }
           if (!isSameTag) {
             return false;
           }
           stack || (stack = new Stack());
-          return equalObjects(object, other, equalFunc, customizer, bitmask, stack);
+          return equalObjects(object, other, bitmask, customizer, equalFunc, stack);
         }
         module.exports = baseIsEqualDeep;
       },
       {
-        './_Stack': 82,
-        './_equalArrays': 128,
-        './_equalByTag': 129,
-        './_equalObjects': 130,
-        './_getTag': 136,
-        './isArray': 193,
-        './isBuffer': 195,
-        './isTypedArray': 202
+        './_Stack': 83,
+        './_equalArrays': 132,
+        './_equalByTag': 133,
+        './_equalObjects': 134,
+        './_getTag': 142,
+        './isArray': 199,
+        './isBuffer': 201,
+        './isTypedArray': 208
       }
     ],
-    106: [
+    110: [
       function (require, module, exports) {
         'use strict';
         var Stack = require('./_Stack'), baseIsEqual = require('./_baseIsEqual');
-        /** Used to compose bitmasks for comparison styles. */
-        var UNORDERED_COMPARE_FLAG = 1, PARTIAL_COMPARE_FLAG = 2;
+        /** Used to compose bitmasks for value comparisons. */
+        var COMPARE_PARTIAL_FLAG = 1, COMPARE_UNORDERED_FLAG = 2;
         /**
  * The base implementation of `_.isMatch` without support for iteratee shorthands.
  *
@@ -16191,7 +17820,7 @@
               if (customizer) {
                 var result = customizer(objValue, srcValue, key, object, source, stack);
               }
-              if (!(result === undefined ? baseIsEqual(srcValue, objValue, customizer, UNORDERED_COMPARE_FLAG | PARTIAL_COMPARE_FLAG, stack) : result)) {
+              if (!(result === undefined ? baseIsEqual(srcValue, objValue, COMPARE_PARTIAL_FLAG | COMPARE_UNORDERED_FLAG, customizer, stack) : result)) {
                 return false;
               }
             }
@@ -16201,11 +17830,11 @@
         module.exports = baseIsMatch;
       },
       {
-        './_Stack': 82,
-        './_baseIsEqual': 104
+        './_Stack': 83,
+        './_baseIsEqual': 108
       }
     ],
-    107: [
+    111: [
       function (require, module, exports) {
         'use strict';
         var isFunction = require('./isFunction'), isMasked = require('./_isMasked'), isObject = require('./isObject'), toSource = require('./_toSource');
@@ -16242,13 +17871,13 @@
         module.exports = baseIsNative;
       },
       {
-        './_isMasked': 148,
-        './_toSource': 183,
-        './isFunction': 197,
-        './isObject': 199
+        './_isMasked': 154,
+        './_toSource': 189,
+        './isFunction': 203,
+        './isObject': 205
       }
     ],
-    108: [
+    112: [
       function (require, module, exports) {
         'use strict';
         var baseGetTag = require('./_baseGetTag'), isLength = require('./isLength'), isObjectLike = require('./isObjectLike');
@@ -16272,12 +17901,12 @@
         module.exports = baseIsTypedArray;
       },
       {
-        './_baseGetTag': 101,
-        './isLength': 198,
-        './isObjectLike': 200
+        './_baseGetTag': 105,
+        './isLength': 204,
+        './isObjectLike': 206
       }
     ],
-    109: [
+    113: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -16310,14 +17939,14 @@
         module.exports = baseIteratee;
       },
       {
-        './_baseMatches': 111,
-        './_baseMatchesProperty': 112,
-        './identity': 191,
-        './isArray': 193,
-        './property': 206
+        './_baseMatches': 115,
+        './_baseMatchesProperty': 116,
+        './identity': 197,
+        './isArray': 199,
+        './property': 212
       }
     ],
-    110: [
+    114: [
       function (require, module, exports) {
         'use strict';
         var isPrototype = require('./_isPrototype'), nativeKeys = require('./_nativeKeys');
@@ -16347,11 +17976,11 @@
         module.exports = baseKeys;
       },
       {
-        './_isPrototype': 149,
-        './_nativeKeys': 165
+        './_isPrototype': 155,
+        './_nativeKeys': 171
       }
     ],
-    111: [
+    115: [
       function (require, module, exports) {
         'use strict';
         var baseIsMatch = require('./_baseIsMatch'), getMatchData = require('./_getMatchData'), matchesStrictComparable = require('./_matchesStrictComparable');
@@ -16374,17 +18003,17 @@
         module.exports = baseMatches;
       },
       {
-        './_baseIsMatch': 106,
-        './_getMatchData': 133,
-        './_matchesStrictComparable': 162
+        './_baseIsMatch': 110,
+        './_getMatchData': 138,
+        './_matchesStrictComparable': 168
       }
     ],
-    112: [
+    116: [
       function (require, module, exports) {
         'use strict';
         var baseIsEqual = require('./_baseIsEqual'), get = require('./get'), hasIn = require('./hasIn'), isKey = require('./_isKey'), isStrictComparable = require('./_isStrictComparable'), matchesStrictComparable = require('./_matchesStrictComparable'), toKey = require('./_toKey');
-        /** Used to compose bitmasks for comparison styles. */
-        var UNORDERED_COMPARE_FLAG = 1, PARTIAL_COMPARE_FLAG = 2;
+        /** Used to compose bitmasks for value comparisons. */
+        var COMPARE_PARTIAL_FLAG = 1, COMPARE_UNORDERED_FLAG = 2;
         /**
  * The base implementation of `_.matchesProperty` which doesn't clone `srcValue`.
  *
@@ -16399,22 +18028,22 @@
           }
           return function (object) {
             var objValue = get(object, path);
-            return objValue === undefined && objValue === srcValue ? hasIn(object, path) : baseIsEqual(srcValue, objValue, undefined, UNORDERED_COMPARE_FLAG | PARTIAL_COMPARE_FLAG);
+            return objValue === undefined && objValue === srcValue ? hasIn(object, path) : baseIsEqual(srcValue, objValue, COMPARE_PARTIAL_FLAG | COMPARE_UNORDERED_FLAG);
           };
         }
         module.exports = baseMatchesProperty;
       },
       {
-        './_baseIsEqual': 104,
-        './_isKey': 146,
-        './_isStrictComparable': 150,
-        './_matchesStrictComparable': 162,
-        './_toKey': 182,
-        './get': 189,
-        './hasIn': 190
+        './_baseIsEqual': 108,
+        './_isKey': 152,
+        './_isStrictComparable': 156,
+        './_matchesStrictComparable': 168,
+        './_toKey': 188,
+        './get': 195,
+        './hasIn': 196
       }
     ],
-    113: [
+    117: [
       function (require, module, exports) {
         'use strict';
         /**
@@ -16433,7 +18062,7 @@
       },
       {}
     ],
-    114: [
+    118: [
       function (require, module, exports) {
         'use strict';
         var baseGet = require('./_baseGet');
@@ -16451,9 +18080,9 @@
         }
         module.exports = basePropertyDeep;
       },
-      { './_baseGet': 100 }
+      { './_baseGet': 103 }
     ],
-    115: [
+    119: [
       function (require, module, exports) {
         'use strict';
         var identity = require('./identity'), overRest = require('./_overRest'), setToString = require('./_setToString');
@@ -16471,12 +18100,12 @@
         module.exports = baseRest;
       },
       {
-        './_overRest': 169,
-        './_setToString': 174,
-        './identity': 191
+        './_overRest': 175,
+        './_setToString': 180,
+        './identity': 197
       }
     ],
-    116: [
+    120: [
       function (require, module, exports) {
         'use strict';
         var constant = require('./constant'), defineProperty = require('./_defineProperty'), identity = require('./identity');
@@ -16499,12 +18128,12 @@
         module.exports = baseSetToString;
       },
       {
-        './_defineProperty': 127,
-        './constant': 185,
-        './identity': 191
+        './_defineProperty': 131,
+        './constant': 191,
+        './identity': 197
       }
     ],
-    117: [
+    121: [
       function (require, module, exports) {
         'use strict';
         /**
@@ -16527,7 +18156,7 @@
       },
       {}
     ],
-    118: [
+    122: [
       function (require, module, exports) {
         'use strict';
         var _Symbol = require('./_Symbol'), arrayMap = require('./_arrayMap'), isArray = require('./isArray'), isSymbol = require('./isSymbol');
@@ -16561,13 +18190,13 @@
         module.exports = baseToString;
       },
       {
-        './_Symbol': 83,
-        './_arrayMap': 89,
-        './isArray': 193,
-        './isSymbol': 201
+        './_Symbol': 84,
+        './_arrayMap': 91,
+        './isArray': 199,
+        './isSymbol': 207
       }
     ],
-    119: [
+    123: [
       function (require, module, exports) {
         'use strict';
         /**
@@ -16586,7 +18215,7 @@
       },
       {}
     ],
-    120: [
+    124: [
       function (require, module, exports) {
         'use strict';
         /**
@@ -16604,28 +18233,34 @@
       },
       {}
     ],
-    121: [
+    125: [
       function (require, module, exports) {
         'use strict';
-        var isArray = require('./isArray'), stringToPath = require('./_stringToPath');
+        var isArray = require('./isArray'), isKey = require('./_isKey'), stringToPath = require('./_stringToPath'), toString = require('./toString');
         /**
  * Casts `value` to a path array if it's not one.
  *
  * @private
  * @param {*} value The value to inspect.
+ * @param {Object} [object] The object to query keys on.
  * @returns {Array} Returns the cast property path array.
  */
-        function castPath(value) {
-          return isArray(value) ? value : stringToPath(value);
+        function castPath(value, object) {
+          if (isArray(value)) {
+            return value;
+          }
+          return isKey(value, object) ? [value] : stringToPath(toString(value));
         }
         module.exports = castPath;
       },
       {
-        './_stringToPath': 181,
-        './isArray': 193
+        './_isKey': 152,
+        './_stringToPath': 187,
+        './isArray': 199,
+        './toString': 215
       }
     ],
-    122: [
+    126: [
       function (require, module, exports) {
         'use strict';
         var assignValue = require('./_assignValue'), baseAssignValue = require('./_baseAssignValue');
@@ -16660,11 +18295,11 @@
         module.exports = copyObject;
       },
       {
-        './_assignValue': 91,
-        './_baseAssignValue': 94
+        './_assignValue': 94,
+        './_baseAssignValue': 97
       }
     ],
-    123: [
+    127: [
       function (require, module, exports) {
         'use strict';
         var root = require('./_root');
@@ -16672,9 +18307,9 @@
         var coreJsData = root['__core-js_shared__'];
         module.exports = coreJsData;
       },
-      { './_root': 170 }
+      { './_root': 176 }
     ],
-    124: [
+    128: [
       function (require, module, exports) {
         'use strict';
         var baseRest = require('./_baseRest'), isIterateeCall = require('./_isIterateeCall');
@@ -16706,11 +18341,11 @@
         module.exports = createAssigner;
       },
       {
-        './_baseRest': 115,
-        './_isIterateeCall': 145
+        './_baseRest': 119,
+        './_isIterateeCall': 151
       }
     ],
-    125: [
+    129: [
       function (require, module, exports) {
         'use strict';
         var isArrayLike = require('./isArrayLike');
@@ -16741,9 +18376,9 @@
         }
         module.exports = createBaseEach;
       },
-      { './isArrayLike': 194 }
+      { './isArrayLike': 200 }
     ],
-    126: [
+    130: [
       function (require, module, exports) {
         'use strict';
         /**
@@ -16769,7 +18404,7 @@
       },
       {}
     ],
-    127: [
+    131: [
       function (require, module, exports) {
         'use strict';
         var getNative = require('./_getNative');
@@ -16783,14 +18418,14 @@
           }();
         module.exports = defineProperty;
       },
-      { './_getNative': 134 }
+      { './_getNative': 139 }
     ],
-    128: [
+    132: [
       function (require, module, exports) {
         'use strict';
         var SetCache = require('./_SetCache'), arraySome = require('./_arraySome'), cacheHas = require('./_cacheHas');
-        /** Used to compose bitmasks for comparison styles. */
-        var UNORDERED_COMPARE_FLAG = 1, PARTIAL_COMPARE_FLAG = 2;
+        /** Used to compose bitmasks for value comparisons. */
+        var COMPARE_PARTIAL_FLAG = 1, COMPARE_UNORDERED_FLAG = 2;
         /**
  * A specialized version of `baseIsEqualDeep` for arrays with support for
  * partial deep comparisons.
@@ -16798,15 +18433,14 @@
  * @private
  * @param {Array} array The array to compare.
  * @param {Array} other The other array to compare.
- * @param {Function} equalFunc The function to determine equivalents of values.
+ * @param {number} bitmask The bitmask flags. See `baseIsEqual` for more details.
  * @param {Function} customizer The function to customize comparisons.
- * @param {number} bitmask The bitmask of comparison flags. See `baseIsEqual`
- *  for more details.
+ * @param {Function} equalFunc The function to determine equivalents of values.
  * @param {Object} stack Tracks traversed `array` and `other` objects.
  * @returns {boolean} Returns `true` if the arrays are equivalent, else `false`.
  */
-        function equalArrays(array, other, equalFunc, customizer, bitmask, stack) {
-          var isPartial = bitmask & PARTIAL_COMPARE_FLAG, arrLength = array.length, othLength = other.length;
+        function equalArrays(array, other, bitmask, customizer, equalFunc, stack) {
+          var isPartial = bitmask & COMPARE_PARTIAL_FLAG, arrLength = array.length, othLength = other.length;
           if (arrLength != othLength && !(isPartial && othLength > arrLength)) {
             return false;
           }
@@ -16815,7 +18449,7 @@
           if (stacked && stack.get(other)) {
             return stacked == other;
           }
-          var index = -1, result = true, seen = bitmask & UNORDERED_COMPARE_FLAG ? new SetCache() : undefined;
+          var index = -1, result = true, seen = bitmask & COMPARE_UNORDERED_FLAG ? new SetCache() : undefined;
           stack.set(array, other);
           stack.set(other, array);
           // Ignore non-index properties.
@@ -16834,14 +18468,14 @@
             // Recursively compare arrays (susceptible to call stack limits).
             if (seen) {
               if (!arraySome(other, function (othValue, othIndex) {
-                  if (!cacheHas(seen, othIndex) && (arrValue === othValue || equalFunc(arrValue, othValue, customizer, bitmask, stack))) {
+                  if (!cacheHas(seen, othIndex) && (arrValue === othValue || equalFunc(arrValue, othValue, bitmask, customizer, stack))) {
                     return seen.push(othIndex);
                   }
                 })) {
                 result = false;
                 break;
               }
-            } else if (!(arrValue === othValue || equalFunc(arrValue, othValue, customizer, bitmask, stack))) {
+            } else if (!(arrValue === othValue || equalFunc(arrValue, othValue, bitmask, customizer, stack))) {
               result = false;
               break;
             }
@@ -16853,17 +18487,17 @@
         module.exports = equalArrays;
       },
       {
-        './_SetCache': 81,
-        './_arraySome': 90,
-        './_cacheHas': 120
+        './_SetCache': 82,
+        './_arraySome': 93,
+        './_cacheHas': 124
       }
     ],
-    129: [
+    133: [
       function (require, module, exports) {
         'use strict';
         var _Symbol = require('./_Symbol'), Uint8Array = require('./_Uint8Array'), eq = require('./eq'), equalArrays = require('./_equalArrays'), mapToArray = require('./_mapToArray'), setToArray = require('./_setToArray');
-        /** Used to compose bitmasks for comparison styles. */
-        var UNORDERED_COMPARE_FLAG = 1, PARTIAL_COMPARE_FLAG = 2;
+        /** Used to compose bitmasks for value comparisons. */
+        var COMPARE_PARTIAL_FLAG = 1, COMPARE_UNORDERED_FLAG = 2;
         /** `Object#toString` result references. */
         var boolTag = '[object Boolean]', dateTag = '[object Date]', errorTag = '[object Error]', mapTag = '[object Map]', numberTag = '[object Number]', regexpTag = '[object RegExp]', setTag = '[object Set]', stringTag = '[object String]', symbolTag = '[object Symbol]';
         var arrayBufferTag = '[object ArrayBuffer]', dataViewTag = '[object DataView]';
@@ -16880,14 +18514,13 @@
  * @param {Object} object The object to compare.
  * @param {Object} other The other object to compare.
  * @param {string} tag The `toStringTag` of the objects to compare.
- * @param {Function} equalFunc The function to determine equivalents of values.
+ * @param {number} bitmask The bitmask flags. See `baseIsEqual` for more details.
  * @param {Function} customizer The function to customize comparisons.
- * @param {number} bitmask The bitmask of comparison flags. See `baseIsEqual`
- *  for more details.
+ * @param {Function} equalFunc The function to determine equivalents of values.
  * @param {Object} stack Tracks traversed `object` and `other` objects.
  * @returns {boolean} Returns `true` if the objects are equivalent, else `false`.
  */
-        function equalByTag(object, other, tag, equalFunc, customizer, bitmask, stack) {
+        function equalByTag(object, other, tag, bitmask, customizer, equalFunc, stack) {
           switch (tag) {
           case dataViewTag:
             if (object.byteLength != other.byteLength || object.byteOffset != other.byteOffset) {
@@ -16917,7 +18550,7 @@
           case mapTag:
             var convert = mapToArray;
           case setTag:
-            var isPartial = bitmask & PARTIAL_COMPARE_FLAG;
+            var isPartial = bitmask & COMPARE_PARTIAL_FLAG;
             convert || (convert = setToArray);
             if (object.size != other.size && !isPartial) {
               return false;
@@ -16927,10 +18560,10 @@
             if (stacked) {
               return stacked == other;
             }
-            bitmask |= UNORDERED_COMPARE_FLAG;
+            bitmask |= COMPARE_UNORDERED_FLAG;
             // Recursively compare objects (susceptible to call stack limits).
             stack.set(object, other);
-            var result = equalArrays(convert(object), convert(other), equalFunc, customizer, bitmask, stack);
+            var result = equalArrays(convert(object), convert(other), bitmask, customizer, equalFunc, stack);
             stack['delete'](object);
             return result;
           case symbolTag:
@@ -16943,20 +18576,20 @@
         module.exports = equalByTag;
       },
       {
-        './_Symbol': 83,
-        './_Uint8Array': 84,
-        './_equalArrays': 128,
-        './_mapToArray': 161,
-        './_setToArray': 173,
-        './eq': 187
+        './_Symbol': 84,
+        './_Uint8Array': 85,
+        './_equalArrays': 132,
+        './_mapToArray': 167,
+        './_setToArray': 179,
+        './eq': 193
       }
     ],
-    130: [
+    134: [
       function (require, module, exports) {
         'use strict';
-        var keys = require('./keys');
-        /** Used to compose bitmasks for comparison styles. */
-        var PARTIAL_COMPARE_FLAG = 2;
+        var getAllKeys = require('./_getAllKeys');
+        /** Used to compose bitmasks for value comparisons. */
+        var COMPARE_PARTIAL_FLAG = 1;
         /** Used for built-in method references. */
         var objectProto = Object.prototype;
         /** Used to check objects for own properties. */
@@ -16968,15 +18601,14 @@
  * @private
  * @param {Object} object The object to compare.
  * @param {Object} other The other object to compare.
- * @param {Function} equalFunc The function to determine equivalents of values.
+ * @param {number} bitmask The bitmask flags. See `baseIsEqual` for more details.
  * @param {Function} customizer The function to customize comparisons.
- * @param {number} bitmask The bitmask of comparison flags. See `baseIsEqual`
- *  for more details.
+ * @param {Function} equalFunc The function to determine equivalents of values.
  * @param {Object} stack Tracks traversed `object` and `other` objects.
  * @returns {boolean} Returns `true` if the objects are equivalent, else `false`.
  */
-        function equalObjects(object, other, equalFunc, customizer, bitmask, stack) {
-          var isPartial = bitmask & PARTIAL_COMPARE_FLAG, objProps = keys(object), objLength = objProps.length, othProps = keys(other), othLength = othProps.length;
+        function equalObjects(object, other, bitmask, customizer, equalFunc, stack) {
+          var isPartial = bitmask & COMPARE_PARTIAL_FLAG, objProps = getAllKeys(object), objLength = objProps.length, othProps = getAllKeys(other), othLength = othProps.length;
           if (objLength != othLength && !isPartial) {
             return false;
           }
@@ -17003,7 +18635,7 @@
               var compared = isPartial ? customizer(othValue, objValue, key, other, object, stack) : customizer(objValue, othValue, key, object, other, stack);
             }
             // Recursively compare objects (susceptible to call stack limits).
-            if (!(compared === undefined ? objValue === othValue || equalFunc(objValue, othValue, customizer, bitmask, stack) : compared)) {
+            if (!(compared === undefined ? objValue === othValue || equalFunc(objValue, othValue, bitmask, customizer, stack) : compared)) {
               result = false;
               break;
             }
@@ -17022,9 +18654,9 @@
         }
         module.exports = equalObjects;
       },
-      { './keys': 203 }
+      { './_getAllKeys': 136 }
     ],
-    131: [
+    135: [
       function (require, module, exports) {
         (function (global) {
           'use strict';
@@ -17040,7 +18672,29 @@
       },
       {}
     ],
-    132: [
+    136: [
+      function (require, module, exports) {
+        'use strict';
+        var baseGetAllKeys = require('./_baseGetAllKeys'), getSymbols = require('./_getSymbols'), keys = require('./keys');
+        /**
+ * Creates an array of own enumerable property names and symbols of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of property names and symbols.
+ */
+        function getAllKeys(object) {
+          return baseGetAllKeys(object, keys, getSymbols);
+        }
+        module.exports = getAllKeys;
+      },
+      {
+        './_baseGetAllKeys': 104,
+        './_getSymbols': 141,
+        './keys': 209
+      }
+    ],
+    137: [
       function (require, module, exports) {
         'use strict';
         var isKeyable = require('./_isKeyable');
@@ -17058,9 +18712,9 @@
         }
         module.exports = getMapData;
       },
-      { './_isKeyable': 147 }
+      { './_isKeyable': 153 }
     ],
-    133: [
+    138: [
       function (require, module, exports) {
         'use strict';
         var isStrictComparable = require('./_isStrictComparable'), keys = require('./keys');
@@ -17086,11 +18740,11 @@
         module.exports = getMatchData;
       },
       {
-        './_isStrictComparable': 150,
-        './keys': 203
+        './_isStrictComparable': 156,
+        './keys': 209
       }
     ],
-    134: [
+    139: [
       function (require, module, exports) {
         'use strict';
         var baseIsNative = require('./_baseIsNative'), getValue = require('./_getValue');
@@ -17109,11 +18763,11 @@
         module.exports = getNative;
       },
       {
-        './_baseIsNative': 107,
-        './_getValue': 137
+        './_baseIsNative': 111,
+        './_getValue': 143
       }
     ],
-    135: [
+    140: [
       function (require, module, exports) {
         'use strict';
         var _Symbol = require('./_Symbol');
@@ -17155,9 +18809,42 @@
         }
         module.exports = getRawTag;
       },
-      { './_Symbol': 83 }
+      { './_Symbol': 84 }
     ],
-    136: [
+    141: [
+      function (require, module, exports) {
+        'use strict';
+        var arrayFilter = require('./_arrayFilter'), stubArray = require('./stubArray');
+        /** Used for built-in method references. */
+        var objectProto = Object.prototype;
+        /** Built-in value references. */
+        var propertyIsEnumerable = objectProto.propertyIsEnumerable;
+        /* Built-in method references for those with the same name as other `lodash` methods. */
+        var nativeGetSymbols = Object.getOwnPropertySymbols;
+        /**
+ * Creates an array of the own enumerable symbols of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of symbols.
+ */
+        var getSymbols = !nativeGetSymbols ? stubArray : function (object) {
+            if (object == null) {
+              return [];
+            }
+            object = Object(object);
+            return arrayFilter(nativeGetSymbols(object), function (symbol) {
+              return propertyIsEnumerable.call(object, symbol);
+            });
+          };
+        module.exports = getSymbols;
+      },
+      {
+        './_arrayFilter': 89,
+        './stubArray': 213
+      }
+    ],
+    142: [
       function (require, module, exports) {
         'use strict';
         var DataView = require('./_DataView'), Map = require('./_Map'), Promise = require('./_Promise'), Set = require('./_Set'), WeakMap = require('./_WeakMap'), baseGetTag = require('./_baseGetTag'), toSource = require('./_toSource');
@@ -17198,16 +18885,16 @@
         module.exports = getTag;
       },
       {
-        './_DataView': 74,
-        './_Map': 77,
-        './_Promise': 79,
-        './_Set': 80,
-        './_WeakMap': 85,
-        './_baseGetTag': 101,
-        './_toSource': 183
+        './_DataView': 75,
+        './_Map': 78,
+        './_Promise': 80,
+        './_Set': 81,
+        './_WeakMap': 86,
+        './_baseGetTag': 105,
+        './_toSource': 189
       }
     ],
-    137: [
+    143: [
       function (require, module, exports) {
         'use strict';
         /**
@@ -17225,10 +18912,10 @@
       },
       {}
     ],
-    138: [
+    144: [
       function (require, module, exports) {
         'use strict';
-        var castPath = require('./_castPath'), isArguments = require('./isArguments'), isArray = require('./isArray'), isIndex = require('./_isIndex'), isKey = require('./_isKey'), isLength = require('./isLength'), toKey = require('./_toKey');
+        var castPath = require('./_castPath'), isArguments = require('./isArguments'), isArray = require('./isArray'), isIndex = require('./_isIndex'), isLength = require('./isLength'), toKey = require('./_toKey');
         /**
  * Checks if `path` exists on `object`.
  *
@@ -17239,7 +18926,7 @@
  * @returns {boolean} Returns `true` if `path` exists, else `false`.
  */
         function hasPath(object, path, hasFunc) {
-          path = isKey(path, object) ? [path] : castPath(path);
+          path = castPath(path, object);
           var index = -1, length = path.length, result = false;
           while (++index < length) {
             var key = toKey(path[index]);
@@ -17257,16 +18944,15 @@
         module.exports = hasPath;
       },
       {
-        './_castPath': 121,
-        './_isIndex': 144,
-        './_isKey': 146,
-        './_toKey': 182,
-        './isArguments': 192,
-        './isArray': 193,
-        './isLength': 198
+        './_castPath': 125,
+        './_isIndex': 150,
+        './_toKey': 188,
+        './isArguments': 198,
+        './isArray': 199,
+        './isLength': 204
       }
     ],
-    139: [
+    145: [
       function (require, module, exports) {
         'use strict';
         var nativeCreate = require('./_nativeCreate');
@@ -17283,9 +18969,9 @@
         }
         module.exports = hashClear;
       },
-      { './_nativeCreate': 164 }
+      { './_nativeCreate': 170 }
     ],
-    140: [
+    146: [
       function (require, module, exports) {
         'use strict';
         /**
@@ -17307,7 +18993,7 @@
       },
       {}
     ],
-    141: [
+    147: [
       function (require, module, exports) {
         'use strict';
         var nativeCreate = require('./_nativeCreate');
@@ -17336,9 +19022,9 @@
         }
         module.exports = hashGet;
       },
-      { './_nativeCreate': 164 }
+      { './_nativeCreate': 170 }
     ],
-    142: [
+    148: [
       function (require, module, exports) {
         'use strict';
         var nativeCreate = require('./_nativeCreate');
@@ -17361,9 +19047,9 @@
         }
         module.exports = hashHas;
       },
-      { './_nativeCreate': 164 }
+      { './_nativeCreate': 170 }
     ],
-    143: [
+    149: [
       function (require, module, exports) {
         'use strict';
         var nativeCreate = require('./_nativeCreate');
@@ -17387,9 +19073,9 @@
         }
         module.exports = hashSet;
       },
-      { './_nativeCreate': 164 }
+      { './_nativeCreate': 170 }
     ],
-    144: [
+    150: [
       function (require, module, exports) {
         'use strict';
         /** Used as references for various `Number` constants. */
@@ -17412,7 +19098,7 @@
       },
       {}
     ],
-    145: [
+    151: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -17444,13 +19130,13 @@
         module.exports = isIterateeCall;
       },
       {
-        './_isIndex': 144,
-        './eq': 187,
-        './isArrayLike': 194,
-        './isObject': 199
+        './_isIndex': 150,
+        './eq': 193,
+        './isArrayLike': 200,
+        './isObject': 205
       }
     ],
-    146: [
+    152: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -17482,11 +19168,11 @@
         module.exports = isKey;
       },
       {
-        './isArray': 193,
-        './isSymbol': 201
+        './isArray': 199,
+        './isSymbol': 207
       }
     ],
-    147: [
+    153: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -17509,7 +19195,7 @@
       },
       {}
     ],
-    148: [
+    154: [
       function (require, module, exports) {
         'use strict';
         var coreJsData = require('./_coreJsData');
@@ -17530,9 +19216,9 @@
         }
         module.exports = isMasked;
       },
-      { './_coreJsData': 123 }
+      { './_coreJsData': 127 }
     ],
-    149: [
+    155: [
       function (require, module, exports) {
         'use strict';
         /** Used for built-in method references. */
@@ -17552,7 +19238,7 @@
       },
       {}
     ],
-    150: [
+    156: [
       function (require, module, exports) {
         'use strict';
         var isObject = require('./isObject');
@@ -17569,9 +19255,9 @@
         }
         module.exports = isStrictComparable;
       },
-      { './isObject': 199 }
+      { './isObject': 205 }
     ],
-    151: [
+    157: [
       function (require, module, exports) {
         'use strict';
         /**
@@ -17589,7 +19275,7 @@
       },
       {}
     ],
-    152: [
+    158: [
       function (require, module, exports) {
         'use strict';
         var assocIndexOf = require('./_assocIndexOf');
@@ -17622,9 +19308,9 @@
         }
         module.exports = listCacheDelete;
       },
-      { './_assocIndexOf': 92 }
+      { './_assocIndexOf': 95 }
     ],
-    153: [
+    159: [
       function (require, module, exports) {
         'use strict';
         var assocIndexOf = require('./_assocIndexOf');
@@ -17643,9 +19329,9 @@
         }
         module.exports = listCacheGet;
       },
-      { './_assocIndexOf': 92 }
+      { './_assocIndexOf': 95 }
     ],
-    154: [
+    160: [
       function (require, module, exports) {
         'use strict';
         var assocIndexOf = require('./_assocIndexOf');
@@ -17663,9 +19349,9 @@
         }
         module.exports = listCacheHas;
       },
-      { './_assocIndexOf': 92 }
+      { './_assocIndexOf': 95 }
     ],
-    155: [
+    161: [
       function (require, module, exports) {
         'use strict';
         var assocIndexOf = require('./_assocIndexOf');
@@ -17694,9 +19380,9 @@
         }
         module.exports = listCacheSet;
       },
-      { './_assocIndexOf': 92 }
+      { './_assocIndexOf': 95 }
     ],
-    156: [
+    162: [
       function (require, module, exports) {
         'use strict';
         var Hash = require('./_Hash'), ListCache = require('./_ListCache'), Map = require('./_Map');
@@ -17718,12 +19404,12 @@
         module.exports = mapCacheClear;
       },
       {
-        './_Hash': 75,
-        './_ListCache': 76,
-        './_Map': 77
+        './_Hash': 76,
+        './_ListCache': 77,
+        './_Map': 78
       }
     ],
-    157: [
+    163: [
       function (require, module, exports) {
         'use strict';
         var getMapData = require('./_getMapData');
@@ -17743,9 +19429,9 @@
         }
         module.exports = mapCacheDelete;
       },
-      { './_getMapData': 132 }
+      { './_getMapData': 137 }
     ],
-    158: [
+    164: [
       function (require, module, exports) {
         'use strict';
         var getMapData = require('./_getMapData');
@@ -17763,9 +19449,9 @@
         }
         module.exports = mapCacheGet;
       },
-      { './_getMapData': 132 }
+      { './_getMapData': 137 }
     ],
-    159: [
+    165: [
       function (require, module, exports) {
         'use strict';
         var getMapData = require('./_getMapData');
@@ -17783,9 +19469,9 @@
         }
         module.exports = mapCacheHas;
       },
-      { './_getMapData': 132 }
+      { './_getMapData': 137 }
     ],
-    160: [
+    166: [
       function (require, module, exports) {
         'use strict';
         var getMapData = require('./_getMapData');
@@ -17807,9 +19493,9 @@
         }
         module.exports = mapCacheSet;
       },
-      { './_getMapData': 132 }
+      { './_getMapData': 137 }
     ],
-    161: [
+    167: [
       function (require, module, exports) {
         'use strict';
         /**
@@ -17833,7 +19519,7 @@
       },
       {}
     ],
-    162: [
+    168: [
       function (require, module, exports) {
         'use strict';
         /**
@@ -17857,7 +19543,7 @@
       },
       {}
     ],
-    163: [
+    169: [
       function (require, module, exports) {
         'use strict';
         var memoize = require('./memoize');
@@ -17883,9 +19569,9 @@
         }
         module.exports = memoizeCapped;
       },
-      { './memoize': 205 }
+      { './memoize': 211 }
     ],
-    164: [
+    170: [
       function (require, module, exports) {
         'use strict';
         var getNative = require('./_getNative');
@@ -17893,9 +19579,9 @@
         var nativeCreate = getNative(Object, 'create');
         module.exports = nativeCreate;
       },
-      { './_getNative': 134 }
+      { './_getNative': 139 }
     ],
-    165: [
+    171: [
       function (require, module, exports) {
         'use strict';
         var overArg = require('./_overArg');
@@ -17903,9 +19589,9 @@
         var nativeKeys = overArg(Object.keys, Object);
         module.exports = nativeKeys;
       },
-      { './_overArg': 168 }
+      { './_overArg': 174 }
     ],
-    166: [
+    172: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -17925,15 +19611,15 @@
         /** Used to access faster Node.js helpers. */
         var nodeUtil = function () {
             try {
-              return freeProcess && freeProcess.binding('util');
+              return freeProcess && freeProcess.binding && freeProcess.binding('util');
             } catch (e) {
             }
           }();
         module.exports = nodeUtil;
       },
-      { './_freeGlobal': 131 }
+      { './_freeGlobal': 135 }
     ],
-    167: [
+    173: [
       function (require, module, exports) {
         'use strict';
         /** Used for built-in method references. */
@@ -17958,7 +19644,7 @@
       },
       {}
     ],
-    168: [
+    174: [
       function (require, module, exports) {
         'use strict';
         /**
@@ -17978,7 +19664,7 @@
       },
       {}
     ],
-    169: [
+    175: [
       function (require, module, exports) {
         'use strict';
         var apply = require('./_apply');
@@ -18011,9 +19697,9 @@
         }
         module.exports = overRest;
       },
-      { './_apply': 86 }
+      { './_apply': 87 }
     ],
-    170: [
+    176: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -18028,9 +19714,9 @@
         var root = freeGlobal || freeSelf || Function('return this')();
         module.exports = root;
       },
-      { './_freeGlobal': 131 }
+      { './_freeGlobal': 135 }
     ],
-    171: [
+    177: [
       function (require, module, exports) {
         'use strict';
         /** Used to stand-in for `undefined` hash values. */
@@ -18053,7 +19739,7 @@
       },
       {}
     ],
-    172: [
+    178: [
       function (require, module, exports) {
         'use strict';
         /**
@@ -18072,7 +19758,7 @@
       },
       {}
     ],
-    173: [
+    179: [
       function (require, module, exports) {
         'use strict';
         /**
@@ -18093,7 +19779,7 @@
       },
       {}
     ],
-    174: [
+    180: [
       function (require, module, exports) {
         'use strict';
         var baseSetToString = require('./_baseSetToString'), shortOut = require('./_shortOut');
@@ -18109,11 +19795,11 @@
         module.exports = setToString;
       },
       {
-        './_baseSetToString': 116,
-        './_shortOut': 175
+        './_baseSetToString': 120,
+        './_shortOut': 181
       }
     ],
-    175: [
+    181: [
       function (require, module, exports) {
         'use strict';
         /** Used to detect hot functions by number of calls within a span of milliseconds. */
@@ -18148,7 +19834,7 @@
       },
       {}
     ],
-    176: [
+    182: [
       function (require, module, exports) {
         'use strict';
         var ListCache = require('./_ListCache');
@@ -18165,9 +19851,9 @@
         }
         module.exports = stackClear;
       },
-      { './_ListCache': 76 }
+      { './_ListCache': 77 }
     ],
-    177: [
+    183: [
       function (require, module, exports) {
         'use strict';
         /**
@@ -18188,7 +19874,7 @@
       },
       {}
     ],
-    178: [
+    184: [
       function (require, module, exports) {
         'use strict';
         /**
@@ -18207,7 +19893,7 @@
       },
       {}
     ],
-    179: [
+    185: [
       function (require, module, exports) {
         'use strict';
         /**
@@ -18226,7 +19912,7 @@
       },
       {}
     ],
-    180: [
+    186: [
       function (require, module, exports) {
         'use strict';
         var ListCache = require('./_ListCache'), Map = require('./_Map'), MapCache = require('./_MapCache');
@@ -18263,15 +19949,15 @@
         module.exports = stackSet;
       },
       {
-        './_ListCache': 76,
-        './_Map': 77,
-        './_MapCache': 78
+        './_ListCache': 77,
+        './_Map': 78,
+        './_MapCache': 79
       }
     ],
-    181: [
+    187: [
       function (require, module, exports) {
         'use strict';
-        var memoizeCapped = require('./_memoizeCapped'), toString = require('./toString');
+        var memoizeCapped = require('./_memoizeCapped');
         /** Used to match property names within property paths. */
         var reLeadingDot = /^\./, rePropName = /[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(?:\.|\[\])(?:\.|\[\]|$))/g;
         /** Used to match backslashes in property paths. */
@@ -18284,7 +19970,6 @@
  * @returns {Array} Returns the property path array.
  */
         var stringToPath = memoizeCapped(function (string) {
-            string = toString(string);
             var result = [];
             if (reLeadingDot.test(string)) {
               result.push('');
@@ -18296,12 +19981,9 @@
           });
         module.exports = stringToPath;
       },
-      {
-        './_memoizeCapped': 163,
-        './toString': 208
-      }
+      { './_memoizeCapped': 169 }
     ],
-    182: [
+    188: [
       function (require, module, exports) {
         'use strict';
         var isSymbol = require('./isSymbol');
@@ -18323,9 +20005,9 @@
         }
         module.exports = toKey;
       },
-      { './isSymbol': 201 }
+      { './isSymbol': 207 }
     ],
-    183: [
+    189: [
       function (require, module, exports) {
         'use strict';
         /** Used for built-in method references. */
@@ -18356,7 +20038,7 @@
       },
       {}
     ],
-    184: [
+    190: [
       function (require, module, exports) {
         'use strict';
         var assignValue = require('./_assignValue'), copyObject = require('./_copyObject'), createAssigner = require('./_createAssigner'), isArrayLike = require('./isArrayLike'), isPrototype = require('./_isPrototype'), keys = require('./keys');
@@ -18410,15 +20092,15 @@
         module.exports = assign;
       },
       {
-        './_assignValue': 91,
-        './_copyObject': 122,
-        './_createAssigner': 124,
-        './_isPrototype': 149,
-        './isArrayLike': 194,
-        './keys': 203
+        './_assignValue': 94,
+        './_copyObject': 126,
+        './_createAssigner': 128,
+        './_isPrototype': 155,
+        './isArrayLike': 200,
+        './keys': 209
       }
     ],
-    185: [
+    191: [
       function (require, module, exports) {
         'use strict';
         /**
@@ -18449,7 +20131,7 @@
       },
       {}
     ],
-    186: [
+    192: [
       function (require, module, exports) {
         'use strict';
         var baseAssign = require('./_baseAssign'), baseCreate = require('./_baseCreate');
@@ -18494,11 +20176,11 @@
         module.exports = create;
       },
       {
-        './_baseAssign': 93,
-        './_baseCreate': 95
+        './_baseAssign': 96,
+        './_baseCreate': 98
       }
     ],
-    187: [
+    193: [
       function (require, module, exports) {
         'use strict';
         /**
@@ -18540,7 +20222,7 @@
       },
       {}
     ],
-    188: [
+    194: [
       function (require, module, exports) {
         'use strict';
         var arrayEvery = require('./_arrayEvery'), baseEvery = require('./_baseEvery'), baseIteratee = require('./_baseIteratee'), isArray = require('./isArray'), isIterateeCall = require('./_isIterateeCall');
@@ -18595,14 +20277,14 @@
         module.exports = every;
       },
       {
-        './_arrayEvery': 87,
-        './_baseEvery': 97,
-        './_baseIteratee': 109,
-        './_isIterateeCall': 145,
-        './isArray': 193
+        './_arrayEvery': 88,
+        './_baseEvery': 100,
+        './_baseIteratee': 113,
+        './_isIterateeCall': 151,
+        './isArray': 199
       }
     ],
-    189: [
+    195: [
       function (require, module, exports) {
         'use strict';
         var baseGet = require('./_baseGet');
@@ -18637,9 +20319,9 @@
         }
         module.exports = get;
       },
-      { './_baseGet': 100 }
+      { './_baseGet': 103 }
     ],
-    190: [
+    196: [
       function (require, module, exports) {
         'use strict';
         var baseHasIn = require('./_baseHasIn'), hasPath = require('./_hasPath');
@@ -18675,11 +20357,11 @@
         module.exports = hasIn;
       },
       {
-        './_baseHasIn': 102,
-        './_hasPath': 138
+        './_baseHasIn': 106,
+        './_hasPath': 144
       }
     ],
-    191: [
+    197: [
       function (require, module, exports) {
         'use strict';
         /**
@@ -18705,7 +20387,7 @@
       },
       {}
     ],
-    192: [
+    198: [
       function (require, module, exports) {
         'use strict';
         var baseIsArguments = require('./_baseIsArguments'), isObjectLike = require('./isObjectLike');
@@ -18741,11 +20423,11 @@
         module.exports = isArguments;
       },
       {
-        './_baseIsArguments': 103,
-        './isObjectLike': 200
+        './_baseIsArguments': 107,
+        './isObjectLike': 206
       }
     ],
-    193: [
+    199: [
       function (require, module, exports) {
         'use strict';
         /**
@@ -18776,7 +20458,7 @@
       },
       {}
     ],
-    194: [
+    200: [
       function (require, module, exports) {
         'use strict';
         var isFunction = require('./isFunction'), isLength = require('./isLength');
@@ -18811,11 +20493,11 @@
         module.exports = isArrayLike;
       },
       {
-        './isFunction': 197,
-        './isLength': 198
+        './isFunction': 203,
+        './isLength': 204
       }
     ],
-    195: [
+    201: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -18855,11 +20537,11 @@
         module.exports = isBuffer;
       },
       {
-        './_root': 170,
-        './stubFalse': 207
+        './_root': 176,
+        './stubFalse': 214
       }
     ],
-    196: [
+    202: [
       function (require, module, exports) {
         'use strict';
         var baseKeys = require('./_baseKeys'), getTag = require('./_getTag'), isArguments = require('./isArguments'), isArray = require('./isArray'), isArrayLike = require('./isArrayLike'), isBuffer = require('./isBuffer'), isPrototype = require('./_isPrototype'), isTypedArray = require('./isTypedArray');
@@ -18926,17 +20608,17 @@
         module.exports = isEmpty;
       },
       {
-        './_baseKeys': 110,
-        './_getTag': 136,
-        './_isPrototype': 149,
-        './isArguments': 192,
-        './isArray': 193,
-        './isArrayLike': 194,
-        './isBuffer': 195,
-        './isTypedArray': 202
+        './_baseKeys': 114,
+        './_getTag': 142,
+        './_isPrototype': 155,
+        './isArguments': 198,
+        './isArray': 199,
+        './isArrayLike': 200,
+        './isBuffer': 201,
+        './isTypedArray': 208
       }
     ],
-    197: [
+    203: [
       function (require, module, exports) {
         'use strict';
         var baseGetTag = require('./_baseGetTag'), isObject = require('./isObject');
@@ -18971,11 +20653,11 @@
         module.exports = isFunction;
       },
       {
-        './_baseGetTag': 101,
-        './isObject': 199
+        './_baseGetTag': 105,
+        './isObject': 205
       }
     ],
-    198: [
+    204: [
       function (require, module, exports) {
         'use strict';
         /** Used as references for various `Number` constants. */
@@ -19013,7 +20695,7 @@
       },
       {}
     ],
-    199: [
+    205: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -19054,7 +20736,7 @@
       },
       {}
     ],
-    200: [
+    206: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -19093,7 +20775,7 @@
       },
       {}
     ],
-    201: [
+    207: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -19127,11 +20809,11 @@
         module.exports = isSymbol;
       },
       {
-        './_baseGetTag': 101,
-        './isObjectLike': 200
+        './_baseGetTag': 105,
+        './isObjectLike': 206
       }
     ],
-    202: [
+    208: [
       function (require, module, exports) {
         'use strict';
         var baseIsTypedArray = require('./_baseIsTypedArray'), baseUnary = require('./_baseUnary'), nodeUtil = require('./_nodeUtil');
@@ -19158,12 +20840,12 @@
         module.exports = isTypedArray;
       },
       {
-        './_baseIsTypedArray': 108,
-        './_baseUnary': 119,
-        './_nodeUtil': 166
+        './_baseIsTypedArray': 112,
+        './_baseUnary': 123,
+        './_nodeUtil': 172
       }
     ],
-    203: [
+    209: [
       function (require, module, exports) {
         'use strict';
         var arrayLikeKeys = require('./_arrayLikeKeys'), baseKeys = require('./_baseKeys'), isArrayLike = require('./isArrayLike');
@@ -19201,12 +20883,12 @@
         module.exports = keys;
       },
       {
-        './_arrayLikeKeys': 88,
-        './_baseKeys': 110,
-        './isArrayLike': 194
+        './_arrayLikeKeys': 90,
+        './_baseKeys': 114,
+        './isArrayLike': 200
       }
     ],
-    204: [
+    210: [
       function (require, module, exports) {
         (function (global) {
           'use strict';
@@ -19217,7 +20899,7 @@
             };
           /**
  * @license
- * lodash <https://lodash.com/>
+ * Lodash <https://lodash.com/>
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -19228,21 +20910,23 @@
             /** Used as a safe reference for `undefined` in pre-ES5 environments. */
             var undefined;
             /** Used as the semantic version number. */
-            var VERSION = '4.16.6';
+            var VERSION = '4.17.4';
             /** Used as the size to enable large array optimizations. */
             var LARGE_ARRAY_SIZE = 200;
             /** Error message constants. */
-            var CORE_ERROR_TEXT = 'Unsupported core-js use. Try https://github.com/es-shims.', FUNC_ERROR_TEXT = 'Expected a function';
+            var CORE_ERROR_TEXT = 'Unsupported core-js use. Try https://npms.io/search?q=ponyfill.', FUNC_ERROR_TEXT = 'Expected a function';
             /** Used to stand-in for `undefined` hash values. */
             var HASH_UNDEFINED = '__lodash_hash_undefined__';
             /** Used as the maximum memoize cache size. */
             var MAX_MEMOIZE_SIZE = 500;
             /** Used as the internal argument placeholder. */
             var PLACEHOLDER = '__lodash_placeholder__';
+            /** Used to compose bitmasks for cloning. */
+            var CLONE_DEEP_FLAG = 1, CLONE_FLAT_FLAG = 2, CLONE_SYMBOLS_FLAG = 4;
+            /** Used to compose bitmasks for value comparisons. */
+            var COMPARE_PARTIAL_FLAG = 1, COMPARE_UNORDERED_FLAG = 2;
             /** Used to compose bitmasks for function metadata. */
-            var BIND_FLAG = 1, BIND_KEY_FLAG = 2, CURRY_BOUND_FLAG = 4, CURRY_FLAG = 8, CURRY_RIGHT_FLAG = 16, PARTIAL_FLAG = 32, PARTIAL_RIGHT_FLAG = 64, ARY_FLAG = 128, REARG_FLAG = 256, FLIP_FLAG = 512;
-            /** Used to compose bitmasks for comparison styles. */
-            var UNORDERED_COMPARE_FLAG = 1, PARTIAL_COMPARE_FLAG = 2;
+            var WRAP_BIND_FLAG = 1, WRAP_BIND_KEY_FLAG = 2, WRAP_CURRY_BOUND_FLAG = 4, WRAP_CURRY_FLAG = 8, WRAP_CURRY_RIGHT_FLAG = 16, WRAP_PARTIAL_FLAG = 32, WRAP_PARTIAL_RIGHT_FLAG = 64, WRAP_ARY_FLAG = 128, WRAP_REARG_FLAG = 256, WRAP_FLIP_FLAG = 512;
             /** Used as default options for `_.truncate`. */
             var DEFAULT_TRUNC_LENGTH = 30, DEFAULT_TRUNC_OMISSION = '...';
             /** Used to detect hot functions by number of calls within a span of milliseconds. */
@@ -19257,39 +20941,39 @@
             var wrapFlags = [
                 [
                   'ary',
-                  ARY_FLAG
+                  WRAP_ARY_FLAG
                 ],
                 [
                   'bind',
-                  BIND_FLAG
+                  WRAP_BIND_FLAG
                 ],
                 [
                   'bindKey',
-                  BIND_KEY_FLAG
+                  WRAP_BIND_KEY_FLAG
                 ],
                 [
                   'curry',
-                  CURRY_FLAG
+                  WRAP_CURRY_FLAG
                 ],
                 [
                   'curryRight',
-                  CURRY_RIGHT_FLAG
+                  WRAP_CURRY_RIGHT_FLAG
                 ],
                 [
                   'flip',
-                  FLIP_FLAG
+                  WRAP_FLIP_FLAG
                 ],
                 [
                   'partial',
-                  PARTIAL_FLAG
+                  WRAP_PARTIAL_FLAG
                 ],
                 [
                   'partialRight',
-                  PARTIAL_RIGHT_FLAG
+                  WRAP_PARTIAL_RIGHT_FLAG
                 ],
                 [
                   'rearg',
-                  REARG_FLAG
+                  WRAP_REARG_FLAG
                 ]
               ];
             /** `Object#toString` result references. */
@@ -19340,9 +21024,9 @@
             /** Used to match unescaped characters in compiled string literals. */
             var reUnescapedString = /['\n\r\u2028\u2029\\]/g;
             /** Used to compose unicode character classes. */
-            var rsAstralRange = '\\ud800-\\udfff', rsComboMarksRange = '\\u0300-\\u036f\\ufe20-\\ufe23', rsComboSymbolsRange = '\\u20d0-\\u20f0', rsDingbatRange = '\\u2700-\\u27bf', rsLowerRange = 'a-z\\xdf-\\xf6\\xf8-\\xff', rsMathOpRange = '\\xac\\xb1\\xd7\\xf7', rsNonCharRange = '\\x00-\\x2f\\x3a-\\x40\\x5b-\\x60\\x7b-\\xbf', rsPunctuationRange = '\\u2000-\\u206f', rsSpaceRange = ' \\t\\x0b\\f\\xa0\\ufeff\\n\\r\\u2028\\u2029\\u1680\\u180e\\u2000\\u2001\\u2002\\u2003\\u2004\\u2005\\u2006\\u2007\\u2008\\u2009\\u200a\\u202f\\u205f\\u3000', rsUpperRange = 'A-Z\\xc0-\\xd6\\xd8-\\xde', rsVarRange = '\\ufe0e\\ufe0f', rsBreakRange = rsMathOpRange + rsNonCharRange + rsPunctuationRange + rsSpaceRange;
+            var rsAstralRange = '\\ud800-\\udfff', rsComboMarksRange = '\\u0300-\\u036f', reComboHalfMarksRange = '\\ufe20-\\ufe2f', rsComboSymbolsRange = '\\u20d0-\\u20ff', rsComboRange = rsComboMarksRange + reComboHalfMarksRange + rsComboSymbolsRange, rsDingbatRange = '\\u2700-\\u27bf', rsLowerRange = 'a-z\\xdf-\\xf6\\xf8-\\xff', rsMathOpRange = '\\xac\\xb1\\xd7\\xf7', rsNonCharRange = '\\x00-\\x2f\\x3a-\\x40\\x5b-\\x60\\x7b-\\xbf', rsPunctuationRange = '\\u2000-\\u206f', rsSpaceRange = ' \\t\\x0b\\f\\xa0\\ufeff\\n\\r\\u2028\\u2029\\u1680\\u180e\\u2000\\u2001\\u2002\\u2003\\u2004\\u2005\\u2006\\u2007\\u2008\\u2009\\u200a\\u202f\\u205f\\u3000', rsUpperRange = 'A-Z\\xc0-\\xd6\\xd8-\\xde', rsVarRange = '\\ufe0e\\ufe0f', rsBreakRange = rsMathOpRange + rsNonCharRange + rsPunctuationRange + rsSpaceRange;
             /** Used to compose unicode capture groups. */
-            var rsApos = '[\'\u2019]', rsAstral = '[' + rsAstralRange + ']', rsBreak = '[' + rsBreakRange + ']', rsCombo = '[' + rsComboMarksRange + rsComboSymbolsRange + ']', rsDigits = '\\d+', rsDingbat = '[' + rsDingbatRange + ']', rsLower = '[' + rsLowerRange + ']', rsMisc = '[^' + rsAstralRange + rsBreakRange + rsDigits + rsDingbatRange + rsLowerRange + rsUpperRange + ']', rsFitz = '\\ud83c[\\udffb-\\udfff]', rsModifier = '(?:' + rsCombo + '|' + rsFitz + ')', rsNonAstral = '[^' + rsAstralRange + ']', rsRegional = '(?:\\ud83c[\\udde6-\\uddff]){2}', rsSurrPair = '[\\ud800-\\udbff][\\udc00-\\udfff]', rsUpper = '[' + rsUpperRange + ']', rsZWJ = '\\u200d';
+            var rsApos = '[\'\u2019]', rsAstral = '[' + rsAstralRange + ']', rsBreak = '[' + rsBreakRange + ']', rsCombo = '[' + rsComboRange + ']', rsDigits = '\\d+', rsDingbat = '[' + rsDingbatRange + ']', rsLower = '[' + rsLowerRange + ']', rsMisc = '[^' + rsAstralRange + rsBreakRange + rsDigits + rsDingbatRange + rsLowerRange + rsUpperRange + ']', rsFitz = '\\ud83c[\\udffb-\\udfff]', rsModifier = '(?:' + rsCombo + '|' + rsFitz + ')', rsNonAstral = '[^' + rsAstralRange + ']', rsRegional = '(?:\\ud83c[\\udde6-\\uddff]){2}', rsSurrPair = '[\\ud800-\\udbff][\\udc00-\\udfff]', rsUpper = '[' + rsUpperRange + ']', rsZWJ = '\\u200d';
             /** Used to compose unicode regexes. */
             var rsMiscLower = '(?:' + rsLower + '|' + rsMisc + ')', rsMiscUpper = '(?:' + rsUpper + '|' + rsMisc + ')', rsOptContrLower = '(?:' + rsApos + '(?:d|ll|m|re|s|t|ve))?', rsOptContrUpper = '(?:' + rsApos + '(?:D|LL|M|RE|S|T|VE))?', reOptMod = rsModifier + '?', rsOptVar = '[' + rsVarRange + ']?', rsOptJoin = '(?:' + rsZWJ + '(?:' + [
                 rsNonAstral,
@@ -19388,7 +21072,7 @@
                 rsEmoji
               ].join('|'), 'g');
             /** Used to detect strings with [zero-width joiners or code points from the astral planes](http://eev.ee/blog/2015/09/12/dark-corners-of-unicode/). */
-            var reHasUnicode = RegExp('[' + rsZWJ + rsAstralRange + rsComboMarksRange + rsComboSymbolsRange + rsVarRange + ']');
+            var reHasUnicode = RegExp('[' + rsZWJ + rsAstralRange + rsComboRange + rsVarRange + ']');
             /** Used to detect strings that need a more robust regexp to match words. */
             var reHasUnicodeWord = /[a-z][A-Z]|[A-Z]{2,}[a-z]|[0-9][a-zA-Z]|[a-zA-Z][0-9]|[^a-zA-Z0-9 ]/;
             /** Used to assign default `context` object properties. */
@@ -19671,7 +21355,7 @@
             /** Used to access faster Node.js helpers. */
             var nodeUtil = function () {
                 try {
-                  return freeProcess && freeProcess.binding('util');
+                  return freeProcess && freeProcess.binding && freeProcess.binding('util');
                 } catch (e) {
                 }
               }();
@@ -20622,9 +22306,9 @@
      * Shortcut fusion is an optimization to merge iteratee calls; this avoids
      * the creation of intermediate arrays and can greatly reduce the number of
      * iteratee executions. Sections of a chain sequence qualify for shortcut
-     * fusion if the section is applied to an array of at least `200` elements
-     * and any iteratees accept only one argument. The heuristic for whether a
-     * section qualifies for shortcut fusion is subject to change.
+     * fusion if the section is applied to an array and iteratees accept only
+     * one argument. The heuristic for whether a section qualifies for shortcut
+     * fusion is subject to change.
      *
      * Chaining is supported in custom builds as long as the `_#value` method is
      * directly or indirectly included in the build.
@@ -20780,8 +22464,8 @@
               }
               /**
      * By default, the template delimiters used by lodash are like those in
-     * embedded Ruby (ERB). Change the following template settings to use
-     * alternative delimiters.
+     * embedded Ruby (ERB) as well as ES2015 template strings. Change the
+     * following template settings to use alternative delimiters.
      *
      * @static
      * @memberOf _
@@ -20863,7 +22547,7 @@
      */
               function lazyValue() {
                 var array = this.__wrapped__.value(), dir = this.__dir__, isArr = isArray(array), isRight = dir < 0, arrLength = isArr ? array.length : 0, view = getView(0, arrLength, this.__views__), start = view.start, end = view.end, length = end - start, index = isRight ? end : start - 1, iteratees = this.__iteratees__, iterLength = iteratees.length, resIndex = 0, takeCount = nativeMin(length, this.__takeCount__);
-                if (!isArr || arrLength < LARGE_ARRAY_SIZE || arrLength == length && takeCount == length) {
+                if (!isArr || !isRight && arrLength == length && takeCount == length) {
                   return baseWrapperValue(array, this.__actions__);
                 }
                 var result = [];
@@ -21370,22 +23054,6 @@
                 return shuffleSelf(copyArray(array));
               }
               /**
-     * Used by `_.defaults` to customize its `_.assignIn` use.
-     *
-     * @private
-     * @param {*} objValue The destination value.
-     * @param {*} srcValue The source value.
-     * @param {string} key The key of the property to assign.
-     * @param {Object} object The parent object of `objValue`.
-     * @returns {*} Returns the value to assign.
-     */
-              function assignInDefaults(objValue, srcValue, key, object) {
-                if (objValue === undefined || eq(objValue, objectProto[key]) && !hasOwnProperty.call(object, key)) {
-                  return srcValue;
-                }
-                return objValue;
-              }
-              /**
      * This function is like `assignValue` except that it doesn't assign
      * `undefined` values.
      *
@@ -21462,6 +23130,18 @@
                 return object && copyObject(source, keys(source), object);
               }
               /**
+     * The base implementation of `_.assignIn` without support for multiple sources
+     * or `customizer` functions.
+     *
+     * @private
+     * @param {Object} object The destination object.
+     * @param {Object} source The source object.
+     * @returns {Object} Returns `object`.
+     */
+              function baseAssignIn(object, source) {
+                return object && copyObject(source, keysIn(source), object);
+              }
+              /**
      * The base implementation of `assignValue` and `assignMergeValue` without
      * value checks.
      *
@@ -21487,7 +23167,7 @@
      *
      * @private
      * @param {Object} object The object to iterate over.
-     * @param {string[]} paths The property paths of elements to pick.
+     * @param {string[]} paths The property paths to pick.
      * @returns {Array} Returns the picked elements.
      */
               function baseAt(object, paths) {
@@ -21523,16 +23203,18 @@
      *
      * @private
      * @param {*} value The value to clone.
-     * @param {boolean} [isDeep] Specify a deep clone.
-     * @param {boolean} [isFull] Specify a clone including symbols.
+     * @param {boolean} bitmask The bitmask flags.
+     *  1 - Deep clone
+     *  2 - Flatten inherited properties
+     *  4 - Clone symbols
      * @param {Function} [customizer] The function to customize cloning.
      * @param {string} [key] The key of `value`.
      * @param {Object} [object] The parent object of `value`.
      * @param {Object} [stack] Tracks traversed objects and their clone counterparts.
      * @returns {*} Returns the cloned value.
      */
-              function baseClone(value, isDeep, isFull, customizer, key, object, stack) {
-                var result;
+              function baseClone(value, bitmask, customizer, key, object, stack) {
+                var result, isDeep = bitmask & CLONE_DEEP_FLAG, isFlat = bitmask & CLONE_FLAT_FLAG, isFull = bitmask & CLONE_SYMBOLS_FLAG;
                 if (customizer) {
                   result = object ? customizer(value, key, object, stack) : customizer(value);
                 }
@@ -21554,9 +23236,9 @@
                     return cloneBuffer(value, isDeep);
                   }
                   if (tag == objectTag || tag == argsTag || isFunc && !object) {
-                    result = initCloneObject(isFunc ? {} : value);
+                    result = isFlat || isFunc ? {} : initCloneObject(value);
                     if (!isDeep) {
-                      return copySymbols(value, baseAssign(result, value));
+                      return isFlat ? copySymbolsIn(value, baseAssignIn(result, value)) : copySymbols(value, baseAssign(result, value));
                     }
                   } else {
                     if (!cloneableTags[tag]) {
@@ -21572,14 +23254,15 @@
                   return stacked;
                 }
                 stack.set(value, result);
-                var props = isArr ? undefined : (isFull ? getAllKeys : keys)(value);
+                var keysFunc = isFull ? isFlat ? getAllKeysIn : getAllKeys : isFlat ? keysIn : keys;
+                var props = isArr ? undefined : keysFunc(value);
                 arrayEach(props || value, function (subValue, key) {
                   if (props) {
                     key = subValue;
                     subValue = value[key];
                   }
                   // Recursively populate clone (susceptible to call stack limits).
-                  assignValue(result, key, baseClone(subValue, isDeep, isFull, customizer, key, value, stack));
+                  assignValue(result, key, baseClone(subValue, bitmask, customizer, key, value, stack));
                 });
                 return result;
               }
@@ -21877,7 +23560,7 @@
      * @returns {*} Returns the resolved value.
      */
               function baseGet(object, path) {
-                path = isKey(path, object) ? [path] : castPath(path);
+                path = castPath(path, object);
                 var index = 0, length = path.length;
                 while (object != null && index < length) {
                   object = object[toKey(path[index++])];
@@ -21910,8 +23593,7 @@
                 if (value == null) {
                   return value === undefined ? undefinedTag : nullTag;
                 }
-                value = Object(value);
-                return symToStringTag && symToStringTag in value ? getRawTag(value) : objectToString(value);
+                return symToStringTag && symToStringTag in Object(value) ? getRawTag(value) : objectToString(value);
               }
               /**
      * The base implementation of `_.gt` which doesn't coerce arguments.
@@ -22029,12 +23711,9 @@
      * @returns {*} Returns the result of the invoked method.
      */
               function baseInvoke(object, path, args) {
-                if (!isKey(path, object)) {
-                  path = castPath(path);
-                  object = parent(object, path);
-                  path = last(path);
-                }
-                var func = object == null ? object : object[toKey(path)];
+                path = castPath(path, object);
+                object = parent(object, path);
+                var func = object == null ? object : object[toKey(last(path))];
                 return func == null ? undefined : apply(func, object, args);
               }
               /**
@@ -22074,22 +23753,21 @@
      * @private
      * @param {*} value The value to compare.
      * @param {*} other The other value to compare.
+     * @param {boolean} bitmask The bitmask flags.
+     *  1 - Unordered comparison
+     *  2 - Partial comparison
      * @param {Function} [customizer] The function to customize comparisons.
-     * @param {boolean} [bitmask] The bitmask of comparison flags.
-     *  The bitmask may be composed of the following flags:
-     *     1 - Unordered comparison
-     *     2 - Partial comparison
      * @param {Object} [stack] Tracks traversed `value` and `other` objects.
      * @returns {boolean} Returns `true` if the values are equivalent, else `false`.
      */
-              function baseIsEqual(value, other, customizer, bitmask, stack) {
+              function baseIsEqual(value, other, bitmask, customizer, stack) {
                 if (value === other) {
                   return true;
                 }
-                if (value == null || other == null || !isObject(value) && !isObjectLike(other)) {
+                if (value == null || other == null || !isObjectLike(value) && !isObjectLike(other)) {
                   return value !== value && other !== other;
                 }
-                return baseIsEqualDeep(value, other, baseIsEqual, customizer, bitmask, stack);
+                return baseIsEqualDeep(value, other, bitmask, customizer, baseIsEqual, stack);
               }
               /**
      * A specialized version of `baseIsEqual` for arrays and objects which performs
@@ -22099,23 +23777,16 @@
      * @private
      * @param {Object} object The object to compare.
      * @param {Object} other The other object to compare.
+     * @param {number} bitmask The bitmask flags. See `baseIsEqual` for more details.
+     * @param {Function} customizer The function to customize comparisons.
      * @param {Function} equalFunc The function to determine equivalents of values.
-     * @param {Function} [customizer] The function to customize comparisons.
-     * @param {number} [bitmask] The bitmask of comparison flags. See `baseIsEqual`
-     *  for more details.
      * @param {Object} [stack] Tracks traversed `object` and `other` objects.
      * @returns {boolean} Returns `true` if the objects are equivalent, else `false`.
      */
-              function baseIsEqualDeep(object, other, equalFunc, customizer, bitmask, stack) {
-                var objIsArr = isArray(object), othIsArr = isArray(other), objTag = arrayTag, othTag = arrayTag;
-                if (!objIsArr) {
-                  objTag = getTag(object);
-                  objTag = objTag == argsTag ? objectTag : objTag;
-                }
-                if (!othIsArr) {
-                  othTag = getTag(other);
-                  othTag = othTag == argsTag ? objectTag : othTag;
-                }
+              function baseIsEqualDeep(object, other, bitmask, customizer, equalFunc, stack) {
+                var objIsArr = isArray(object), othIsArr = isArray(other), objTag = objIsArr ? arrayTag : getTag(object), othTag = othIsArr ? arrayTag : getTag(other);
+                objTag = objTag == argsTag ? objectTag : objTag;
+                othTag = othTag == argsTag ? objectTag : othTag;
                 var objIsObj = objTag == objectTag, othIsObj = othTag == objectTag, isSameTag = objTag == othTag;
                 if (isSameTag && isBuffer(object)) {
                   if (!isBuffer(other)) {
@@ -22126,21 +23797,21 @@
                 }
                 if (isSameTag && !objIsObj) {
                   stack || (stack = new Stack());
-                  return objIsArr || isTypedArray(object) ? equalArrays(object, other, equalFunc, customizer, bitmask, stack) : equalByTag(object, other, objTag, equalFunc, customizer, bitmask, stack);
+                  return objIsArr || isTypedArray(object) ? equalArrays(object, other, bitmask, customizer, equalFunc, stack) : equalByTag(object, other, objTag, bitmask, customizer, equalFunc, stack);
                 }
-                if (!(bitmask & PARTIAL_COMPARE_FLAG)) {
+                if (!(bitmask & COMPARE_PARTIAL_FLAG)) {
                   var objIsWrapped = objIsObj && hasOwnProperty.call(object, '__wrapped__'), othIsWrapped = othIsObj && hasOwnProperty.call(other, '__wrapped__');
                   if (objIsWrapped || othIsWrapped) {
                     var objUnwrapped = objIsWrapped ? object.value() : object, othUnwrapped = othIsWrapped ? other.value() : other;
                     stack || (stack = new Stack());
-                    return equalFunc(objUnwrapped, othUnwrapped, customizer, bitmask, stack);
+                    return equalFunc(objUnwrapped, othUnwrapped, bitmask, customizer, stack);
                   }
                 }
                 if (!isSameTag) {
                   return false;
                 }
                 stack || (stack = new Stack());
-                return equalObjects(object, other, equalFunc, customizer, bitmask, stack);
+                return equalObjects(object, other, bitmask, customizer, equalFunc, stack);
               }
               /**
      * The base implementation of `_.isMap` without Node.js optimizations.
@@ -22186,7 +23857,7 @@
                     if (customizer) {
                       var result = customizer(objValue, srcValue, key, object, source, stack);
                     }
-                    if (!(result === undefined ? baseIsEqual(srcValue, objValue, customizer, UNORDERED_COMPARE_FLAG | PARTIAL_COMPARE_FLAG, stack) : result)) {
+                    if (!(result === undefined ? baseIsEqual(srcValue, objValue, COMPARE_PARTIAL_FLAG | COMPARE_UNORDERED_FLAG, customizer, stack) : result)) {
                       return false;
                     }
                   }
@@ -22354,7 +24025,7 @@
                 }
                 return function (object) {
                   var objValue = get(object, path);
-                  return objValue === undefined && objValue === srcValue ? hasIn(object, path) : baseIsEqual(srcValue, objValue, undefined, UNORDERED_COMPARE_FLAG | PARTIAL_COMPARE_FLAG);
+                  return objValue === undefined && objValue === srcValue ? hasIn(object, path) : baseIsEqual(srcValue, objValue, COMPARE_PARTIAL_FLAG | COMPARE_UNORDERED_FLAG);
                 };
               }
               /**
@@ -22492,13 +24163,12 @@
      *
      * @private
      * @param {Object} object The source object.
-     * @param {string[]} props The property identifiers to pick.
+     * @param {string[]} paths The property paths to pick.
      * @returns {Object} Returns the new object.
      */
-              function basePick(object, props) {
-                object = Object(object);
-                return basePickBy(object, props, function (value, key) {
-                  return key in object;
+              function basePick(object, paths) {
+                return basePickBy(object, paths, function (value, path) {
+                  return hasIn(object, path);
                 });
               }
               /**
@@ -22506,16 +24176,16 @@
      *
      * @private
      * @param {Object} object The source object.
-     * @param {string[]} props The property identifiers to pick from.
+     * @param {string[]} paths The property paths to pick.
      * @param {Function} predicate The function invoked per property.
      * @returns {Object} Returns the new object.
      */
-              function basePickBy(object, props, predicate) {
-                var index = -1, length = props.length, result = {};
+              function basePickBy(object, paths, predicate) {
+                var index = -1, length = paths.length, result = {};
                 while (++index < length) {
-                  var key = props[index], value = object[key];
-                  if (predicate(value, key)) {
-                    baseAssignValue(result, key, value);
+                  var path = paths[index], value = baseGet(object, path);
+                  if (predicate(value, path)) {
+                    baseSet(result, castPath(path, object), value);
                   }
                 }
                 return result;
@@ -22579,13 +24249,8 @@
                     var previous = index;
                     if (isIndex(index)) {
                       splice.call(array, index, 1);
-                    } else if (!isKey(index, array)) {
-                      var path = castPath(index), object = parent(array, path);
-                      if (object != null) {
-                        delete object[toKey(last(path))];
-                      }
                     } else {
-                      delete array[toKey(index)];
+                      baseUnset(array, index);
                     }
                   }
                 }
@@ -22695,7 +24360,7 @@
                 if (!isObject(object)) {
                   return object;
                 }
-                path = isKey(path, object) ? [path] : castPath(path);
+                path = castPath(path, object);
                 var index = -1, length = path.length, lastIndex = length - 1, nested = object;
                 while (nested != null && ++index < length) {
                   var key = toKey(path[index]), newValue = value;
@@ -22972,14 +24637,13 @@
      *
      * @private
      * @param {Object} object The object to modify.
-     * @param {Array|string} path The path of the property to unset.
+     * @param {Array|string} path The property path to unset.
      * @returns {boolean} Returns `true` if the property is deleted, else `false`.
      */
               function baseUnset(object, path) {
-                path = isKey(path, object) ? [path] : castPath(path);
+                path = castPath(path, object);
                 object = parent(object, path);
-                var key = toKey(last(path));
-                return !(object != null && hasOwnProperty.call(object, key)) || delete object[key];
+                return object == null || delete object[toKey(last(path))];
               }
               /**
      * The base implementation of `_.update`.
@@ -23098,10 +24762,14 @@
      *
      * @private
      * @param {*} value The value to inspect.
+     * @param {Object} [object] The object to query keys on.
      * @returns {Array} Returns the cast property path array.
      */
-              function castPath(value) {
-                return isArray(value) ? value : stringToPath(value);
+              function castPath(value, object) {
+                if (isArray(value)) {
+                  return value;
+                }
+                return isKey(value, object) ? [value] : stringToPath(toString(value));
               }
               /**
      * A `baseRest` alias which can be replaced with `identity` by module
@@ -23186,7 +24854,7 @@
      * @returns {Object} Returns the cloned map.
      */
               function cloneMap(map, isDeep, cloneFunc) {
-                var array = isDeep ? cloneFunc(mapToArray(map), true) : mapToArray(map);
+                var array = isDeep ? cloneFunc(mapToArray(map), CLONE_DEEP_FLAG) : mapToArray(map);
                 return arrayReduce(array, addMapEntry, new map.constructor());
               }
               /**
@@ -23211,7 +24879,7 @@
      * @returns {Object} Returns the cloned set.
      */
               function cloneSet(set, isDeep, cloneFunc) {
-                var array = isDeep ? cloneFunc(setToArray(set), true) : setToArray(set);
+                var array = isDeep ? cloneFunc(setToArray(set), CLONE_DEEP_FLAG) : setToArray(set);
                 return arrayReduce(array, addSetEntry, new set.constructor());
               }
               /**
@@ -23390,7 +25058,7 @@
                 return object;
               }
               /**
-     * Copies own symbol properties of `source` to `object`.
+     * Copies own symbols of `source` to `object`.
      *
      * @private
      * @param {Object} source The object to copy symbols from.
@@ -23399,6 +25067,17 @@
      */
               function copySymbols(source, object) {
                 return copyObject(source, getSymbols(source), object);
+              }
+              /**
+     * Copies own and inherited symbols of `source` to `object`.
+     *
+     * @private
+     * @param {Object} source The object to copy symbols from.
+     * @param {Object} [object={}] The object to copy symbols to.
+     * @returns {Object} Returns `object`.
+     */
+              function copySymbolsIn(source, object) {
+                return copyObject(source, getSymbolsIn(source), object);
               }
               /**
      * Creates a function like `_.groupBy`.
@@ -23494,7 +25173,7 @@
      * @returns {Function} Returns the new wrapped function.
      */
               function createBind(func, bitmask, thisArg) {
-                var isBind = bitmask & BIND_FLAG, Ctor = createCtor(func);
+                var isBind = bitmask & WRAP_BIND_FLAG, Ctor = createCtor(func);
                 function wrapper() {
                   var fn = this && this !== root && this instanceof wrapper ? Ctor : func;
                   return fn.apply(isBind ? thisArg : this, arguments);
@@ -23640,7 +25319,7 @@
                   while (++index < length) {
                     func = funcs[index];
                     var funcName = getFuncName(func), data = funcName == 'wrapper' ? getData(func) : undefined;
-                    if (data && isLaziable(data[0]) && data[1] == (ARY_FLAG | CURRY_FLAG | PARTIAL_FLAG | REARG_FLAG) && !data[4].length && data[9] == 1) {
+                    if (data && isLaziable(data[0]) && data[1] == (WRAP_ARY_FLAG | WRAP_CURRY_FLAG | WRAP_PARTIAL_FLAG | WRAP_REARG_FLAG) && !data[4].length && data[9] == 1) {
                       wrapper = wrapper[getFuncName(data[0])].apply(wrapper, data[3]);
                     } else {
                       wrapper = func.length == 1 && isLaziable(func) ? wrapper[funcName]() : wrapper.thru(func);
@@ -23648,7 +25327,7 @@
                   }
                   return function () {
                     var args = arguments, value = args[0];
-                    if (wrapper && args.length == 1 && isArray(value) && value.length >= LARGE_ARRAY_SIZE) {
+                    if (wrapper && args.length == 1 && isArray(value)) {
                       return wrapper.plant(value).value();
                     }
                     var index = 0, result = length ? funcs[index].apply(this, args) : value;
@@ -23679,7 +25358,7 @@
      * @returns {Function} Returns the new wrapped function.
      */
               function createHybrid(func, bitmask, thisArg, partials, holders, partialsRight, holdersRight, argPos, ary, arity) {
-                var isAry = bitmask & ARY_FLAG, isBind = bitmask & BIND_FLAG, isBindKey = bitmask & BIND_KEY_FLAG, isCurried = bitmask & (CURRY_FLAG | CURRY_RIGHT_FLAG), isFlip = bitmask & FLIP_FLAG, Ctor = isBindKey ? undefined : createCtor(func);
+                var isAry = bitmask & WRAP_ARY_FLAG, isBind = bitmask & WRAP_BIND_FLAG, isBindKey = bitmask & WRAP_BIND_KEY_FLAG, isCurried = bitmask & (WRAP_CURRY_FLAG | WRAP_CURRY_RIGHT_FLAG), isFlip = bitmask & WRAP_FLIP_FLAG, Ctor = isBindKey ? undefined : createCtor(func);
                 function wrapper() {
                   var length = arguments.length, args = Array(length), index = length;
                   while (index--) {
@@ -23811,7 +25490,7 @@
      * @returns {Function} Returns the new wrapped function.
      */
               function createPartial(func, bitmask, thisArg, partials) {
-                var isBind = bitmask & BIND_FLAG, Ctor = createCtor(func);
+                var isBind = bitmask & WRAP_BIND_FLAG, Ctor = createCtor(func);
                 function wrapper() {
                   var argsIndex = -1, argsLength = arguments.length, leftIndex = -1, leftLength = partials.length, args = Array(leftLength + argsLength), fn = this && this !== root && this instanceof wrapper ? Ctor : func;
                   while (++leftIndex < leftLength) {
@@ -23882,11 +25561,11 @@
      * @returns {Function} Returns the new wrapped function.
      */
               function createRecurry(func, bitmask, wrapFunc, placeholder, thisArg, partials, holders, argPos, ary, arity) {
-                var isCurry = bitmask & CURRY_FLAG, newHolders = isCurry ? holders : undefined, newHoldersRight = isCurry ? undefined : holders, newPartials = isCurry ? partials : undefined, newPartialsRight = isCurry ? undefined : partials;
-                bitmask |= isCurry ? PARTIAL_FLAG : PARTIAL_RIGHT_FLAG;
-                bitmask &= ~(isCurry ? PARTIAL_RIGHT_FLAG : PARTIAL_FLAG);
-                if (!(bitmask & CURRY_BOUND_FLAG)) {
-                  bitmask &= ~(BIND_FLAG | BIND_KEY_FLAG);
+                var isCurry = bitmask & WRAP_CURRY_FLAG, newHolders = isCurry ? holders : undefined, newHoldersRight = isCurry ? undefined : holders, newPartials = isCurry ? partials : undefined, newPartialsRight = isCurry ? undefined : partials;
+                bitmask |= isCurry ? WRAP_PARTIAL_FLAG : WRAP_PARTIAL_RIGHT_FLAG;
+                bitmask &= ~(isCurry ? WRAP_PARTIAL_RIGHT_FLAG : WRAP_PARTIAL_FLAG);
+                if (!(bitmask & WRAP_CURRY_BOUND_FLAG)) {
+                  bitmask &= ~(WRAP_BIND_FLAG | WRAP_BIND_KEY_FLAG);
                 }
                 var newData = [
                     func,
@@ -23918,7 +25597,7 @@
                 var func = Math[methodName];
                 return function (number, precision) {
                   number = toNumber(number);
-                  precision = nativeMin(toInteger(precision), 292);
+                  precision = precision == null ? 0 : nativeMin(toInteger(precision), 292);
                   if (precision) {
                     // Shift with exponential notation to avoid floating-point issues.
                     // See [MDN](https://mdn.io/round#Examples) for more details.
@@ -23968,17 +25647,16 @@
      * @private
      * @param {Function|string} func The function or method name to wrap.
      * @param {number} bitmask The bitmask flags.
-     *  The bitmask may be composed of the following flags:
-     *     1 - `_.bind`
-     *     2 - `_.bindKey`
-     *     4 - `_.curry` or `_.curryRight` of a bound function
-     *     8 - `_.curry`
-     *    16 - `_.curryRight`
-     *    32 - `_.partial`
-     *    64 - `_.partialRight`
-     *   128 - `_.rearg`
-     *   256 - `_.ary`
-     *   512 - `_.flip`
+     *    1 - `_.bind`
+     *    2 - `_.bindKey`
+     *    4 - `_.curry` or `_.curryRight` of a bound function
+     *    8 - `_.curry`
+     *   16 - `_.curryRight`
+     *   32 - `_.partial`
+     *   64 - `_.partialRight`
+     *  128 - `_.rearg`
+     *  256 - `_.ary`
+     *  512 - `_.flip`
      * @param {*} [thisArg] The `this` binding of `func`.
      * @param {Array} [partials] The arguments to be partially applied.
      * @param {Array} [holders] The `partials` placeholder indexes.
@@ -23988,19 +25666,19 @@
      * @returns {Function} Returns the new wrapped function.
      */
               function createWrap(func, bitmask, thisArg, partials, holders, argPos, ary, arity) {
-                var isBindKey = bitmask & BIND_KEY_FLAG;
+                var isBindKey = bitmask & WRAP_BIND_KEY_FLAG;
                 if (!isBindKey && typeof func != 'function') {
                   throw new TypeError(FUNC_ERROR_TEXT);
                 }
                 var length = partials ? partials.length : 0;
                 if (!length) {
-                  bitmask &= ~(PARTIAL_FLAG | PARTIAL_RIGHT_FLAG);
+                  bitmask &= ~(WRAP_PARTIAL_FLAG | WRAP_PARTIAL_RIGHT_FLAG);
                   partials = holders = undefined;
                 }
                 ary = ary === undefined ? ary : nativeMax(toInteger(ary), 0);
                 arity = arity === undefined ? arity : toInteger(arity);
                 length -= holders ? holders.length : 0;
-                if (bitmask & PARTIAL_RIGHT_FLAG) {
+                if (bitmask & WRAP_PARTIAL_RIGHT_FLAG) {
                   var partialsRight = partials, holdersRight = holders;
                   partials = holders = undefined;
                 }
@@ -24025,15 +25703,15 @@
                 thisArg = newData[2];
                 partials = newData[3];
                 holders = newData[4];
-                arity = newData[9] = newData[9] == null ? isBindKey ? 0 : func.length : nativeMax(newData[9] - length, 0);
-                if (!arity && bitmask & (CURRY_FLAG | CURRY_RIGHT_FLAG)) {
-                  bitmask &= ~(CURRY_FLAG | CURRY_RIGHT_FLAG);
+                arity = newData[9] = newData[9] === undefined ? isBindKey ? 0 : func.length : nativeMax(newData[9] - length, 0);
+                if (!arity && bitmask & (WRAP_CURRY_FLAG | WRAP_CURRY_RIGHT_FLAG)) {
+                  bitmask &= ~(WRAP_CURRY_FLAG | WRAP_CURRY_RIGHT_FLAG);
                 }
-                if (!bitmask || bitmask == BIND_FLAG) {
+                if (!bitmask || bitmask == WRAP_BIND_FLAG) {
                   var result = createBind(func, bitmask, thisArg);
-                } else if (bitmask == CURRY_FLAG || bitmask == CURRY_RIGHT_FLAG) {
+                } else if (bitmask == WRAP_CURRY_FLAG || bitmask == WRAP_CURRY_RIGHT_FLAG) {
                   result = createCurry(func, bitmask, arity);
-                } else if ((bitmask == PARTIAL_FLAG || bitmask == (BIND_FLAG | PARTIAL_FLAG)) && !holders.length) {
+                } else if ((bitmask == WRAP_PARTIAL_FLAG || bitmask == (WRAP_BIND_FLAG | WRAP_PARTIAL_FLAG)) && !holders.length) {
                   result = createPartial(func, bitmask, thisArg, partials);
                 } else {
                   result = createHybrid.apply(undefined, newData);
@@ -24042,21 +25720,73 @@
                 return setWrapToString(setter(result, newData), func, bitmask);
               }
               /**
+     * Used by `_.defaults` to customize its `_.assignIn` use to assign properties
+     * of source objects to the destination object for all destination properties
+     * that resolve to `undefined`.
+     *
+     * @private
+     * @param {*} objValue The destination value.
+     * @param {*} srcValue The source value.
+     * @param {string} key The key of the property to assign.
+     * @param {Object} object The parent object of `objValue`.
+     * @returns {*} Returns the value to assign.
+     */
+              function customDefaultsAssignIn(objValue, srcValue, key, object) {
+                if (objValue === undefined || eq(objValue, objectProto[key]) && !hasOwnProperty.call(object, key)) {
+                  return srcValue;
+                }
+                return objValue;
+              }
+              /**
+     * Used by `_.defaultsDeep` to customize its `_.merge` use to merge source
+     * objects into destination objects that are passed thru.
+     *
+     * @private
+     * @param {*} objValue The destination value.
+     * @param {*} srcValue The source value.
+     * @param {string} key The key of the property to merge.
+     * @param {Object} object The parent object of `objValue`.
+     * @param {Object} source The parent object of `srcValue`.
+     * @param {Object} [stack] Tracks traversed source values and their merged
+     *  counterparts.
+     * @returns {*} Returns the value to assign.
+     */
+              function customDefaultsMerge(objValue, srcValue, key, object, source, stack) {
+                if (isObject(objValue) && isObject(srcValue)) {
+                  // Recursively merge objects and arrays (susceptible to call stack limits).
+                  stack.set(srcValue, objValue);
+                  baseMerge(objValue, srcValue, undefined, customDefaultsMerge, stack);
+                  stack['delete'](srcValue);
+                }
+                return objValue;
+              }
+              /**
+     * Used by `_.omit` to customize its `_.cloneDeep` use to only clone plain
+     * objects.
+     *
+     * @private
+     * @param {*} value The value to inspect.
+     * @param {string} key The key of the property to inspect.
+     * @returns {*} Returns the uncloned value or `undefined` to defer cloning to `_.cloneDeep`.
+     */
+              function customOmitClone(value) {
+                return isPlainObject(value) ? undefined : value;
+              }
+              /**
      * A specialized version of `baseIsEqualDeep` for arrays with support for
      * partial deep comparisons.
      *
      * @private
      * @param {Array} array The array to compare.
      * @param {Array} other The other array to compare.
-     * @param {Function} equalFunc The function to determine equivalents of values.
+     * @param {number} bitmask The bitmask flags. See `baseIsEqual` for more details.
      * @param {Function} customizer The function to customize comparisons.
-     * @param {number} bitmask The bitmask of comparison flags. See `baseIsEqual`
-     *  for more details.
+     * @param {Function} equalFunc The function to determine equivalents of values.
      * @param {Object} stack Tracks traversed `array` and `other` objects.
      * @returns {boolean} Returns `true` if the arrays are equivalent, else `false`.
      */
-              function equalArrays(array, other, equalFunc, customizer, bitmask, stack) {
-                var isPartial = bitmask & PARTIAL_COMPARE_FLAG, arrLength = array.length, othLength = other.length;
+              function equalArrays(array, other, bitmask, customizer, equalFunc, stack) {
+                var isPartial = bitmask & COMPARE_PARTIAL_FLAG, arrLength = array.length, othLength = other.length;
                 if (arrLength != othLength && !(isPartial && othLength > arrLength)) {
                   return false;
                 }
@@ -24065,7 +25795,7 @@
                 if (stacked && stack.get(other)) {
                   return stacked == other;
                 }
-                var index = -1, result = true, seen = bitmask & UNORDERED_COMPARE_FLAG ? new SetCache() : undefined;
+                var index = -1, result = true, seen = bitmask & COMPARE_UNORDERED_FLAG ? new SetCache() : undefined;
                 stack.set(array, other);
                 stack.set(other, array);
                 // Ignore non-index properties.
@@ -24084,14 +25814,14 @@
                   // Recursively compare arrays (susceptible to call stack limits).
                   if (seen) {
                     if (!arraySome(other, function (othValue, othIndex) {
-                        if (!cacheHas(seen, othIndex) && (arrValue === othValue || equalFunc(arrValue, othValue, customizer, bitmask, stack))) {
+                        if (!cacheHas(seen, othIndex) && (arrValue === othValue || equalFunc(arrValue, othValue, bitmask, customizer, stack))) {
                           return seen.push(othIndex);
                         }
                       })) {
                       result = false;
                       break;
                     }
-                  } else if (!(arrValue === othValue || equalFunc(arrValue, othValue, customizer, bitmask, stack))) {
+                  } else if (!(arrValue === othValue || equalFunc(arrValue, othValue, bitmask, customizer, stack))) {
                     result = false;
                     break;
                   }
@@ -24111,14 +25841,13 @@
      * @param {Object} object The object to compare.
      * @param {Object} other The other object to compare.
      * @param {string} tag The `toStringTag` of the objects to compare.
-     * @param {Function} equalFunc The function to determine equivalents of values.
+     * @param {number} bitmask The bitmask flags. See `baseIsEqual` for more details.
      * @param {Function} customizer The function to customize comparisons.
-     * @param {number} bitmask The bitmask of comparison flags. See `baseIsEqual`
-     *  for more details.
+     * @param {Function} equalFunc The function to determine equivalents of values.
      * @param {Object} stack Tracks traversed `object` and `other` objects.
      * @returns {boolean} Returns `true` if the objects are equivalent, else `false`.
      */
-              function equalByTag(object, other, tag, equalFunc, customizer, bitmask, stack) {
+              function equalByTag(object, other, tag, bitmask, customizer, equalFunc, stack) {
                 switch (tag) {
                 case dataViewTag:
                   if (object.byteLength != other.byteLength || object.byteOffset != other.byteOffset) {
@@ -24148,7 +25877,7 @@
                 case mapTag:
                   var convert = mapToArray;
                 case setTag:
-                  var isPartial = bitmask & PARTIAL_COMPARE_FLAG;
+                  var isPartial = bitmask & COMPARE_PARTIAL_FLAG;
                   convert || (convert = setToArray);
                   if (object.size != other.size && !isPartial) {
                     return false;
@@ -24158,10 +25887,10 @@
                   if (stacked) {
                     return stacked == other;
                   }
-                  bitmask |= UNORDERED_COMPARE_FLAG;
+                  bitmask |= COMPARE_UNORDERED_FLAG;
                   // Recursively compare objects (susceptible to call stack limits).
                   stack.set(object, other);
-                  var result = equalArrays(convert(object), convert(other), equalFunc, customizer, bitmask, stack);
+                  var result = equalArrays(convert(object), convert(other), bitmask, customizer, equalFunc, stack);
                   stack['delete'](object);
                   return result;
                 case symbolTag:
@@ -24178,15 +25907,14 @@
      * @private
      * @param {Object} object The object to compare.
      * @param {Object} other The other object to compare.
-     * @param {Function} equalFunc The function to determine equivalents of values.
+     * @param {number} bitmask The bitmask flags. See `baseIsEqual` for more details.
      * @param {Function} customizer The function to customize comparisons.
-     * @param {number} bitmask The bitmask of comparison flags. See `baseIsEqual`
-     *  for more details.
+     * @param {Function} equalFunc The function to determine equivalents of values.
      * @param {Object} stack Tracks traversed `object` and `other` objects.
      * @returns {boolean} Returns `true` if the objects are equivalent, else `false`.
      */
-              function equalObjects(object, other, equalFunc, customizer, bitmask, stack) {
-                var isPartial = bitmask & PARTIAL_COMPARE_FLAG, objProps = keys(object), objLength = objProps.length, othProps = keys(other), othLength = othProps.length;
+              function equalObjects(object, other, bitmask, customizer, equalFunc, stack) {
+                var isPartial = bitmask & COMPARE_PARTIAL_FLAG, objProps = getAllKeys(object), objLength = objProps.length, othProps = getAllKeys(other), othLength = othProps.length;
                 if (objLength != othLength && !isPartial) {
                   return false;
                 }
@@ -24213,7 +25941,7 @@
                     var compared = isPartial ? customizer(othValue, objValue, key, other, object, stack) : customizer(objValue, othValue, key, object, other, stack);
                   }
                   // Recursively compare objects (susceptible to call stack limits).
-                  if (!(compared === undefined ? objValue === othValue || equalFunc(objValue, othValue, customizer, bitmask, stack) : compared)) {
+                  if (!(compared === undefined ? objValue === othValue || equalFunc(objValue, othValue, bitmask, customizer, stack) : compared)) {
                     result = false;
                     break;
                   }
@@ -24383,16 +26111,23 @@
                 return result;
               }
               /**
-     * Creates an array of the own enumerable symbol properties of `object`.
+     * Creates an array of the own enumerable symbols of `object`.
      *
      * @private
      * @param {Object} object The object to query.
      * @returns {Array} Returns the array of symbols.
      */
-              var getSymbols = nativeGetSymbols ? overArg(nativeGetSymbols, Object) : stubArray;
+              var getSymbols = !nativeGetSymbols ? stubArray : function (object) {
+                  if (object == null) {
+                    return [];
+                  }
+                  object = Object(object);
+                  return arrayFilter(nativeGetSymbols(object), function (symbol) {
+                    return propertyIsEnumerable.call(object, symbol);
+                  });
+                };
               /**
-     * Creates an array of the own and inherited enumerable symbol properties
-     * of `object`.
+     * Creates an array of the own and inherited enumerable symbols of `object`.
      *
      * @private
      * @param {Object} object The object to query.
@@ -24490,7 +26225,7 @@
      * @returns {boolean} Returns `true` if `path` exists, else `false`.
      */
               function hasPath(object, path, hasFunc) {
-                path = isKey(path, object) ? [path] : castPath(path);
+                path = castPath(path, object);
                 var index = -1, length = path.length, result = false;
                 while (++index < length) {
                   var key = toKey(path[index]);
@@ -24777,17 +26512,17 @@
      * @returns {Array} Returns `data`.
      */
               function mergeData(data, source) {
-                var bitmask = data[1], srcBitmask = source[1], newBitmask = bitmask | srcBitmask, isCommon = newBitmask < (BIND_FLAG | BIND_KEY_FLAG | ARY_FLAG);
-                var isCombo = srcBitmask == ARY_FLAG && bitmask == CURRY_FLAG || srcBitmask == ARY_FLAG && bitmask == REARG_FLAG && data[7].length <= source[8] || srcBitmask == (ARY_FLAG | REARG_FLAG) && source[7].length <= source[8] && bitmask == CURRY_FLAG;
+                var bitmask = data[1], srcBitmask = source[1], newBitmask = bitmask | srcBitmask, isCommon = newBitmask < (WRAP_BIND_FLAG | WRAP_BIND_KEY_FLAG | WRAP_ARY_FLAG);
+                var isCombo = srcBitmask == WRAP_ARY_FLAG && bitmask == WRAP_CURRY_FLAG || srcBitmask == WRAP_ARY_FLAG && bitmask == WRAP_REARG_FLAG && data[7].length <= source[8] || srcBitmask == (WRAP_ARY_FLAG | WRAP_REARG_FLAG) && source[7].length <= source[8] && bitmask == WRAP_CURRY_FLAG;
                 // Exit early if metadata can't be merged.
                 if (!(isCommon || isCombo)) {
                   return data;
                 }
                 // Use source `thisArg` if available.
-                if (srcBitmask & BIND_FLAG) {
+                if (srcBitmask & WRAP_BIND_FLAG) {
                   data[2] = source[2];
                   // Set when currying a bound function.
-                  newBitmask |= bitmask & BIND_FLAG ? 0 : CURRY_BOUND_FLAG;
+                  newBitmask |= bitmask & WRAP_BIND_FLAG ? 0 : WRAP_CURRY_BOUND_FLAG;
                 }
                 // Compose partial arguments.
                 var value = source[3];
@@ -24809,7 +26544,7 @@
                   data[7] = value;
                 }
                 // Use source `ary` if it's smaller.
-                if (srcBitmask & ARY_FLAG) {
+                if (srcBitmask & WRAP_ARY_FLAG) {
                   data[8] = data[8] == null ? source[8] : nativeMin(data[8], source[8]);
                 }
                 // Use source `arity` if one is not provided.
@@ -24820,28 +26555,6 @@
                 data[0] = source[0];
                 data[1] = newBitmask;
                 return data;
-              }
-              /**
-     * Used by `_.defaultsDeep` to customize its `_.merge` use.
-     *
-     * @private
-     * @param {*} objValue The destination value.
-     * @param {*} srcValue The source value.
-     * @param {string} key The key of the property to merge.
-     * @param {Object} object The parent object of `objValue`.
-     * @param {Object} source The parent object of `srcValue`.
-     * @param {Object} [stack] Tracks traversed source values and their merged
-     *  counterparts.
-     * @returns {*} Returns the value to assign.
-     */
-              function mergeDefaults(objValue, srcValue, key, object, source, stack) {
-                if (isObject(objValue) && isObject(srcValue)) {
-                  // Recursively merge objects and arrays (susceptible to call stack limits).
-                  stack.set(srcValue, objValue);
-                  baseMerge(objValue, srcValue, undefined, mergeDefaults, stack);
-                  stack['delete'](srcValue);
-                }
-                return objValue;
               }
               /**
      * This function is like
@@ -24905,7 +26618,7 @@
      * @returns {*} Returns the parent value.
      */
               function parent(object, path) {
-                return path.length == 1 ? object : baseGet(object, baseSlice(path, 0, -1));
+                return path.length < 2 ? object : baseGet(object, baseSlice(path, 0, -1));
               }
               /**
      * Reorder `array` according to the specified indexes where the element at
@@ -25025,7 +26738,6 @@
      * @returns {Array} Returns the property path array.
      */
               var stringToPath = memoizeCapped(function (string) {
-                  string = toString(string);
                   var result = [];
                   if (reLeadingDot.test(string)) {
                     result.push('');
@@ -26452,7 +28164,7 @@
      *
      * var users = [
      *   { 'user': 'barney',  'active': false },
-     *   { 'user': 'fred',    'active': false},
+     *   { 'user': 'fred',    'active': false },
      *   { 'user': 'pebbles', 'active': true }
      * ];
      *
@@ -26961,7 +28673,7 @@
      * @memberOf _
      * @since 1.0.0
      * @category Seq
-     * @param {...(string|string[])} [paths] The property paths of elements to pick.
+     * @param {...(string|string[])} [paths] The property paths to pick.
      * @returns {Object} Returns the new `lodash` wrapper instance.
      * @example
      *
@@ -27596,10 +29308,9 @@
      * // => [['1', '2', '3'], ['4', '5', '6']]
      */
               var invokeMap = baseRest(function (collection, path, args) {
-                  var index = -1, isFunc = typeof path == 'function', isProp = isKey(path), result = isArrayLike(collection) ? Array(collection.length) : [];
+                  var index = -1, isFunc = typeof path == 'function', result = isArrayLike(collection) ? Array(collection.length) : [];
                   baseEach(collection, function (value) {
-                    var func = isFunc ? path : isProp && value != null ? value[path] : undefined;
-                    result[++index] = func ? apply(func, value, args) : baseInvoke(value, path, args);
+                    result[++index] = isFunc ? apply(path, value, args) : baseInvoke(value, path, args);
                   });
                   return result;
                 });
@@ -28131,7 +29842,7 @@
               function ary(func, n, guard) {
                 n = guard ? undefined : n;
                 n = func && n == null ? func.length : n;
-                return createWrap(func, ARY_FLAG, undefined, undefined, undefined, undefined, n);
+                return createWrap(func, WRAP_ARY_FLAG, undefined, undefined, undefined, undefined, n);
               }
               /**
      * Creates a function that invokes `func`, with the `this` binding and arguments
@@ -28202,10 +29913,10 @@
      * // => 'hi fred!'
      */
               var bind = baseRest(function (func, thisArg, partials) {
-                  var bitmask = BIND_FLAG;
+                  var bitmask = WRAP_BIND_FLAG;
                   if (partials.length) {
                     var holders = replaceHolders(partials, getHolder(bind));
-                    bitmask |= PARTIAL_FLAG;
+                    bitmask |= WRAP_PARTIAL_FLAG;
                   }
                   return createWrap(func, bitmask, thisArg, partials, holders);
                 });
@@ -28255,10 +29966,10 @@
      * // => 'hiya fred!'
      */
               var bindKey = baseRest(function (object, key, partials) {
-                  var bitmask = BIND_FLAG | BIND_KEY_FLAG;
+                  var bitmask = WRAP_BIND_FLAG | WRAP_BIND_KEY_FLAG;
                   if (partials.length) {
                     var holders = replaceHolders(partials, getHolder(bindKey));
-                    bitmask |= PARTIAL_FLAG;
+                    bitmask |= WRAP_PARTIAL_FLAG;
                   }
                   return createWrap(key, bitmask, object, partials, holders);
                 });
@@ -28305,7 +30016,7 @@
      */
               function curry(func, arity, guard) {
                 arity = guard ? undefined : arity;
-                var result = createWrap(func, CURRY_FLAG, undefined, undefined, undefined, undefined, undefined, arity);
+                var result = createWrap(func, WRAP_CURRY_FLAG, undefined, undefined, undefined, undefined, undefined, arity);
                 result.placeholder = curry.placeholder;
                 return result;
               }
@@ -28349,7 +30060,7 @@
      */
               function curryRight(func, arity, guard) {
                 arity = guard ? undefined : arity;
-                var result = createWrap(func, CURRY_RIGHT_FLAG, undefined, undefined, undefined, undefined, undefined, arity);
+                var result = createWrap(func, WRAP_CURRY_RIGHT_FLAG, undefined, undefined, undefined, undefined, undefined, arity);
                 result.placeholder = curryRight.placeholder;
                 return result;
               }
@@ -28559,7 +30270,7 @@
      * // => ['d', 'c', 'b', 'a']
      */
               function flip(func) {
-                return createWrap(func, FLIP_FLAG);
+                return createWrap(func, WRAP_FLIP_FLAG);
               }
               /**
      * Creates a function that memoizes the result of `func`. If `resolver` is
@@ -28760,7 +30471,7 @@
      */
               var partial = baseRest(function (func, partials) {
                   var holders = replaceHolders(partials, getHolder(partial));
-                  return createWrap(func, PARTIAL_FLAG, undefined, partials, holders);
+                  return createWrap(func, WRAP_PARTIAL_FLAG, undefined, partials, holders);
                 });
               /**
      * This method is like `_.partial` except that partially applied arguments
@@ -28796,7 +30507,7 @@
      */
               var partialRight = baseRest(function (func, partials) {
                   var holders = replaceHolders(partials, getHolder(partialRight));
-                  return createWrap(func, PARTIAL_RIGHT_FLAG, undefined, partials, holders);
+                  return createWrap(func, WRAP_PARTIAL_RIGHT_FLAG, undefined, partials, holders);
                 });
               /**
      * Creates a function that invokes `func` with arguments arranged according
@@ -28821,7 +30532,7 @@
      * // => ['a', 'b', 'c']
      */
               var rearg = flatRest(function (func, indexes) {
-                  return createWrap(func, REARG_FLAG, undefined, undefined, undefined, indexes);
+                  return createWrap(func, WRAP_REARG_FLAG, undefined, undefined, undefined, indexes);
                 });
               /**
      * Creates a function that invokes `func` with the `this` binding of the
@@ -28893,7 +30604,7 @@
                 if (typeof func != 'function') {
                   throw new TypeError(FUNC_ERROR_TEXT);
                 }
-                start = start === undefined ? 0 : nativeMax(toInteger(start), 0);
+                start = start == null ? 0 : nativeMax(toInteger(start), 0);
                 return baseRest(function (args) {
                   var array = args[start], otherArgs = castSlice(args, 0, start);
                   if (array) {
@@ -29072,7 +30783,7 @@
      * // => true
      */
               function clone(value) {
-                return baseClone(value, false, true);
+                return baseClone(value, CLONE_SYMBOLS_FLAG);
               }
               /**
      * This method is like `_.clone` except that it accepts `customizer` which
@@ -29107,7 +30818,7 @@
      */
               function cloneWith(value, customizer) {
                 customizer = typeof customizer == 'function' ? customizer : undefined;
-                return baseClone(value, false, true, customizer);
+                return baseClone(value, CLONE_SYMBOLS_FLAG, customizer);
               }
               /**
      * This method is like `_.clone` except that it recursively clones `value`.
@@ -29128,7 +30839,7 @@
      * // => false
      */
               function cloneDeep(value) {
-                return baseClone(value, true, true);
+                return baseClone(value, CLONE_DEEP_FLAG | CLONE_SYMBOLS_FLAG);
               }
               /**
      * This method is like `_.cloneWith` except that it recursively clones `value`.
@@ -29160,7 +30871,7 @@
      */
               function cloneDeepWith(value, customizer) {
                 customizer = typeof customizer == 'function' ? customizer : undefined;
-                return baseClone(value, true, true, customizer);
+                return baseClone(value, CLONE_DEEP_FLAG | CLONE_SYMBOLS_FLAG, customizer);
               }
               /**
      * Checks if `object` conforms to `source` by invoking the predicate
@@ -29533,7 +31244,7 @@
      * date objects, error objects, maps, numbers, `Object` objects, regexes,
      * sets, strings, symbols, and typed arrays. `Object` objects are compared
      * by their own, not inherited, enumerable properties. Functions and DOM
-     * nodes are **not** supported.
+     * nodes are compared by strict equality, i.e. `===`.
      *
      * @static
      * @memberOf _
@@ -29591,7 +31302,7 @@
               function isEqualWith(value, other, customizer) {
                 customizer = typeof customizer == 'function' ? customizer : undefined;
                 var result = customizer ? customizer(value, other) : undefined;
-                return result === undefined ? baseIsEqual(value, other, customizer) : !!result;
+                return result === undefined ? baseIsEqual(value, other, undefined, customizer) : !!result;
               }
               /**
      * Checks if `value` is an `Error`, `EvalError`, `RangeError`, `ReferenceError`,
@@ -30506,7 +32217,7 @@
      * // => 3
      */
               function toSafeInteger(value) {
-                return baseClamp(toInteger(value), -MAX_SAFE_INTEGER, MAX_SAFE_INTEGER);
+                return value ? baseClamp(toInteger(value), -MAX_SAFE_INTEGER, MAX_SAFE_INTEGER) : value === 0 ? value : 0;
               }
               /**
      * Converts `value` to a string. An empty string is returned for `null`
@@ -30681,7 +32392,7 @@
      * @since 1.0.0
      * @category Object
      * @param {Object} object The object to iterate over.
-     * @param {...(string|string[])} [paths] The property paths of elements to pick.
+     * @param {...(string|string[])} [paths] The property paths to pick.
      * @returns {Array} Returns the picked values.
      * @example
      *
@@ -30751,7 +32462,7 @@
      * // => { 'a': 1, 'b': 2 }
      */
               var defaults = baseRest(function (args) {
-                  args.push(undefined, assignInDefaults);
+                  args.push(undefined, customDefaultsAssignIn);
                   return apply(assignInWith, undefined, args);
                 });
               /**
@@ -30774,7 +32485,7 @@
      * // => { 'a': { 'b': 2, 'c': 3 } }
      */
               var defaultsDeep = baseRest(function (args) {
-                  args.push(undefined, mergeDefaults);
+                  args.push(undefined, customDefaultsMerge);
                   return apply(mergeWith, undefined, args);
                 });
               /**
@@ -31378,15 +33089,16 @@
                 });
               /**
      * The opposite of `_.pick`; this method creates an object composed of the
-     * own and inherited enumerable string keyed properties of `object` that are
-     * not omitted.
+     * own and inherited enumerable property paths of `object` that are not omitted.
+     *
+     * **Note:** This method is considerably slower than `_.pick`.
      *
      * @static
      * @since 0.1.0
      * @memberOf _
      * @category Object
      * @param {Object} object The source object.
-     * @param {...(string|string[])} [props] The property identifiers to omit.
+     * @param {...(string|string[])} [paths] The property paths to omit.
      * @returns {Object} Returns the new object.
      * @example
      *
@@ -31395,12 +33107,26 @@
      * _.omit(object, ['a', 'c']);
      * // => { 'b': '2' }
      */
-              var omit = flatRest(function (object, props) {
+              var omit = flatRest(function (object, paths) {
+                  var result = {};
                   if (object == null) {
-                    return {};
+                    return result;
                   }
-                  props = arrayMap(props, toKey);
-                  return basePick(object, baseDifference(getAllKeysIn(object), props));
+                  var isDeep = false;
+                  paths = arrayMap(paths, function (path) {
+                    path = castPath(path, object);
+                    isDeep || (isDeep = path.length > 1);
+                    return path;
+                  });
+                  copyObject(object, getAllKeysIn(object), result);
+                  if (isDeep) {
+                    result = baseClone(result, CLONE_DEEP_FLAG | CLONE_FLAT_FLAG | CLONE_SYMBOLS_FLAG, customOmitClone);
+                  }
+                  var length = paths.length;
+                  while (length--) {
+                    baseUnset(result, paths[length]);
+                  }
+                  return result;
                 });
               /**
      * The opposite of `_.pickBy`; this method creates an object composed of
@@ -31433,7 +33159,7 @@
      * @memberOf _
      * @category Object
      * @param {Object} object The source object.
-     * @param {...(string|string[])} [props] The property identifiers to pick.
+     * @param {...(string|string[])} [paths] The property paths to pick.
      * @returns {Object} Returns the new object.
      * @example
      *
@@ -31442,8 +33168,8 @@
      * _.pick(object, ['a', 'c']);
      * // => { 'a': 1, 'c': 3 }
      */
-              var pick = flatRest(function (object, props) {
-                  return object == null ? {} : basePick(object, arrayMap(props, toKey));
+              var pick = flatRest(function (object, paths) {
+                  return object == null ? {} : basePick(object, paths);
                 });
               /**
      * Creates an object composed of the `object` properties `predicate` returns
@@ -31464,7 +33190,16 @@
      * // => { 'a': 1, 'c': 3 }
      */
               function pickBy(object, predicate) {
-                return object == null ? {} : basePickBy(object, getAllKeysIn(object), getIteratee(predicate));
+                if (object == null) {
+                  return {};
+                }
+                var props = arrayMap(getAllKeysIn(object), function (prop) {
+                    return [prop];
+                  });
+                predicate = getIteratee(predicate);
+                return basePickBy(object, props, function (value, path) {
+                  return predicate(value, path[0]);
+                });
               }
               /**
      * This method is like `_.get` except that if the resolved value is a
@@ -31496,12 +33231,12 @@
      * // => 'default'
      */
               function result(object, path, defaultValue) {
-                path = isKey(path, object) ? [path] : castPath(path);
+                path = castPath(path, object);
                 var index = -1, length = path.length;
                 // Ensure the loop is entered when path is empty.
                 if (!length) {
-                  object = undefined;
                   length = 1;
+                  object = undefined;
                 }
                 while (++index < length) {
                   var value = object == null ? undefined : object[toKey(path[index])];
@@ -32463,7 +34198,7 @@
      */
               function startsWith(string, target, position) {
                 string = toString(string);
-                position = baseClamp(toInteger(position), 0, string.length);
+                position = position == null ? 0 : baseClamp(toInteger(position), 0, string.length);
                 target = baseToString(target);
                 return string.slice(position, position + target.length) == target;
               }
@@ -32580,8 +34315,8 @@
                   options = undefined;
                 }
                 string = toString(string);
-                options = assignInWith({}, options, settings, assignInDefaults);
-                var imports = assignInWith({}, options.imports, settings.imports, assignInDefaults), importsKeys = keys(imports), importsValues = baseValues(imports, importsKeys);
+                options = assignInWith({}, options, settings, customDefaultsAssignIn);
+                var imports = assignInWith({}, options.imports, settings.imports, customDefaultsAssignIn), importsKeys = keys(imports), importsValues = baseValues(imports, importsKeys);
                 var isEscaping, isEvaluating, index = 0, interpolate = options.interpolate || reNoMatch, source = '__p += \'';
                 // Compile the regexp to match each delimiter.
                 var reDelimiters = RegExp((options.escape || reNoMatch).source + '|' + interpolate.source + '|' + (interpolate === reInterpolate ? reEsTemplate : reNoMatch).source + '|' + (options.evaluate || reNoMatch).source + '|$', 'g');
@@ -33084,7 +34819,7 @@
      * // => [{ 'a': 1, 'b': 2 }]
      */
               function conforms(source) {
-                return baseConforms(baseClone(source, true));
+                return baseConforms(baseClone(source, CLONE_DEEP_FLAG));
               }
               /**
      * Creates a function that returns `value`.
@@ -33240,7 +34975,7 @@
      * // => ['def']
      */
               function iteratee(func) {
-                return baseIteratee(typeof func == 'function' ? func : baseClone(func, true));
+                return baseIteratee(typeof func == 'function' ? func : baseClone(func, CLONE_DEEP_FLAG));
               }
               /**
      * Creates a function that performs a partial deep comparison between a given
@@ -33271,7 +35006,7 @@
      * // => [{ 'a': 4, 'b': 5, 'c': 6 }]
      */
               function matches(source) {
-                return baseMatches(baseClone(source, true));
+                return baseMatches(baseClone(source, CLONE_DEEP_FLAG));
               }
               /**
      * Creates a function that performs a partial deep comparison between the
@@ -33300,7 +35035,7 @@
      * // => { 'a': 4, 'b': 5, 'c': 6 }
      */
               function matchesProperty(path, srcValue) {
-                return baseMatchesProperty(path, baseClone(srcValue, true));
+                return baseMatchesProperty(path, baseClone(srcValue, CLONE_DEEP_FLAG));
               }
               /**
      * Creates a function that invokes the method at `path` of a given object.
@@ -33829,7 +35564,7 @@
                 if (isArray(value)) {
                   return arrayMap(value, toKey);
                 }
-                return isSymbol(value) ? [value] : copyArray(stringToPath(value));
+                return isSymbol(value) ? [value] : copyArray(stringToPath(toString(value)));
               }
               /**
      * Generates a unique ID. If `prefix` is given, the ID is appended to it.
@@ -34519,13 +36254,9 @@
                 'take'
               ], function (methodName, index) {
                 LazyWrapper.prototype[methodName] = function (n) {
-                  var filtered = this.__filtered__;
-                  if (filtered && !index) {
-                    return new LazyWrapper(this);
-                  }
                   n = n === undefined ? 1 : nativeMax(toInteger(n), 0);
-                  var result = this.clone();
-                  if (filtered) {
+                  var result = this.__filtered__ && !index ? new LazyWrapper(this) : this.clone();
+                  if (result.__filtered__) {
                     result.__takeCount__ = nativeMin(n, result.__takeCount__);
                   } else {
                     result.__views__.push({
@@ -34685,7 +36416,7 @@
                   });
                 }
               });
-              realNames[createHybrid(undefined, BIND_KEY_FLAG).name] = [{
+              realNames[createHybrid(undefined, WRAP_BIND_KEY_FLAG).name] = [{
                   'name': 'wrapper',
                   'func': undefined
                 }];
@@ -34738,7 +36469,7 @@
       },
       {}
     ],
-    205: [
+    211: [
       function (require, module, exports) {
         'use strict';
         var MapCache = require('./_MapCache');
@@ -34808,9 +36539,9 @@
         memoize.Cache = MapCache;
         module.exports = memoize;
       },
-      { './_MapCache': 78 }
+      { './_MapCache': 79 }
     ],
-    206: [
+    212: [
       function (require, module, exports) {
         'use strict';
         var baseProperty = require('./_baseProperty'), basePropertyDeep = require('./_basePropertyDeep'), isKey = require('./_isKey'), toKey = require('./_toKey');
@@ -34842,13 +36573,41 @@
         module.exports = property;
       },
       {
-        './_baseProperty': 113,
-        './_basePropertyDeep': 114,
-        './_isKey': 146,
-        './_toKey': 182
+        './_baseProperty': 117,
+        './_basePropertyDeep': 118,
+        './_isKey': 152,
+        './_toKey': 188
       }
     ],
-    207: [
+    213: [
+      function (require, module, exports) {
+        'use strict';
+        /**
+ * This method returns a new empty array.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.13.0
+ * @category Util
+ * @returns {Array} Returns the new empty array.
+ * @example
+ *
+ * var arrays = _.times(2, _.stubArray);
+ *
+ * console.log(arrays);
+ * // => [[], []]
+ *
+ * console.log(arrays[0] === arrays[1]);
+ * // => false
+ */
+        function stubArray() {
+          return [];
+        }
+        module.exports = stubArray;
+      },
+      {}
+    ],
+    214: [
       function (require, module, exports) {
         'use strict';
         /**
@@ -34871,7 +36630,7 @@
       },
       {}
     ],
-    208: [
+    215: [
       function (require, module, exports) {
         'use strict';
         var baseToString = require('./_baseToString');
@@ -34901,9 +36660,9 @@
         }
         module.exports = toString;
       },
-      { './_baseToString': 118 }
+      { './_baseToString': 122 }
     ],
-    209: [
+    216: [
       function (require, module, exports) {
         'use strict';
         /**
@@ -35026,7 +36785,7 @@
       },
       {}
     ],
-    210: [
+    217: [
       function (require, module, exports) {
         'use strict';
         var converter = require('./lib/converter'), Importer = require('./lib/importers/index'), Exporter = require('./lib/exporters/index'), Formats = require('./lib/formats');
@@ -35038,13 +36797,13 @@
         };
       },
       {
-        './lib/converter': 211,
-        './lib/exporters/index': 221,
-        './lib/formats': 225,
-        './lib/importers/index': 231
+        './lib/converter': 218,
+        './lib/exporters/index': 228,
+        './lib/formats': 232,
+        './lib/importers/index': 238
       }
     ],
-    211: [
+    218: [
       function (require, module, exports) {
         'use strict';
         var _createClass = function () {
@@ -35152,11 +36911,11 @@
         exports.Converter = Converter;
       },
       {
-        './exporters/index': 221,
-        './importers/index': 231
+        './exporters/index': 228,
+        './importers/index': 238
       }
     ],
-    212: [
+    219: [
       function (require, module, exports) {
         'use strict';
         var _createClass = function () {
@@ -35431,9 +37190,9 @@
           }();
         module.exports = Endpoint;
       },
-      { '../utils/strings': 237 }
+      { '../utils/strings': 244 }
     ],
-    213: [
+    220: [
       function (require, module, exports) {
         'use strict';
         var _createClass = function () {
@@ -35583,7 +37342,7 @@
       },
       {}
     ],
-    214: [
+    221: [
       function (require, module, exports) {
         'use strict';
         var _createClass = function () {
@@ -35735,9 +37494,9 @@
           }();
         module.exports = Project;
       },
-      { './environment': 213 }
+      { './environment': 220 }
     ],
-    215: [
+    222: [
       function (require, module, exports) {
         'use strict';
         var _createClass = function () {
@@ -35803,7 +37562,7 @@
       },
       {}
     ],
-    216: [
+    223: [
       function (require, module, exports) {
         'use strict';
         var _createClass = function () {
@@ -35879,7 +37638,7 @@
       },
       {}
     ],
-    217: [
+    224: [
       function (require, module, exports) {
         'use strict';
         function _classCallCheck(instance, Constructor) {
@@ -35908,7 +37667,7 @@
       },
       {}
     ],
-    218: [
+    225: [
       function (require, module, exports) {
         'use strict';
         var _createClass = function () {
@@ -35987,7 +37746,7 @@
       },
       {}
     ],
-    219: [
+    226: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -37395,15 +39154,15 @@
         module.exports = RAMLExporter;
       },
       {
-        '../helpers/raml': 226,
-        '../utils/json': 236,
-        '../utils/strings': 237,
-        './exporter': 220,
-        'js-yaml': 21,
-        'lodash': 204
+        '../helpers/raml': 233,
+        '../utils/json': 243,
+        '../utils/strings': 244,
+        './exporter': 227,
+        'js-yaml': 247,
+        'lodash': 210
       }
     ],
-    220: [
+    227: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -37462,31 +39221,27 @@
                   var _this = this;
                   return new Promise(function (resolve, reject) {
                     try {
-                      (function () {
-                        _this.options = options;
-                        _this._export();
-                        var exportedData = _this._getData(format);
-                        if (options && (options.validate === true || options.validateExport === true)) {
-                          (function () {
-                            var formattedData = (typeof exportedData === 'undefined' ? 'undefined' : _typeof(exportedData)) === 'object' ? JSON.stringify(exportedData) : exportedData;
-                            var importer = Importer.factory(Formats.AUTO);
-                            importer.loadData(formattedData, options).then(function () {
-                              try {
-                                importer.import();
-                                resolve(exportedData);
-                              } catch (err) {
-                                err.exportedData = exportedData;
-                                reject(err);
-                              }
-                            }).catch(function (err) {
-                              err.exportedData = exportedData;
-                              reject(err);
-                            });
-                          }());
-                        } else {
-                          resolve(exportedData);
-                        }
-                      }());
+                      _this.options = options;
+                      _this._export();
+                      var exportedData = _this._getData(format);
+                      if (options && (options.validate === true || options.validateExport === true)) {
+                        var formattedData = (typeof exportedData === 'undefined' ? 'undefined' : _typeof(exportedData)) === 'object' ? JSON.stringify(exportedData) : exportedData;
+                        var importer = Importer.factory(Formats.AUTO);
+                        importer.loadData(formattedData, options).then(function () {
+                          try {
+                            importer.import();
+                            resolve(exportedData);
+                          } catch (err) {
+                            err.exportedData = exportedData;
+                            reject(err);
+                          }
+                        }).catch(function (err) {
+                          err.exportedData = exportedData;
+                          reject(err);
+                        });
+                      } else {
+                        resolve(exportedData);
+                      }
                     } catch (err) {
                       reject(err);
                     }
@@ -37559,12 +39314,12 @@
         module.exports = Exporter;
       },
       {
-        '../formats': 225,
-        '../importers/index': 231,
-        'js-yaml': 21
+        '../formats': 232,
+        '../importers/index': 238,
+        'js-yaml': 247
       }
     ],
-    221: [
+    228: [
       function (require, module, exports) {
         'use strict';
         var exporters = {
@@ -37586,12 +39341,12 @@
         };
       },
       {
-        './raml08': 222,
-        './raml10': 223,
-        './swagger': 224
+        './raml08': 229,
+        './raml10': 230,
+        './swagger': 231
       }
     ],
-    222: [
+    229: [
       function (require, module, exports) {
         'use strict';
         var _createClass = function () {
@@ -37787,12 +39542,12 @@
         module.exports = RAML08Exporter;
       },
       {
-        '../utils/json': 236,
-        './baseraml': 219,
-        'lodash': 204
+        '../utils/json': 243,
+        './baseraml': 226,
+        'lodash': 210
       }
     ],
-    223: [
+    230: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -38150,14 +39905,14 @@
         module.exports = RAML10Exporter;
       },
       {
-        '../helpers/raml': 226,
-        '../utils/json': 236,
-        '../utils/strings': 237,
-        './baseraml': 219,
-        'lodash': 204
+        '../helpers/raml': 233,
+        '../utils/json': 243,
+        '../utils/strings': 244,
+        './baseraml': 226,
+        'lodash': 210
       }
     ],
-    224: [
+    231: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -38588,6 +40343,9 @@
                       delete definition['id'];
                     }
                     definition = this.convertRefFromModel(definition, true);
+                    if (definition.hasOwnProperty('description') && _.isEmpty(definition.description)) {
+                      delete definition.description;
+                    }
                     result[schema.NameSpace] = definition;
                   }
                   return result;
@@ -38627,6 +40385,9 @@
                     if (!object.hasOwnProperty(id) || swaggerHelper.isExtension(id))
                       continue;
                     var val = object[id];
+                    if (id == 'type') {
+                      object.type = Swagger.convertTypes(val);
+                    }
                     if (id == 'allOf') {
                       var allOf = object.allOf;
                       for (var key in allOf) {
@@ -38644,6 +40405,9 @@
                         _.merge(object, object.allOf[0]);
                         delete object.allOf;
                       }
+                    } else if ((id === 'oneOf' || id === 'anyOf') && !isProperty) {
+                      delete object[id];
+                      object.type = 'object';
                     } else if (id === 'schemaPath') {
                       this.addExtension(object, 'x-raml-xsd-definition', val);
                       delete object[id];
@@ -38975,19 +40739,30 @@
                     Swagger._convertToTemplateUri(swaggerDef);
                   }
                   if (Array.isArray(env.Protocols) && !_.isEmpty(env.Protocols)) {
-                    (function () {
-                      var filteredSchemes = [];
-                      env.Protocols.map(function (p) {
-                        if (acceptedSchemes.indexOf(p.toLowerCase()) >= 0) {
-                          filteredSchemes.push(p.toLowerCase());
-                        }
-                      });
-                      swaggerDef.schemes = filteredSchemes;
-                    }());
+                    var filteredSchemes = [];
+                    env.Protocols.map(function (p) {
+                      if (acceptedSchemes.indexOf(p.toLowerCase()) >= 0) {
+                        filteredSchemes.push(p.toLowerCase());
+                      }
+                    });
+                    swaggerDef.schemes = filteredSchemes;
                   } else if (hostUrl.protocol) {
-                    swaggerDef.schemes = [hostUrl.protocol.split(':')[0]];
+                    var scheme = hostUrl.protocol.split(':')[0];
+                    if (acceptedSchemes.includes(scheme))
+                      swaggerDef.schemes = [scheme];
                   } else {
                     delete swaggerDef.schemes;
+                  }
+                }
+              },
+              {
+                key: '_mapHostAnnotations',
+                value: function _mapHostAnnotations(env, swaggerDef) {
+                  for (var id in env) {
+                    if (!env.hasOwnProperty(id))
+                      continue;
+                    if (id.startsWith('x-annotation-'))
+                      swaggerDef[id] = env[id];
                   }
                 }
               },
@@ -39000,6 +40775,7 @@
                   var env = this.project.Environment;
                   swaggerDef.info.version = env.Version;
                   swaggerDef.BasePath = env.BasePath || '';
+                  this._mapHostAnnotations(env, swaggerDef);
                   this._mapHostAndProtocol(env, swaggerDef);
                   if (env.Produces && env.Produces.length > 0) {
                     swaggerDef.produces = env.Produces;
@@ -39240,6 +41016,24 @@
                 }
               },
               {
+                key: 'convertTypes',
+                value: function convertTypes(object) {
+                  if (_.isArray(object)) {
+                    for (var id in object) {
+                      if (!object.hasOwnProperty(id))
+                        continue;
+                      var val = object[id];
+                      if (val === 'null' || val === null) {
+                        if (!object.includes('string'))
+                          object[id] = 'string';
+                        object.splice(id, 1);
+                      }
+                    }
+                  }
+                  return object.length == 1 ? object[0] : object;
+                }
+              },
+              {
                 key: 'convertDefinitions',
                 value: function convertDefinitions(object) {
                   if (object.items.hasOwnProperty('$ref')) {
@@ -39294,19 +41088,19 @@
         module.exports = Swagger;
       },
       {
-        '../entities/swagger/definition': 216,
-        '../helpers/swagger': 227,
-        '../utils/array.js': 235,
-        '../utils/json.js': 236,
-        '../utils/strings.js': 237,
-        '../utils/url': 238,
-        '../utils/xml.js': 239,
-        './exporter': 220,
-        'lodash': 204,
-        'url': 277
+        '../entities/swagger/definition': 223,
+        '../helpers/swagger': 234,
+        '../utils/array.js': 242,
+        '../utils/json.js': 243,
+        '../utils/strings.js': 244,
+        '../utils/url': 245,
+        '../utils/xml.js': 246,
+        './exporter': 227,
+        'lodash': 210,
+        'url': 314
       }
     ],
-    225: [
+    232: [
       function (require, module, exports) {
         'use strict';
         var supportedFormats = {
@@ -39317,7 +41111,7 @@
               import: true,
               export: false
             },
-            'SWAGGER': {
+            'OAS': {
               name: 'OAS 2.0',
               className: 'Swagger',
               formats: [
@@ -39346,7 +41140,7 @@
       },
       {}
     ],
-    226: [
+    233: [
       function (require, module, exports) {
         'use strict';
         var _ = require('lodash');
@@ -39520,9 +41314,9 @@
           }
         };
       },
-      { 'lodash': 204 }
+      { 'lodash': 210 }
     ],
-    227: [
+    234: [
       function (require, module, exports) {
         'use strict';
         module.exports = {
@@ -39613,7 +41407,7 @@
       },
       {}
     ],
-    228: [
+    235: [
       function (require, module, exports) {
         'use strict';
         var _createClass = function () {
@@ -39745,7 +41539,7 @@
                   if (/#%RAML[\s]*0\.?8?/.test(data))
                     return Formats.RAML08;
                   if (/swagger:[\s'"]*\d\.?\d?/.test(data) || /{"swagger":[\s'"]*\d\.?\d?/.test(data))
-                    return Formats.SWAGGER;
+                    return Formats.OAS;
                 }
               }]);
             return Auto;
@@ -39753,17 +41547,17 @@
         module.exports = Auto;
       },
       {
-        '../formats': 225,
-        '../utils/url': 238,
-        './importer': 230,
-        './raml08': 232,
-        './raml10': 233,
-        './swagger': 234,
+        '../formats': 232,
+        '../utils/url': 245,
+        './importer': 237,
+        './raml08': 239,
+        './raml10': 240,
+        './swagger': 241,
         'fs': 4,
-        'lodash': 204
+        'lodash': 210
       }
     ],
-    229: [
+    236: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -39816,7 +41610,7 @@
           if (superClass)
             Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
         }
-        var Endpoint = require('../entities/endpoint'), Importer = require('./importer'), Project = require('../entities/project'), jsonHelper = require('../utils/json'), xmlHelper = require('../utils/xml'), ramlHelper = require('../helpers/raml'), url = require('url'), _ = require('lodash');
+        var Endpoint = require('../entities/endpoint'), Importer = require('./importer'), Project = require('../entities/project'), jsonHelper = require('../utils/json'), xmlHelper = require('../utils/xml'), ramlHelper = require('../helpers/raml'), Schema = require('../entities/schema'), url = require('url'), _ = require('lodash');
         var toJSONOptions = { serializeMetadata: false };
         //TODO multi file support isn't justified
         var RAMLImporter = function (_Importer) {
@@ -40040,13 +41834,15 @@
                         else
                           RAMLImporter._mapTypesFormats(header, false);
                         r[header.name] = this._mapQueryString(header);
-                        header = RAMLImporter._mapExamples(header);
                         delete r[header.name]['name'];
+                        header = RAMLImporter._mapExamples(header);
+                        if (header.description && _.isEmpty(header.description))
+                          header.description = '';
                       }
                       result.headers = r;
                     }
                     if (response.description) {
-                      result.description = jsonHelper.stringify(response.description);
+                      result.description = _.isEmpty(response.description) ? '' : jsonHelper.stringify(response.description);
                     }
                     RAMLImporter._addAnnotations(response, result);
                     data.push(result);
@@ -40059,7 +41855,49 @@
                 value: function _mapSchemas(schemData) {
                   //check if type attribute is abscent and fill with default value (type: string).
                   RAMLImporter._checkForDefaultType(schemData);
-                  return this.mapSchemas(schemData);
+                  var schemas = [];
+                  var newSchemas = [];
+                  for (var index in schemData) {
+                    if (!schemData.hasOwnProperty(index))
+                      continue;
+                    for (var schemaName in schemData[index]) {
+                      if (!schemData[index].hasOwnProperty(schemaName))
+                        continue;
+                      var sd = new Schema(schemaName);
+                      sd.Name = schemaName;
+                      var schema = jsonHelper.parse(schemData[index][schemaName]);
+                      if (schema.hasOwnProperty('definitions')) {
+                        newSchemas = this.addDefinitions(schema, newSchemas);
+                      }
+                      sd.Definition = this._mapSchema(schemData[index][schemaName], true, false);
+                      schemas.push(sd);
+                    }
+                  }
+                  if (!_.isEmpty(newSchemas)) {
+                    schemas = _.concat(schemas, this._mapSchemas(newSchemas));
+                  }
+                  return schemas;
+                }
+              },
+              {
+                key: 'addDefinitions',
+                value: function addDefinitions(schema, schemas) {
+                  var definitions = schema.definitions;
+                  if (!schemas)
+                    schemas = [];
+                  for (var def in definitions) {
+                    if (!definitions.hasOwnProperty(def))
+                      continue;
+                    var newSchema = {};
+                    newSchema[def] = jsonHelper.stringify(definitions[def]);
+                    var schemaNames = schemas.map(function (a) {
+                        return Object.keys(a)[0];
+                      });
+                    if (!_.includes(schemaNames, def))
+                      schemas.push(newSchema);
+                  }
+                  delete schema.definitions;
+                  return schemas;
                 }
               },
               {
@@ -40315,6 +42153,13 @@
                   var parsedURL = url.parse(this.data.baseUri || '');
                   project.Environment.Host = parsedURL.protocol && parsedURL.host ? parsedURL.protocol + '//' + parsedURL.host : null;
                   project.Environment.BasePath = parsedURL.path;
+                  if (this.data.hasOwnProperty('scalarsAnnotations') && this.data.scalarsAnnotations.hasOwnProperty('baseUri')) {
+                    var annotations = _.reduce(this.data.scalarsAnnotations.baseUri, function (obj, param) {
+                        obj[param.name] = { structuredValue: param.structuredValue };
+                        return obj;
+                      }, {});
+                    RAMLImporter._addAnnotations({ annotations: annotations }, project.Environment);
+                  }
                 }
               },
               {
@@ -40449,8 +42294,8 @@
                 }  //noinspection JSMethodCanBeStatic
               },
               {
-                key: 'mapSchemas',
-                value: function mapSchemas() {
+                key: '_mapSchema',
+                value: function _mapSchema() {
                   throw new Error('mapSchema method not implemented');
                 }  //noinspection JSMethodCanBeStatic
               },
@@ -40517,6 +42362,8 @@
                       result = this._isParametricTrait(prop);
                     } else {
                       if (_.includes(prop, '<<') && _.includes(prop, '>>'))
+                        result = true;
+                      else if (typeof prop === 'number' && _.isNaN(prop))
                         result = true;
                     }
                   }
@@ -40750,17 +42597,18 @@
         module.exports = RAMLImporter;
       },
       {
-        '../entities/endpoint': 212,
-        '../entities/project': 214,
-        '../helpers/raml': 226,
-        '../utils/json': 236,
-        '../utils/xml': 239,
-        './importer': 230,
-        'lodash': 204,
-        'url': 277
+        '../entities/endpoint': 219,
+        '../entities/project': 221,
+        '../entities/schema': 222,
+        '../helpers/raml': 233,
+        '../utils/json': 243,
+        '../utils/xml': 246,
+        './importer': 237,
+        'lodash': 210,
+        'url': 314
       }
     ],
-    230: [
+    237: [
       function (require, module, exports) {
         'use strict';
         var _createClass = function () {
@@ -40880,7 +42728,7 @@
       },
       {}
     ],
-    231: [
+    238: [
       function (require, module, exports) {
         'use strict';
         var importers = {
@@ -40903,20 +42751,15 @@
         };
       },
       {
-        './auto': 228,
-        './raml08': 232,
-        './raml10': 233,
-        './swagger': 234
+        './auto': 235,
+        './raml08': 239,
+        './raml10': 240,
+        './swagger': 241
       }
     ],
-    232: [
+    239: [
       function (require, module, exports) {
         'use strict';
-        var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
-            return typeof obj;
-          } : function (obj) {
-            return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
-          };
         var _createClass = function () {
             function defineProperties(target, props) {
               for (var i = 0; i < props.length; i++) {
@@ -40962,7 +42805,7 @@
           if (superClass)
             Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
         }
-        var RAMLImporter = require('./baseraml'), Schema = require('../entities/schema'), jsonHelper = require('../utils/json'), ramlHelper = require('../helpers/raml'), Text = require('../entities/text'), _ = require('lodash');
+        var RAMLImporter = require('./baseraml'), jsonHelper = require('../utils/json'), ramlHelper = require('../helpers/raml'), Text = require('../entities/text'), _ = require('lodash');
         var RAML08Importer = function (_RAMLImporter) {
             _inherits(RAML08Importer, _RAMLImporter);
             function RAML08Importer() {
@@ -40983,9 +42826,10 @@
                     data.example = methodBody.example;
                   }
                   if (methodBody.schema) {
-                    if (methodBody.schema.hasOwnProperty('definitions')) {
-                      this.data.types = _.concat(this.data.types, methodBody.schema.definitions);
-                      delete methodBody.schema.definitions;
+                    var schema = jsonHelper.parse(methodBody.schema);
+                    if (schema.hasOwnProperty('definitions')) {
+                      this.data.schemas = this.addDefinitions(schema, this.data.schemas);
+                      methodBody.schema = jsonHelper.stringify(schema);
                     }
                     data.body = this._mapSchema(this.convertRefToModel(jsonHelper.parse(methodBody.schema), false));
                   } else if (methodBody.formParameters) {
@@ -41028,61 +42872,82 @@
                 }
               },
               {
-                key: 'mapSchemas',
-                value: function mapSchemas(schemData) {
-                  var schemas = [];
-                  for (var i in schemData) {
-                    if (!schemData.hasOwnProperty(i))
-                      continue;
-                    for (var schemaName in schemData[i]) {
-                      if (!schemData[i].hasOwnProperty(schemaName))
-                        continue;
-                      var sd = new Schema(schemaName);
-                      sd.Name = schemaName;
-                      var definition = this._mapSchema(schemData[i][schemaName], true);
-                      sd.Definition = jsonHelper.parse(jsonHelper.cleanSchema(definition));
-                      schemas.push(sd);
-                    }
-                  }
-                  return schemas;
-                }
-              },
-              {
                 key: '_mapSchema',
-                value: function _mapSchema(definition, isSchema) {
-                  definition = jsonHelper.parse(definition);
-                  if (definition.properties && !_.isEmpty(definition.properties)) {
-                    definition = RAML08Importer.convertObjectProperty(definition);
-                  }
-                  for (var id in definition) {
-                    if (!definition.hasOwnProperty(id))
+                value: function _mapSchema(definition, isSchema, isProperty) {
+                  if (typeof definition === 'string')
+                    definition = jsonHelper.parse(definition);
+                  if (typeof definition === 'string')
+                    return definition;
+                  if (!isProperty)
+                    definition.required = definition.hasOwnProperty('required') && _.isArray(definition.required) ? definition.required : [];
+                  for (var id in definition.properties) {
+                    if (!definition.properties.hasOwnProperty(id))
                       continue;
-                    var val = definition[id];
-                    if (id === 'items') {
-                      if (_.isArray(val) && val.length == 0)
-                        definition[id] = { type: 'string' };
-                      else if (!_.isArray(val) && (typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object')
-                        val = this._mapSchema(val);
+                    var property = definition.properties[id];
+                    property = _.isArray(property) ? property[0] : property;
+                    definition.properties[id] = property;
+                    if (property.hasOwnProperty('required') && typeof property.required === 'boolean' && !isProperty) {
+                      if (property.required && !definition.required.includes(id)) {
+                        definition.required.push(id);
+                      }
+                      delete property.required;
                     }
-                    if (id === 'type') {
-                      if (_.isArray(val)) {
-                        if (val.length == 1)
-                          val = val[0];
-                        else if (val.length == 0) {
-                          definition[id] = 'array';
-                          definition['items'] = { type: 'string' };
-                          val = 'array';
+                  }
+                  for (var _id in definition) {
+                    if (!definition.hasOwnProperty(_id))
+                      continue;
+                    var val = definition[_id];
+                    if (!isProperty) {
+                      if (_id === 'items') {
+                        if (_.isArray(val) && val.length == 0) {
+                          definition[_id] = { type: 'string' };
+                        } else if (_.isArray(val) || val.hasOwnProperty('0')) {
+                          for (var key in val) {
+                            if (!val.hasOwnProperty(key))
+                              continue;
+                            definition[_id][key] = this._mapSchema(val[key], isSchema, false);
+                          }
+                        } else {
+                          definition[_id] = this._mapSchema(val, isSchema, false);
                         }
+                      } else if (_id === 'type') {
+                        if (_.isArray(val)) {
+                          if (val.length == 1)
+                            val = val[0];
+                          else if (val.length == 0) {
+                            definition[_id] = 'array';
+                            definition['items'] = { type: 'string' };
+                            val = 'array';
+                          }
+                        }
+                        if (typeof val === 'string' && val != 'object' && ramlHelper.getRAML08ScalarTypes.indexOf(val) < 0) {
+                          definition[RAMLImporter.getCustomProperty('type')] = val;
+                          definition.type = 'string';
+                        }
+                        if (typeof val === 'string' && val === 'array' && !definition.hasOwnProperty('items')) {
+                          if (definition.hasOwnProperty('properties')) {
+                            definition.items = {
+                              type: 'object',
+                              properties: this._mapSchema(definition.properties, isSchema, !isProperty)
+                            };
+                            if (definition.hasOwnProperty('required') && !_.isEmpty(definition.required)) {
+                              definition.items.required = definition.required;
+                              delete definition.required;
+                            }
+                            delete definition.properties;
+                          } else {
+                            definition.items = { type: 'string' };
+                          }
+                        }
+                      } else if (_id === 'properties') {
+                        definition[_id] = this._mapSchema(val, isSchema, !isProperty);
                       }
-                      if (typeof val === 'string' && val != 'object' && ramlHelper.getRAML08ScalarTypes.indexOf(val) < 0) {
-                        definition[RAMLImporter.getCustomProperty('type')] = val;
-                        definition.type = 'string';
-                      }
-                      if (typeof val === 'string' && val === 'array' && !definition.hasOwnProperty('items'))
-                        definition['items'] = { type: 'string' };
-                    } else if ((typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object') {
-                      this._mapSchema(val, isSchema);
+                    } else {
+                      definition[_id] = this._mapSchema(val, isSchema, false);
                     }
+                  }
+                  if (definition.required && definition.required.length == 0) {
+                    delete definition.required;
                   }
                   return definition;
                 }  //noinspection JSMethodCanBeStatic
@@ -41135,53 +43000,20 @@
                   }
                 }
               }
-            ], [{
-                key: 'convertObjectProperty',
-                value: function convertObjectProperty(source) {
-                  var target = Object.assign({}, source);
-                  target.properties = {};
-                  target.required = source.hasOwnProperty('required') && _.isArray(source.required) ? source.required : [];
-                  for (var paramName in source.properties) {
-                    if (!source.properties.hasOwnProperty(paramName))
-                      continue;
-                    var parameter = source.properties[paramName];
-                    var param = _.isArray(parameter) ? parameter[0] : parameter;
-                    target.properties[paramName] = param;
-                    if (param.properties && !_.isEmpty(param.properties)) {
-                      target.properties[paramName] = RAML08Importer.convertObjectProperty(param);
-                    } else if (paramName === 'items' && (typeof param === 'undefined' ? 'undefined' : _typeof(param)) === 'object') {
-                      target[paramName] = RAML08Importer.convertObjectProperty(param);
-                    } else if (param.hasOwnProperty('required')) {
-                      //required
-                      if (param.required === true && target.required.indexOf(paramName) < 0) {
-                        target['required'].push(paramName);
-                      }
-                      delete param.required;
-                    }
-                  }
-                  if (target.required && target.required.length == 0) {
-                    delete target.required;
-                  }
-                  if (target.properties && _.isEmpty(target.properties)) {
-                    delete target.properties;
-                  }
-                  return target;
-                }
-              }]);
+            ]);
             return RAML08Importer;
           }(RAMLImporter);
         module.exports = RAML08Importer;
       },
       {
-        '../entities/schema': 215,
-        '../entities/text': 218,
-        '../helpers/raml': 226,
-        '../utils/json': 236,
-        './baseraml': 229,
-        'lodash': 204
+        '../entities/text': 225,
+        '../helpers/raml': 233,
+        '../utils/json': 243,
+        './baseraml': 236,
+        'lodash': 210
       }
     ],
-    233: [
+    240: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -41234,7 +43066,7 @@
           if (superClass)
             Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
         }
-        var RAMLImporter = require('./baseraml'), Schema = require('../entities/schema'), jsonHelper = require('../utils/json'), _ = require('lodash');
+        var RAMLImporter = require('./baseraml'), jsonHelper = require('../utils/json'), _ = require('lodash');
         var RAML10Importer = function (_RAMLImporter) {
             _inherits(RAML10Importer, _RAMLImporter);
             function RAML10Importer() {
@@ -41257,7 +43089,7 @@
                   if (methodBody.properties && !_.isEmpty(methodBody.properties)) {
                     switch (data.mimeType) {
                     case 'application/json':
-                      data.body = this._mapSchema(methodBody, true);
+                      data.body = this._mapSchema(methodBody, true, false);
                       // data.body = RAML10Importer.convertObjectProperty(mimeType);
                       delete data.body.description;
                       // delete data.body.type;
@@ -41289,20 +43121,19 @@
                     default:
                     }
                   } else if (RAML10Importer.isArray(methodBody)) {
-                    data.body = this.convertRefToModel(this.convertArray(methodBody), false);
+                    data.body = this.convertRefToModel(this.convertArray(methodBody), false, false);
                   } else if (methodBody.schema && !_.isEmpty(methodBody.schema)) {
                     var schema = _.isArray(methodBody.schema) ? methodBody.schema[0] : methodBody.schema;
                     if ((typeof schema === 'undefined' ? 'undefined' : _typeof(schema)) !== 'object')
                       schema = jsonHelper.parse(schema);
                     if (schema.hasOwnProperty('definitions')) {
-                      this.data.types = _.concat(this.data.types, schema.definitions);
-                      delete schema.definitions;
+                      this.data.types = this.addDefinitions(schema, this.data.types);
                     }
-                    data.body = this._mapSchema(this.convertRefToModel({ type: schema }, false), false);
+                    data.body = this._mapSchema(this.convertRefToModel({ type: schema }, false), false, false);
                   } else if (methodBody.type && !_.isEmpty(methodBody.type) && methodBody.type[0] !== 'object') {
-                    data.body = this._mapSchema(methodBody, false);  // data.body = RAMLImporter.convertRefToModel({
-                                                                     // 	type: mimeType.type[0]
-                                                                     // });
+                    data.body = this._mapSchema(methodBody, false, false);  // data.body = RAMLImporter.convertRefToModel({
+                                                                            // 	type: mimeType.type[0]
+                                                                            // });
                   }
                   return data;
                 }
@@ -41336,22 +43167,23 @@
               {
                 key: 'convertObjectProperty',
                 value: function convertObjectProperty(source) {
+                  var _this2 = this;
                   var target = Object.assign({}, source);
                   target.properties = {};
                   if (source.type !== 'array')
                     target.type = 'object';
                   target.required = [];
-                  if (source.description) {
+                  if (source.hasOwnProperty('description') && !_.isEmpty(source.description)) {
                     target.description = jsonHelper.stringify(source.description);
                   }
-                  for (var paramName in source.properties) {
+                  var _loop = function _loop(paramName) {
                     var skipRequired = false;
                     if (!source.properties.hasOwnProperty(paramName))
-                      continue;
+                      return 'continue';
                     var parameter = source.properties[paramName];
-                    var param = _.isArray(parameter) ? this.convertArrayTypeExpression(parameter) : parameter;
+                    var param = _.isArray(parameter) ? _this2.convertArrayTypeExpression(parameter) : parameter;
                     if (RAML10Importer.isArray(param)) {
-                      target.properties[paramName] = this.convertArray(param);
+                      target.properties[paramName] = _this2.convertArray(param);
                     } else if (RAML10Importer.isFacet(param)) {
                       //check for facets
                       target.properties[paramName] = RAML10Importer.convertFacet(param);
@@ -41365,16 +43197,32 @@
                         param.allOf = param.type;
                         delete param.type;
                       }
+                      if (!_.isArray(param.type) && _typeof(param.type) === 'object') {
+                        param.type = _this2._mapSchema(param.type, false, false);
+                        param = _this2.mapNestedType(param);
+                      }
                       target.properties[paramName] = param;
                     }
                     if (skipRequired)
-                      continue;
+                      return 'continue';
                     //add annotations
                     RAMLImporter._addAnnotations(param, target.properties[paramName]);
                     //required
                     RAMLImporter._convertRequiredToArray(param, paramName, target['required']);
+                    if (param.hasOwnProperty('scalarsAnnotations') && param.scalarsAnnotations.hasOwnProperty('required')) {
+                      var annotations = _.reduce(param.scalarsAnnotations.required, function (obj, prop) {
+                          obj[param.name + '-' + prop.name] = { structuredValue: prop.structuredValue };
+                          return obj;
+                        }, {});
+                      RAMLImporter._addAnnotations({ annotations: annotations }, target);
+                    }
                     if (param.properties && !_.isEmpty(param.properties))
-                      target.properties[paramName] = this.convertObjectProperty(param);
+                      target.properties[paramName] = _this2.convertObjectProperty(param);
+                  };
+                  for (var paramName in source.properties) {
+                    var _ret = _loop(paramName);
+                    if (_ret === 'continue')
+                      continue;
                   }
                   if (target.required && target.required.length == 0) {
                     delete target.required;
@@ -41387,8 +43235,27 @@
                 }
               },
               {
+                key: 'mapNestedType',
+                value: function mapNestedType(param) {
+                  var type = param.type;
+                  var mergeFacets = [
+                      'properties',
+                      'required'
+                    ];
+                  for (var id in type) {
+                    if (!type.hasOwnProperty(id))
+                      continue;
+                    var val = type[id];
+                    param[id] = mergeFacets.indexOf(id) > -1 && param.hasOwnProperty(id) ? _.merge(param[id], val) : val;
+                  }
+                  return param;
+                }
+              },
+              {
                 key: '_mapSchema',
-                value: function _mapSchema(definition, isSchema) {
+                value: function _mapSchema(definition, isSchema, isProperty) {
+                  if (typeof definition === 'string')
+                    definition = jsonHelper.parse(definition);
                   var properties = null;
                   var result = definition;
                   if (definition.properties && !_.isEmpty(definition.properties)) {
@@ -41438,7 +43305,7 @@
                   //add annotations
                   RAMLImporter._addAnnotations(definition, result);
                   result = this._convertCustomTypes(result);
-                  return this.convertRefToModel(result, isSchema);
+                  return this.convertRefToModel(result, isSchema, isProperty);
                 }
               },
               {
@@ -41455,25 +43322,6 @@
                     }
                   }
                   return false;
-                }
-              },
-              {
-                key: 'mapSchemas',
-                value: function mapSchemas(schemData) {
-                  var schemas = [];
-                  for (var index in schemData) {
-                    if (!schemData.hasOwnProperty(index))
-                      continue;
-                    for (var schemaName in schemData[index]) {
-                      if (!schemData[index].hasOwnProperty(schemaName))
-                        continue;
-                      var sd = new Schema(schemaName);
-                      sd.Name = schemaName;
-                      sd.Definition = this._mapSchema(schemData[index][schemaName], true);
-                      schemas.push(sd);
-                    }
-                  }
-                  return schemas;
                 }
               },
               {
@@ -41692,13 +43540,12 @@
         module.exports = RAML10Importer;
       },
       {
-        '../entities/schema': 215,
-        '../utils/json': 236,
-        './baseraml': 229,
-        'lodash': 204
+        '../utils/json': 243,
+        './baseraml': 236,
+        'lodash': 210
       }
     ],
-    234: [
+    241: [
       function (require, module, exports) {
         'use strict';
         var _createClass = function () {
@@ -42182,17 +44029,15 @@
                       //   }
                       // }
                       if (currentMethod.produces && _.isArray(currentMethod.produces)) {
-                        (function () {
-                          var p = _.uniq(endpoint.Produces && _.isArray(endpoint.Produces) ? endpoint.Produces.concat(currentMethod.produces) : currentMethod.produces);
-                          if (produces && _.isArray(produces) && p.length) {
-                            produces.forEach(function (mimeType) {
-                              return p = _.without(p, mimeType);
-                            });
-                          }
-                          if (endpoint.Produces || p.length) {
-                            endpoint.Produces = p;
-                          }
-                        }());
+                        var p = _.uniq(endpoint.Produces && _.isArray(endpoint.Produces) ? endpoint.Produces.concat(currentMethod.produces) : currentMethod.produces);
+                        if (produces && _.isArray(produces) && p.length) {
+                          produces.forEach(function (mimeType) {
+                            return p = _.without(p, mimeType);
+                          });
+                        }
+                        if (endpoint.Produces || p.length) {
+                          endpoint.Produces = p;
+                        }
                       }
                       var responses = _this5._mapResponseBody(currentMethod.responses, true, currentMethodResolved.responses, _this5.$refs);
                       if (responses) {
@@ -42679,19 +44524,19 @@
         module.exports = Swagger;
       },
       {
-        '../entities/endpoint': 212,
-        '../entities/project': 214,
-        '../entities/schema': 215,
-        '../entities/swagger/method': 217,
-        '../helpers/swagger': 227,
-        '../utils/json': 236,
-        './importer': 230,
-        'js-yaml': 21,
-        'lodash': 204,
-        'swagger-parser': 269
+        '../entities/endpoint': 219,
+        '../entities/project': 221,
+        '../entities/schema': 222,
+        '../entities/swagger/method': 224,
+        '../helpers/swagger': 234,
+        '../utils/json': 243,
+        './importer': 237,
+        'js-yaml': 247,
+        'lodash': 210,
+        'swagger-parser': 306
       }
     ],
-    235: [
+    242: [
       function (require, module, exports) {
         'use strict';
         var _ = require('lodash');
@@ -42703,9 +44548,9 @@
           }
         };
       },
-      { 'lodash': 204 }
+      { 'lodash': 210 }
     ],
-    236: [
+    243: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -42767,19 +44612,12 @@
             return def;
           },
           orderByKeys: function orderByKeys(obj, propertiesOrder) {
-            var _this = this;
             //if array recursive call to all items
             if (Array.isArray(obj)) {
-              var _ret = function () {
-                  var me = _this;
-                  return {
-                    v: obj.map(function (item) {
-                      return me.orderByKeys(item, propertiesOrder);
-                    })
-                  };
-                }();
-              if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === 'object')
-                return _ret.v;
+              var me = this;
+              return obj.map(function (item) {
+                return me.orderByKeys(item, propertiesOrder);
+              });
             }
             var orderedObj = {};
             //place the ordered key items first
@@ -42839,11 +44677,11 @@
         };
       },
       {
-        'json-schema-compatibility': 51,
-        'lodash': 204
+        'json-schema-compatibility': 21,
+        'lodash': 210
       }
     ],
-    237: [
+    244: [
       function (require, module, exports) {
         'use strict';
         var _ = require('lodash');
@@ -42874,9 +44712,9 @@
           }
         };
       },
-      { 'lodash': 204 }
+      { 'lodash': 210 }
     ],
-    238: [
+    245: [
       function (require, module, exports) {
         'use strict';
         var request = require('request');
@@ -42907,11 +44745,11 @@
         };
       },
       {
-        'lodash': 204,
+        'lodash': 210,
         'request': 2
       }
     ],
-    239: [
+    246: [
       function (require, module, exports) {
         'use strict';
         var parseString = require('xml2js').parseString;
@@ -42926,9 +44764,313 @@
           }
         };
       },
-      { 'xml2js': 348 }
+      { 'xml2js': 386 }
     ],
-    240: [
+    247: [
+      function (require, module, exports) {
+        arguments[4][43][0].apply(exports, arguments);
+      },
+      {
+        './lib/js-yaml.js': 248,
+        'dup': 43
+      }
+    ],
+    248: [
+      function (require, module, exports) {
+        arguments[4][44][0].apply(exports, arguments);
+      },
+      {
+        './js-yaml/dumper': 250,
+        './js-yaml/exception': 251,
+        './js-yaml/loader': 252,
+        './js-yaml/schema': 254,
+        './js-yaml/schema/core': 255,
+        './js-yaml/schema/default_full': 256,
+        './js-yaml/schema/default_safe': 257,
+        './js-yaml/schema/failsafe': 258,
+        './js-yaml/schema/json': 259,
+        './js-yaml/type': 260,
+        'dup': 44
+      }
+    ],
+    249: [
+      function (require, module, exports) {
+        arguments[4][45][0].apply(exports, arguments);
+      },
+      { 'dup': 45 }
+    ],
+    250: [
+      function (require, module, exports) {
+        arguments[4][46][0].apply(exports, arguments);
+      },
+      {
+        './common': 249,
+        './exception': 251,
+        './schema/default_full': 256,
+        './schema/default_safe': 257,
+        'dup': 46
+      }
+    ],
+    251: [
+      function (require, module, exports) {
+        arguments[4][47][0].apply(exports, arguments);
+      },
+      { 'dup': 47 }
+    ],
+    252: [
+      function (require, module, exports) {
+        arguments[4][48][0].apply(exports, arguments);
+      },
+      {
+        './common': 249,
+        './exception': 251,
+        './mark': 253,
+        './schema/default_full': 256,
+        './schema/default_safe': 257,
+        'dup': 48
+      }
+    ],
+    253: [
+      function (require, module, exports) {
+        arguments[4][49][0].apply(exports, arguments);
+      },
+      {
+        './common': 249,
+        'dup': 49
+      }
+    ],
+    254: [
+      function (require, module, exports) {
+        arguments[4][50][0].apply(exports, arguments);
+      },
+      {
+        './common': 249,
+        './exception': 251,
+        './type': 260,
+        'dup': 50
+      }
+    ],
+    255: [
+      function (require, module, exports) {
+        arguments[4][51][0].apply(exports, arguments);
+      },
+      {
+        '../schema': 254,
+        './json': 259,
+        'dup': 51
+      }
+    ],
+    256: [
+      function (require, module, exports) {
+        arguments[4][52][0].apply(exports, arguments);
+      },
+      {
+        '../schema': 254,
+        '../type/js/function': 265,
+        '../type/js/regexp': 266,
+        '../type/js/undefined': 267,
+        './default_safe': 257,
+        'dup': 52
+      }
+    ],
+    257: [
+      function (require, module, exports) {
+        arguments[4][53][0].apply(exports, arguments);
+      },
+      {
+        '../schema': 254,
+        '../type/binary': 261,
+        '../type/merge': 269,
+        '../type/omap': 271,
+        '../type/pairs': 272,
+        '../type/set': 274,
+        '../type/timestamp': 276,
+        './core': 255,
+        'dup': 53
+      }
+    ],
+    258: [
+      function (require, module, exports) {
+        arguments[4][54][0].apply(exports, arguments);
+      },
+      {
+        '../schema': 254,
+        '../type/map': 268,
+        '../type/seq': 273,
+        '../type/str': 275,
+        'dup': 54
+      }
+    ],
+    259: [
+      function (require, module, exports) {
+        arguments[4][55][0].apply(exports, arguments);
+      },
+      {
+        '../schema': 254,
+        '../type/bool': 262,
+        '../type/float': 263,
+        '../type/int': 264,
+        '../type/null': 270,
+        './failsafe': 258,
+        'dup': 55
+      }
+    ],
+    260: [
+      function (require, module, exports) {
+        arguments[4][56][0].apply(exports, arguments);
+      },
+      {
+        './exception': 251,
+        'dup': 56
+      }
+    ],
+    261: [
+      function (require, module, exports) {
+        arguments[4][57][0].apply(exports, arguments);
+      },
+      {
+        '../type': 260,
+        'dup': 57
+      }
+    ],
+    262: [
+      function (require, module, exports) {
+        arguments[4][58][0].apply(exports, arguments);
+      },
+      {
+        '../type': 260,
+        'dup': 58
+      }
+    ],
+    263: [
+      function (require, module, exports) {
+        arguments[4][59][0].apply(exports, arguments);
+      },
+      {
+        '../common': 249,
+        '../type': 260,
+        'dup': 59
+      }
+    ],
+    264: [
+      function (require, module, exports) {
+        arguments[4][60][0].apply(exports, arguments);
+      },
+      {
+        '../common': 249,
+        '../type': 260,
+        'dup': 60
+      }
+    ],
+    265: [
+      function (require, module, exports) {
+        arguments[4][61][0].apply(exports, arguments);
+      },
+      {
+        '../../type': 260,
+        'dup': 61
+      }
+    ],
+    266: [
+      function (require, module, exports) {
+        arguments[4][62][0].apply(exports, arguments);
+      },
+      {
+        '../../type': 260,
+        'dup': 62
+      }
+    ],
+    267: [
+      function (require, module, exports) {
+        arguments[4][63][0].apply(exports, arguments);
+      },
+      {
+        '../../type': 260,
+        'dup': 63
+      }
+    ],
+    268: [
+      function (require, module, exports) {
+        arguments[4][64][0].apply(exports, arguments);
+      },
+      {
+        '../type': 260,
+        'dup': 64
+      }
+    ],
+    269: [
+      function (require, module, exports) {
+        arguments[4][65][0].apply(exports, arguments);
+      },
+      {
+        '../type': 260,
+        'dup': 65
+      }
+    ],
+    270: [
+      function (require, module, exports) {
+        arguments[4][66][0].apply(exports, arguments);
+      },
+      {
+        '../type': 260,
+        'dup': 66
+      }
+    ],
+    271: [
+      function (require, module, exports) {
+        arguments[4][67][0].apply(exports, arguments);
+      },
+      {
+        '../type': 260,
+        'dup': 67
+      }
+    ],
+    272: [
+      function (require, module, exports) {
+        arguments[4][68][0].apply(exports, arguments);
+      },
+      {
+        '../type': 260,
+        'dup': 68
+      }
+    ],
+    273: [
+      function (require, module, exports) {
+        arguments[4][69][0].apply(exports, arguments);
+      },
+      {
+        '../type': 260,
+        'dup': 69
+      }
+    ],
+    274: [
+      function (require, module, exports) {
+        arguments[4][70][0].apply(exports, arguments);
+      },
+      {
+        '../type': 260,
+        'dup': 70
+      }
+    ],
+    275: [
+      function (require, module, exports) {
+        arguments[4][71][0].apply(exports, arguments);
+      },
+      {
+        '../type': 260,
+        'dup': 71
+      }
+    ],
+    276: [
+      function (require, module, exports) {
+        arguments[4][72][0].apply(exports, arguments);
+      },
+      {
+        '../type': 260,
+        'dup': 72
+      }
+    ],
+    277: [
       function (require, module, exports) {
         'use strict';
         // modified from https://github.com/es-shims/es5-shim
@@ -43070,9 +45212,9 @@
         };
         module.exports = keysShim;
       },
-      { './isArguments': 241 }
+      { './isArguments': 278 }
     ],
-    241: [
+    278: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -43092,7 +45234,7 @@
       },
       {}
     ],
-    242: [
+    279: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -43296,9 +45438,9 @@
           }
         }
       },
-      { 'util': 281 }
+      { 'util': 318 }
     ],
-    243: [
+    280: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -43342,9 +45484,9 @@
           }
         }.call(this, require('_process')));
       },
-      { '_process': 244 }
+      { '_process': 281 }
     ],
-    244: [
+    281: [
       function (require, module, exports) {
         // shim for using process in browser
         var process = module.exports = {};
@@ -43518,7 +45660,7 @@
       },
       {}
     ],
-    245: [
+    282: [
       function (require, module, exports) {
         (function (global) {
           /*! https://mths.be/punycode v1.4.1 by @mathias */
@@ -43936,7 +46078,7 @@
       },
       {}
     ],
-    246: [
+    283: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -44013,7 +46155,7 @@
       },
       {}
     ],
-    247: [
+    284: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -44098,18 +46240,18 @@
       },
       {}
     ],
-    248: [
+    285: [
       function (require, module, exports) {
         'use strict';
         exports.decode = exports.parse = require('./decode');
         exports.encode = exports.stringify = require('./encode');
       },
       {
-        './decode': 246,
-        './encode': 247
+        './decode': 283,
+        './encode': 284
       }
     ],
-    249: [
+    286: [
       function (require, module, exports) {
         (function (Buffer) {
           'use strict';
@@ -44372,8 +46514,6 @@
             var whitespace = '\r\n\t ';
             // this really needs to be replaced with character classes.
             // XML allows all manner of ridiculous numbers and digits.
-            var number = '0124356789';
-            var letter = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
             // (Letter | "_" | ":")
             var quote = '\'"';
             var attribEnd = whitespace + '>';
@@ -44387,8 +46527,6 @@
               };
             // turn all the string character sets into character class objects.
             whitespace = charClass(whitespace);
-            number = charClass(number);
-            letter = charClass(letter);
             // http://www.w3.org/TR/REC-xml/#NT-NameStartChar
             // This implementation works on strings, a single character at a time
             // as such, it cannot ever support astral-plane characters (10000-EFFFF)
@@ -44396,9 +46534,9 @@
             // JavaScript language.  Implementation of an emoji-capable xml parser
             // is left as an exercise for the reader.
             var nameStart = /[:_A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD]/;
-            var nameBody = /[:_A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD\u00B7\u0300-\u036F\u203F-\u2040\.\d-]/;
+            var nameBody = /[:_A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD\u00B7\u0300-\u036F\u203F-\u2040.\d-]/;
             var entityStart = /[#:_A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD]/;
-            var entityBody = /[#:_A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD\u00B7\u0300-\u036F\u203F-\u2040\.\d-]/;
+            var entityBody = /[#:_A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD\u00B7\u0300-\u036F\u203F-\u2040.\d-]/;
             quote = charClass(quote);
             attribEnd = charClass(attribEnd);
             function charClass(str) {
@@ -44407,11 +46545,14 @@
                 return s;
               }, {});
             }
-            function isRegExp(c) {
-              return Object.prototype.toString.call(c) === '[object RegExp]';
+            function isMatch(regex, c) {
+              return regex.test(c);
             }
             function is(charclass, c) {
-              return isRegExp(charclass) ? !!c.match(charclass) : charclass[c];
+              return charclass[c];
+            }
+            function notMatch(regex, c) {
+              return !isMatch(regex, c);
             }
             function not(charclass, c) {
               return !is(charclass, c);
@@ -45138,7 +47279,7 @@
                     parser.state = S.SGML_DECL;
                     parser.sgmlDecl = '';
                   } else if (is(whitespace, c)) {
-                  } else if (is(nameStart, c)) {
+                  } else if (isMatch(nameStart, c)) {
                     parser.state = S.OPEN_TAG;
                     parser.tagName = c;
                   } else if (c === '/') {
@@ -45324,7 +47465,7 @@
                   }
                   continue;
                 case S.OPEN_TAG:
-                  if (is(nameBody, c)) {
+                  if (isMatch(nameBody, c)) {
                     parser.tagName += c;
                   } else {
                     newTag(parser);
@@ -45357,7 +47498,7 @@
                     openTag(parser);
                   } else if (c === '/') {
                     parser.state = S.OPEN_TAG_SLASH;
-                  } else if (is(nameStart, c)) {
+                  } else if (isMatch(nameStart, c)) {
                     parser.attribName = c;
                     parser.attribValue = '';
                     parser.state = S.ATTRIB_NAME;
@@ -45375,7 +47516,7 @@
                     openTag(parser);
                   } else if (is(whitespace, c)) {
                     parser.state = S.ATTRIB_NAME_SAW_WHITE;
-                  } else if (is(nameBody, c)) {
+                  } else if (isMatch(nameBody, c)) {
                     parser.attribName += c;
                   } else {
                     strictFail(parser, 'Invalid attribute name');
@@ -45397,7 +47538,7 @@
                     parser.attribName = '';
                     if (c === '>') {
                       openTag(parser);
-                    } else if (is(nameStart, c)) {
+                    } else if (isMatch(nameStart, c)) {
                       parser.attribName = c;
                       parser.state = S.ATTRIB_NAME;
                     } else {
@@ -45438,7 +47579,7 @@
                     openTag(parser);
                   } else if (c === '/') {
                     parser.state = S.OPEN_TAG_SLASH;
-                  } else if (is(nameStart, c)) {
+                  } else if (isMatch(nameStart, c)) {
                     strictFail(parser, 'No whitespace between attributes');
                     parser.attribName = c;
                     parser.attribValue = '';
@@ -45467,7 +47608,7 @@
                   if (!parser.tagName) {
                     if (is(whitespace, c)) {
                       continue;
-                    } else if (not(nameStart, c)) {
+                    } else if (notMatch(nameStart, c)) {
                       if (parser.script) {
                         parser.script += '</' + c;
                         parser.state = S.SCRIPT;
@@ -45479,7 +47620,7 @@
                     }
                   } else if (c === '>') {
                     closeTag(parser);
-                  } else if (is(nameBody, c)) {
+                  } else if (isMatch(nameBody, c)) {
                     parser.tagName += c;
                   } else if (parser.script) {
                     parser.script += '</' + parser.tagName;
@@ -45525,7 +47666,7 @@
                     parser[buffer] += parseEntity(parser);
                     parser.entity = '';
                     parser.state = returnState;
-                  } else if (is(parser.entity.length ? entityBody : entityStart, c)) {
+                  } else if (isMatch(parser.entity.length ? entityBody : entityStart, c)) {
                     parser.entity += c;
                   } else {
                     strictFail(parser, 'Invalid character in entity name');
@@ -45545,6 +47686,7 @@
               return parser;
             }
             /*! http://mths.be/fromcodepoint v0.1.0 by @mathias */
+            /* istanbul ignore next */
             if (!String.fromCodePoint) {
               (function () {
                 var stringFromCharCode = String.fromCharCode;
@@ -45583,6 +47725,7 @@
                   }
                   return result;
                 };
+                /* istanbul ignore next */
                 if (Object.defineProperty) {
                   Object.defineProperty(String, 'fromCodePoint', {
                     value: fromCodePoint,
@@ -45599,11 +47742,11 @@
       },
       {
         'buffer': 6,
-        'stream': 250,
-        'string_decoder': 267
+        'stream': 287,
+        'string_decoder': 304
       }
     ],
-    250: [
+    287: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -45709,26 +47852,26 @@
       {
         'events': 14,
         'inherits': 19,
-        'readable-stream/duplex.js': 252,
-        'readable-stream/passthrough.js': 259,
-        'readable-stream/readable.js': 260,
-        'readable-stream/transform.js': 261,
-        'readable-stream/writable.js': 262
+        'readable-stream/duplex.js': 289,
+        'readable-stream/passthrough.js': 296,
+        'readable-stream/readable.js': 297,
+        'readable-stream/transform.js': 298,
+        'readable-stream/writable.js': 299
       }
     ],
-    251: [
+    288: [
       function (require, module, exports) {
         arguments[4][7][0].apply(exports, arguments);
       },
       { 'dup': 7 }
     ],
-    252: [
+    289: [
       function (require, module, exports) {
         module.exports = require('./lib/_stream_duplex.js');
       },
-      { './lib/_stream_duplex.js': 253 }
+      { './lib/_stream_duplex.js': 290 }
     ],
-    253: [
+    290: [
       function (require, module, exports) {
         // a duplex stream is just a stream that is both readable and writable.
         // Since JS doesn't have multiple prototypal inheritance, this class
@@ -45795,14 +47938,14 @@
         }
       },
       {
-        './_stream_readable': 255,
-        './_stream_writable': 257,
+        './_stream_readable': 292,
+        './_stream_writable': 294,
         'core-util-is': 10,
         'inherits': 19,
-        'process-nextick-args': 243
+        'process-nextick-args': 280
       }
     ],
-    254: [
+    291: [
       function (require, module, exports) {
         // a passthrough stream.
         // basically just the most minimal sort of Transform stream.
@@ -45825,12 +47968,12 @@
         };
       },
       {
-        './_stream_transform': 256,
+        './_stream_transform': 293,
         'core-util-is': 10,
         'inherits': 19
       }
     ],
-    255: [
+    292: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -46737,21 +48880,21 @@
         }.call(this, require('_process')));
       },
       {
-        './_stream_duplex': 253,
-        './internal/streams/BufferList': 258,
-        '_process': 244,
+        './_stream_duplex': 290,
+        './internal/streams/BufferList': 295,
+        '_process': 281,
         'buffer': 6,
         'buffer-shims': 5,
         'core-util-is': 10,
         'events': 14,
         'inherits': 19,
-        'isarray': 251,
-        'process-nextick-args': 243,
-        'string_decoder/': 267,
+        'isarray': 288,
+        'process-nextick-args': 280,
+        'string_decoder/': 304,
         'util': 3
       }
     ],
-    256: [
+    293: [
       function (require, module, exports) {
         // a transform stream is a readable/writable stream where you do
         // something with the data.  Sometimes it's called a "filter",
@@ -46916,12 +49059,12 @@
         }
       },
       {
-        './_stream_duplex': 253,
+        './_stream_duplex': 290,
         'core-util-is': 10,
         'inherits': 19
       }
     ],
-    257: [
+    294: [
       function (require, module, exports) {
         (function (process) {
           // A bit simpler than readable streams.
@@ -47070,7 +49213,7 @@
           // Test _writableState for inheritance to account for Duplex streams,
           // whose prototype chain only points to Readable.
           var realHasInstance;
-          if (typeof Symbol === 'function' && Symbol.hasInstance) {
+          if (typeof Symbol === 'function' && Symbol.hasInstance && typeof Function.prototype[Symbol.hasInstance] === 'function') {
             realHasInstance = Function.prototype[Symbol.hasInstance];
             Object.defineProperty(Writable, Symbol.hasInstance, {
               value: function (object) {
@@ -47116,20 +49259,15 @@
             stream.emit('error', er);
             processNextTick(cb, er);
           }
-          // If we get something that is not a buffer, string, null, or undefined,
-          // and we're not in objectMode, then that's an error.
-          // Otherwise stream chunks are all considered to be of length=1, and the
-          // watermarks determine how many objects to keep in the buffer, rather than
-          // how many bytes or characters.
+          // Checks that a user-supplied chunk is valid, especially for the particular
+          // mode the stream is in. Currently this means that `null` is never accepted
+          // and undefined/non-string values are only allowed in object mode.
           function validChunk(stream, state, chunk, cb) {
             var valid = true;
             var er = false;
-            // Always throw error if a null is written
-            // if we are not in object mode then throw
-            // if it is not a buffer, string, or undefined.
             if (chunk === null) {
               er = new TypeError('May not write null values to stream');
-            } else if (!Buffer.isBuffer(chunk) && typeof chunk !== 'string' && chunk !== undefined && !state.objectMode) {
+            } else if (typeof chunk !== 'string' && chunk !== undefined && !state.objectMode) {
               er = new TypeError('Invalid non-string/buffer chunk');
             }
             if (er) {
@@ -47142,11 +49280,12 @@
           Writable.prototype.write = function (chunk, encoding, cb) {
             var state = this._writableState;
             var ret = false;
+            var isBuf = Buffer.isBuffer(chunk);
             if (typeof encoding === 'function') {
               cb = encoding;
               encoding = null;
             }
-            if (Buffer.isBuffer(chunk))
+            if (isBuf)
               encoding = 'buffer';
             else if (!encoding)
               encoding = state.defaultEncoding;
@@ -47154,9 +49293,9 @@
               cb = nop;
             if (state.ended)
               writeAfterEnd(this, cb);
-            else if (validChunk(this, state, chunk, cb)) {
+            else if (isBuf || validChunk(this, state, chunk, cb)) {
               state.pendingcb++;
-              ret = writeOrBuffer(this, state, chunk, encoding, cb);
+              ret = writeOrBuffer(this, state, isBuf, chunk, encoding, cb);
             }
             return ret;
           };
@@ -47202,10 +49341,12 @@
           // if we're already writing something, then just put this
           // in the queue, and wait our turn.  Otherwise, call _write
           // If we return false, then we need a drain event, so set that flag.
-          function writeOrBuffer(stream, state, chunk, encoding, cb) {
-            chunk = decodeChunk(state, chunk, encoding);
-            if (Buffer.isBuffer(chunk))
-              encoding = 'buffer';
+          function writeOrBuffer(stream, state, isBuf, chunk, encoding, cb) {
+            if (!isBuf) {
+              chunk = decodeChunk(state, chunk, encoding);
+              if (Buffer.isBuffer(chunk))
+                encoding = 'buffer';
+            }
             var len = state.objectMode ? 1 : chunk.length;
             state.length += len;
             var ret = state.length < state.highWaterMark;
@@ -47424,18 +49565,18 @@
         }.call(this, require('_process')));
       },
       {
-        './_stream_duplex': 253,
-        '_process': 244,
+        './_stream_duplex': 290,
+        '_process': 281,
         'buffer': 6,
         'buffer-shims': 5,
         'core-util-is': 10,
         'events': 14,
         'inherits': 19,
-        'process-nextick-args': 243,
-        'util-deprecate': 278
+        'process-nextick-args': 280,
+        'util-deprecate': 315
       }
     ],
-    258: [
+    295: [
       function (require, module, exports) {
         'use strict';
         var Buffer = require('buffer').Buffer;
@@ -47516,13 +49657,13 @@
         'buffer-shims': 5
       }
     ],
-    259: [
+    296: [
       function (require, module, exports) {
         module.exports = require('./lib/_stream_passthrough.js');
       },
-      { './lib/_stream_passthrough.js': 254 }
+      { './lib/_stream_passthrough.js': 291 }
     ],
-    260: [
+    297: [
       function (require, module, exports) {
         (function (process) {
           var Stream = function () {
@@ -47544,27 +49685,27 @@
         }.call(this, require('_process')));
       },
       {
-        './lib/_stream_duplex.js': 253,
-        './lib/_stream_passthrough.js': 254,
-        './lib/_stream_readable.js': 255,
-        './lib/_stream_transform.js': 256,
-        './lib/_stream_writable.js': 257,
-        '_process': 244
+        './lib/_stream_duplex.js': 290,
+        './lib/_stream_passthrough.js': 291,
+        './lib/_stream_readable.js': 292,
+        './lib/_stream_transform.js': 293,
+        './lib/_stream_writable.js': 294,
+        '_process': 281
       }
     ],
-    261: [
+    298: [
       function (require, module, exports) {
         module.exports = require('./lib/_stream_transform.js');
       },
-      { './lib/_stream_transform.js': 256 }
+      { './lib/_stream_transform.js': 293 }
     ],
-    262: [
+    299: [
       function (require, module, exports) {
         module.exports = require('./lib/_stream_writable.js');
       },
-      { './lib/_stream_writable.js': 257 }
+      { './lib/_stream_writable.js': 294 }
     ],
-    263: [
+    300: [
       function (require, module, exports) {
         var ClientRequest = require('./lib/request');
         var extend = require('xtend');
@@ -47632,13 +49773,13 @@
         ];
       },
       {
-        './lib/request': 265,
+        './lib/request': 302,
         'builtin-status-codes': 8,
-        'url': 277,
-        'xtend': 366
+        'url': 314,
+        'xtend': 404
       }
     ],
-    264: [
+    301: [
       function (require, module, exports) {
         (function (global) {
           'use strict';
@@ -47680,7 +49821,7 @@
       },
       {}
     ],
-    265: [
+    302: [
       function (require, module, exports) {
         (function (process, global, Buffer) {
           'use strict';
@@ -47931,18 +50072,18 @@
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}, require('buffer').Buffer));
       },
       {
-        './capability': 264,
-        './response': 266,
-        '_process': 244,
+        './capability': 301,
+        './response': 303,
+        '_process': 281,
         'buffer': 6,
         'foreach': 15,
         'indexof': 18,
         'inherits': 19,
-        'object-keys': 240,
-        'stream': 250
+        'object-keys': 277,
+        'stream': 287
       }
     ],
-    266: [
+    303: [
       function (require, module, exports) {
         (function (process, global, Buffer) {
           'use strict';
@@ -47973,34 +50114,30 @@
                 });
               });
               if (mode === 'fetch') {
-                var header, _i, _it;
-                var reader;
-                (function () {
-                  var read = function read() {
-                    reader.read().then(function (result) {
-                      if (self._destroyed)
-                        return;
-                      if (result.done) {
-                        self.push(null);
-                        return;
-                      }
-                      self.push(new Buffer(result.value));
-                      read();
-                    });
-                  };
-                  self._fetchResponse = response;
-                  self.statusCode = response.status;
-                  self.statusMessage = response.statusText;
-                  // backwards compatible version of for (<item> of <iterable>):
-                  // for (var <item>,_i,_it = <iterable>[Symbol.iterator](); <item> = (_i = _it.next()).value,!_i.done;)
-                  for (_it = response.headers[Symbol.iterator](); header = (_i = _it.next()).value, !_i.done;) {
-                    self.headers[header[0].toLowerCase()] = header[1];
-                    self.rawHeaders.push(header[0], header[1]);
-                  }
-                  // TODO: this doesn't respect backpressure. Once WritableStream is available, this can be fixed
-                  reader = response.body.getReader();
-                  read();
-                }());
+                var read = function read() {
+                  reader.read().then(function (result) {
+                    if (self._destroyed)
+                      return;
+                    if (result.done) {
+                      self.push(null);
+                      return;
+                    }
+                    self.push(new Buffer(result.value));
+                    read();
+                  });
+                };
+                self._fetchResponse = response;
+                self.statusCode = response.status;
+                self.statusMessage = response.statusText;
+                // backwards compatible version of for (<item> of <iterable>):
+                // for (var <item>,_i,_it = <iterable>[Symbol.iterator](); <item> = (_i = _it.next()).value,!_i.done;)
+                for (var header, _i, _it = response.headers[Symbol.iterator](); header = (_i = _it.next()).value, !_i.done;) {
+                  self.headers[header[0].toLowerCase()] = header[1];
+                  self.rawHeaders.push(header[0], header[1]);
+                }
+                // TODO: this doesn't respect backpressure. Once WritableStream is available, this can be fixed
+                var reader = response.body.getReader();
+                read();
               } else {
                 self._xhr = xhr;
                 self._pos = 0;
@@ -48115,15 +50252,15 @@
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}, require('buffer').Buffer));
       },
       {
-        './capability': 264,
-        '_process': 244,
+        './capability': 301,
+        '_process': 281,
         'buffer': 6,
         'foreach': 15,
         'inherits': 19,
-        'stream': 250
+        'stream': 287
       }
     ],
-    267: [
+    304: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -48327,7 +50464,7 @@
       },
       { 'buffer': 6 }
     ],
-    268: [
+    305: [
       function (require, module, exports) {
         'use strict';
         module.exports = [
@@ -48342,7 +50479,7 @@
       },
       {}
     ],
-    269: [
+    306: [
       function (require, module, exports) {
         /** !
  * Swagger Parser v4.0.0-beta.2
@@ -48523,18 +50660,18 @@
         }
       },
       {
-        './options': 270,
-        './promise': 271,
-        './util': 272,
-        './validate-schema': 273,
-        './validate-spec': 274,
+        './options': 307,
+        './promise': 308,
+        './util': 309,
+        './validate-schema': 310,
+        './validate-spec': 311,
         'call-me-maybe': 9,
-        'json-schema-ref-parser': 54,
-        'json-schema-ref-parser/lib/dereference': 53,
-        'ono': 242
+        'json-schema-ref-parser': 24,
+        'json-schema-ref-parser/lib/dereference': 23,
+        'ono': 279
       }
     ],
-    270: [
+    307: [
       function (require, module, exports) {
         'use strict';
         var $RefParserOptions = require('json-schema-ref-parser/lib/options'), util = require('util');
@@ -48559,20 +50696,20 @@
         util.inherits(ParserOptions, $RefParserOptions);
       },
       {
-        'json-schema-ref-parser/lib/options': 55,
-        'util': 281
+        'json-schema-ref-parser/lib/options': 25,
+        'util': 318
       }
     ],
-    271: [
+    308: [
       function (require, module, exports) {
-        arguments[4][69][0].apply(exports, arguments);
+        arguments[4][39][0].apply(exports, arguments);
       },
       {
-        'dup': 69,
+        'dup': 39,
         'es6-promise': 13
       }
     ],
-    272: [
+    309: [
       function (require, module, exports) {
         'use strict';
         var debug = require('debug'), util = require('util');
@@ -48591,10 +50728,10 @@
       },
       {
         'debug': 11,
-        'util': 281
+        'util': 318
       }
     ],
-    273: [
+    310: [
       function (require, module, exports) {
         'use strict';
         var util = require('./util'), ono = require('ono'), ZSchema = require('z-schema'), swaggerSchema = require('swagger-schema-official/schema');
@@ -48649,13 +50786,13 @@
         }
       },
       {
-        './util': 272,
-        'ono': 242,
-        'swagger-schema-official/schema': 275,
-        'z-schema': 376
+        './util': 309,
+        'ono': 279,
+        'swagger-schema-official/schema': 312,
+        'z-schema': 414
       }
     ],
-    274: [
+    311: [
       function (require, module, exports) {
         'use strict';
         var util = require('./util'), ono = require('ono'), swaggerMethods = require('swagger-methods'), primitiveTypes = [
@@ -48900,12 +51037,12 @@
         }
       },
       {
-        './util': 272,
-        'ono': 242,
-        'swagger-methods': 268
+        './util': 309,
+        'ono': 279,
+        'swagger-methods': 305
       }
     ],
-    275: [
+    312: [
       function (require, module, exports) {
         module.exports = {
           'title': 'A JSON Schema for Swagger 2.0 API.',
@@ -49883,7 +52020,7 @@
       },
       {}
     ],
-    276: [
+    313: [
       function (require, module, exports) {
         var nextTick = require('process/browser.js').nextTick;
         var apply = Function.prototype.apply;
@@ -49952,9 +52089,9 @@
           delete immediateIds[id];
         };
       },
-      { 'process/browser.js': 244 }
+      { 'process/browser.js': 281 }
     ],
-    277: [
+    314: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -50589,11 +52726,11 @@
         }
       },
       {
-        'punycode': 245,
-        'querystring': 248
+        'punycode': 282,
+        'querystring': 285
       }
     ],
-    278: [
+    315: [
       function (require, module, exports) {
         (function (global) {
           'use strict';
@@ -50662,7 +52799,7 @@
       },
       {}
     ],
-    279: [
+    316: [
       function (require, module, exports) {
         if (typeof Object.create === 'function') {
           // implementation from standard node.js 'util' module
@@ -50691,7 +52828,7 @@
       },
       {}
     ],
-    280: [
+    317: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -50705,7 +52842,7 @@
       },
       {}
     ],
-    281: [
+    318: [
       function (require, module, exports) {
         (function (process, global) {
           // Copyright Joyent, Inc. and other Node contributors.
@@ -51264,12 +53401,12 @@
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
       },
       {
-        './support/isBuffer': 280,
-        '_process': 244,
-        'inherits': 279
+        './support/isBuffer': 317,
+        '_process': 281,
+        'inherits': 316
       }
     ],
-    282: [
+    319: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -51337,8 +53474,8 @@
         var _isMD2 = _interopRequireDefault(_isMD);
         var _isJSON = require('./lib/isJSON');
         var _isJSON2 = _interopRequireDefault(_isJSON);
-        var _isNull = require('./lib/isNull');
-        var _isNull2 = _interopRequireDefault(_isNull);
+        var _isEmpty = require('./lib/isEmpty');
+        var _isEmpty2 = _interopRequireDefault(_isEmpty);
         var _isLength = require('./lib/isLength');
         var _isLength2 = _interopRequireDefault(_isLength);
         var _isByteLength = require('./lib/isByteLength');
@@ -51361,6 +53498,8 @@
         var _isISIN2 = _interopRequireDefault(_isISIN);
         var _isISBN = require('./lib/isISBN');
         var _isISBN2 = _interopRequireDefault(_isISBN);
+        var _isISSN = require('./lib/isISSN');
+        var _isISSN2 = _interopRequireDefault(_isISSN);
         var _isMobilePhone = require('./lib/isMobilePhone');
         var _isMobilePhone2 = _interopRequireDefault(_isMobilePhone);
         var _isCurrency = require('./lib/isCurrency');
@@ -51396,7 +53535,7 @@
         function _interopRequireDefault(obj) {
           return obj && obj.__esModule ? obj : { default: obj };
         }
-        var version = '5.7.0';
+        var version = '6.3.0';
         var validator = {
             version: version,
             toDate: _toDate2.default,
@@ -51431,7 +53570,7 @@
             isHexColor: _isHexColor2.default,
             isMD5: _isMD2.default,
             isJSON: _isJSON2.default,
-            isNull: _isNull2.default,
+            isEmpty: _isEmpty2.default,
             isLength: _isLength2.default,
             isByteLength: _isByteLength2.default,
             isUUID: _isUUID2.default,
@@ -51443,6 +53582,7 @@
             isCreditCard: _isCreditCard2.default,
             isISIN: _isISIN2.default,
             isISBN: _isISBN2.default,
+            isISSN: _isISSN2.default,
             isMobilePhone: _isMobilePhone2.default,
             isCurrency: _isCurrency2.default,
             isISO8601: _isISO2.default,
@@ -51464,75 +53604,77 @@
         module.exports = exports['default'];
       },
       {
-        './lib/blacklist': 284,
-        './lib/contains': 285,
-        './lib/equals': 286,
-        './lib/escape': 287,
-        './lib/isAfter': 288,
-        './lib/isAlpha': 289,
-        './lib/isAlphanumeric': 290,
-        './lib/isAscii': 291,
-        './lib/isBase64': 292,
-        './lib/isBefore': 293,
-        './lib/isBoolean': 294,
-        './lib/isByteLength': 295,
-        './lib/isCreditCard': 296,
-        './lib/isCurrency': 297,
-        './lib/isDataURI': 298,
-        './lib/isDate': 299,
-        './lib/isDecimal': 300,
-        './lib/isDivisibleBy': 301,
-        './lib/isEmail': 302,
-        './lib/isFQDN': 303,
-        './lib/isFloat': 304,
-        './lib/isFullWidth': 305,
-        './lib/isHalfWidth': 306,
-        './lib/isHexColor': 307,
-        './lib/isHexadecimal': 308,
-        './lib/isIP': 309,
-        './lib/isISBN': 310,
-        './lib/isISIN': 311,
-        './lib/isISO8601': 312,
-        './lib/isIn': 313,
-        './lib/isInt': 314,
-        './lib/isJSON': 315,
-        './lib/isLength': 316,
-        './lib/isLowercase': 317,
-        './lib/isMACAddress': 318,
-        './lib/isMD5': 319,
-        './lib/isMobilePhone': 320,
-        './lib/isMongoId': 321,
-        './lib/isMultibyte': 322,
-        './lib/isNull': 323,
-        './lib/isNumeric': 324,
-        './lib/isSurrogatePair': 325,
-        './lib/isURL': 326,
-        './lib/isUUID': 327,
-        './lib/isUppercase': 328,
-        './lib/isVariableWidth': 329,
-        './lib/isWhitelisted': 330,
-        './lib/ltrim': 331,
-        './lib/matches': 332,
-        './lib/normalizeEmail': 333,
-        './lib/rtrim': 334,
-        './lib/stripLow': 335,
-        './lib/toBoolean': 336,
-        './lib/toDate': 337,
-        './lib/toFloat': 338,
-        './lib/toInt': 339,
-        './lib/trim': 340,
-        './lib/unescape': 341,
-        './lib/util/toString': 344,
-        './lib/whitelist': 345
+        './lib/blacklist': 321,
+        './lib/contains': 322,
+        './lib/equals': 323,
+        './lib/escape': 324,
+        './lib/isAfter': 325,
+        './lib/isAlpha': 326,
+        './lib/isAlphanumeric': 327,
+        './lib/isAscii': 328,
+        './lib/isBase64': 329,
+        './lib/isBefore': 330,
+        './lib/isBoolean': 331,
+        './lib/isByteLength': 332,
+        './lib/isCreditCard': 333,
+        './lib/isCurrency': 334,
+        './lib/isDataURI': 335,
+        './lib/isDate': 336,
+        './lib/isDecimal': 337,
+        './lib/isDivisibleBy': 338,
+        './lib/isEmail': 339,
+        './lib/isEmpty': 340,
+        './lib/isFQDN': 341,
+        './lib/isFloat': 342,
+        './lib/isFullWidth': 343,
+        './lib/isHalfWidth': 344,
+        './lib/isHexColor': 345,
+        './lib/isHexadecimal': 346,
+        './lib/isIP': 347,
+        './lib/isISBN': 348,
+        './lib/isISIN': 349,
+        './lib/isISO8601': 350,
+        './lib/isISSN': 351,
+        './lib/isIn': 352,
+        './lib/isInt': 353,
+        './lib/isJSON': 354,
+        './lib/isLength': 355,
+        './lib/isLowercase': 356,
+        './lib/isMACAddress': 357,
+        './lib/isMD5': 358,
+        './lib/isMobilePhone': 359,
+        './lib/isMongoId': 360,
+        './lib/isMultibyte': 361,
+        './lib/isNumeric': 362,
+        './lib/isSurrogatePair': 363,
+        './lib/isURL': 364,
+        './lib/isUUID': 365,
+        './lib/isUppercase': 366,
+        './lib/isVariableWidth': 367,
+        './lib/isWhitelisted': 368,
+        './lib/ltrim': 369,
+        './lib/matches': 370,
+        './lib/normalizeEmail': 371,
+        './lib/rtrim': 372,
+        './lib/stripLow': 373,
+        './lib/toBoolean': 374,
+        './lib/toDate': 375,
+        './lib/toFloat': 376,
+        './lib/toInt': 377,
+        './lib/trim': 378,
+        './lib/unescape': 379,
+        './lib/util/toString': 382,
+        './lib/whitelist': 383
       }
     ],
-    283: [
+    320: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
         var alpha = exports.alpha = {
             'en-US': /^[A-Z]+$/i,
             'cs-CZ': /^[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]+$/i,
+            'da-DK': /^[A-ZÆØÅ]+$/i,
             'de-DE': /^[A-ZÄÖÜß]+$/i,
             'es-ES': /^[A-ZÁÉÍÑÓÚÜ]+$/i,
             'fr-FR': /^[A-ZÀÂÆÇÉÈÊËÏÎÔŒÙÛÜŸ]+$/i,
@@ -51544,11 +53686,13 @@
             'sr-RS@latin': /^[A-ZČĆŽŠĐ]+$/i,
             'sr-RS': /^[А-ЯЂЈЉЊЋЏ]+$/i,
             'tr-TR': /^[A-ZÇĞİıÖŞÜ]+$/i,
+            'uk-UA': /^[А-ЯЄIЇҐ]+$/i,
             ar: /^[ءآأؤإئابةتثجحخدذرزسشصضطظعغفقكلمنهوىيًٌٍَُِّْٰ]+$/
           };
         var alphanumeric = exports.alphanumeric = {
             'en-US': /^[0-9A-Z]+$/i,
             'cs-CZ': /^[0-9A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]+$/i,
+            'da-DK': /^[0-9A-ZÆØÅ]$/i,
             'de-DE': /^[0-9A-ZÄÖÜß]+$/i,
             'es-ES': /^[0-9A-ZÁÉÍÑÓÚÜ]+$/i,
             'fr-FR': /^[0-9A-ZÀÂÆÇÉÈÊËÏÎÔŒÙÛÜŸ]+$/i,
@@ -51560,6 +53704,7 @@
             'sr-RS@latin': /^[0-9A-ZČĆŽŠĐ]+$/i,
             'sr-RS': /^[0-9А-ЯЂЈЉЊЋЏ]+$/i,
             'tr-TR': /^[0-9A-ZÇĞİıÖŞÜ]+$/i,
+            'uk-UA': /^[0-9А-ЯЄIЇҐ]+$/i,
             ar: /^[٠١٢٣٤٥٦٧٨٩0-9ءآأؤإئابةتثجحخدذرزسشصضطظعغفقكلمنهوىيًٌٍَُِّْٰ]+$/
           };
         var englishLocales = exports.englishLocales = [
@@ -51606,7 +53751,7 @@
       },
       {}
     ],
-    284: [
+    321: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -51622,9 +53767,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    285: [
+    322: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -51643,11 +53788,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 342,
-        './util/toString': 344
+        './util/assertString': 380,
+        './util/toString': 382
       }
     ],
-    286: [
+    323: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -51663,9 +53808,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    287: [
+    324: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -51677,13 +53822,13 @@
         }
         function escape(str) {
           (0, _assertString2.default)(str);
-          return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\//g, '&#x2F;').replace(/`/g, '&#96;');
+          return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\//g, '&#x2F;').replace(/\\/g, '&#x5C;').replace(/`/g, '&#96;');
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    288: [
+    325: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -51696,7 +53841,7 @@
           return obj && obj.__esModule ? obj : { default: obj };
         }
         function isAfter(str) {
-          var date = arguments.length <= 1 || arguments[1] === undefined ? String(new Date()) : arguments[1];
+          var date = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : String(new Date());
           (0, _assertString2.default)(str);
           var comparison = (0, _toDate2.default)(date);
           var original = (0, _toDate2.default)(str);
@@ -51705,11 +53850,11 @@
         module.exports = exports['default'];
       },
       {
-        './toDate': 337,
-        './util/assertString': 342
+        './toDate': 375,
+        './util/assertString': 380
       }
     ],
-    289: [
+    326: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -51721,7 +53866,7 @@
           return obj && obj.__esModule ? obj : { default: obj };
         }
         function isAlpha(str) {
-          var locale = arguments.length <= 1 || arguments[1] === undefined ? 'en-US' : arguments[1];
+          var locale = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'en-US';
           (0, _assertString2.default)(str);
           if (locale in _alpha.alpha) {
             return _alpha.alpha[locale].test(str);
@@ -51731,11 +53876,11 @@
         module.exports = exports['default'];
       },
       {
-        './alpha': 283,
-        './util/assertString': 342
+        './alpha': 320,
+        './util/assertString': 380
       }
     ],
-    290: [
+    327: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -51747,7 +53892,7 @@
           return obj && obj.__esModule ? obj : { default: obj };
         }
         function isAlphanumeric(str) {
-          var locale = arguments.length <= 1 || arguments[1] === undefined ? 'en-US' : arguments[1];
+          var locale = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'en-US';
           (0, _assertString2.default)(str);
           if (locale in _alpha.alphanumeric) {
             return _alpha.alphanumeric[locale].test(str);
@@ -51757,11 +53902,11 @@
         module.exports = exports['default'];
       },
       {
-        './alpha': 283,
-        './util/assertString': 342
+        './alpha': 320,
+        './util/assertString': 380
       }
     ],
-    291: [
+    328: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -51780,9 +53925,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    292: [
+    329: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -51804,9 +53949,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    293: [
+    330: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -51819,7 +53964,7 @@
           return obj && obj.__esModule ? obj : { default: obj };
         }
         function isBefore(str) {
-          var date = arguments.length <= 1 || arguments[1] === undefined ? String(new Date()) : arguments[1];
+          var date = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : String(new Date());
           (0, _assertString2.default)(str);
           var comparison = (0, _toDate2.default)(date);
           var original = (0, _toDate2.default)(str);
@@ -51828,11 +53973,11 @@
         module.exports = exports['default'];
       },
       {
-        './toDate': 337,
-        './util/assertString': 342
+        './toDate': 375,
+        './util/assertString': 380
       }
     ],
-    294: [
+    331: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -51853,9 +53998,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    295: [
+    332: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -51867,7 +54012,7 @@
         var _typeof = typeof Symbol === 'function' && _typeof2(Symbol.iterator) === 'symbol' ? function (obj) {
             return typeof obj === 'undefined' ? 'undefined' : _typeof2(obj);
           } : function (obj) {
-            return obj && typeof Symbol === 'function' && obj.constructor === Symbol ? 'symbol' : typeof obj === 'undefined' ? 'undefined' : _typeof2(obj);
+            return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj === 'undefined' ? 'undefined' : _typeof2(obj);
           };
         exports.default = isByteLength;
         var _assertString = require('./util/assertString');
@@ -51893,9 +54038,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    296: [
+    333: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -51937,9 +54082,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    297: [
+    334: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52011,11 +54156,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 342,
-        './util/merge': 343
+        './util/assertString': 380,
+        './util/merge': 381
       }
     ],
-    298: [
+    335: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52033,9 +54178,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    299: [
+    336: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52124,11 +54269,11 @@
         module.exports = exports['default'];
       },
       {
-        './isISO8601': 312,
-        './util/assertString': 342
+        './isISO8601': 350,
+        './util/assertString': 380
       }
     ],
-    300: [
+    337: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52145,9 +54290,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    301: [
+    338: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52166,11 +54311,11 @@
         module.exports = exports['default'];
       },
       {
-        './toFloat': 338,
-        './util/assertString': 342
+        './toFloat': 376,
+        './util/assertString': 380
       }
     ],
-    302: [
+    339: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52188,6 +54333,7 @@
         }
         var default_email_options = {
             allow_display_name: false,
+            require_display_name: false,
             allow_utf8_local_part: true,
             require_tld: true
           };
@@ -52203,10 +54349,12 @@
         function isEmail(str, options) {
           (0, _assertString2.default)(str);
           options = (0, _merge2.default)(options, default_email_options);
-          if (options.allow_display_name) {
+          if (options.require_display_name || options.allow_display_name) {
             var display_email = str.match(displayName);
             if (display_email) {
               str = display_email[1];
+            } else if (options.require_display_name) {
+              return false;
             }
           }
           var parts = str.split('@');
@@ -52238,13 +54386,31 @@
         module.exports = exports['default'];
       },
       {
-        './isByteLength': 295,
-        './isFQDN': 303,
-        './util/assertString': 342,
-        './util/merge': 343
+        './isByteLength': 332,
+        './isFQDN': 341,
+        './util/assertString': 380,
+        './util/merge': 381
       }
     ],
-    303: [
+    340: [
+      function (require, module, exports) {
+        'use strict';
+        Object.defineProperty(exports, '__esModule', { value: true });
+        exports.default = isEmpty;
+        var _assertString = require('./util/assertString');
+        var _assertString2 = _interopRequireDefault(_assertString);
+        function _interopRequireDefault(obj) {
+          return obj && obj.__esModule ? obj : { default: obj };
+        }
+        function isEmpty(str) {
+          (0, _assertString2.default)(str);
+          return str.length === 0;
+        }
+        module.exports = exports['default'];
+      },
+      { './util/assertString': 380 }
+    ],
+    341: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52296,11 +54462,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 342,
-        './util/merge': 343
+        './util/assertString': 380,
+        './util/merge': 381
       }
     ],
-    304: [
+    342: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52310,20 +54476,20 @@
         function _interopRequireDefault(obj) {
           return obj && obj.__esModule ? obj : { default: obj };
         }
-        var float = /^(?:[-+]?(?:[0-9]+))?(?:\.[0-9]*)?(?:[eE][\+\-]?(?:[0-9]+))?$/;
+        var float = /^(?:[-+])?(?:[0-9]+)?(?:\.[0-9]*)?(?:[eE][\+\-]?(?:[0-9]+))?$/;
         function isFloat(str, options) {
           (0, _assertString2.default)(str);
           options = options || {};
           if (str === '' || str === '.') {
             return false;
           }
-          return float.test(str) && (!options.hasOwnProperty('min') || str >= options.min) && (!options.hasOwnProperty('max') || str <= options.max);
+          return float.test(str) && (!options.hasOwnProperty('min') || str >= options.min) && (!options.hasOwnProperty('max') || str <= options.max) && (!options.hasOwnProperty('lt') || str < options.lt) && (!options.hasOwnProperty('gt') || str > options.gt);
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    305: [
+    343: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52340,9 +54506,9 @@
           return fullWidth.test(str);
         }
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    306: [
+    344: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52359,9 +54525,9 @@
           return halfWidth.test(str);
         }
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    307: [
+    345: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52378,9 +54544,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    308: [
+    346: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52397,9 +54563,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    309: [
+    347: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52412,7 +54578,7 @@
         var ipv4Maybe = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
         var ipv6Block = /^[0-9A-F]{1,4}$/i;
         function isIP(str) {
-          var version = arguments.length <= 1 || arguments[1] === undefined ? '' : arguments[1];
+          var version = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
           (0, _assertString2.default)(str);
           version = String(version);
           if (!version) {
@@ -52472,9 +54638,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    310: [
+    348: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52491,7 +54657,7 @@
             3
           ];
         function isISBN(str) {
-          var version = arguments.length <= 1 || arguments[1] === undefined ? '' : arguments[1];
+          var version = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
           (0, _assertString2.default)(str);
           version = String(version);
           if (!version) {
@@ -52530,9 +54696,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    311: [
+    349: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52574,9 +54740,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    312: [
+    350: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52594,9 +54760,62 @@
         // from http://goo.gl/0ejHHW
         var iso8601 = exports.iso8601 = /^([\+-]?\d{4}(?!\d{2}\b))((-?)((0[1-9]|1[0-2])(\3([12]\d|0[1-9]|3[01]))?|W([0-4]\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\d|[12]\d{2}|3([0-5]\d|6[1-6])))([T\s]((([01]\d|2[0-3])((:?)[0-5]\d)?|24:?00)([\.,]\d+(?!:))?)?(\17[0-5]\d([\.,]\d+)?)?([zZ]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?)?)?$/;  /* eslint-enable max-len */
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    313: [
+    351: [
+      function (require, module, exports) {
+        'use strict';
+        Object.defineProperty(exports, '__esModule', { value: true });
+        exports.default = isISSN;
+        var _assertString = require('./util/assertString');
+        var _assertString2 = _interopRequireDefault(_assertString);
+        function _interopRequireDefault(obj) {
+          return obj && obj.__esModule ? obj : { default: obj };
+        }
+        var issn = '^\\d{4}-?\\d{3}[\\dX]$';
+        function isISSN(str) {
+          var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+          (0, _assertString2.default)(str);
+          var testIssn = issn;
+          testIssn = options.require_hyphen ? testIssn.replace('?', '') : testIssn;
+          testIssn = options.case_sensitive ? new RegExp(testIssn) : new RegExp(testIssn, 'i');
+          if (!testIssn.test(str)) {
+            return false;
+          }
+          var issnDigits = str.replace('-', '');
+          var position = 8;
+          var checksum = 0;
+          var _iteratorNormalCompletion = true;
+          var _didIteratorError = false;
+          var _iteratorError = undefined;
+          try {
+            for (var _iterator = issnDigits[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+              var digit = _step.value;
+              var digitValue = digit.toUpperCase() === 'X' ? 10 : +digit;
+              checksum += digitValue * position;
+              --position;
+            }
+          } catch (err) {
+            _didIteratorError = true;
+            _iteratorError = err;
+          } finally {
+            try {
+              if (!_iteratorNormalCompletion && _iterator.return) {
+                _iterator.return();
+              }
+            } finally {
+              if (_didIteratorError) {
+                throw _iteratorError;
+              }
+            }
+          }
+          return checksum % 11 === 0;
+        }
+        module.exports = exports['default'];
+      },
+      { './util/assertString': 380 }
+    ],
+    352: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -52608,7 +54827,7 @@
         var _typeof = typeof Symbol === 'function' && _typeof2(Symbol.iterator) === 'symbol' ? function (obj) {
             return typeof obj === 'undefined' ? 'undefined' : _typeof2(obj);
           } : function (obj) {
-            return obj && typeof Symbol === 'function' && obj.constructor === Symbol ? 'symbol' : typeof obj === 'undefined' ? 'undefined' : _typeof2(obj);
+            return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj === 'undefined' ? 'undefined' : _typeof2(obj);
           };
         exports.default = isIn;
         var _assertString = require('./util/assertString');
@@ -52639,11 +54858,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 342,
-        './util/toString': 344
+        './util/assertString': 380,
+        './util/toString': 382
       }
     ],
-    314: [
+    353: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52660,17 +54879,19 @@
           options = options || {};
           // Get the regex to use for testing, based on whether
           // leading zeroes are allowed or not.
-          var regex = options.hasOwnProperty('allow_leading_zeroes') && options.allow_leading_zeroes ? intLeadingZeroes : int;
-          // Check min/max
+          var regex = options.hasOwnProperty('allow_leading_zeroes') && !options.allow_leading_zeroes ? int : intLeadingZeroes;
+          // Check min/max/lt/gt
           var minCheckPassed = !options.hasOwnProperty('min') || str >= options.min;
           var maxCheckPassed = !options.hasOwnProperty('max') || str <= options.max;
-          return regex.test(str) && minCheckPassed && maxCheckPassed;
+          var ltCheckPassed = !options.hasOwnProperty('lt') || str < options.lt;
+          var gtCheckPassed = !options.hasOwnProperty('gt') || str > options.gt;
+          return regex.test(str) && minCheckPassed && maxCheckPassed && ltCheckPassed && gtCheckPassed;
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    315: [
+    354: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -52682,7 +54903,7 @@
         var _typeof = typeof Symbol === 'function' && _typeof2(Symbol.iterator) === 'symbol' ? function (obj) {
             return typeof obj === 'undefined' ? 'undefined' : _typeof2(obj);
           } : function (obj) {
-            return obj && typeof Symbol === 'function' && obj.constructor === Symbol ? 'symbol' : typeof obj === 'undefined' ? 'undefined' : _typeof2(obj);
+            return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj === 'undefined' ? 'undefined' : _typeof2(obj);
           };
         exports.default = isJSON;
         var _assertString = require('./util/assertString');
@@ -52701,9 +54922,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    316: [
+    355: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -52715,7 +54936,7 @@
         var _typeof = typeof Symbol === 'function' && _typeof2(Symbol.iterator) === 'symbol' ? function (obj) {
             return typeof obj === 'undefined' ? 'undefined' : _typeof2(obj);
           } : function (obj) {
-            return obj && typeof Symbol === 'function' && obj.constructor === Symbol ? 'symbol' : typeof obj === 'undefined' ? 'undefined' : _typeof2(obj);
+            return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj === 'undefined' ? 'undefined' : _typeof2(obj);
           };
         exports.default = isLength;
         var _assertString = require('./util/assertString');
@@ -52742,9 +54963,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    317: [
+    356: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52760,9 +54981,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    318: [
+    357: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52779,9 +55000,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    319: [
+    358: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52798,9 +55019,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    320: [
+    359: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52824,12 +55045,14 @@
             'en-GB': /^(\+?44|0)7\d{9}$/,
             'en-HK': /^(\+?852\-?)?[569]\d{3}\-?\d{4}$/,
             'en-IN': /^(\+?91|0)?[789]\d{9}$/,
+            'en-NG': /^(\+?234|0)?[789]\d{9}$/,
             'en-NZ': /^(\+?64|0)2\d{7,9}$/,
             'en-ZA': /^(\+?27|0)\d{9}$/,
             'en-ZM': /^(\+?26)?09[567]\d{7}$/,
             'es-ES': /^(\+?34)?(6\d{1}|7[1234])\d{7}$/,
             'fi-FI': /^(\+?358|0)\s?(4(0|1|2|4|5)?|50)\s?(\d\s?){4,8}\d$/,
             'fr-FR': /^(\+?33|0)[67]\d{8}$/,
+            'he-IL': /^(\+972|0)([23489]|5[0248]|77)[1-9]\d{6}/,
             'hu-HU': /^(\+?36)(20|30|70)\d{7}$/,
             'it-IT': /^(\+?39)?\s?3\d{2} ?\d{6,7}$/,
             'ja-JP': /^(\+?81|0)\d{1,4}[ \-]?\d{1,4}[ \-]?\d{4}$/,
@@ -52840,6 +55063,8 @@
             'pl-PL': /^(\+?48)? ?[5-8]\d ?\d{3} ?\d{2} ?\d{2}$/,
             'pt-BR': /^(\+?55|0)\-?[1-9]{2}\-?[2-9]{1}\d{3,4}\-?\d{4}$/,
             'pt-PT': /^(\+?351)?9[1236]\d{7}$/,
+            'ro-RO': /^(\+?4?0)\s?7\d{2}(\/|\s|\.|\-)?\d{3}(\s|\.|\-)?\d{3}$/,
+            'en-PK': /^((\+92)|(0092))-{0,1}\d{3}-{0,1}\d{7}$|^\d{11}$|^\d{4}-\d{7}$/,
             'ru-RU': /^(\+?7|8)?9\d{9}$/,
             'sr-RS': /^(\+3816|06)[- \d]{5,9}$/,
             'tr-TR': /^(\+?90|0)?5\d{9}$/,
@@ -52851,6 +55076,7 @@
         // aliases
         phones['en-CA'] = phones['en-US'];
         phones['fr-BE'] = phones['nl-BE'];
+        phones['zh-HK'] = phones['en-HK'];
         function isMobilePhone(str, locale) {
           (0, _assertString2.default)(str);
           if (locale in phones) {
@@ -52860,9 +55086,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    321: [
+    360: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52881,11 +55107,11 @@
         module.exports = exports['default'];
       },
       {
-        './isHexadecimal': 308,
-        './util/assertString': 342
+        './isHexadecimal': 346,
+        './util/assertString': 380
       }
     ],
-    322: [
+    361: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52904,27 +55130,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    323: [
-      function (require, module, exports) {
-        'use strict';
-        Object.defineProperty(exports, '__esModule', { value: true });
-        exports.default = isNull;
-        var _assertString = require('./util/assertString');
-        var _assertString2 = _interopRequireDefault(_assertString);
-        function _interopRequireDefault(obj) {
-          return obj && obj.__esModule ? obj : { default: obj };
-        }
-        function isNull(str) {
-          (0, _assertString2.default)(str);
-          return str.length === 0;
-        }
-        module.exports = exports['default'];
-      },
-      { './util/assertString': 342 }
-    ],
-    324: [
+    362: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52941,9 +55149,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    325: [
+    363: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -52960,9 +55168,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    326: [
+    364: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53007,7 +55215,7 @@
         }
         function isURL(url, options) {
           (0, _assertString2.default)(url);
-          if (!url || url.length >= 2083 || /\s/.test(url)) {
+          if (!url || url.length >= 2083 || /[\s<>]/.test(url)) {
             return false;
           }
           if (url.indexOf('mailto:') === 0) {
@@ -53078,13 +55286,13 @@
         module.exports = exports['default'];
       },
       {
-        './isFQDN': 303,
-        './isIP': 309,
-        './util/assertString': 342,
-        './util/merge': 343
+        './isFQDN': 341,
+        './isIP': 347,
+        './util/assertString': 380,
+        './util/merge': 381
       }
     ],
-    327: [
+    365: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53101,16 +55309,16 @@
             all: /^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$/i
           };
         function isUUID(str) {
-          var version = arguments.length <= 1 || arguments[1] === undefined ? 'all' : arguments[1];
+          var version = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'all';
           (0, _assertString2.default)(str);
           var pattern = uuid[version];
           return pattern && pattern.test(str);
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    328: [
+    366: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53126,9 +55334,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    329: [
+    367: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53147,12 +55355,12 @@
         module.exports = exports['default'];
       },
       {
-        './isFullWidth': 305,
-        './isHalfWidth': 306,
-        './util/assertString': 342
+        './isFullWidth': 343,
+        './isHalfWidth': 344,
+        './util/assertString': 380
       }
     ],
-    330: [
+    368: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53173,9 +55381,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    331: [
+    369: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53192,9 +55400,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    332: [
+    370: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53213,9 +55421,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    333: [
+    371: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53228,30 +55436,189 @@
           return obj && obj.__esModule ? obj : { default: obj };
         }
         var default_normalize_email_options = {
-            lowercase: true,
-            remove_dots: true,
-            remove_extension: true
+            all_lowercase: true,
+            gmail_lowercase: true,
+            gmail_remove_dots: true,
+            gmail_remove_subaddress: true,
+            gmail_convert_googlemaildotcom: true,
+            outlookdotcom_lowercase: true,
+            outlookdotcom_remove_subaddress: true,
+            yahoo_lowercase: true,
+            yahoo_remove_subaddress: true,
+            icloud_lowercase: true,
+            icloud_remove_subaddress: true
           };
+        // List of domains used by iCloud
+        var icloud_domains = [
+            'icloud.com',
+            'me.com'
+          ];
+        // List of domains used by Outlook.com and its predecessors
+        // This list is likely incomplete.
+        // Partial reference:
+        // https://blogs.office.com/2013/04/17/outlook-com-gets-two-step-verification-sign-in-by-alias-and-new-international-domains/
+        var outlookdotcom_domains = [
+            'hotmail.at',
+            'hotmail.be',
+            'hotmail.ca',
+            'hotmail.cl',
+            'hotmail.co.il',
+            'hotmail.co.nz',
+            'hotmail.co.th',
+            'hotmail.co.uk',
+            'hotmail.com',
+            'hotmail.com.ar',
+            'hotmail.com.au',
+            'hotmail.com.br',
+            'hotmail.com.gr',
+            'hotmail.com.mx',
+            'hotmail.com.pe',
+            'hotmail.com.tr',
+            'hotmail.com.vn',
+            'hotmail.cz',
+            'hotmail.de',
+            'hotmail.dk',
+            'hotmail.es',
+            'hotmail.fr',
+            'hotmail.hu',
+            'hotmail.id',
+            'hotmail.ie',
+            'hotmail.in',
+            'hotmail.it',
+            'hotmail.jp',
+            'hotmail.kr',
+            'hotmail.lv',
+            'hotmail.my',
+            'hotmail.ph',
+            'hotmail.pt',
+            'hotmail.sa',
+            'hotmail.sg',
+            'hotmail.sk',
+            'live.be',
+            'live.co.uk',
+            'live.com',
+            'live.com.ar',
+            'live.com.mx',
+            'live.de',
+            'live.es',
+            'live.eu',
+            'live.fr',
+            'live.it',
+            'live.nl',
+            'msn.com',
+            'outlook.at',
+            'outlook.be',
+            'outlook.cl',
+            'outlook.co.il',
+            'outlook.co.nz',
+            'outlook.co.th',
+            'outlook.com',
+            'outlook.com.ar',
+            'outlook.com.au',
+            'outlook.com.br',
+            'outlook.com.gr',
+            'outlook.com.pe',
+            'outlook.com.tr',
+            'outlook.com.vn',
+            'outlook.cz',
+            'outlook.de',
+            'outlook.dk',
+            'outlook.es',
+            'outlook.fr',
+            'outlook.hu',
+            'outlook.id',
+            'outlook.ie',
+            'outlook.in',
+            'outlook.it',
+            'outlook.jp',
+            'outlook.kr',
+            'outlook.lv',
+            'outlook.my',
+            'outlook.ph',
+            'outlook.pt',
+            'outlook.sa',
+            'outlook.sg',
+            'outlook.sk',
+            'passport.com'
+          ];
+        // List of domains used by Yahoo Mail
+        // This list is likely incomplete
+        var yahoo_domains = [
+            'rocketmail.com',
+            'yahoo.ca',
+            'yahoo.co.uk',
+            'yahoo.com',
+            'yahoo.de',
+            'yahoo.fr',
+            'yahoo.in',
+            'yahoo.it',
+            'ymail.com'
+          ];
         function normalizeEmail(email, options) {
           options = (0, _merge2.default)(options, default_normalize_email_options);
           if (!(0, _isEmail2.default)(email)) {
             return false;
           }
-          var parts = email.split('@', 2);
+          var raw_parts = email.split('@');
+          var domain = raw_parts.pop();
+          var user = raw_parts.join('@');
+          var parts = [
+              user,
+              domain
+            ];
+          // The domain is always lowercased, as it's case-insensitive per RFC 1035
           parts[1] = parts[1].toLowerCase();
           if (parts[1] === 'gmail.com' || parts[1] === 'googlemail.com') {
-            if (options.remove_extension) {
+            // Address is GMail
+            if (options.gmail_remove_subaddress) {
               parts[0] = parts[0].split('+')[0];
             }
-            if (options.remove_dots) {
+            if (options.gmail_remove_dots) {
               parts[0] = parts[0].replace(/\./g, '');
             }
             if (!parts[0].length) {
               return false;
             }
-            parts[0] = parts[0].toLowerCase();
-            parts[1] = 'gmail.com';
-          } else if (options.lowercase) {
+            if (options.all_lowercase || options.gmail_lowercase) {
+              parts[0] = parts[0].toLowerCase();
+            }
+            parts[1] = options.gmail_convert_googlemaildotcom ? 'gmail.com' : parts[1];
+          } else if (~icloud_domains.indexOf(parts[1])) {
+            // Address is iCloud
+            if (options.icloud_remove_subaddress) {
+              parts[0] = parts[0].split('+')[0];
+            }
+            if (!parts[0].length) {
+              return false;
+            }
+            if (options.all_lowercase || options.icloud_lowercase) {
+              parts[0] = parts[0].toLowerCase();
+            }
+          } else if (~outlookdotcom_domains.indexOf(parts[1])) {
+            // Address is Outlook.com
+            if (options.outlookdotcom_remove_subaddress) {
+              parts[0] = parts[0].split('+')[0];
+            }
+            if (!parts[0].length) {
+              return false;
+            }
+            if (options.all_lowercase || options.outlookdotcom_lowercase) {
+              parts[0] = parts[0].toLowerCase();
+            }
+          } else if (~yahoo_domains.indexOf(parts[1])) {
+            // Address is Yahoo
+            if (options.yahoo_remove_subaddress) {
+              var components = parts[0].split('-');
+              parts[0] = components.length > 1 ? components.slice(0, -1).join('-') : components[0];
+            }
+            if (!parts[0].length) {
+              return false;
+            }
+            if (options.all_lowercase || options.yahoo_lowercase) {
+              parts[0] = parts[0].toLowerCase();
+            }
+          } else if (options.all_lowercase) {
+            // Any other address
             parts[0] = parts[0].toLowerCase();
           }
           return parts.join('@');
@@ -53259,11 +55626,11 @@
         module.exports = exports['default'];
       },
       {
-        './isEmail': 302,
-        './util/merge': 343
+        './isEmail': 339,
+        './util/merge': 381
       }
     ],
-    334: [
+    372: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53284,9 +55651,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    335: [
+    373: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53306,11 +55673,11 @@
         module.exports = exports['default'];
       },
       {
-        './blacklist': 284,
-        './util/assertString': 342
+        './blacklist': 321,
+        './util/assertString': 380
       }
     ],
-    336: [
+    374: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53329,9 +55696,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    337: [
+    375: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53348,9 +55715,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    338: [
+    376: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53366,9 +55733,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    339: [
+    377: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53384,9 +55751,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    340: [
+    378: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53404,11 +55771,11 @@
         module.exports = exports['default'];
       },
       {
-        './ltrim': 331,
-        './rtrim': 334
+        './ltrim': 369,
+        './rtrim': 372
       }
     ],
-    341: [
+    379: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53424,9 +55791,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    342: [
+    380: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53440,13 +55807,13 @@
       },
       {}
     ],
-    343: [
+    381: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
         exports.default = merge;
         function merge() {
-          var obj = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+          var obj = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
           var defaults = arguments[1];
           for (var key in defaults) {
             if (typeof obj[key] === 'undefined') {
@@ -53459,7 +55826,7 @@
       },
       {}
     ],
-    344: [
+    382: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -53471,7 +55838,7 @@
         var _typeof = typeof Symbol === 'function' && _typeof2(Symbol.iterator) === 'symbol' ? function (obj) {
             return typeof obj === 'undefined' ? 'undefined' : _typeof2(obj);
           } : function (obj) {
-            return obj && typeof Symbol === 'function' && obj.constructor === Symbol ? 'symbol' : typeof obj === 'undefined' ? 'undefined' : _typeof2(obj);
+            return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj === 'undefined' ? 'undefined' : _typeof2(obj);
           };
         exports.default = toString;
         function toString(input) {
@@ -53490,7 +55857,7 @@
       },
       {}
     ],
-    345: [
+    383: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53506,9 +55873,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 342 }
+      { './util/assertString': 380 }
     ],
-    346: [
+    384: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.10.0
@@ -53525,7 +55892,7 @@
       },
       {}
     ],
-    347: [
+    385: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.10.0
@@ -53558,7 +55925,7 @@
       },
       {}
     ],
-    348: [
+    386: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -54099,15 +56466,15 @@
         }.call(undefined));
       },
       {
-        './bom': 346,
-        './processors': 347,
+        './bom': 384,
+        './processors': 385,
         'events': 14,
-        'sax': 249,
-        'timers': 276,
-        'xmlbuilder': 365
+        'sax': 286,
+        'timers': 313,
+        'xmlbuilder': 403
       }
     ],
-    349: [
+    387: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -54136,9 +56503,9 @@
           }();
         }.call(undefined));
       },
-      { 'lodash/create': 186 }
+      { 'lodash/create': 192 }
     ],
-    350: [
+    388: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -54201,13 +56568,13 @@
         }.call(undefined));
       },
       {
-        './XMLDeclaration': 357,
-        './XMLDocType': 358,
-        './XMLElement': 359,
-        './XMLStringifier': 363
+        './XMLDeclaration': 395,
+        './XMLDocType': 396,
+        './XMLElement': 397,
+        './XMLStringifier': 401
       }
     ],
-    351: [
+    389: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -54262,11 +56629,11 @@
         }.call(undefined));
       },
       {
-        './XMLNode': 360,
-        'lodash/create': 186
+        './XMLNode': 398,
+        'lodash/create': 192
       }
     ],
-    352: [
+    390: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -54321,11 +56688,11 @@
         }.call(undefined));
       },
       {
-        './XMLNode': 360,
-        'lodash/create': 186
+        './XMLNode': 398,
+        'lodash/create': 192
       }
     ],
-    353: [
+    391: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -54391,9 +56758,9 @@
           }();
         }.call(undefined));
       },
-      { 'lodash/create': 186 }
+      { 'lodash/create': 192 }
     ],
-    354: [
+    392: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -54437,9 +56804,9 @@
           }();
         }.call(undefined));
       },
-      { 'lodash/create': 186 }
+      { 'lodash/create': 192 }
     ],
-    355: [
+    393: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -54521,11 +56888,11 @@
         }.call(undefined));
       },
       {
-        'lodash/create': 186,
-        'lodash/isObject': 199
+        'lodash/create': 192,
+        'lodash/isObject': 205
       }
     ],
-    356: [
+    394: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -54579,9 +56946,9 @@
           }();
         }.call(undefined));
       },
-      { 'lodash/create': 186 }
+      { 'lodash/create': 192 }
     ],
-    357: [
+    395: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -54652,12 +57019,12 @@
         }.call(undefined));
       },
       {
-        './XMLNode': 360,
-        'lodash/create': 186,
-        'lodash/isObject': 199
+        './XMLNode': 398,
+        'lodash/create': 192,
+        'lodash/isObject': 205
       }
     ],
-    358: [
+    396: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -54819,18 +57186,18 @@
         }.call(undefined));
       },
       {
-        './XMLCData': 351,
-        './XMLComment': 352,
-        './XMLDTDAttList': 353,
-        './XMLDTDElement': 354,
-        './XMLDTDEntity': 355,
-        './XMLDTDNotation': 356,
-        './XMLProcessingInstruction': 361,
-        'lodash/create': 186,
-        'lodash/isObject': 199
+        './XMLCData': 389,
+        './XMLComment': 390,
+        './XMLDTDAttList': 391,
+        './XMLDTDElement': 392,
+        './XMLDTDEntity': 393,
+        './XMLDTDNotation': 394,
+        './XMLProcessingInstruction': 399,
+        'lodash/create': 192,
+        'lodash/isObject': 205
       }
     ],
-    359: [
+    397: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -55040,16 +57407,16 @@
         }.call(undefined));
       },
       {
-        './XMLAttribute': 349,
-        './XMLNode': 360,
-        './XMLProcessingInstruction': 361,
-        'lodash/create': 186,
-        'lodash/every': 188,
-        'lodash/isFunction': 197,
-        'lodash/isObject': 199
+        './XMLAttribute': 387,
+        './XMLNode': 398,
+        './XMLProcessingInstruction': 399,
+        'lodash/create': 192,
+        'lodash/every': 194,
+        'lodash/isFunction': 203,
+        'lodash/isObject': 205
       }
     ],
-    360: [
+    398: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -55347,19 +57714,19 @@
         }.call(undefined));
       },
       {
-        './XMLCData': 351,
-        './XMLComment': 352,
-        './XMLDeclaration': 357,
-        './XMLDocType': 358,
-        './XMLElement': 359,
-        './XMLRaw': 362,
-        './XMLText': 364,
-        'lodash/isEmpty': 196,
-        'lodash/isFunction': 197,
-        'lodash/isObject': 199
+        './XMLCData': 389,
+        './XMLComment': 390,
+        './XMLDeclaration': 395,
+        './XMLDocType': 396,
+        './XMLElement': 397,
+        './XMLRaw': 400,
+        './XMLText': 402,
+        'lodash/isEmpty': 202,
+        'lodash/isFunction': 203,
+        'lodash/isObject': 205
       }
     ],
-    361: [
+    399: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -55407,9 +57774,9 @@
           }();
         }.call(undefined));
       },
-      { 'lodash/create': 186 }
+      { 'lodash/create': 192 }
     ],
-    362: [
+    400: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -55464,11 +57831,11 @@
         }.call(undefined));
       },
       {
-        './XMLNode': 360,
-        'lodash/create': 186
+        './XMLNode': 398,
+        'lodash/create': 192
       }
     ],
-    363: [
+    401: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -55615,7 +57982,7 @@
       },
       {}
     ],
-    364: [
+    402: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -55670,11 +58037,11 @@
         }.call(undefined));
       },
       {
-        './XMLNode': 360,
-        'lodash/create': 186
+        './XMLNode': 398,
+        'lodash/create': 192
       }
     ],
-    365: [
+    403: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -55689,11 +58056,11 @@
         }.call(undefined));
       },
       {
-        './XMLBuilder': 350,
-        'lodash/assign': 184
+        './XMLBuilder': 388,
+        'lodash/assign': 190
       }
     ],
-    366: [
+    404: [
       function (require, module, exports) {
         'use strict';
         module.exports = extend;
@@ -55713,7 +58080,7 @@
       },
       {}
     ],
-    367: [
+    405: [
       function (require, module, exports) {
         'use strict';
         module.exports = {
@@ -55762,7 +58129,7 @@
       },
       {}
     ],
-    368: [
+    406: [
       function (require, module, exports) {
         'use strict';
         /*jshint maxlen: false*/
@@ -55893,9 +58260,9 @@
           };
         module.exports = FormatValidators;
       },
-      { 'validator': 282 }
+      { 'validator': 319 }
     ],
-    369: [
+    407: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -56437,12 +58804,12 @@
         };
       },
       {
-        './FormatValidators': 368,
-        './Report': 371,
-        './Utils': 375
+        './FormatValidators': 406,
+        './Report': 409,
+        './Utils': 413
       }
     ],
-    370: [
+    408: [
       function (require, module, exports) {
         'use strict';
         // Number.isFinite polyfill
@@ -56464,7 +58831,7 @@
       },
       {}
     ],
-    371: [
+    409: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -56641,13 +59008,13 @@
         }.call(this, require('_process')));
       },
       {
-        './Errors': 367,
-        './Utils': 375,
-        '_process': 244,
+        './Errors': 405,
+        './Utils': 413,
+        '_process': 281,
         'lodash.get': 73
       }
     ],
-    372: [
+    410: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -56655,6 +59022,7 @@
           } : function (obj) {
             return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
           };
+        var isequal = require('lodash.isequal');
         var Report = require('./Report');
         var SchemaCompilation = require('./SchemaCompilation');
         var SchemaValidation = require('./SchemaValidation');
@@ -56742,7 +59110,7 @@
         exports.getSchemaByReference = function (report, key) {
           var i = this.referenceCache.length;
           while (i--) {
-            if (this.referenceCache[i][0] === key) {
+            if (isequal(this.referenceCache[i][0], key)) {
               return this.referenceCache[i][1];
             }
           }
@@ -56794,13 +59162,14 @@
         exports.getRemotePath = getRemotePath;
       },
       {
-        './Report': 371,
-        './SchemaCompilation': 373,
-        './SchemaValidation': 374,
-        './Utils': 375
+        './Report': 409,
+        './SchemaCompilation': 411,
+        './SchemaValidation': 412,
+        './Utils': 413,
+        'lodash.isequal': 74
       }
     ],
-    373: [
+    411: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -57052,12 +59421,12 @@
         };
       },
       {
-        './Report': 371,
-        './SchemaCache': 372,
-        './Utils': 375
+        './Report': 409,
+        './SchemaCache': 410,
+        './Utils': 413
       }
     ],
-    374: [
+    412: [
       function (require, module, exports) {
         'use strict';
         var FormatValidators = require('./FormatValidators'), JsonValidation = require('./JsonValidation'), Report = require('./Report'), Utils = require('./Utils');
@@ -57823,13 +60192,13 @@
         };
       },
       {
-        './FormatValidators': 368,
-        './JsonValidation': 369,
-        './Report': 371,
-        './Utils': 375
+        './FormatValidators': 406,
+        './JsonValidation': 407,
+        './Report': 409,
+        './Utils': 413
       }
     ],
-    375: [
+    413: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -58040,7 +60409,7 @@
       },
       {}
     ],
-    376: [
+    414: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -58342,21 +60711,21 @@
         }.call(this, require('_process')));
       },
       {
-        './FormatValidators': 368,
-        './JsonValidation': 369,
-        './Polyfills': 370,
-        './Report': 371,
-        './SchemaCache': 372,
-        './SchemaCompilation': 373,
-        './SchemaValidation': 374,
-        './Utils': 375,
-        './schemas/hyper-schema.json': 377,
-        './schemas/schema.json': 378,
-        '_process': 244,
+        './FormatValidators': 406,
+        './JsonValidation': 407,
+        './Polyfills': 408,
+        './Report': 409,
+        './SchemaCache': 410,
+        './SchemaCompilation': 411,
+        './SchemaValidation': 412,
+        './Utils': 413,
+        './schemas/hyper-schema.json': 415,
+        './schemas/schema.json': 416,
+        '_process': 281,
         'lodash.get': 73
       }
     ],
-    377: [
+    415: [
       function (require, module, exports) {
         module.exports = {
           '$schema': 'http://json-schema.org/draft-04/hyper-schema#',
@@ -58474,7 +60843,7 @@
       },
       {}
     ],
-    378: [
+    416: [
       function (require, module, exports) {
         module.exports = {
           'id': 'http://json-schema.org/draft-04/schema#',
@@ -58633,58 +61002,83 @@
       },
       {}
     ]
-  }, {}, [210])(210);
+  }, {}, [217])(217);
 }));
-// CodeMirror is the only global var we claim
-window.CodeMirror = function () {
+// CodeMirror, copyright (c) by Marijn Haverbeke and others
+// Distributed under an MIT license: http://codemirror.net/LICENSE
+// This is CodeMirror (http://codemirror.net), a code editor
+// implemented in JavaScript on top of the browser's DOM.
+//
+// You can find some technical background for some of the code below
+// at http://marijnhaverbeke.nl/blog/#cm-internals .
+(function (mod) {
+  if (typeof exports == 'object' && typeof module == 'object')
+    // CommonJS
+    module.exports = mod();
+  else if (typeof define == 'function' && define.amd)
+    // AMD
+    return define([], mod);
+  else
+    // Plain browser env
+    this.CodeMirror = mod();
+}(function () {
   'use strict';
   // BROWSER SNIFFING
-  // Crude, but necessary to handle a number of hard-to-feature-detect
-  // bugs and behavior differences.
+  // Kludges for bugs and behavior differences that can't be feature
+  // detected are enabled based on userAgent etc sniffing.
   var gecko = /gecko\/\d/i.test(navigator.userAgent);
-  var ie = /MSIE \d/.test(navigator.userAgent);
-  var ie_lt8 = ie && (document.documentMode == null || document.documentMode < 8);
-  var ie_lt9 = ie && (document.documentMode == null || document.documentMode < 9);
+  // ie_uptoN means Internet Explorer version N or lower
+  var ie_upto10 = /MSIE \d/.test(navigator.userAgent);
+  var ie_upto7 = ie_upto10 && (document.documentMode == null || document.documentMode < 8);
+  var ie_upto8 = ie_upto10 && (document.documentMode == null || document.documentMode < 9);
+  var ie_upto9 = ie_upto10 && (document.documentMode == null || document.documentMode < 10);
+  var ie_11up = /Trident\/([7-9]|\d{2,})\./.test(navigator.userAgent);
+  var ie = ie_upto10 || ie_11up;
   var webkit = /WebKit\//.test(navigator.userAgent);
   var qtwebkit = webkit && /Qt\/\d+\.\d+/.test(navigator.userAgent);
   var chrome = /Chrome\//.test(navigator.userAgent);
-  var opera = /Opera\//.test(navigator.userAgent);
+  var presto = /Opera\//.test(navigator.userAgent);
   var safari = /Apple Computer/.test(navigator.vendor);
   var khtml = /KHTML\//.test(navigator.userAgent);
-  var mac_geLion = /Mac OS X 1\d\D([7-9]|\d\d)\D/.test(navigator.userAgent);
   var mac_geMountainLion = /Mac OS X 1\d\D([8-9]|\d\d)\D/.test(navigator.userAgent);
   var phantom = /PhantomJS/.test(navigator.userAgent);
   var ios = /AppleWebKit/.test(navigator.userAgent) && /Mobile\/\w+/.test(navigator.userAgent);
   // This is woefully incomplete. Suggestions for alternative methods welcome.
   var mobile = ios || /Android|webOS|BlackBerry|Opera Mini|Opera Mobi|IEMobile/i.test(navigator.userAgent);
   var mac = ios || /Mac/.test(navigator.platform);
-  var windows = /windows/i.test(navigator.platform);
-  var opera_version = opera && navigator.userAgent.match(/Version\/(\d*\.\d*)/);
-  if (opera_version)
-    opera_version = Number(opera_version[1]);
-  if (opera_version && opera_version >= 15) {
-    opera = false;
+  var windows = /win/i.test(navigator.platform);
+  var presto_version = presto && navigator.userAgent.match(/Version\/(\d*\.\d*)/);
+  if (presto_version)
+    presto_version = Number(presto_version[1]);
+  if (presto_version && presto_version >= 15) {
+    presto = false;
     webkit = true;
   }
   // Some browsers use the wrong event properties to signal cmd/ctrl on OS X
-  var flipCtrlCmd = mac && (qtwebkit || opera && (opera_version == null || opera_version < 12.11));
-  var captureMiddleClick = gecko || ie && !ie_lt9;
-  // Optimize some code when these features are not used
+  var flipCtrlCmd = mac && (qtwebkit || presto && (presto_version == null || presto_version < 12.11));
+  var captureRightClick = gecko || ie && !ie_upto8;
+  // Optimize some code when these features are not used.
   var sawReadOnlySpans = false, sawCollapsedSpans = false;
-  // CONSTRUCTOR
+  // EDITOR CONSTRUCTOR
+  // A CodeMirror instance represents an editor. This is the object
+  // that user code is usually dealing with.
   function CodeMirror(place, options) {
     if (!(this instanceof CodeMirror))
       return new CodeMirror(place, options);
     this.options = options = options || {};
     // Determine effective options based on given values and defaults.
-    for (var opt in defaults)
-      if (!options.hasOwnProperty(opt) && defaults.hasOwnProperty(opt))
-        options[opt] = defaults[opt];
+    copyObj(defaults, options, false);
     setGuttersForLineNumbers(options);
-    var docStart = typeof options.value == 'string' ? 0 : options.value.first;
-    var display = this.display = makeDisplay(place, docStart);
+    var doc = options.value;
+    if (typeof doc == 'string')
+      doc = new Doc(doc, options.mode);
+    this.doc = doc;
+    var display = this.display = new Display(place, doc);
     display.wrapper.CodeMirror = this;
     updateGutters(this);
+    themeChanged(this);
+    if (options.lineWrapping)
+      this.display.wrapper.className += ' CodeMirror-wrap';
     if (options.autofocus && !mobile)
       focusInput(this);
     this.state = {
@@ -58695,49 +61089,49 @@ window.CodeMirror = function () {
       focused: false,
       suppressEdits: false,
       pasteIncoming: false,
+      cutIncoming: false,
       draggingText: false,
       highlight: new Delayed()
     };
-    themeChanged(this);
-    if (options.lineWrapping)
-      this.display.wrapper.className += ' CodeMirror-wrap';
-    var doc = options.value;
-    if (typeof doc == 'string')
-      doc = new Doc(options.value, options.mode);
-    operation(this, attachDoc)(this, doc);
     // Override magic textarea content restore that IE sometimes does
     // on our hidden textarea on reload
-    if (ie)
+    if (ie_upto10)
       setTimeout(bind(resetInput, this, true), 20);
     registerEventHandlers(this);
-    // IE throws unspecified error in certain cases, when
-    // trying to access activeElement before onload
-    var hasFocus;
-    try {
-      hasFocus = document.activeElement == display.input;
-    } catch (e) {
-    }
-    if (hasFocus || options.autofocus && !mobile)
-      setTimeout(bind(onFocus, this), 20);
-    else
-      onBlur(this);
-    operation(this, function () {
+    ensureGlobalHandlers();
+    var cm = this;
+    runInOp(this, function () {
+      cm.curOp.forceUpdate = true;
+      attachDoc(cm, doc);
+      if (options.autofocus && !mobile || activeElt() == display.input)
+        setTimeout(bind(onFocus, cm), 20);
+      else
+        onBlur(cm);
       for (var opt in optionHandlers)
-        if (optionHandlers.propertyIsEnumerable(opt))
-          optionHandlers[opt](this, options[opt], Init);
+        if (optionHandlers.hasOwnProperty(opt))
+          optionHandlers[opt](cm, options[opt], Init);
       for (var i = 0; i < initHooks.length; ++i)
-        initHooks[i](this);
-    })();
+        initHooks[i](cm);
+    });
   }
   // DISPLAY CONSTRUCTOR
-  function makeDisplay(place, docStart) {
-    var d = {};
-    var input = d.input = elt('textarea', null, null, 'position: absolute; padding: 0; width: 1px; height: 1em; outline: none; font-size: 4px;');
+  // The display handles the DOM integration, both for input reading
+  // and content drawing. It holds references to DOM nodes and
+  // display-related state.
+  function Display(place, doc) {
+    var d = this;
+    // The semihidden textarea that is focused when the editor is
+    // focused, and receives input.
+    var input = d.input = elt('textarea', null, null, 'position: absolute; padding: 0; width: 1px; height: 1em; outline: none');
+    // The textarea is kept positioned near the cursor to prevent the
+    // fact that it'll be scrolled into view on input from scrolling
+    // our fake cursor out of view. On webkit, when wrap=off, paste is
+    // very slow. So make the area wide instead.
     if (webkit)
       input.style.width = '1000px';
     else
       input.setAttribute('wrap', 'off');
-    // if border: 0; -- iOS fails to open keyboard (issue #1287)
+    // If border: 0; -- iOS fails to open keyboard (issue #1287)
     if (ios)
       input.style.border = '1px solid black';
     input.setAttribute('autocorrect', 'off');
@@ -58745,38 +61139,43 @@ window.CodeMirror = function () {
     input.setAttribute('spellcheck', 'false');
     // Wraps and hides input textarea
     d.inputDiv = elt('div', [input], null, 'overflow: hidden; position: relative; width: 3px; height: 0px;');
-    // The actual fake scrollbars.
-    d.scrollbarH = elt('div', [elt('div', null, null, 'height: 1px')], 'CodeMirror-hscrollbar');
-    d.scrollbarV = elt('div', [elt('div', null, null, 'width: 1px')], 'CodeMirror-vscrollbar');
+    // The fake scrollbar elements.
+    d.scrollbarH = elt('div', [elt('div', null, null, 'height: 100%; min-height: 1px')], 'CodeMirror-hscrollbar');
+    d.scrollbarV = elt('div', [elt('div', null, null, 'min-width: 1px')], 'CodeMirror-vscrollbar');
+    // Covers bottom-right square when both scrollbars are present.
     d.scrollbarFiller = elt('div', null, 'CodeMirror-scrollbar-filler');
+    // Covers bottom of gutter when coverGutterNextToScrollbar is on
+    // and h scrollbar is present.
     d.gutterFiller = elt('div', null, 'CodeMirror-gutter-filler');
-    // DIVs containing the selection and the actual code
+    // Will contain the actual code, positioned to cover the viewport.
     d.lineDiv = elt('div', null, 'CodeMirror-code');
+    // Elements are added to these to represent selection and cursors.
     d.selectionDiv = elt('div', null, null, 'position: relative; z-index: 1');
-    // Blinky cursor, and element used to ensure cursor fits at the end of a line
-    d.cursor = elt('div', '\xa0', 'CodeMirror-cursor');
-    // Secondary cursor, shown when on a 'jump' in bi-directional text
-    d.otherCursor = elt('div', '\xa0', 'CodeMirror-cursor CodeMirror-secondarycursor');
-    // Used to measure text size
+    d.cursorDiv = elt('div', null, 'CodeMirror-cursors');
+    // A visibility: hidden element used to find the size of things.
     d.measure = elt('div', null, 'CodeMirror-measure');
+    // When lines outside of the viewport are measured, they are drawn in this.
+    d.lineMeasure = elt('div', null, 'CodeMirror-measure');
     // Wraps everything that needs to exist inside the vertically-padded coordinate system
     d.lineSpace = elt('div', [
       d.measure,
+      d.lineMeasure,
       d.selectionDiv,
-      d.lineDiv,
-      d.cursor,
-      d.otherCursor
+      d.cursorDiv,
+      d.lineDiv
     ], null, 'position: relative; outline: none');
-    // Moved around its parent to cover visible view
+    // Moved around its parent to cover visible view.
     d.mover = elt('div', [elt('div', [d.lineSpace], 'CodeMirror-lines')], null, 'position: relative');
-    // Set to the height of the text, causes scrolling
+    // Set to the height of the document, allowing scrolling.
     d.sizer = elt('div', [d.mover], 'CodeMirror-sizer');
-    // D is needed because behavior of elts with overflow: auto and padding is inconsistent across browsers
+    // Behavior of elts with overflow: auto and padding is
+    // inconsistent across browsers. This is used to ensure the
+    // scrollable area is big enough.
     d.heightForcer = elt('div', null, null, 'position: absolute; height: ' + scrollerCutOff + 'px; width: 1px;');
-    // Will contain the gutters, if any
+    // Will contain the gutters, if any.
     d.gutters = elt('div', null, 'CodeMirror-gutters');
     d.lineGutter = null;
-    // Provides scrolling
+    // Actual scrollable element.
     d.scroller = elt('div', [
       d.sizer,
       d.heightForcer,
@@ -58792,15 +61191,11 @@ window.CodeMirror = function () {
       d.gutterFiller,
       d.scroller
     ], 'CodeMirror');
-    // Work around IE7 z-index bug
-    if (ie_lt8) {
+    // Work around IE7 z-index bug (not perfect, hence IE7 not really being supported)
+    if (ie_upto7) {
       d.gutters.style.zIndex = -1;
       d.scroller.style.paddingRight = 0;
     }
-    if (place.appendChild)
-      place.appendChild(d.wrapper);
-    else
-      place(d.wrapper);
     // Needed to hide big blue blinking cursor on Mobile Safari
     if (ios)
       input.style.width = '0px';
@@ -58810,31 +61205,43 @@ window.CodeMirror = function () {
     if (khtml) {
       d.inputDiv.style.height = '1px';
       d.inputDiv.style.position = 'absolute';
-    }  // Need to set a minimum width to see the scrollbar on IE7 (but must not set it on IE8).
-    else if (ie_lt8)
-      d.scrollbarH.style.minWidth = d.scrollbarV.style.minWidth = '18px';
-    // Current visible range (may be bigger than the view window).
-    d.viewOffset = d.lastSizeC = 0;
-    d.showingFrom = d.showingTo = docStart;
+    }
+    // Need to set a minimum width to see the scrollbar on IE7 (but must not set it on IE8).
+    if (ie_upto7)
+      d.scrollbarH.style.minHeight = d.scrollbarV.style.minWidth = '18px';
+    if (place.appendChild)
+      place.appendChild(d.wrapper);
+    else
+      place(d.wrapper);
+    // Current rendered range (may be bigger than the view window).
+    d.viewFrom = d.viewTo = doc.first;
+    // Information about the rendered lines.
+    d.view = [];
+    // Holds info about a single rendered line when it was rendered
+    // for measurement, while not in view.
+    d.externalMeasured = null;
+    // Empty space (in pixels) above the view
+    d.viewOffset = 0;
+    d.lastSizeC = 0;
+    d.updateLineNumbers = null;
     // Used to only resize the line number gutter when necessary (when
     // the amount of lines crosses a boundary that makes its width change)
     d.lineNumWidth = d.lineNumInnerWidth = d.lineNumChars = null;
     // See readInput and resetInput
     d.prevInput = '';
-    // Set to true when a non-horizontal-scrolling widget is added. As
-    // an optimization, widget aligning is skipped when d is false.
+    // Set to true when a non-horizontal-scrolling line widget is
+    // added. As an optimization, line widget aligning is skipped when
+    // this is false.
     d.alignWidgets = false;
-    // Flag that indicates whether we currently expect input to appear
-    // (after some event like 'keypress' or 'input') and are polling
-    // intensively.
+    // Flag that indicates whether we expect input to appear real soon
+    // now (after some event like 'keypress' or 'input') and are
+    // polling intensively.
     d.pollingFast = false;
     // Self-resetting timeout for the poller
     d.poll = new Delayed();
-    d.cachedCharWidth = d.cachedTextHeight = null;
-    d.measureLineCache = [];
-    d.measureLineCachePos = 0;
+    d.cachedCharWidth = d.cachedTextHeight = d.cachedPaddingH = null;
     // Tracks when resetInput has punted to just putting a short
-    // string instead of the (large) selection.
+    // string into the textarea instead of the full selection.
     d.inaccurateSelection = false;
     // Tracks the maximum line length so that the horizontal scrollbar
     // can be kept static when scrolling.
@@ -58843,12 +61250,19 @@ window.CodeMirror = function () {
     d.maxLineChanged = false;
     // Used for measuring wheel scrolling granularity
     d.wheelDX = d.wheelDY = d.wheelStartX = d.wheelStartY = null;
-    return d;
+    // True when shift is held down.
+    d.shift = false;
+    // Used to track whether anything happened since the context menu
+    // was opened.
+    d.selForContextMenu = null;
   }
   // STATE UPDATES
   // Used to get the editor into a consistent state again when options change.
   function loadMode(cm) {
     cm.doc.mode = CodeMirror.getMode(cm.options, cm.doc.modeOption);
+    resetModeState(cm);
+  }
+  function resetModeState(cm) {
     cm.doc.iter(function (line) {
       if (line.stateAfter)
         line.stateAfter = null;
@@ -58863,11 +61277,11 @@ window.CodeMirror = function () {
   }
   function wrappingChanged(cm) {
     if (cm.options.lineWrapping) {
-      cm.display.wrapper.className += ' CodeMirror-wrap';
+      addClass(cm.display.wrapper, 'CodeMirror-wrap');
       cm.display.sizer.style.minWidth = '';
     } else {
-      cm.display.wrapper.className = cm.display.wrapper.className.replace(' CodeMirror-wrap', '');
-      computeMaxLength(cm);
+      rmClass(cm.display.wrapper, 'CodeMirror-wrap');
+      findMaxLine(cm);
     }
     estimateLineHeights(cm);
     regChange(cm);
@@ -58876,16 +61290,25 @@ window.CodeMirror = function () {
       updateScrollbars(cm);
     }, 100);
   }
+  // Returns a function that estimates the height of a line, to use as
+  // first approximation until the line becomes visible (and is thus
+  // properly measurable).
   function estimateHeight(cm) {
     var th = textHeight(cm.display), wrapping = cm.options.lineWrapping;
     var perLine = wrapping && Math.max(5, cm.display.scroller.clientWidth / charWidth(cm.display) - 3);
     return function (line) {
       if (lineIsHidden(cm.doc, line))
         return 0;
-      else if (wrapping)
-        return (Math.ceil(line.text.length / perLine) || 1) * th;
+      var widgetsHeight = 0;
+      if (line.widgets)
+        for (var i = 0; i < line.widgets.length; i++) {
+          if (line.widgets[i].height)
+            widgetsHeight += line.widgets[i].height;
+        }
+      if (wrapping)
+        return widgetsHeight + (Math.ceil(line.text.length / perLine) || 1) * th;
       else
-        return th;
+        return widgetsHeight + th;
     };
   }
   function estimateLineHeights(cm) {
@@ -58899,7 +61322,6 @@ window.CodeMirror = function () {
   function keyMapChanged(cm) {
     var map = keyMap[cm.options.keyMap], style = map.style;
     cm.display.wrapper.className = cm.display.wrapper.className.replace(/\s*cm-keymap-\S+/g, '') + (style ? ' cm-keymap-' + style : '');
-    cm.state.disableInput = map.disableInput;
   }
   function themeChanged(cm) {
     cm.display.wrapper.className = cm.display.wrapper.className.replace(/\s*cm-s-\S+/g, '') + cm.options.theme.replace(/(^|\s)\s*/g, ' cm-s-');
@@ -58912,6 +61334,8 @@ window.CodeMirror = function () {
       alignHorizontally(cm);
     }, 20);
   }
+  // Rebuild the gutter elements, ensure the margin to the left of the
+  // code matches their width.
   function updateGutters(cm) {
     var gutters = cm.display.gutters, specs = cm.options.gutters;
     removeChildren(gutters);
@@ -58924,32 +61348,42 @@ window.CodeMirror = function () {
       }
     }
     gutters.style.display = i ? '' : 'none';
+    updateGutterSpace(cm);
   }
-  function lineLength(doc, line) {
+  function updateGutterSpace(cm) {
+    var width = cm.display.gutters.offsetWidth;
+    cm.display.sizer.style.marginLeft = width + 'px';
+    cm.display.scrollbarH.style.left = cm.options.fixedGutter ? width + 'px' : 0;
+  }
+  // Compute the character length of a line, taking into account
+  // collapsed ranges (see markText) that might hide parts, and join
+  // other lines onto it.
+  function lineLength(line) {
     if (line.height == 0)
       return 0;
     var len = line.text.length, merged, cur = line;
     while (merged = collapsedSpanAtStart(cur)) {
-      var found = merged.find();
-      cur = getLine(doc, found.from.line);
+      var found = merged.find(0, true);
+      cur = found.from.line;
       len += found.from.ch - found.to.ch;
     }
     cur = line;
     while (merged = collapsedSpanAtEnd(cur)) {
-      var found = merged.find();
+      var found = merged.find(0, true);
       len -= cur.text.length - found.from.ch;
-      cur = getLine(doc, found.to.line);
+      cur = found.to.line;
       len += cur.text.length - found.to.ch;
     }
     return len;
   }
-  function computeMaxLength(cm) {
+  // Find the longest line in the document.
+  function findMaxLine(cm) {
     var d = cm.display, doc = cm.doc;
     d.maxLine = getLine(doc, doc.first);
-    d.maxLineLength = lineLength(doc, d.maxLine);
+    d.maxLineLength = lineLength(d.maxLine);
     d.maxLineChanged = true;
     doc.iter(function (line) {
-      var len = lineLength(doc, line);
+      var len = lineLength(line);
       if (len > d.maxLineLength) {
         d.maxLineLength = len;
         d.maxLine = line;
@@ -58959,41 +61393,54 @@ window.CodeMirror = function () {
   // Make sure the gutters options contains the element
   // "CodeMirror-linenumbers" when the lineNumbers option is true.
   function setGuttersForLineNumbers(options) {
-    var found = false;
-    for (var i = 0; i < options.gutters.length; ++i) {
-      if (options.gutters[i] == 'CodeMirror-linenumbers') {
-        if (options.lineNumbers)
-          found = true;
-        else
-          options.gutters.splice(i--, 1);
-      }
+    var found = indexOf(options.gutters, 'CodeMirror-linenumbers');
+    if (found == -1 && options.lineNumbers) {
+      options.gutters = options.gutters.concat(['CodeMirror-linenumbers']);
+    } else if (found > -1 && !options.lineNumbers) {
+      options.gutters = options.gutters.slice(0);
+      options.gutters.splice(found, 1);
     }
-    if (!found && options.lineNumbers)
-      options.gutters.push('CodeMirror-linenumbers');
   }
   // SCROLLBARS
+  // Prepare DOM reads needed to update the scrollbars. Done in one
+  // shot to minimize update/measure roundtrips.
+  function measureForScrollbars(cm) {
+    var scroll = cm.display.scroller;
+    return {
+      clientHeight: scroll.clientHeight,
+      barHeight: cm.display.scrollbarV.clientHeight,
+      scrollWidth: scroll.scrollWidth,
+      clientWidth: scroll.clientWidth,
+      barWidth: cm.display.scrollbarH.clientWidth,
+      docHeight: Math.round(cm.doc.height + paddingVert(cm.display))
+    };
+  }
   // Re-synchronize the fake scrollbars with the actual size of the
-  // content. Optionally force a scrollTop.
-  function updateScrollbars(cm) {
-    var d = cm.display, docHeight = cm.doc.height;
-    var totalHeight = docHeight + paddingVert(d);
-    d.sizer.style.minHeight = d.heightForcer.style.top = totalHeight + 'px';
-    d.gutters.style.height = Math.max(totalHeight, d.scroller.clientHeight - scrollerCutOff) + 'px';
-    var scrollHeight = Math.max(totalHeight, d.scroller.scrollHeight);
-    var needsH = d.scroller.scrollWidth > d.scroller.clientWidth + 1;
-    var needsV = scrollHeight > d.scroller.clientHeight + 1;
+  // content.
+  function updateScrollbars(cm, measure) {
+    if (!measure)
+      measure = measureForScrollbars(cm);
+    var d = cm.display;
+    var scrollHeight = measure.docHeight + scrollerCutOff;
+    var needsH = measure.scrollWidth > measure.clientWidth;
+    var needsV = scrollHeight > measure.clientHeight;
     if (needsV) {
       d.scrollbarV.style.display = 'block';
       d.scrollbarV.style.bottom = needsH ? scrollbarWidth(d.measure) + 'px' : '0';
-      d.scrollbarV.firstChild.style.height = scrollHeight - d.scroller.clientHeight + d.scrollbarV.clientHeight + 'px';
-    } else
+      // A bug in IE8 can cause this value to be negative, so guard it.
+      d.scrollbarV.firstChild.style.height = Math.max(0, scrollHeight - measure.clientHeight + (measure.barHeight || d.scrollbarV.clientHeight)) + 'px';
+    } else {
       d.scrollbarV.style.display = '';
+      d.scrollbarV.firstChild.style.height = '0';
+    }
     if (needsH) {
       d.scrollbarH.style.display = 'block';
       d.scrollbarH.style.right = needsV ? scrollbarWidth(d.measure) + 'px' : '0';
-      d.scrollbarH.firstChild.style.width = d.scroller.scrollWidth - d.scroller.clientWidth + d.scrollbarH.clientWidth + 'px';
-    } else
+      d.scrollbarH.firstChild.style.width = measure.scrollWidth - measure.clientWidth + (measure.barWidth || d.scrollbarH.clientWidth) + 'px';
+    } else {
       d.scrollbarH.style.display = '';
+      d.scrollbarH.firstChild.style.width = '0';
+    }
     if (needsH && needsV) {
       d.scrollbarFiller.style.display = 'block';
       d.scrollbarFiller.style.height = d.scrollbarFiller.style.width = scrollbarWidth(d.measure) + 'px';
@@ -59005,39 +61452,72 @@ window.CodeMirror = function () {
       d.gutterFiller.style.width = d.gutters.offsetWidth + 'px';
     } else
       d.gutterFiller.style.display = '';
-    if (mac_geLion && scrollbarWidth(d.measure) === 0)
-      d.scrollbarV.style.minWidth = d.scrollbarH.style.minHeight = mac_geMountainLion ? '18px' : '12px';
-  }
-  function visibleLines(display, doc, viewPort) {
-    var top = display.scroller.scrollTop, height = display.wrapper.clientHeight;
-    if (typeof viewPort == 'number')
-      top = viewPort;
-    else if (viewPort) {
-      top = viewPort.top;
-      height = viewPort.bottom - viewPort.top;
+    if (!cm.state.checkedOverlayScrollbar && measure.clientHeight > 0) {
+      if (scrollbarWidth(d.measure) === 0) {
+        var w = mac && !mac_geMountainLion ? '12px' : '18px';
+        d.scrollbarV.style.minWidth = d.scrollbarH.style.minHeight = w;
+        var barMouseDown = function (e) {
+          if (e_target(e) != d.scrollbarV && e_target(e) != d.scrollbarH)
+            operation(cm, onMouseDown)(e);
+        };
+        on(d.scrollbarV, 'mousedown', barMouseDown);
+        on(d.scrollbarH, 'mousedown', barMouseDown);
+      }
+      cm.state.checkedOverlayScrollbar = true;
     }
+  }
+  // Compute the lines that are visible in a given viewport (defaults
+  // the the current scroll position). viewPort may contain top,
+  // height, and ensure (see op.scrollToPos) properties.
+  function visibleLines(display, doc, viewPort) {
+    var top = viewPort && viewPort.top != null ? Math.max(0, viewPort.top) : display.scroller.scrollTop;
     top = Math.floor(top - paddingTop(display));
-    var bottom = Math.ceil(top + height);
+    var bottom = viewPort && viewPort.bottom != null ? viewPort.bottom : top + display.wrapper.clientHeight;
+    var from = lineAtHeight(doc, top), to = lineAtHeight(doc, bottom);
+    // Ensure is a {from: {line, ch}, to: {line, ch}} object, and
+    // forces those lines into the viewport (if possible).
+    if (viewPort && viewPort.ensure) {
+      var ensureFrom = viewPort.ensure.from.line, ensureTo = viewPort.ensure.to.line;
+      if (ensureFrom < from)
+        return {
+          from: ensureFrom,
+          to: lineAtHeight(doc, heightAtLine(getLine(doc, ensureFrom)) + display.wrapper.clientHeight)
+        };
+      if (Math.min(ensureTo, doc.lastLine()) >= to)
+        return {
+          from: lineAtHeight(doc, heightAtLine(getLine(doc, ensureTo)) - display.wrapper.clientHeight),
+          to: ensureTo
+        };
+    }
     return {
-      from: lineAtHeight(doc, top),
-      to: lineAtHeight(doc, bottom)
+      from: from,
+      to: Math.max(to, from + 1)
     };
   }
   // LINE NUMBERS
+  // Re-align line numbers and gutter marks to compensate for
+  // horizontal scrolling.
   function alignHorizontally(cm) {
-    var display = cm.display;
+    var display = cm.display, view = display.view;
     if (!display.alignWidgets && (!display.gutters.firstChild || !cm.options.fixedGutter))
       return;
     var comp = compensateForHScroll(display) - display.scroller.scrollLeft + cm.doc.scrollLeft;
-    var gutterW = display.gutters.offsetWidth, l = comp + 'px';
-    for (var n = display.lineDiv.firstChild; n; n = n.nextSibling)
-      if (n.alignable) {
-        for (var i = 0, a = n.alignable; i < a.length; ++i)
-          a[i].style.left = l;
+    var gutterW = display.gutters.offsetWidth, left = comp + 'px';
+    for (var i = 0; i < view.length; i++)
+      if (!view[i].hidden) {
+        if (cm.options.fixedGutter && view[i].gutter)
+          view[i].gutter.style.left = left;
+        var align = view[i].alignable;
+        if (align)
+          for (var j = 0; j < align.length; j++)
+            align[j].style.left = left;
       }
     if (cm.options.fixedGutter)
       display.gutters.style.left = comp + gutterW + 'px';
   }
+  // Used to ensure that the line number gutter is still the right
+  // size for the current document size. Returns true when an update
+  // is needed.
   function maybeUpdateLineNumberWidth(cm) {
     if (!cm.options.lineNumbers)
       return false;
@@ -59050,6 +61530,7 @@ window.CodeMirror = function () {
       display.lineNumWidth = display.lineNumInnerWidth + padding;
       display.lineNumChars = display.lineNumInnerWidth ? last.length : -1;
       display.lineGutter.style.width = display.lineNumWidth + 'px';
+      updateGutterSpace(cm);
       return true;
     }
     return false;
@@ -59057,204 +61538,177 @@ window.CodeMirror = function () {
   function lineNumberFor(options, i) {
     return String(options.lineNumberFormatter(i + options.firstLineNumber));
   }
+  // Computes display.scroller.scrollLeft + display.gutters.offsetWidth,
+  // but using getBoundingClientRect to get a sub-pixel-accurate
+  // result.
   function compensateForHScroll(display) {
-    return getRect(display.scroller).left - getRect(display.sizer).left;
+    return display.scroller.getBoundingClientRect().left - display.sizer.getBoundingClientRect().left;
   }
   // DISPLAY DRAWING
-  function updateDisplay(cm, changes, viewPort, forced) {
-    var oldFrom = cm.display.showingFrom, oldTo = cm.display.showingTo, updated;
+  // Updates the display, selection, and scrollbars, using the
+  // information in display.view to find out which nodes are no longer
+  // up-to-date. Tries to bail out early when no changes are needed,
+  // unless forced is true.
+  // Returns true if an actual update happened, false otherwise.
+  function updateDisplay(cm, viewPort, forced) {
+    var oldFrom = cm.display.viewFrom, oldTo = cm.display.viewTo, updated;
     var visible = visibleLines(cm.display, cm.doc, viewPort);
-    for (;;) {
-      if (!updateDisplayInner(cm, changes, visible, forced))
+    for (var first = true;; first = false) {
+      var oldWidth = cm.display.scroller.clientWidth;
+      if (!updateDisplayInner(cm, visible, forced))
         break;
-      forced = false;
       updated = true;
+      // If the max line changed since it was last measured, measure it,
+      // and ensure the document's width matches it.
+      if (cm.display.maxLineChanged && !cm.options.lineWrapping)
+        adjustContentWidth(cm);
+      var barMeasure = measureForScrollbars(cm);
       updateSelection(cm);
-      updateScrollbars(cm);
-      // Clip forced viewport to actual scrollable area
-      if (viewPort)
-        viewPort = Math.min(cm.display.scroller.scrollHeight - cm.display.scroller.clientHeight, typeof viewPort == 'number' ? viewPort : viewPort.top);
+      setDocumentHeight(cm, barMeasure);
+      updateScrollbars(cm, barMeasure);
+      if (webkit && cm.options.lineWrapping)
+        checkForWebkitWidthBug(cm, barMeasure);
+      // (Issue #2420)
+      if (first && cm.options.lineWrapping && oldWidth != cm.display.scroller.clientWidth) {
+        forced = true;
+        continue;
+      }
+      forced = false;
+      // Clip forced viewport to actual scrollable area.
+      if (viewPort && viewPort.top != null)
+        viewPort = { top: Math.min(barMeasure.docHeight - scrollerCutOff - barMeasure.clientHeight, viewPort.top) };
+      // Updated line heights might result in the drawn area not
+      // actually covering the viewport. Keep looping until it does.
       visible = visibleLines(cm.display, cm.doc, viewPort);
-      if (visible.from >= cm.display.showingFrom && visible.to <= cm.display.showingTo)
+      if (visible.from >= cm.display.viewFrom && visible.to <= cm.display.viewTo)
         break;
-      changes = [];
     }
+    cm.display.updateLineNumbers = null;
     if (updated) {
       signalLater(cm, 'update', cm);
-      if (cm.display.showingFrom != oldFrom || cm.display.showingTo != oldTo)
-        signalLater(cm, 'viewportChange', cm, cm.display.showingFrom, cm.display.showingTo);
+      if (cm.display.viewFrom != oldFrom || cm.display.viewTo != oldTo)
+        signalLater(cm, 'viewportChange', cm, cm.display.viewFrom, cm.display.viewTo);
     }
     return updated;
   }
-  // Uses a set of changes plus the current scroll position to
-  // determine which DOM updates have to be made, and makes the
-  // updates.
-  function updateDisplayInner(cm, changes, visible, forced) {
+  // Does the actual updating of the line display. Bails out
+  // (returning false) when there is nothing to be done and forced is
+  // false.
+  function updateDisplayInner(cm, visible, forced) {
     var display = cm.display, doc = cm.doc;
-    if (!display.wrapper.clientWidth) {
-      display.showingFrom = display.showingTo = doc.first;
-      display.viewOffset = 0;
+    if (!display.wrapper.offsetWidth) {
+      resetView(cm);
       return;
     }
     // Bail out if the visible area is already rendered and nothing changed.
-    if (!forced && changes.length == 0 && visible.from > display.showingFrom && visible.to < display.showingTo)
+    if (!forced && visible.from >= display.viewFrom && visible.to <= display.viewTo && countDirtyView(cm) == 0)
       return;
     if (maybeUpdateLineNumberWidth(cm))
-      changes = [{
-          from: doc.first,
-          to: doc.first + doc.size
-        }];
-    var gutterW = display.sizer.style.marginLeft = display.gutters.offsetWidth + 'px';
-    display.scrollbarH.style.left = cm.options.fixedGutter ? gutterW : '0';
-    // Used to determine which lines need their line numbers updated
-    var positionsChangedFrom = Infinity;
-    if (cm.options.lineNumbers)
-      for (var i = 0; i < changes.length; ++i)
-        if (changes[i].diff) {
-          positionsChangedFrom = changes[i].from;
-          break;
-        }
+      resetView(cm);
+    var dims = getDimensions(cm);
+    // Compute a suitable new viewport (from & to)
     var end = doc.first + doc.size;
     var from = Math.max(visible.from - cm.options.viewportMargin, doc.first);
     var to = Math.min(end, visible.to + cm.options.viewportMargin);
-    if (display.showingFrom < from && from - display.showingFrom < 20)
-      from = Math.max(doc.first, display.showingFrom);
-    if (display.showingTo > to && display.showingTo - to < 20)
-      to = Math.min(end, display.showingTo);
+    if (display.viewFrom < from && from - display.viewFrom < 20)
+      from = Math.max(doc.first, display.viewFrom);
+    if (display.viewTo > to && display.viewTo - to < 20)
+      to = Math.min(end, display.viewTo);
     if (sawCollapsedSpans) {
-      from = lineNo(visualLine(doc, getLine(doc, from)));
-      while (to < end && lineIsHidden(doc, getLine(doc, to)))
-        ++to;
+      from = visualLineNo(cm.doc, from);
+      to = visualLineEndNo(cm.doc, to);
     }
-    // Create a range of theoretically intact lines, and punch holes
-    // in that using the change info.
-    var intact = [{
-          from: Math.max(display.showingFrom, doc.first),
-          to: Math.min(display.showingTo, end)
-        }];
-    if (intact[0].from >= intact[0].to)
-      intact = [];
-    else
-      intact = computeIntact(intact, changes);
-    // When merged lines are present, we might have to reduce the
-    // intact ranges because changes in continued fragments of the
-    // intact lines do require the lines to be redrawn.
-    if (sawCollapsedSpans)
-      for (var i = 0; i < intact.length; ++i) {
-        var range = intact[i], merged;
-        while (merged = collapsedSpanAtEnd(getLine(doc, range.to - 1))) {
-          var newTo = merged.find().from.line;
-          if (newTo > range.from)
-            range.to = newTo;
-          else {
-            intact.splice(i--, 1);
-            break;
-          }
-        }
-      }
-    // Clip off the parts that won't be visible
-    var intactLines = 0;
-    for (var i = 0; i < intact.length; ++i) {
-      var range = intact[i];
-      if (range.from < from)
-        range.from = from;
-      if (range.to > to)
-        range.to = to;
-      if (range.from >= range.to)
-        intact.splice(i--, 1);
-      else
-        intactLines += range.to - range.from;
-    }
-    if (!forced && intactLines == to - from && from == display.showingFrom && to == display.showingTo) {
-      updateViewOffset(cm);
+    var different = from != display.viewFrom || to != display.viewTo || display.lastSizeC != display.wrapper.clientHeight;
+    adjustView(cm, from, to);
+    display.viewOffset = heightAtLine(getLine(cm.doc, display.viewFrom));
+    // Position the mover div to align with the current scroll position
+    cm.display.mover.style.top = display.viewOffset + 'px';
+    var toUpdate = countDirtyView(cm);
+    if (!different && toUpdate == 0 && !forced)
       return;
-    }
-    intact.sort(function (a, b) {
-      return a.from - b.from;
-    });
-    // Avoid crashing on IE's "unspecified error" when in iframes
-    try {
-      var focused = document.activeElement;
-    } catch (e) {
-    }
-    if (intactLines < (to - from) * 0.7)
+    // For big changes, we hide the enclosing element during the
+    // update, since that speeds up the operations on most browsers.
+    var focused = activeElt();
+    if (toUpdate > 4)
       display.lineDiv.style.display = 'none';
-    patchDisplay(cm, from, to, intact, positionsChangedFrom);
-    display.lineDiv.style.display = '';
-    if (focused && document.activeElement != focused && focused.offsetHeight)
+    patchDisplay(cm, display.updateLineNumbers, dims);
+    if (toUpdate > 4)
+      display.lineDiv.style.display = '';
+    // There might have been a widget with a focused element that got
+    // hidden or updated, if so re-focus it.
+    if (focused && activeElt() != focused && focused.offsetHeight)
       focused.focus();
-    var different = from != display.showingFrom || to != display.showingTo || display.lastSizeC != display.wrapper.clientHeight;
-    // This is just a bogus formula that detects when the editor is
-    // resized or the font size changes.
+    // Prevent selection and cursors from interfering with the scroll
+    // width.
+    removeChildren(display.cursorDiv);
+    removeChildren(display.selectionDiv);
     if (different) {
       display.lastSizeC = display.wrapper.clientHeight;
       startWorker(cm, 400);
     }
-    display.showingFrom = from;
-    display.showingTo = to;
     updateHeightsInViewport(cm);
-    updateViewOffset(cm);
     return true;
   }
+  function adjustContentWidth(cm) {
+    var display = cm.display;
+    var width = measureChar(cm, display.maxLine, display.maxLine.text.length).left;
+    display.maxLineChanged = false;
+    var minWidth = Math.max(0, width + 3);
+    var maxScrollLeft = Math.max(0, display.sizer.offsetLeft + minWidth + scrollerCutOff - display.scroller.clientWidth);
+    display.sizer.style.minWidth = minWidth + 'px';
+    if (maxScrollLeft < cm.doc.scrollLeft)
+      setScrollLeft(cm, Math.min(display.scroller.scrollLeft, maxScrollLeft), true);
+  }
+  function setDocumentHeight(cm, measure) {
+    cm.display.sizer.style.minHeight = cm.display.heightForcer.style.top = measure.docHeight + 'px';
+    cm.display.gutters.style.height = Math.max(measure.docHeight, measure.clientHeight - scrollerCutOff) + 'px';
+  }
+  function checkForWebkitWidthBug(cm, measure) {
+    // Work around Webkit bug where it sometimes reserves space for a
+    // non-existing phantom scrollbar in the scroller (Issue #2420)
+    if (cm.display.sizer.offsetWidth + cm.display.gutters.offsetWidth < cm.display.scroller.clientWidth - 1) {
+      cm.display.sizer.style.minHeight = cm.display.heightForcer.style.top = '0px';
+      cm.display.gutters.style.height = measure.docHeight + 'px';
+    }
+  }
+  // Read the actual heights of the rendered lines, and update their
+  // stored heights to match.
   function updateHeightsInViewport(cm) {
     var display = cm.display;
     var prevBottom = display.lineDiv.offsetTop;
-    for (var node = display.lineDiv.firstChild, height; node; node = node.nextSibling)
-      if (node.lineObj) {
-        if (ie_lt8) {
-          var bot = node.offsetTop + node.offsetHeight;
-          height = bot - prevBottom;
-          prevBottom = bot;
-        } else {
-          var box = getRect(node);
-          height = box.bottom - box.top;
-        }
-        var diff = node.lineObj.height - height;
-        if (height < 2)
-          height = textHeight(display);
-        if (diff > 0.001 || diff < -0.001) {
-          updateLineHeight(node.lineObj, height);
-          var widgets = node.lineObj.widgets;
-          if (widgets)
-            for (var i = 0; i < widgets.length; ++i)
-              widgets[i].height = widgets[i].node.offsetHeight;
-        }
+    for (var i = 0; i < display.view.length; i++) {
+      var cur = display.view[i], height;
+      if (cur.hidden)
+        continue;
+      if (ie_upto7) {
+        var bot = cur.node.offsetTop + cur.node.offsetHeight;
+        height = bot - prevBottom;
+        prevBottom = bot;
+      } else {
+        var box = cur.node.getBoundingClientRect();
+        height = box.bottom - box.top;
       }
-  }
-  function updateViewOffset(cm) {
-    var off = cm.display.viewOffset = heightAtLine(cm, getLine(cm.doc, cm.display.showingFrom));
-    // Position the mover div to align with the current virtual scroll position
-    cm.display.mover.style.top = off + 'px';
-  }
-  function computeIntact(intact, changes) {
-    for (var i = 0, l = changes.length || 0; i < l; ++i) {
-      var change = changes[i], intact2 = [], diff = change.diff || 0;
-      for (var j = 0, l2 = intact.length; j < l2; ++j) {
-        var range = intact[j];
-        if (change.to <= range.from && change.diff) {
-          intact2.push({
-            from: range.from + diff,
-            to: range.to + diff
-          });
-        } else if (change.to <= range.from || change.from >= range.to) {
-          intact2.push(range);
-        } else {
-          if (change.from > range.from)
-            intact2.push({
-              from: range.from,
-              to: change.from
-            });
-          if (change.to < range.to)
-            intact2.push({
-              from: change.to + diff,
-              to: range.to + diff
-            });
-        }
+      var diff = cur.line.height - height;
+      if (height < 2)
+        height = textHeight(display);
+      if (diff > 0.001 || diff < -0.001) {
+        updateLineHeight(cur.line, height);
+        updateWidgetHeight(cur.line);
+        if (cur.rest)
+          for (var j = 0; j < cur.rest.length; j++)
+            updateWidgetHeight(cur.rest[j]);
       }
-      intact = intact2;
     }
-    return intact;
   }
+  // Read and store the height of line widgets associated with the
+  // given line.
+  function updateWidgetHeight(line) {
+    if (line.widgets)
+      for (var i = 0; i < line.widgets.length; ++i)
+        line.widgets[i].height = line.widgets[i].node.offsetHeight;
+  }
+  // Do a bulk-read of the DOM positions and sizes needed to draw the
+  // view, so that we don't interleave reading and writing to the DOM.
   function getDimensions(cm) {
     var d = cm.display, left = {}, width = {};
     for (var n = d.gutters.firstChild, i = 0; n; n = n.nextSibling, ++i) {
@@ -59269,131 +61723,148 @@ window.CodeMirror = function () {
       wrapperWidth: d.wrapper.clientWidth
     };
   }
-  function patchDisplay(cm, from, to, intact, updateNumbersFrom) {
-    var dims = getDimensions(cm);
+  // Sync the actual display DOM structure with display.view, removing
+  // nodes for lines that are no longer in view, and creating the ones
+  // that are not there yet, and updating the ones that are out of
+  // date.
+  function patchDisplay(cm, updateNumbersFrom, dims) {
     var display = cm.display, lineNumbers = cm.options.lineNumbers;
-    if (!intact.length && (!webkit || !cm.display.currentWheelTarget))
-      removeChildren(display.lineDiv);
     var container = display.lineDiv, cur = container.firstChild;
     function rm(node) {
       var next = node.nextSibling;
-      if (webkit && mac && cm.display.currentWheelTarget == node) {
+      // Works around a throw-scroll bug in OS X Webkit
+      if (webkit && mac && cm.display.currentWheelTarget == node)
         node.style.display = 'none';
-        node.lineObj = null;
-      } else {
+      else
         node.parentNode.removeChild(node);
-      }
       return next;
     }
-    var nextIntact = intact.shift(), lineN = from;
-    cm.doc.iter(from, to, function (line) {
-      if (nextIntact && nextIntact.to == lineN)
-        nextIntact = intact.shift();
-      if (lineIsHidden(cm.doc, line)) {
-        if (line.height != 0)
-          updateLineHeight(line, 0);
-        if (line.widgets && cur.previousSibling)
-          for (var i = 0; i < line.widgets.length; ++i) {
-            var w = line.widgets[i];
-            if (w.showIfHidden) {
-              var prev = cur.previousSibling;
-              if (/pre/i.test(prev.nodeName)) {
-                var wrap = elt('div', null, null, 'position: relative');
-                prev.parentNode.replaceChild(wrap, prev);
-                wrap.appendChild(prev);
-                prev = wrap;
-              }
-              var wnode = prev.appendChild(elt('div', [w.node], 'CodeMirror-linewidget'));
-              if (!w.handleMouseEvents)
-                wnode.ignoreEvents = true;
-              positionLineWidget(w, wnode, prev, dims);
-            }
-          }
-      } else if (nextIntact && nextIntact.from <= lineN && nextIntact.to > lineN) {
-        // This line is intact. Skip to the actual node. Update its
-        // line number if needed.
-        while (cur.lineObj != line)
-          cur = rm(cur);
-        if (lineNumbers && updateNumbersFrom <= lineN && cur.lineNumber)
-          setTextContent(cur.lineNumber, lineNumberFor(cm.options, lineN));
-        cur = cur.nextSibling;
+    var view = display.view, lineN = display.viewFrom;
+    // Loop over the elements in the view, syncing cur (the DOM nodes
+    // in display.lineDiv) with the view as we go.
+    for (var i = 0; i < view.length; i++) {
+      var lineView = view[i];
+      if (lineView.hidden) {
+      } else if (!lineView.node) {
+        // Not drawn yet
+        var node = buildLineElement(cm, lineView, lineN, dims);
+        container.insertBefore(node, cur);
       } else {
-        // For lines with widgets, make an attempt to find and reuse
-        // the existing element, so that widgets aren't needlessly
-        // removed and re-inserted into the dom
-        if (line.widgets)
-          for (var j = 0, search = cur, reuse; search && j < 20; ++j, search = search.nextSibling)
-            if (search.lineObj == line && /div/i.test(search.nodeName)) {
-              reuse = search;
-              break;
-            }
-        // This line needs to be generated.
-        var lineNode = buildLineElement(cm, line, lineN, dims, reuse);
-        if (lineNode != reuse) {
-          container.insertBefore(lineNode, cur);
-        } else {
-          while (cur != reuse)
-            cur = rm(cur);
-          cur = cur.nextSibling;
+        // Already drawn
+        while (cur != lineView.node)
+          cur = rm(cur);
+        var updateNumber = lineNumbers && updateNumbersFrom != null && updateNumbersFrom <= lineN && lineView.lineNumber;
+        if (lineView.changes) {
+          if (indexOf(lineView.changes, 'gutter') > -1)
+            updateNumber = false;
+          updateLineForChanges(cm, lineView, lineN, dims);
         }
-        lineNode.lineObj = line;
+        if (updateNumber) {
+          removeChildren(lineView.lineNumber);
+          lineView.lineNumber.appendChild(document.createTextNode(lineNumberFor(cm.options, lineN)));
+        }
+        cur = lineView.node.nextSibling;
       }
-      ++lineN;
-    });
+      lineN += lineView.size;
+    }
     while (cur)
       cur = rm(cur);
   }
-  function buildLineElement(cm, line, lineNo, dims, reuse) {
-    var lineElement = lineContent(cm, line);
-    var markers = line.gutterMarkers, display = cm.display, wrap;
-    if (!cm.options.lineNumbers && !markers && !line.bgClass && !line.wrapClass && !line.widgets)
-      return lineElement;
-    // Lines with gutter elements, widgets or a background class need
-    // to be wrapped again, and have the extra elements added to the
-    // wrapper div
-    if (reuse) {
-      reuse.alignable = null;
-      var isOk = true, widgetsSeen = 0, insertBefore = null;
-      for (var n = reuse.firstChild, next; n; n = next) {
-        next = n.nextSibling;
-        if (!/\bCodeMirror-linewidget\b/.test(n.className)) {
-          reuse.removeChild(n);
-        } else {
-          for (var i = 0; i < line.widgets.length; ++i) {
-            var widget = line.widgets[i];
-            if (widget.node == n.firstChild) {
-              if (!widget.above && !insertBefore)
-                insertBefore = n;
-              positionLineWidget(widget, n, reuse, dims);
-              ++widgetsSeen;
-              break;
-            }
-          }
-          if (i == line.widgets.length) {
-            isOk = false;
-            break;
-          }
-        }
-      }
-      reuse.insertBefore(lineElement, insertBefore);
-      if (isOk && widgetsSeen == line.widgets.length) {
-        wrap = reuse;
-        reuse.className = line.wrapClass || '';
-      }
+  // When an aspect of a line changes, a string is added to
+  // lineView.changes. This updates the relevant part of the line's
+  // DOM structure.
+  function updateLineForChanges(cm, lineView, lineN, dims) {
+    for (var j = 0; j < lineView.changes.length; j++) {
+      var type = lineView.changes[j];
+      if (type == 'text')
+        updateLineText(cm, lineView);
+      else if (type == 'gutter')
+        updateLineGutter(cm, lineView, lineN, dims);
+      else if (type == 'class')
+        updateLineClasses(lineView);
+      else if (type == 'widget')
+        updateLineWidgets(lineView, dims);
     }
-    if (!wrap) {
-      wrap = elt('div', null, line.wrapClass, 'position: relative');
-      wrap.appendChild(lineElement);
+    lineView.changes = null;
+  }
+  // Lines with gutter elements, widgets or a background class need to
+  // be wrapped, and have the extra elements added to the wrapper div
+  function ensureLineWrapped(lineView) {
+    if (lineView.node == lineView.text) {
+      lineView.node = elt('div', null, null, 'position: relative');
+      if (lineView.text.parentNode)
+        lineView.text.parentNode.replaceChild(lineView.node, lineView.text);
+      lineView.node.appendChild(lineView.text);
+      if (ie_upto7)
+        lineView.node.style.zIndex = 2;
     }
-    // Kludge to make sure the styled element lies behind the selection (by z-index)
-    if (line.bgClass)
-      wrap.insertBefore(elt('div', null, line.bgClass + ' CodeMirror-linebackground'), wrap.firstChild);
+    return lineView.node;
+  }
+  function updateLineBackground(lineView) {
+    var cls = lineView.bgClass ? lineView.bgClass + ' ' + (lineView.line.bgClass || '') : lineView.line.bgClass;
+    if (cls)
+      cls += ' CodeMirror-linebackground';
+    if (lineView.background) {
+      if (cls)
+        lineView.background.className = cls;
+      else {
+        lineView.background.parentNode.removeChild(lineView.background);
+        lineView.background = null;
+      }
+    } else if (cls) {
+      var wrap = ensureLineWrapped(lineView);
+      lineView.background = wrap.insertBefore(elt('div', null, cls), wrap.firstChild);
+    }
+  }
+  // Wrapper around buildLineContent which will reuse the structure
+  // in display.externalMeasured when possible.
+  function getLineContent(cm, lineView) {
+    var ext = cm.display.externalMeasured;
+    if (ext && ext.line == lineView.line) {
+      cm.display.externalMeasured = null;
+      lineView.measure = ext.measure;
+      return ext.built;
+    }
+    return buildLineContent(cm, lineView);
+  }
+  // Redraw the line's text. Interacts with the background and text
+  // classes because the mode may output tokens that influence these
+  // classes.
+  function updateLineText(cm, lineView) {
+    var cls = lineView.text.className;
+    var built = getLineContent(cm, lineView);
+    if (lineView.text == lineView.node)
+      lineView.node = built.pre;
+    lineView.text.parentNode.replaceChild(built.pre, lineView.text);
+    lineView.text = built.pre;
+    if (built.bgClass != lineView.bgClass || built.textClass != lineView.textClass) {
+      lineView.bgClass = built.bgClass;
+      lineView.textClass = built.textClass;
+      updateLineClasses(lineView);
+    } else if (cls) {
+      lineView.text.className = cls;
+    }
+  }
+  function updateLineClasses(lineView) {
+    updateLineBackground(lineView);
+    if (lineView.line.wrapClass)
+      ensureLineWrapped(lineView).className = lineView.line.wrapClass;
+    else if (lineView.node != lineView.text)
+      lineView.node.className = '';
+    var textClass = lineView.textClass ? lineView.textClass + ' ' + (lineView.line.textClass || '') : lineView.line.textClass;
+    lineView.text.className = textClass || '';
+  }
+  function updateLineGutter(cm, lineView, lineN, dims) {
+    if (lineView.gutter) {
+      lineView.node.removeChild(lineView.gutter);
+      lineView.gutter = null;
+    }
+    var markers = lineView.line.gutterMarkers;
     if (cm.options.lineNumbers || markers) {
-      var gutterWrap = wrap.insertBefore(elt('div', null, null, 'position: absolute; left: ' + (cm.options.fixedGutter ? dims.fixedPos : -dims.gutterTotalWidth) + 'px'), wrap.firstChild);
-      if (cm.options.fixedGutter)
-        (wrap.alignable || (wrap.alignable = [])).push(gutterWrap);
+      var wrap = ensureLineWrapped(lineView);
+      var gutterWrap = lineView.gutter = wrap.insertBefore(elt('div', null, 'CodeMirror-gutter-wrapper', 'position: absolute; left: ' + (cm.options.fixedGutter ? dims.fixedPos : -dims.gutterTotalWidth) + 'px'), lineView.text);
       if (cm.options.lineNumbers && (!markers || !markers['CodeMirror-linenumbers']))
-        wrap.lineNumber = gutterWrap.appendChild(elt('div', lineNumberFor(cm.options, lineNo), 'CodeMirror-linenumber CodeMirror-gutter-elt', 'left: ' + dims.gutterLeft['CodeMirror-linenumbers'] + 'px; width: ' + display.lineNumInnerWidth + 'px'));
+        lineView.lineNumber = gutterWrap.appendChild(elt('div', lineNumberFor(cm.options, lineN), 'CodeMirror-linenumber CodeMirror-gutter-elt', 'left: ' + dims.gutterLeft['CodeMirror-linenumbers'] + 'px; width: ' + cm.display.lineNumInnerWidth + 'px'));
       if (markers)
         for (var k = 0; k < cm.options.gutters.length; ++k) {
           var id = cm.options.gutters[k], found = markers.hasOwnProperty(id) && markers[id];
@@ -59401,25 +61872,57 @@ window.CodeMirror = function () {
             gutterWrap.appendChild(elt('div', [found], 'CodeMirror-gutter-elt', 'left: ' + dims.gutterLeft[id] + 'px; width: ' + dims.gutterWidth[id] + 'px'));
         }
     }
-    if (ie_lt8)
-      wrap.style.zIndex = 2;
-    if (line.widgets && wrap != reuse)
-      for (var i = 0, ws = line.widgets; i < ws.length; ++i) {
-        var widget = ws[i], node = elt('div', [widget.node], 'CodeMirror-linewidget');
-        if (!widget.handleMouseEvents)
-          node.ignoreEvents = true;
-        positionLineWidget(widget, node, wrap, dims);
-        if (widget.above)
-          wrap.insertBefore(node, cm.options.lineNumbers && line.height != 0 ? gutterWrap : lineElement);
-        else
-          wrap.appendChild(node);
-        signalLater(widget, 'redraw');
-      }
-    return wrap;
   }
-  function positionLineWidget(widget, node, wrap, dims) {
+  function updateLineWidgets(lineView, dims) {
+    if (lineView.alignable)
+      lineView.alignable = null;
+    for (var node = lineView.node.firstChild, next; node; node = next) {
+      var next = node.nextSibling;
+      if (node.className == 'CodeMirror-linewidget')
+        lineView.node.removeChild(node);
+    }
+    insertLineWidgets(lineView, dims);
+  }
+  // Build a line's DOM representation from scratch
+  function buildLineElement(cm, lineView, lineN, dims) {
+    var built = getLineContent(cm, lineView);
+    lineView.text = lineView.node = built.pre;
+    if (built.bgClass)
+      lineView.bgClass = built.bgClass;
+    if (built.textClass)
+      lineView.textClass = built.textClass;
+    updateLineClasses(lineView);
+    updateLineGutter(cm, lineView, lineN, dims);
+    insertLineWidgets(lineView, dims);
+    return lineView.node;
+  }
+  // A lineView may contain multiple logical lines (when merged by
+  // collapsed spans). The widgets for all of them need to be drawn.
+  function insertLineWidgets(lineView, dims) {
+    insertLineWidgetsFor(lineView.line, lineView, dims, true);
+    if (lineView.rest)
+      for (var i = 0; i < lineView.rest.length; i++)
+        insertLineWidgetsFor(lineView.rest[i], lineView, dims, false);
+  }
+  function insertLineWidgetsFor(line, lineView, dims, allowAbove) {
+    if (!line.widgets)
+      return;
+    var wrap = ensureLineWrapped(lineView);
+    for (var i = 0, ws = line.widgets; i < ws.length; ++i) {
+      var widget = ws[i], node = elt('div', [widget.node], 'CodeMirror-linewidget');
+      if (!widget.handleMouseEvents)
+        node.ignoreEvents = true;
+      positionLineWidget(widget, node, lineView, dims);
+      if (allowAbove && widget.above)
+        wrap.insertBefore(node, lineView.gutter || lineView.text);
+      else
+        wrap.appendChild(node);
+      signalLater(widget, 'redraw');
+    }
+  }
+  function positionLineWidget(widget, node, lineView, dims) {
     if (widget.noHScroll) {
-      (wrap.alignable || (wrap.alignable = [])).push(node);
+      (lineView.alignable || (lineView.alignable = [])).push(node);
       var width = dims.wrapperWidth;
       node.style.left = dims.fixedPos + 'px';
       if (!widget.coverGutter) {
@@ -59435,51 +61938,379 @@ window.CodeMirror = function () {
         node.style.marginLeft = -dims.gutterTotalWidth + 'px';
     }
   }
+  // POSITION OBJECT
+  // A Pos instance represents a position within the text.
+  var Pos = CodeMirror.Pos = function (line, ch) {
+      if (!(this instanceof Pos))
+        return new Pos(line, ch);
+      this.line = line;
+      this.ch = ch;
+    };
+  // Compare two positions, return 0 if they are the same, a negative
+  // number when a is less, and a positive number otherwise.
+  var cmp = CodeMirror.cmpPos = function (a, b) {
+      return a.line - b.line || a.ch - b.ch;
+    };
+  function copyPos(x) {
+    return Pos(x.line, x.ch);
+  }
+  function maxPos(a, b) {
+    return cmp(a, b) < 0 ? b : a;
+  }
+  function minPos(a, b) {
+    return cmp(a, b) < 0 ? a : b;
+  }
   // SELECTION / CURSOR
+  // Selection objects are immutable. A new one is created every time
+  // the selection changes. A selection is one or more non-overlapping
+  // (and non-touching) ranges, sorted, and an integer that indicates
+  // which one is the primary selection (the one that's scrolled into
+  // view, that getCursor returns, etc).
+  function Selection(ranges, primIndex) {
+    this.ranges = ranges;
+    this.primIndex = primIndex;
+  }
+  Selection.prototype = {
+    primary: function () {
+      return this.ranges[this.primIndex];
+    },
+    equals: function (other) {
+      if (other == this)
+        return true;
+      if (other.primIndex != this.primIndex || other.ranges.length != this.ranges.length)
+        return false;
+      for (var i = 0; i < this.ranges.length; i++) {
+        var here = this.ranges[i], there = other.ranges[i];
+        if (cmp(here.anchor, there.anchor) != 0 || cmp(here.head, there.head) != 0)
+          return false;
+      }
+      return true;
+    },
+    deepCopy: function () {
+      for (var out = [], i = 0; i < this.ranges.length; i++)
+        out[i] = new Range(copyPos(this.ranges[i].anchor), copyPos(this.ranges[i].head));
+      return new Selection(out, this.primIndex);
+    },
+    somethingSelected: function () {
+      for (var i = 0; i < this.ranges.length; i++)
+        if (!this.ranges[i].empty())
+          return true;
+      return false;
+    },
+    contains: function (pos, end) {
+      if (!end)
+        end = pos;
+      for (var i = 0; i < this.ranges.length; i++) {
+        var range = this.ranges[i];
+        if (cmp(end, range.from()) >= 0 && cmp(pos, range.to()) <= 0)
+          return i;
+      }
+      return -1;
+    }
+  };
+  function Range(anchor, head) {
+    this.anchor = anchor;
+    this.head = head;
+  }
+  Range.prototype = {
+    from: function () {
+      return minPos(this.anchor, this.head);
+    },
+    to: function () {
+      return maxPos(this.anchor, this.head);
+    },
+    empty: function () {
+      return this.head.line == this.anchor.line && this.head.ch == this.anchor.ch;
+    }
+  };
+  // Take an unsorted, potentially overlapping set of ranges, and
+  // build a selection out of it. 'Consumes' ranges array (modifying
+  // it).
+  function normalizeSelection(ranges, primIndex) {
+    var prim = ranges[primIndex];
+    ranges.sort(function (a, b) {
+      return cmp(a.from(), b.from());
+    });
+    primIndex = indexOf(ranges, prim);
+    for (var i = 1; i < ranges.length; i++) {
+      var cur = ranges[i], prev = ranges[i - 1];
+      if (cmp(prev.to(), cur.from()) >= 0) {
+        var from = minPos(prev.from(), cur.from()), to = maxPos(prev.to(), cur.to());
+        var inv = prev.empty() ? cur.from() == cur.head : prev.from() == prev.head;
+        if (i <= primIndex)
+          --primIndex;
+        ranges.splice(--i, 2, new Range(inv ? to : from, inv ? from : to));
+      }
+    }
+    return new Selection(ranges, primIndex);
+  }
+  function simpleSelection(anchor, head) {
+    return new Selection([new Range(anchor, head || anchor)], 0);
+  }
+  // Most of the external API clips given positions to make sure they
+  // actually exist within the document.
+  function clipLine(doc, n) {
+    return Math.max(doc.first, Math.min(n, doc.first + doc.size - 1));
+  }
+  function clipPos(doc, pos) {
+    if (pos.line < doc.first)
+      return Pos(doc.first, 0);
+    var last = doc.first + doc.size - 1;
+    if (pos.line > last)
+      return Pos(last, getLine(doc, last).text.length);
+    return clipToLen(pos, getLine(doc, pos.line).text.length);
+  }
+  function clipToLen(pos, linelen) {
+    var ch = pos.ch;
+    if (ch == null || ch > linelen)
+      return Pos(pos.line, linelen);
+    else if (ch < 0)
+      return Pos(pos.line, 0);
+    else
+      return pos;
+  }
+  function isLine(doc, l) {
+    return l >= doc.first && l < doc.first + doc.size;
+  }
+  function clipPosArray(doc, array) {
+    for (var out = [], i = 0; i < array.length; i++)
+      out[i] = clipPos(doc, array[i]);
+    return out;
+  }
+  // SELECTION UPDATES
+  // The 'scroll' parameter given to many of these indicated whether
+  // the new cursor position should be scrolled into view after
+  // modifying the selection.
+  // If shift is held or the extend flag is set, extends a range to
+  // include a given position (and optionally a second position).
+  // Otherwise, simply returns the range between the given positions.
+  // Used for cursor motion and such.
+  function extendRange(doc, range, head, other) {
+    if (doc.cm && doc.cm.display.shift || doc.extend) {
+      var anchor = range.anchor;
+      if (other) {
+        var posBefore = cmp(head, anchor) < 0;
+        if (posBefore != cmp(other, anchor) < 0) {
+          anchor = head;
+          head = other;
+        } else if (posBefore != cmp(head, other) < 0) {
+          head = other;
+        }
+      }
+      return new Range(anchor, head);
+    } else {
+      return new Range(other || head, head);
+    }
+  }
+  // Extend the primary selection range, discard the rest.
+  function extendSelection(doc, head, other, options) {
+    setSelection(doc, new Selection([extendRange(doc, doc.sel.primary(), head, other)], 0), options);
+  }
+  // Extend all selections (pos is an array of selections with length
+  // equal the number of selections)
+  function extendSelections(doc, heads, options) {
+    for (var out = [], i = 0; i < doc.sel.ranges.length; i++)
+      out[i] = extendRange(doc, doc.sel.ranges[i], heads[i], null);
+    var newSel = normalizeSelection(out, doc.sel.primIndex);
+    setSelection(doc, newSel, options);
+  }
+  // Updates a single range in the selection.
+  function replaceOneSelection(doc, i, range, options) {
+    var ranges = doc.sel.ranges.slice(0);
+    ranges[i] = range;
+    setSelection(doc, normalizeSelection(ranges, doc.sel.primIndex), options);
+  }
+  // Reset the selection to a single range.
+  function setSimpleSelection(doc, anchor, head, options) {
+    setSelection(doc, simpleSelection(anchor, head), options);
+  }
+  // Give beforeSelectionChange handlers a change to influence a
+  // selection update.
+  function filterSelectionChange(doc, sel) {
+    var obj = {
+        ranges: sel.ranges,
+        update: function (ranges) {
+          this.ranges = [];
+          for (var i = 0; i < ranges.length; i++)
+            this.ranges[i] = new Range(clipPos(doc, ranges[i].anchor), clipPos(doc, ranges[i].head));
+        }
+      };
+    signal(doc, 'beforeSelectionChange', doc, obj);
+    if (doc.cm)
+      signal(doc.cm, 'beforeSelectionChange', doc.cm, obj);
+    if (obj.ranges != sel.ranges)
+      return normalizeSelection(obj.ranges, obj.ranges.length - 1);
+    else
+      return sel;
+  }
+  function setSelectionReplaceHistory(doc, sel, options) {
+    var done = doc.history.done, last = lst(done);
+    if (last && last.ranges) {
+      done[done.length - 1] = sel;
+      setSelectionNoUndo(doc, sel, options);
+    } else {
+      setSelection(doc, sel, options);
+    }
+  }
+  // Set a new selection.
+  function setSelection(doc, sel, options) {
+    setSelectionNoUndo(doc, sel, options);
+    addSelectionToHistory(doc, doc.sel, doc.cm ? doc.cm.curOp.id : NaN, options);
+  }
+  function setSelectionNoUndo(doc, sel, options) {
+    if (hasHandler(doc, 'beforeSelectionChange') || doc.cm && hasHandler(doc.cm, 'beforeSelectionChange'))
+      sel = filterSelectionChange(doc, sel);
+    var bias = options && options.bias || (cmp(sel.primary().head, doc.sel.primary().head) < 0 ? -1 : 1);
+    setSelectionInner(doc, skipAtomicInSelection(doc, sel, bias, true));
+    if (!(options && options.scroll === false) && doc.cm)
+      ensureCursorVisible(doc.cm);
+  }
+  function setSelectionInner(doc, sel) {
+    if (sel.equals(doc.sel))
+      return;
+    doc.sel = sel;
+    if (doc.cm) {
+      doc.cm.curOp.updateInput = doc.cm.curOp.selectionChanged = true;
+      signalCursorActivity(doc.cm);
+    }
+    signalLater(doc, 'cursorActivity', doc);
+  }
+  // Verify that the selection does not partially select any atomic
+  // marked ranges.
+  function reCheckSelection(doc) {
+    setSelectionInner(doc, skipAtomicInSelection(doc, doc.sel, null, false), sel_dontScroll);
+  }
+  // Return a selection that does not partially select any atomic
+  // ranges.
+  function skipAtomicInSelection(doc, sel, bias, mayClear) {
+    var out;
+    for (var i = 0; i < sel.ranges.length; i++) {
+      var range = sel.ranges[i];
+      var newAnchor = skipAtomic(doc, range.anchor, bias, mayClear);
+      var newHead = skipAtomic(doc, range.head, bias, mayClear);
+      if (out || newAnchor != range.anchor || newHead != range.head) {
+        if (!out)
+          out = sel.ranges.slice(0, i);
+        out[i] = new Range(newAnchor, newHead);
+      }
+    }
+    return out ? normalizeSelection(out, sel.primIndex) : sel;
+  }
+  // Ensure a given position is not inside an atomic range.
+  function skipAtomic(doc, pos, bias, mayClear) {
+    var flipped = false, curPos = pos;
+    var dir = bias || 1;
+    doc.cantEdit = false;
+    search:
+      for (;;) {
+        var line = getLine(doc, curPos.line);
+        if (line.markedSpans) {
+          for (var i = 0; i < line.markedSpans.length; ++i) {
+            var sp = line.markedSpans[i], m = sp.marker;
+            if ((sp.from == null || (m.inclusiveLeft ? sp.from <= curPos.ch : sp.from < curPos.ch)) && (sp.to == null || (m.inclusiveRight ? sp.to >= curPos.ch : sp.to > curPos.ch))) {
+              if (mayClear) {
+                signal(m, 'beforeCursorEnter');
+                if (m.explicitlyCleared) {
+                  if (!line.markedSpans)
+                    break;
+                  else {
+                    --i;
+                    continue;
+                  }
+                }
+              }
+              if (!m.atomic)
+                continue;
+              var newPos = m.find(dir < 0 ? -1 : 1);
+              if (cmp(newPos, curPos) == 0) {
+                newPos.ch += dir;
+                if (newPos.ch < 0) {
+                  if (newPos.line > doc.first)
+                    newPos = clipPos(doc, Pos(newPos.line - 1));
+                  else
+                    newPos = null;
+                } else if (newPos.ch > line.text.length) {
+                  if (newPos.line < doc.first + doc.size - 1)
+                    newPos = Pos(newPos.line + 1, 0);
+                  else
+                    newPos = null;
+                }
+                if (!newPos) {
+                  if (flipped) {
+                    // Driven in a corner -- no valid cursor position found at all
+                    // -- try again *with* clearing, if we didn't already
+                    if (!mayClear)
+                      return skipAtomic(doc, pos, bias, true);
+                    // Otherwise, turn off editing until further notice, and return the start of the doc
+                    doc.cantEdit = true;
+                    return Pos(doc.first, 0);
+                  }
+                  flipped = true;
+                  newPos = pos;
+                  dir = -dir;
+                }
+              }
+              curPos = newPos;
+              continue search;
+            }
+          }
+        }
+        return curPos;
+      }
+  }
+  // SELECTION DRAWING
+  // Redraw the selection and/or cursor
   function updateSelection(cm) {
-    var display = cm.display;
-    var collapsed = posEq(cm.doc.sel.from, cm.doc.sel.to);
-    if (collapsed || cm.options.showCursorWhenSelecting)
-      updateSelectionCursor(cm);
-    else
-      display.cursor.style.display = display.otherCursor.style.display = 'none';
-    if (!collapsed)
-      updateSelectionRange(cm);
-    else
-      display.selectionDiv.style.display = 'none';
+    var display = cm.display, doc = cm.doc;
+    var curFragment = document.createDocumentFragment();
+    var selFragment = document.createDocumentFragment();
+    for (var i = 0; i < doc.sel.ranges.length; i++) {
+      var range = doc.sel.ranges[i];
+      var collapsed = range.empty();
+      if (collapsed || cm.options.showCursorWhenSelecting)
+        drawSelectionCursor(cm, range, curFragment);
+      if (!collapsed)
+        drawSelectionRange(cm, range, selFragment);
+    }
     // Move the hidden textarea near the cursor to prevent scrolling artifacts
     if (cm.options.moveInputWithCursor) {
-      var headPos = cursorCoords(cm, cm.doc.sel.head, 'div');
-      var wrapOff = getRect(display.wrapper), lineOff = getRect(display.lineDiv);
-      display.inputDiv.style.top = Math.max(0, Math.min(display.wrapper.clientHeight - 10, headPos.top + lineOff.top - wrapOff.top)) + 'px';
-      display.inputDiv.style.left = Math.max(0, Math.min(display.wrapper.clientWidth - 10, headPos.left + lineOff.left - wrapOff.left)) + 'px';
+      var headPos = cursorCoords(cm, doc.sel.primary().head, 'div');
+      var wrapOff = display.wrapper.getBoundingClientRect(), lineOff = display.lineDiv.getBoundingClientRect();
+      var top = Math.max(0, Math.min(display.wrapper.clientHeight - 10, headPos.top + lineOff.top - wrapOff.top));
+      var left = Math.max(0, Math.min(display.wrapper.clientWidth - 10, headPos.left + lineOff.left - wrapOff.left));
+      display.inputDiv.style.top = top + 'px';
+      display.inputDiv.style.left = left + 'px';
     }
+    removeChildrenAndAdd(display.cursorDiv, curFragment);
+    removeChildrenAndAdd(display.selectionDiv, selFragment);
   }
-  // No selection, plain cursor
-  function updateSelectionCursor(cm) {
-    var display = cm.display, pos = cursorCoords(cm, cm.doc.sel.head, 'div');
-    display.cursor.style.left = pos.left + 'px';
-    display.cursor.style.top = pos.top + 'px';
-    display.cursor.style.height = Math.max(0, pos.bottom - pos.top) * cm.options.cursorHeight + 'px';
-    display.cursor.style.display = '';
+  // Draws a cursor for the given range
+  function drawSelectionCursor(cm, range, output) {
+    var pos = cursorCoords(cm, range.head, 'div');
+    var cursor = output.appendChild(elt('div', '\xa0', 'CodeMirror-cursor'));
+    cursor.style.left = pos.left + 'px';
+    cursor.style.top = pos.top + 'px';
+    cursor.style.height = Math.max(0, pos.bottom - pos.top) * cm.options.cursorHeight + 'px';
     if (pos.other) {
-      display.otherCursor.style.display = '';
-      display.otherCursor.style.left = pos.other.left + 'px';
-      display.otherCursor.style.top = pos.other.top + 'px';
-      display.otherCursor.style.height = (pos.other.bottom - pos.other.top) * 0.85 + 'px';
-    } else {
-      display.otherCursor.style.display = 'none';
+      // Secondary cursor, shown when on a 'jump' in bi-directional text
+      var otherCursor = output.appendChild(elt('div', '\xa0', 'CodeMirror-cursor CodeMirror-secondarycursor'));
+      otherCursor.style.display = '';
+      otherCursor.style.left = pos.other.left + 'px';
+      otherCursor.style.top = pos.other.top + 'px';
+      otherCursor.style.height = (pos.other.bottom - pos.other.top) * 0.85 + 'px';
     }
   }
-  // Highlight selection
-  function updateSelectionRange(cm) {
-    var display = cm.display, doc = cm.doc, sel = cm.doc.sel;
+  // Draws the given range as a highlighted selection
+  function drawSelectionRange(cm, range, output) {
+    var display = cm.display, doc = cm.doc;
     var fragment = document.createDocumentFragment();
-    var clientWidth = display.lineSpace.offsetWidth, pl = paddingLeft(cm.display);
+    var padding = paddingH(cm.display), leftSide = padding.left, rightSide = display.lineSpace.offsetWidth - padding.right;
     function add(left, top, width, bottom) {
       if (top < 0)
         top = 0;
-      fragment.appendChild(elt('div', null, 'CodeMirror-selected', 'position: absolute; left: ' + left + 'px; top: ' + top + 'px; width: ' + (width == null ? clientWidth - left : width) + 'px; height: ' + (bottom - top) + 'px'));
+      top = Math.round(top);
+      bottom = Math.round(bottom);
+      fragment.appendChild(elt('div', null, 'CodeMirror-selected', 'position: absolute; left: ' + left + 'px; top: ' + top + 'px; width: ' + (width == null ? rightSide - left : width) + 'px; height: ' + (bottom - top) + 'px'));
     }
     function drawForLine(line, fromArg, toArg) {
       var lineObj = getLine(doc, line);
@@ -59504,22 +62335,22 @@ window.CodeMirror = function () {
           right = rightPos.right;
         }
         if (fromArg == null && from == 0)
-          left = pl;
+          left = leftSide;
         if (rightPos.top - leftPos.top > 3) {
           // Different lines, draw top part
           add(left, leftPos.top, null, leftPos.bottom);
-          left = pl;
+          left = leftSide;
           if (leftPos.bottom < rightPos.top)
             add(left, leftPos.bottom, null, rightPos.top);
         }
         if (toArg == null && to == lineLen)
-          right = clientWidth;
+          right = rightSide;
         if (!start || leftPos.top < start.top || leftPos.top == start.top && leftPos.left < start.left)
           start = leftPos;
         if (!end || rightPos.bottom > end.bottom || rightPos.bottom == end.bottom && rightPos.right > end.right)
           end = rightPos;
-        if (left < pl + 1)
-          left = pl;
+        if (left < leftSide + 1)
+          left = leftSide;
         add(left, rightPos.top, right - left, rightPos.bottom);
       });
       return {
@@ -59527,26 +62358,26 @@ window.CodeMirror = function () {
         end: end
       };
     }
-    if (sel.from.line == sel.to.line) {
-      drawForLine(sel.from.line, sel.from.ch, sel.to.ch);
+    var sFrom = range.from(), sTo = range.to();
+    if (sFrom.line == sTo.line) {
+      drawForLine(sFrom.line, sFrom.ch, sTo.ch);
     } else {
-      var fromLine = getLine(doc, sel.from.line), toLine = getLine(doc, sel.to.line);
-      var singleVLine = visualLine(doc, fromLine) == visualLine(doc, toLine);
-      var leftEnd = drawForLine(sel.from.line, sel.from.ch, singleVLine ? fromLine.text.length : null).end;
-      var rightStart = drawForLine(sel.to.line, singleVLine ? 0 : null, sel.to.ch).start;
+      var fromLine = getLine(doc, sFrom.line), toLine = getLine(doc, sTo.line);
+      var singleVLine = visualLine(fromLine) == visualLine(toLine);
+      var leftEnd = drawForLine(sFrom.line, sFrom.ch, singleVLine ? fromLine.text.length + 1 : null).end;
+      var rightStart = drawForLine(sTo.line, singleVLine ? 0 : null, sTo.ch).start;
       if (singleVLine) {
         if (leftEnd.top < rightStart.top - 2) {
           add(leftEnd.right, leftEnd.top, null, leftEnd.bottom);
-          add(pl, rightStart.top, rightStart.left, rightStart.bottom);
+          add(leftSide, rightStart.top, rightStart.left, rightStart.bottom);
         } else {
           add(leftEnd.right, leftEnd.top, rightStart.left - leftEnd.right, leftEnd.bottom);
         }
       }
       if (leftEnd.bottom < rightStart.top)
-        add(pl, leftEnd.bottom, null, rightStart.top);
+        add(leftSide, leftEnd.bottom, null, rightStart.top);
     }
-    removeChildrenAndAdd(display.selectionDiv, fragment);
-    display.selectionDiv.style.display = '';
+    output.appendChild(fragment);
   }
   // Cursor-blinking
   function restartBlink(cm) {
@@ -59555,58 +62386,53 @@ window.CodeMirror = function () {
     var display = cm.display;
     clearInterval(display.blinker);
     var on = true;
-    display.cursor.style.visibility = display.otherCursor.style.visibility = '';
-    display.blinker = setInterval(function () {
-      display.cursor.style.visibility = display.otherCursor.style.visibility = (on = !on) ? '' : 'hidden';
-    }, cm.options.cursorBlinkRate);
+    display.cursorDiv.style.visibility = '';
+    if (cm.options.cursorBlinkRate > 0)
+      display.blinker = setInterval(function () {
+        display.cursorDiv.style.visibility = (on = !on) ? '' : 'hidden';
+      }, cm.options.cursorBlinkRate);
   }
   // HIGHLIGHT WORKER
   function startWorker(cm, time) {
-    if (cm.doc.mode.startState && cm.doc.frontier < cm.display.showingTo)
+    if (cm.doc.mode.startState && cm.doc.frontier < cm.display.viewTo)
       cm.state.highlight.set(time, bind(highlightWorker, cm));
   }
   function highlightWorker(cm) {
     var doc = cm.doc;
     if (doc.frontier < doc.first)
       doc.frontier = doc.first;
-    if (doc.frontier >= cm.display.showingTo)
+    if (doc.frontier >= cm.display.viewTo)
       return;
     var end = +new Date() + cm.options.workTime;
     var state = copyState(doc.mode, getStateBefore(cm, doc.frontier));
-    var changed = [], prevChange;
-    doc.iter(doc.frontier, Math.min(doc.first + doc.size, cm.display.showingTo + 500), function (line) {
-      if (doc.frontier >= cm.display.showingFrom) {
-        // Visible
-        var oldStyles = line.styles;
-        line.styles = highlightLine(cm, line, state);
-        var ischange = !oldStyles || oldStyles.length != line.styles.length;
-        for (var i = 0; !ischange && i < oldStyles.length; ++i)
-          ischange = oldStyles[i] != line.styles[i];
-        if (ischange) {
-          if (prevChange && prevChange.end == doc.frontier)
-            prevChange.end++;
-          else
-            changed.push(prevChange = {
-              start: doc.frontier,
-              end: doc.frontier + 1
-            });
+    runInOp(cm, function () {
+      doc.iter(doc.frontier, Math.min(doc.first + doc.size, cm.display.viewTo + 500), function (line) {
+        if (doc.frontier >= cm.display.viewFrom) {
+          // Visible
+          var oldStyles = line.styles;
+          var highlighted = highlightLine(cm, line, state, true);
+          line.styles = highlighted.styles;
+          if (highlighted.classes)
+            line.styleClasses = highlighted.classes;
+          else if (line.styleClasses)
+            line.styleClasses = null;
+          var ischange = !oldStyles || oldStyles.length != line.styles.length;
+          for (var i = 0; !ischange && i < oldStyles.length; ++i)
+            ischange = oldStyles[i] != line.styles[i];
+          if (ischange)
+            regLineChange(cm, doc.frontier, 'text');
+          line.stateAfter = copyState(doc.mode, state);
+        } else {
+          processLine(cm, line.text, state);
+          line.stateAfter = doc.frontier % 5 == 0 ? copyState(doc.mode, state) : null;
         }
-        line.stateAfter = copyState(doc.mode, state);
-      } else {
-        processLine(cm, line, state);
-        line.stateAfter = doc.frontier % 5 == 0 ? copyState(doc.mode, state) : null;
-      }
-      ++doc.frontier;
-      if (+new Date() > end) {
-        startWorker(cm, cm.options.workDelay);
-        return true;
-      }
+        ++doc.frontier;
+        if (+new Date() > end) {
+          startWorker(cm, cm.options.workDelay);
+          return true;
+        }
+      });
     });
-    if (changed.length)
-      operation(cm, function () {
-        for (var i = 0; i < changed.length; ++i)
-          regChange(this, changed[i].start, changed[i].end);
-      })();
   }
   // Finds the line to start with when starting a parse. Tries to
   // find a line with a stateAfter, so that it can start with a
@@ -59615,7 +62441,8 @@ window.CodeMirror = function () {
   // parse correctly.
   function findStartLine(cm, n, precise) {
     var minindent, minline, doc = cm.doc;
-    for (var search = n, lim = n - 100; search > lim; --search) {
+    var lim = precise ? -1 : n - (cm.doc.mode.innerMode ? 1000 : 100);
+    for (var search = n; search > lim; --search) {
       if (search <= doc.first)
         return doc.first;
       var line = getLine(doc, search - 1);
@@ -59639,11 +62466,13 @@ window.CodeMirror = function () {
     else
       state = copyState(doc.mode, state);
     doc.iter(pos, n, function (line) {
-      processLine(cm, line, state);
-      var save = pos == n - 1 || pos % 5 == 0 || pos >= display.showingFrom && pos < display.showingTo;
+      processLine(cm, line.text, state);
+      var save = pos == n - 1 || pos % 5 == 0 || pos >= display.viewFrom && pos < display.viewTo;
       line.stateAfter = save ? copyState(doc.mode, state) : null;
       ++pos;
     });
+    if (precise)
+      doc.frontier = pos;
     return state;
   }
   // POSITION MEASUREMENT
@@ -59653,180 +62482,257 @@ window.CodeMirror = function () {
   function paddingVert(display) {
     return display.mover.offsetHeight - display.lineSpace.offsetHeight;
   }
-  function paddingLeft(display) {
-    var e = removeChildrenAndAdd(display.measure, elt('pre', null, null, 'text-align: left')).appendChild(elt('span', 'x'));
-    return e.offsetLeft;
-  }
-  function measureChar(cm, line, ch, data, bias) {
-    var dir = -1;
-    data = data || measureLine(cm, line);
-    for (var pos = ch;; pos += dir) {
-      var r = data[pos];
-      if (r)
-        break;
-      if (dir < 0 && pos == 0)
-        dir = 1;
-    }
-    bias = pos > ch ? 'left' : pos < ch ? 'right' : bias;
-    if (bias == 'left' && r.leftSide)
-      r = r.leftSide;
-    else if (bias == 'right' && r.rightSide)
-      r = r.rightSide;
-    return {
-      left: pos < ch ? r.right : r.left,
-      right: pos > ch ? r.left : r.right,
-      top: r.top,
-      bottom: r.bottom
-    };
-  }
-  function findCachedMeasurement(cm, line) {
-    var cache = cm.display.measureLineCache;
-    for (var i = 0; i < cache.length; ++i) {
-      var memo = cache[i];
-      if (memo.text == line.text && memo.markedSpans == line.markedSpans && cm.display.scroller.clientWidth == memo.width && memo.classes == line.textClass + '|' + line.bgClass + '|' + line.wrapClass)
-        return memo;
-    }
-  }
-  function clearCachedMeasurement(cm, line) {
-    var exists = findCachedMeasurement(cm, line);
-    if (exists)
-      exists.text = exists.measure = exists.markedSpans = null;
-  }
-  function measureLine(cm, line) {
-    // First look in the cache
-    var cached = findCachedMeasurement(cm, line);
-    if (cached)
-      return cached.measure;
-    // Failing that, recompute and store result in cache
-    var measure = measureLineInner(cm, line);
-    var cache = cm.display.measureLineCache;
-    var memo = {
-        text: line.text,
-        width: cm.display.scroller.clientWidth,
-        markedSpans: line.markedSpans,
-        measure: measure,
-        classes: line.textClass + '|' + line.bgClass + '|' + line.wrapClass
+  function paddingH(display) {
+    if (display.cachedPaddingH)
+      return display.cachedPaddingH;
+    var e = removeChildrenAndAdd(display.measure, elt('pre', 'x'));
+    var style = window.getComputedStyle ? window.getComputedStyle(e) : e.currentStyle;
+    var data = {
+        left: parseInt(style.paddingLeft),
+        right: parseInt(style.paddingRight)
       };
-    if (cache.length == 16)
-      cache[++cm.display.measureLineCachePos % 16] = memo;
-    else
-      cache.push(memo);
-    return measure;
-  }
-  function measureLineInner(cm, line) {
-    var display = cm.display, measure = emptyArray(line.text.length);
-    var pre = lineContent(cm, line, measure, true);
-    // IE does not cache element positions of inline elements between
-    // calls to getBoundingClientRect. This makes the loop below,
-    // which gathers the positions of all the characters on the line,
-    // do an amount of layout work quadratic to the number of
-    // characters. When line wrapping is off, we try to improve things
-    // by first subdividing the line into a bunch of inline blocks, so
-    // that IE can reuse most of the layout information from caches
-    // for those blocks. This does interfere with line wrapping, so it
-    // doesn't work when wrapping is on, but in that case the
-    // situation is slightly better, since IE does cache line-wrapping
-    // information and only recomputes per-line.
-    if (ie && !ie_lt8 && !cm.options.lineWrapping && pre.childNodes.length > 100) {
-      var fragment = document.createDocumentFragment();
-      var chunk = 10, n = pre.childNodes.length;
-      for (var i = 0, chunks = Math.ceil(n / chunk); i < chunks; ++i) {
-        var wrap = elt('div', null, null, 'display: inline-block');
-        for (var j = 0; j < chunk && n; ++j) {
-          wrap.appendChild(pre.firstChild);
-          --n;
-        }
-        fragment.appendChild(wrap);
-      }
-      pre.appendChild(fragment);
-    }
-    removeChildrenAndAdd(display.measure, pre);
-    var outer = getRect(display.lineDiv);
-    var vranges = [], data = emptyArray(line.text.length), maxBot = pre.offsetHeight;
-    // Work around an IE7/8 bug where it will sometimes have randomly
-    // replaced our pre with a clone at this point.
-    if (ie_lt9 && display.measure.first != pre)
-      removeChildrenAndAdd(display.measure, pre);
-    function measureRect(rect) {
-      var top = rect.top - outer.top, bot = rect.bottom - outer.top;
-      if (bot > maxBot)
-        bot = maxBot;
-      if (top < 0)
-        top = 0;
-      for (var i = vranges.length - 2; i >= 0; i -= 2) {
-        var rtop = vranges[i], rbot = vranges[i + 1];
-        if (rtop > bot || rbot < top)
-          continue;
-        if (rtop <= top && rbot >= bot || top <= rtop && bot >= rbot || Math.min(bot, rbot) - Math.max(top, rtop) >= bot - top >> 1) {
-          vranges[i] = Math.min(top, rtop);
-          vranges[i + 1] = Math.max(bot, rbot);
-          break;
-        }
-      }
-      if (i < 0) {
-        i = vranges.length;
-        vranges.push(top, bot);
-      }
-      return {
-        left: rect.left - outer.left,
-        right: rect.right - outer.left,
-        top: i,
-        bottom: null
-      };
-    }
-    function finishRect(rect) {
-      rect.bottom = vranges[rect.top + 1];
-      rect.top = vranges[rect.top];
-    }
-    for (var i = 0, cur; i < measure.length; ++i)
-      if (cur = measure[i]) {
-        var node = cur, rect = null;
-        // A widget might wrap, needs special care
-        if (/\bCodeMirror-widget\b/.test(cur.className) && cur.getClientRects) {
-          if (cur.firstChild.nodeType == 1)
-            node = cur.firstChild;
-          var rects = node.getClientRects();
-          if (rects.length > 1) {
-            rect = data[i] = measureRect(rects[0]);
-            rect.rightSide = measureRect(rects[rects.length - 1]);
-          }
-        }
-        if (!rect)
-          rect = data[i] = measureRect(getRect(node));
-        if (cur.measureRight)
-          rect.right = getRect(cur.measureRight).left;
-        if (cur.leftSide)
-          rect.leftSide = measureRect(getRect(cur.leftSide));
-      }
-    for (var i = 0, cur; i < data.length; ++i)
-      if (cur = data[i]) {
-        finishRect(cur);
-        if (cur.leftSide)
-          finishRect(cur.leftSide);
-        if (cur.rightSide)
-          finishRect(cur.rightSide);
-      }
+    if (!isNaN(data.left) && !isNaN(data.right))
+      display.cachedPaddingH = data;
     return data;
   }
-  function measureLineWidth(cm, line) {
-    var hasBadSpan = false;
-    if (line.markedSpans)
-      for (var i = 0; i < line.markedSpans; ++i) {
-        var sp = line.markedSpans[i];
-        if (sp.collapsed && (sp.to == null || sp.to == line.text.length))
-          hasBadSpan = true;
+  // Ensure the lineView.wrapping.heights array is populated. This is
+  // an array of bottom offsets for the lines that make up a drawn
+  // line. When lineWrapping is on, there might be more than one
+  // height.
+  function ensureLineHeights(cm, lineView, rect) {
+    var wrapping = cm.options.lineWrapping;
+    var curWidth = wrapping && cm.display.scroller.clientWidth;
+    if (!lineView.measure.heights || wrapping && lineView.measure.width != curWidth) {
+      var heights = lineView.measure.heights = [];
+      if (wrapping) {
+        lineView.measure.width = curWidth;
+        var rects = lineView.text.firstChild.getClientRects();
+        for (var i = 0; i < rects.length - 1; i++) {
+          var cur = rects[i], next = rects[i + 1];
+          if (Math.abs(cur.bottom - next.bottom) > 2)
+            heights.push((cur.bottom + next.top) / 2 - rect.top);
+        }
       }
-    var cached = !hasBadSpan && findCachedMeasurement(cm, line);
-    if (cached)
-      return measureChar(cm, line, line.text.length, cached.measure, 'right').right;
-    var pre = lineContent(cm, line, null, true);
-    var end = pre.appendChild(zeroWidthElement(cm.display.measure));
-    removeChildrenAndAdd(cm.display.measure, pre);
-    return getRect(end).right - getRect(cm.display.lineDiv).left;
+      heights.push(rect.bottom - rect.top);
+    }
+  }
+  // Find a line map (mapping character offsets to text nodes) and a
+  // measurement cache for the given line number. (A line view might
+  // contain multiple lines when collapsed ranges are present.)
+  function mapFromLineView(lineView, line, lineN) {
+    if (lineView.line == line)
+      return {
+        map: lineView.measure.map,
+        cache: lineView.measure.cache
+      };
+    for (var i = 0; i < lineView.rest.length; i++)
+      if (lineView.rest[i] == line)
+        return {
+          map: lineView.measure.maps[i],
+          cache: lineView.measure.caches[i]
+        };
+    for (var i = 0; i < lineView.rest.length; i++)
+      if (lineNo(lineView.rest[i]) > lineN)
+        return {
+          map: lineView.measure.maps[i],
+          cache: lineView.measure.caches[i],
+          before: true
+        };
+  }
+  // Render a line into the hidden node display.externalMeasured. Used
+  // when measurement is needed for a line that's not in the viewport.
+  function updateExternalMeasurement(cm, line) {
+    line = visualLine(line);
+    var lineN = lineNo(line);
+    var view = cm.display.externalMeasured = new LineView(cm.doc, line, lineN);
+    view.lineN = lineN;
+    var built = view.built = buildLineContent(cm, view);
+    view.text = built.pre;
+    removeChildrenAndAdd(cm.display.lineMeasure, built.pre);
+    return view;
+  }
+  // Get a {top, bottom, left, right} box (in line-local coordinates)
+  // for a given character.
+  function measureChar(cm, line, ch, bias) {
+    return measureCharPrepared(cm, prepareMeasureForLine(cm, line), ch, bias);
+  }
+  // Find a line view that corresponds to the given line number.
+  function findViewForLine(cm, lineN) {
+    if (lineN >= cm.display.viewFrom && lineN < cm.display.viewTo)
+      return cm.display.view[findViewIndex(cm, lineN)];
+    var ext = cm.display.externalMeasured;
+    if (ext && lineN >= ext.lineN && lineN < ext.lineN + ext.size)
+      return ext;
+  }
+  // Measurement can be split in two steps, the set-up work that
+  // applies to the whole line, and the measurement of the actual
+  // character. Functions like coordsChar, that need to do a lot of
+  // measurements in a row, can thus ensure that the set-up work is
+  // only done once.
+  function prepareMeasureForLine(cm, line) {
+    var lineN = lineNo(line);
+    var view = findViewForLine(cm, lineN);
+    if (view && !view.text)
+      view = null;
+    else if (view && view.changes)
+      updateLineForChanges(cm, view, lineN, getDimensions(cm));
+    if (!view)
+      view = updateExternalMeasurement(cm, line);
+    var info = mapFromLineView(view, line, lineN);
+    return {
+      line: line,
+      view: view,
+      rect: null,
+      map: info.map,
+      cache: info.cache,
+      before: info.before,
+      hasHeights: false
+    };
+  }
+  // Given a prepared measurement object, measures the position of an
+  // actual character (or fetches it from the cache).
+  function measureCharPrepared(cm, prepared, ch, bias) {
+    if (prepared.before)
+      ch = -1;
+    var key = ch + (bias || ''), found;
+    if (prepared.cache.hasOwnProperty(key)) {
+      found = prepared.cache[key];
+    } else {
+      if (!prepared.rect)
+        prepared.rect = prepared.view.text.getBoundingClientRect();
+      if (!prepared.hasHeights) {
+        ensureLineHeights(cm, prepared.view, prepared.rect);
+        prepared.hasHeights = true;
+      }
+      found = measureCharInner(cm, prepared, ch, bias);
+      if (!found.bogus)
+        prepared.cache[key] = found;
+    }
+    return {
+      left: found.left,
+      right: found.right,
+      top: found.top,
+      bottom: found.bottom
+    };
+  }
+  var nullRect = {
+      left: 0,
+      right: 0,
+      top: 0,
+      bottom: 0
+    };
+  function measureCharInner(cm, prepared, ch, bias) {
+    var map = prepared.map;
+    var node, start, end, collapse;
+    // First, search the line map for the text node corresponding to,
+    // or closest to, the target character.
+    for (var i = 0; i < map.length; i += 3) {
+      var mStart = map[i], mEnd = map[i + 1];
+      if (ch < mStart) {
+        start = 0;
+        end = 1;
+        collapse = 'left';
+      } else if (ch < mEnd) {
+        start = ch - mStart;
+        end = start + 1;
+      } else if (i == map.length - 3 || ch == mEnd && map[i + 3] > ch) {
+        end = mEnd - mStart;
+        start = end - 1;
+        if (ch >= mEnd)
+          collapse = 'right';
+      }
+      if (start != null) {
+        node = map[i + 2];
+        if (mStart == mEnd && bias == (node.insertLeft ? 'left' : 'right'))
+          collapse = bias;
+        if (bias == 'left' && start == 0)
+          while (i && map[i - 2] == map[i - 3] && map[i - 1].insertLeft) {
+            node = map[(i -= 3) + 2];
+            collapse = 'left';
+          }
+        if (bias == 'right' && start == mEnd - mStart)
+          while (i < map.length - 3 && map[i + 3] == map[i + 4] && !map[i + 5].insertLeft) {
+            node = map[(i += 3) + 2];
+            collapse = 'right';
+          }
+        break;
+      }
+    }
+    var rect;
+    if (node.nodeType == 3) {
+      // If it is a text node, use a range to retrieve the coordinates.
+      while (start && isExtendingChar(prepared.line.text.charAt(mStart + start)))
+        --start;
+      while (mStart + end < mEnd && isExtendingChar(prepared.line.text.charAt(mStart + end)))
+        ++end;
+      if (ie_upto8 && start == 0 && end == mEnd - mStart) {
+        rect = node.parentNode.getBoundingClientRect();
+      } else if (ie && cm.options.lineWrapping) {
+        var rects = range(node, start, end).getClientRects();
+        if (rects.length)
+          rect = rects[bias == 'right' ? rects.length - 1 : 0];
+        else
+          rect = nullRect;
+      } else {
+        rect = range(node, start, end).getBoundingClientRect() || nullRect;
+      }
+    } else {
+      // If it is a widget, simply get the box for the whole widget.
+      if (start > 0)
+        collapse = bias = 'right';
+      var rects;
+      if (cm.options.lineWrapping && (rects = node.getClientRects()).length > 1)
+        rect = rects[bias == 'right' ? rects.length - 1 : 0];
+      else
+        rect = node.getBoundingClientRect();
+    }
+    if (ie_upto8 && !start && (!rect || !rect.left && !rect.right)) {
+      var rSpan = node.parentNode.getClientRects()[0];
+      if (rSpan)
+        rect = {
+          left: rSpan.left,
+          right: rSpan.left + charWidth(cm.display),
+          top: rSpan.top,
+          bottom: rSpan.bottom
+        };
+      else
+        rect = nullRect;
+    }
+    var top, bot = (rect.bottom + rect.top) / 2 - prepared.rect.top;
+    var heights = prepared.view.measure.heights;
+    for (var i = 0; i < heights.length - 1; i++)
+      if (bot < heights[i])
+        break;
+    top = i ? heights[i - 1] : 0;
+    bot = heights[i];
+    var result = {
+        left: (collapse == 'right' ? rect.right : rect.left) - prepared.rect.left,
+        right: (collapse == 'left' ? rect.left : rect.right) - prepared.rect.left,
+        top: top,
+        bottom: bot
+      };
+    if (!rect.left && !rect.right)
+      result.bogus = true;
+    return result;
+  }
+  function clearLineMeasurementCacheFor(lineView) {
+    if (lineView.measure) {
+      lineView.measure.cache = {};
+      lineView.measure.heights = null;
+      if (lineView.rest)
+        for (var i = 0; i < lineView.rest.length; i++)
+          lineView.measure.caches[i] = {};
+    }
+  }
+  function clearLineMeasurementCache(cm) {
+    cm.display.externalMeasure = null;
+    removeChildren(cm.display.lineMeasure);
+    for (var i = 0; i < cm.display.view.length; i++)
+      clearLineMeasurementCacheFor(cm.display.view[i]);
   }
   function clearCaches(cm) {
-    cm.display.measureLineCache.length = cm.display.measureLineCachePos = 0;
-    cm.display.cachedCharWidth = cm.display.cachedTextHeight = null;
+    clearLineMeasurementCache(cm);
+    cm.display.cachedCharWidth = cm.display.cachedTextHeight = cm.display.cachedPaddingH = null;
     if (!cm.options.lineWrapping)
       cm.display.maxLineChanged = true;
     cm.display.lineNumChars = null;
@@ -59837,7 +62743,9 @@ window.CodeMirror = function () {
   function pageScrollY() {
     return window.pageYOffset || (document.documentElement || document.body).scrollTop;
   }
-  // Context is one of "line", "div" (display.lineDiv), "local"/null (editor), or "page"
+  // Converts a {top, bottom, left, right} box from line-local
+  // coordinates into another coordinate system. Context may be one of
+  // "line", "div" (display.lineDiv), "local"/null (editor), or "page".
   function intoCoordSystem(cm, lineObj, rect, context) {
     if (lineObj.widgets)
       for (var i = 0; i < lineObj.widgets.length; ++i)
@@ -59850,13 +62758,13 @@ window.CodeMirror = function () {
       return rect;
     if (!context)
       context = 'local';
-    var yOff = heightAtLine(cm, lineObj);
+    var yOff = heightAtLine(lineObj);
     if (context == 'local')
       yOff += paddingTop(cm.display);
     else
       yOff -= cm.display.viewOffset;
     if (context == 'page' || context == 'window') {
-      var lOff = getRect(cm.display.lineSpace);
+      var lOff = cm.display.lineSpace.getBoundingClientRect();
       yOff += lOff.top + (context == 'window' ? 0 : pageScrollY());
       var xOff = lOff.left + (context == 'window' ? 0 : pageScrollX());
       rect.left += xOff;
@@ -59866,8 +62774,8 @@ window.CodeMirror = function () {
     rect.bottom += yOff;
     return rect;
   }
-  // Context may be "window", "page", "div", or "local"/null
-  // Result is in "div" coords
+  // Coverts a box from "div" coords to another coordinate system.
+  // Context may be "window", "page", "div", or "local"/null.
   function fromCoordSystem(cm, coords, context) {
     if (context == 'div')
       return coords;
@@ -59877,11 +62785,11 @@ window.CodeMirror = function () {
       left -= pageScrollX();
       top -= pageScrollY();
     } else if (context == 'local' || !context) {
-      var localBox = getRect(cm.display.sizer);
+      var localBox = cm.display.sizer.getBoundingClientRect();
       left += localBox.left;
       top += localBox.top;
     }
-    var lineSpaceBox = getRect(cm.display.lineSpace);
+    var lineSpaceBox = cm.display.lineSpace.getBoundingClientRect();
     return {
       left: left - lineSpaceBox.left,
       top: top - lineSpaceBox.top
@@ -59890,14 +62798,17 @@ window.CodeMirror = function () {
   function charCoords(cm, pos, context, lineObj, bias) {
     if (!lineObj)
       lineObj = getLine(cm.doc, pos.line);
-    return intoCoordSystem(cm, lineObj, measureChar(cm, lineObj, pos.ch, null, bias), context);
+    return intoCoordSystem(cm, lineObj, measureChar(cm, lineObj, pos.ch, bias), context);
   }
-  function cursorCoords(cm, pos, context, lineObj, measurement) {
+  // Returns a box for a given cursor position, which may have an
+  // 'other' property containing the position of the secondary cursor
+  // on a bidi boundary.
+  function cursorCoords(cm, pos, context, lineObj, preparedMeasure) {
     lineObj = lineObj || getLine(cm.doc, pos.line);
-    if (!measurement)
-      measurement = measureLine(cm, lineObj);
+    if (!preparedMeasure)
+      preparedMeasure = prepareMeasureForLine(cm, lineObj);
     function get(ch, right) {
-      var m = measureChar(cm, lineObj, ch, measurement, right ? 'right' : 'left');
+      var m = measureCharPrepared(cm, preparedMeasure, ch, right ? 'right' : 'left');
       if (right)
         m.left = m.right;
       else
@@ -59928,41 +62839,63 @@ window.CodeMirror = function () {
       val.other = getBidi(ch, bidiOther);
     return val;
   }
+  // Used to cheaply estimate the coordinates for a position. Used for
+  // intermediate scroll updates.
+  function estimateCoords(cm, pos) {
+    var left = 0, pos = clipPos(cm.doc, pos);
+    if (!cm.options.lineWrapping)
+      left = charWidth(cm.display) * pos.ch;
+    var lineObj = getLine(cm.doc, pos.line);
+    var top = heightAtLine(lineObj) + paddingTop(cm.display);
+    return {
+      left: left,
+      right: left,
+      top: top,
+      bottom: top + lineObj.height
+    };
+  }
+  // Positions returned by coordsChar contain some extra information.
+  // xRel is the relative x position of the input coordinates compared
+  // to the found position (so xRel > 0 means the coordinates are to
+  // the right of the character position, for example). When outside
+  // is true, that means the coordinates lie outside the line's
+  // vertical range.
   function PosWithInfo(line, ch, outside, xRel) {
-    var pos = new Pos(line, ch);
+    var pos = Pos(line, ch);
     pos.xRel = xRel;
     if (outside)
       pos.outside = true;
     return pos;
   }
-  // Coords must be lineSpace-local
+  // Compute the character position closest to the given coordinates.
+  // Input must be lineSpace-local ("div" coordinate system).
   function coordsChar(cm, x, y) {
     var doc = cm.doc;
     y += cm.display.viewOffset;
     if (y < 0)
       return PosWithInfo(doc.first, 0, true, -1);
-    var lineNo = lineAtHeight(doc, y), last = doc.first + doc.size - 1;
-    if (lineNo > last)
+    var lineN = lineAtHeight(doc, y), last = doc.first + doc.size - 1;
+    if (lineN > last)
       return PosWithInfo(doc.first + doc.size - 1, getLine(doc, last).text.length, true, 1);
     if (x < 0)
       x = 0;
+    var lineObj = getLine(doc, lineN);
     for (;;) {
-      var lineObj = getLine(doc, lineNo);
-      var found = coordsCharInner(cm, lineObj, lineNo, x, y);
+      var found = coordsCharInner(cm, lineObj, lineN, x, y);
       var merged = collapsedSpanAtEnd(lineObj);
-      var mergedPos = merged && merged.find();
+      var mergedPos = merged && merged.find(0, true);
       if (merged && (found.ch > mergedPos.from.ch || found.ch == mergedPos.from.ch && found.xRel > 0))
-        lineNo = mergedPos.to.line;
+        lineN = lineNo(lineObj = mergedPos.to.line);
       else
         return found;
     }
   }
   function coordsCharInner(cm, lineObj, lineNo, x, y) {
-    var innerOff = y - heightAtLine(cm, lineObj);
+    var innerOff = y - heightAtLine(lineObj);
     var wrongLine = false, adjust = 2 * cm.display.wrapper.clientWidth;
-    var measurement = measureLine(cm, lineObj);
+    var preparedMeasure = prepareMeasureForLine(cm, lineObj);
     function getX(ch) {
-      var sp = cursorCoords(cm, Pos(lineNo, ch), 'line', lineObj, measurement);
+      var sp = cursorCoords(cm, Pos(lineNo, ch), 'line', lineObj, preparedMeasure);
       wrongLine = true;
       if (innerOff > sp.bottom)
         return sp.left - adjust;
@@ -59982,9 +62915,9 @@ window.CodeMirror = function () {
       if (bidi ? to == from || to == moveVisually(lineObj, from, 1) : to - from <= 1) {
         var ch = x < fromX || x - fromX <= toX - x ? from : to;
         var xDiff = x - (ch == from ? fromX : toX);
-        while (isExtendingChar.test(lineObj.text.charAt(ch)))
+        while (isExtendingChar(lineObj.text.charAt(ch)))
           ++ch;
-        var pos = PosWithInfo(lineNo, ch, ch == from ? fromOutside : toOutside, xDiff < 0 ? -1 : xDiff ? 1 : 0);
+        var pos = PosWithInfo(lineNo, ch, ch == from ? fromOutside : toOutside, xDiff < -1 ? -1 : xDiff > 1 ? 1 : 0);
         return pos;
       }
       var step = Math.ceil(dist / 2), middle = from + step;
@@ -60009,6 +62942,7 @@ window.CodeMirror = function () {
     }
   }
   var measureText;
+  // Compute the default text height.
   function textHeight(display) {
     if (display.cachedTextHeight != null)
       return display.cachedTextHeight;
@@ -60029,80 +62963,90 @@ window.CodeMirror = function () {
     removeChildren(display.measure);
     return height || 1;
   }
+  // Compute the default character width.
   function charWidth(display) {
     if (display.cachedCharWidth != null)
       return display.cachedCharWidth;
-    var anchor = elt('span', 'x');
+    var anchor = elt('span', 'xxxxxxxxxx');
     var pre = elt('pre', [anchor]);
     removeChildrenAndAdd(display.measure, pre);
-    var width = anchor.offsetWidth;
+    var rect = anchor.getBoundingClientRect(), width = (rect.right - rect.left) / 10;
     if (width > 2)
       display.cachedCharWidth = width;
     return width || 10;
   }
   // OPERATIONS
-  // Operations are used to wrap changes in such a way that each
-  // change won't have to update the cursor and display (which would
-  // be awkward, slow, and error-prone), but instead updates are
-  // batched and then all combined and executed at once.
+  // Operations are used to wrap a series of changes to the editor
+  // state in such a way that each change won't have to update the
+  // cursor and display (which would be awkward, slow, and
+  // error-prone). Instead, display updates are batched and then all
+  // combined and executed at once.
   var nextOpId = 0;
+  // Start a new operation.
   function startOperation(cm) {
     cm.curOp = {
-      changes: [],
+      viewChanged: false,
+      startHeight: cm.doc.height,
       forceUpdate: false,
       updateInput: null,
-      userSelChange: null,
-      textChanged: null,
+      typing: false,
+      changeObjs: null,
+      cursorActivityHandlers: null,
       selectionChanged: false,
-      cursorActivity: false,
       updateMaxLine: false,
-      updateScrollPos: false,
+      scrollLeft: null,
+      scrollTop: null,
+      scrollToPos: null,
       id: ++nextOpId
     };
     if (!delayedCallbackDepth++)
       delayedCallbacks = [];
   }
+  // Finish an operation, updating the display and signalling delayed events
   function endOperation(cm) {
     var op = cm.curOp, doc = cm.doc, display = cm.display;
     cm.curOp = null;
     if (op.updateMaxLine)
-      computeMaxLength(cm);
-    if (display.maxLineChanged && !cm.options.lineWrapping && display.maxLine) {
-      var width = measureLineWidth(cm, display.maxLine);
-      display.sizer.style.minWidth = Math.max(0, width + 3 + scrollerCutOff) + 'px';
-      display.maxLineChanged = false;
-      var maxScrollLeft = Math.max(0, display.sizer.offsetLeft + display.sizer.offsetWidth - display.scroller.clientWidth);
-      if (maxScrollLeft < doc.scrollLeft && !op.updateScrollPos)
-        setScrollLeft(cm, Math.min(display.scroller.scrollLeft, maxScrollLeft), true);
-    }
-    var newScrollPos, updated;
-    if (op.updateScrollPos) {
-      newScrollPos = op.updateScrollPos;
-    } else if (op.selectionChanged && display.scroller.clientHeight) {
-      // don't rescroll if not visible
-      var coords = cursorCoords(cm, doc.sel.head);
-      newScrollPos = calculateScrollPos(cm, coords.left, coords.top, coords.left, coords.bottom);
-    }
-    if (op.changes.length || op.forceUpdate || newScrollPos && newScrollPos.scrollTop != null) {
-      updated = updateDisplay(cm, op.changes, newScrollPos && newScrollPos.scrollTop, op.forceUpdate);
+      findMaxLine(cm);
+    // If it looks like an update might be needed, call updateDisplay
+    if (op.viewChanged || op.forceUpdate || op.scrollTop != null || op.scrollToPos && (op.scrollToPos.from.line < display.viewFrom || op.scrollToPos.to.line >= display.viewTo) || display.maxLineChanged && cm.options.lineWrapping) {
+      var updated = updateDisplay(cm, {
+          top: op.scrollTop,
+          ensure: op.scrollToPos
+        }, op.forceUpdate);
       if (cm.display.scroller.offsetHeight)
         cm.doc.scrollTop = cm.display.scroller.scrollTop;
     }
+    // If no update was run, but the selection changed, redraw that.
     if (!updated && op.selectionChanged)
       updateSelection(cm);
-    if (op.updateScrollPos) {
-      display.scroller.scrollTop = display.scrollbarV.scrollTop = doc.scrollTop = newScrollPos.scrollTop;
-      display.scroller.scrollLeft = display.scrollbarH.scrollLeft = doc.scrollLeft = newScrollPos.scrollLeft;
+    if (!updated && op.startHeight != cm.doc.height)
+      updateScrollbars(cm);
+    // Abort mouse wheel delta measurement, when scrolling explicitly
+    if (display.wheelStartX != null && (op.scrollTop != null || op.scrollLeft != null || op.scrollToPos))
+      display.wheelStartX = display.wheelStartY = null;
+    // Propagate the scroll position to the actual DOM scroller
+    if (op.scrollTop != null && display.scroller.scrollTop != op.scrollTop) {
+      var top = Math.max(0, Math.min(display.scroller.scrollHeight - display.scroller.clientHeight, op.scrollTop));
+      display.scroller.scrollTop = display.scrollbarV.scrollTop = doc.scrollTop = top;
+    }
+    if (op.scrollLeft != null && display.scroller.scrollLeft != op.scrollLeft) {
+      var left = Math.max(0, Math.min(display.scroller.scrollWidth - display.scroller.clientWidth, op.scrollLeft));
+      display.scroller.scrollLeft = display.scrollbarH.scrollLeft = doc.scrollLeft = left;
       alignHorizontally(cm);
-      if (op.scrollToPos)
-        scrollPosIntoView(cm, clipPos(cm.doc, op.scrollToPos), op.scrollToPosMargin);
-    } else if (newScrollPos) {
-      scrollCursorIntoView(cm);
+    }
+    // If we need to scroll a specific position into view, do so.
+    if (op.scrollToPos) {
+      var coords = scrollPosIntoView(cm, clipPos(cm.doc, op.scrollToPos.from), clipPos(cm.doc, op.scrollToPos.to), op.scrollToPos.margin);
+      if (op.scrollToPos.isCursor && cm.state.focused)
+        maybeScrollWindow(cm, coords);
     }
     if (op.selectionChanged)
       restartBlink(cm);
     if (cm.state.focused && op.updateInput)
-      resetInput(cm, op.userSelChange);
+      resetInput(cm, op.typing);
+    // Fire events for markers that are hidden/unidden by editing or
+    // undoing
     var hidden = op.maybeHiddenMarkers, unhidden = op.maybeUnhiddenMarkers;
     if (hidden)
       for (var i = 0; i < hidden.length; ++i)
@@ -60117,67 +63061,264 @@ window.CodeMirror = function () {
       delayed = delayedCallbacks;
       delayedCallbacks = null;
     }
-    if (op.textChanged)
-      signal(cm, 'change', cm, op.textChanged);
-    if (op.cursorActivity)
-      signal(cm, 'cursorActivity', cm);
+    // Fire change events, and delayed event handlers
+    if (op.changeObjs)
+      signal(cm, 'changes', cm, op.changeObjs);
     if (delayed)
       for (var i = 0; i < delayed.length; ++i)
         delayed[i]();
+    if (op.cursorActivityHandlers)
+      for (var i = 0; i < op.cursorActivityHandlers.length; i++)
+        op.cursorActivityHandlers[i](cm);
+  }
+  // Run the given function in an operation
+  function runInOp(cm, f) {
+    if (cm.curOp)
+      return f();
+    startOperation(cm);
+    try {
+      return f();
+    } finally {
+      endOperation(cm);
+    }
   }
   // Wraps a function in an operation. Returns the wrapped function.
-  function operation(cm1, f) {
+  function operation(cm, f) {
     return function () {
-      var cm = cm1 || this, withOp = !cm.curOp;
-      if (withOp)
-        startOperation(cm);
-      try {
-        var result = f.apply(cm, arguments);
-      } finally {
-        if (withOp)
-          endOperation(cm);
-      }
-      return result;
-    };
-  }
-  function docOperation(f) {
-    return function () {
-      var withOp = this.cm && !this.cm.curOp, result;
-      if (withOp)
-        startOperation(this.cm);
-      try {
-        result = f.apply(this, arguments);
-      } finally {
-        if (withOp)
-          endOperation(this.cm);
-      }
-      return result;
-    };
-  }
-  function runInOp(cm, f) {
-    var withOp = !cm.curOp, result;
-    if (withOp)
+      if (cm.curOp)
+        return f.apply(cm, arguments);
       startOperation(cm);
-    try {
-      result = f();
-    } finally {
-      if (withOp)
+      try {
+        return f.apply(cm, arguments);
+      } finally {
         endOperation(cm);
-    }
-    return result;
+      }
+    };
   }
+  // Used to add methods to editor and doc instances, wrapping them in
+  // operations.
+  function methodOp(f) {
+    return function () {
+      if (this.curOp)
+        return f.apply(this, arguments);
+      startOperation(this);
+      try {
+        return f.apply(this, arguments);
+      } finally {
+        endOperation(this);
+      }
+    };
+  }
+  function docMethodOp(f) {
+    return function () {
+      var cm = this.cm;
+      if (!cm || cm.curOp)
+        return f.apply(this, arguments);
+      startOperation(cm);
+      try {
+        return f.apply(this, arguments);
+      } finally {
+        endOperation(cm);
+      }
+    };
+  }
+  // VIEW TRACKING
+  // These objects are used to represent the visible (currently drawn)
+  // part of the document. A LineView may correspond to multiple
+  // logical lines, if those are connected by collapsed ranges.
+  function LineView(doc, line, lineN) {
+    // The starting line
+    this.line = line;
+    // Continuing lines, if any
+    this.rest = visualLineContinued(line);
+    // Number of logical lines in this visual line
+    this.size = this.rest ? lineNo(lst(this.rest)) - lineN + 1 : 1;
+    this.node = this.text = null;
+    this.hidden = lineIsHidden(doc, line);
+  }
+  // Create a range of LineView objects for the given lines.
+  function buildViewArray(cm, from, to) {
+    var array = [], nextPos;
+    for (var pos = from; pos < to; pos = nextPos) {
+      var view = new LineView(cm.doc, getLine(cm.doc, pos), pos);
+      nextPos = pos + view.size;
+      array.push(view);
+    }
+    return array;
+  }
+  // Updates the display.view data structure for a given change to the
+  // document. From and to are in pre-change coordinates. Lendiff is
+  // the amount of lines added or subtracted by the change. This is
+  // used for changes that span multiple lines, or change the way
+  // lines are divided into visual lines. regLineChange (below)
+  // registers single-line changes.
   function regChange(cm, from, to, lendiff) {
     if (from == null)
       from = cm.doc.first;
     if (to == null)
       to = cm.doc.first + cm.doc.size;
-    cm.curOp.changes.push({
-      from: from,
-      to: to,
-      diff: lendiff
-    });
+    if (!lendiff)
+      lendiff = 0;
+    var display = cm.display;
+    if (lendiff && to < display.viewTo && (display.updateLineNumbers == null || display.updateLineNumbers > from))
+      display.updateLineNumbers = from;
+    cm.curOp.viewChanged = true;
+    if (from >= display.viewTo) {
+      // Change after
+      if (sawCollapsedSpans && visualLineNo(cm.doc, from) < display.viewTo)
+        resetView(cm);
+    } else if (to <= display.viewFrom) {
+      // Change before
+      if (sawCollapsedSpans && visualLineEndNo(cm.doc, to + lendiff) > display.viewFrom) {
+        resetView(cm);
+      } else {
+        display.viewFrom += lendiff;
+        display.viewTo += lendiff;
+      }
+    } else if (from <= display.viewFrom && to >= display.viewTo) {
+      // Full overlap
+      resetView(cm);
+    } else if (from <= display.viewFrom) {
+      // Top overlap
+      var cut = viewCuttingPoint(cm, to, to + lendiff, 1);
+      if (cut) {
+        display.view = display.view.slice(cut.index);
+        display.viewFrom = cut.lineN;
+        display.viewTo += lendiff;
+      } else {
+        resetView(cm);
+      }
+    } else if (to >= display.viewTo) {
+      // Bottom overlap
+      var cut = viewCuttingPoint(cm, from, from, -1);
+      if (cut) {
+        display.view = display.view.slice(0, cut.index);
+        display.viewTo = cut.lineN;
+      } else {
+        resetView(cm);
+      }
+    } else {
+      // Gap in the middle
+      var cutTop = viewCuttingPoint(cm, from, from, -1);
+      var cutBot = viewCuttingPoint(cm, to, to + lendiff, 1);
+      if (cutTop && cutBot) {
+        display.view = display.view.slice(0, cutTop.index).concat(buildViewArray(cm, cutTop.lineN, cutBot.lineN)).concat(display.view.slice(cutBot.index));
+        display.viewTo += lendiff;
+      } else {
+        resetView(cm);
+      }
+    }
+    var ext = display.externalMeasured;
+    if (ext) {
+      if (to < ext.lineN)
+        ext.lineN += lendiff;
+      else if (from < ext.lineN + ext.size)
+        display.externalMeasured = null;
+    }
+  }
+  // Register a change to a single line. Type must be one of "text",
+  // "gutter", "class", "widget"
+  function regLineChange(cm, line, type) {
+    cm.curOp.viewChanged = true;
+    var display = cm.display, ext = cm.display.externalMeasured;
+    if (ext && line >= ext.lineN && line < ext.lineN + ext.size)
+      display.externalMeasured = null;
+    if (line < display.viewFrom || line >= display.viewTo)
+      return;
+    var lineView = display.view[findViewIndex(cm, line)];
+    if (lineView.node == null)
+      return;
+    var arr = lineView.changes || (lineView.changes = []);
+    if (indexOf(arr, type) == -1)
+      arr.push(type);
+  }
+  // Clear the view.
+  function resetView(cm) {
+    cm.display.viewFrom = cm.display.viewTo = cm.doc.first;
+    cm.display.view = [];
+    cm.display.viewOffset = 0;
+  }
+  // Find the view element corresponding to a given line. Return null
+  // when the line isn't visible.
+  function findViewIndex(cm, n) {
+    if (n >= cm.display.viewTo)
+      return null;
+    n -= cm.display.viewFrom;
+    if (n < 0)
+      return null;
+    var view = cm.display.view;
+    for (var i = 0; i < view.length; i++) {
+      n -= view[i].size;
+      if (n < 0)
+        return i;
+    }
+  }
+  function viewCuttingPoint(cm, oldN, newN, dir) {
+    var index = findViewIndex(cm, oldN), diff, view = cm.display.view;
+    if (!sawCollapsedSpans || newN == cm.doc.first + cm.doc.size)
+      return {
+        index: index,
+        lineN: newN
+      };
+    for (var i = 0, n = cm.display.viewFrom; i < index; i++)
+      n += view[i].size;
+    if (n != oldN) {
+      if (dir > 0) {
+        if (index == view.length - 1)
+          return null;
+        diff = n + view[index].size - oldN;
+        index++;
+      } else {
+        diff = n - oldN;
+      }
+      oldN += diff;
+      newN += diff;
+    }
+    while (visualLineNo(cm.doc, newN) != newN) {
+      if (index == (dir < 0 ? 0 : view.length - 1))
+        return null;
+      newN += dir * view[index - (dir < 0 ? 1 : 0)].size;
+      index += dir;
+    }
+    return {
+      index: index,
+      lineN: newN
+    };
+  }
+  // Force the view to cover a given range, adding empty view element
+  // or clipping off existing ones as needed.
+  function adjustView(cm, from, to) {
+    var display = cm.display, view = display.view;
+    if (view.length == 0 || from >= display.viewTo || to <= display.viewFrom) {
+      display.view = buildViewArray(cm, from, to);
+      display.viewFrom = from;
+    } else {
+      if (display.viewFrom > from)
+        display.view = buildViewArray(cm, from, display.viewFrom).concat(display.view);
+      else if (display.viewFrom < from)
+        display.view = display.view.slice(findViewIndex(cm, from));
+      display.viewFrom = from;
+      if (display.viewTo < to)
+        display.view = display.view.concat(buildViewArray(cm, display.viewTo, to));
+      else if (display.viewTo > to)
+        display.view = display.view.slice(0, findViewIndex(cm, to));
+    }
+    display.viewTo = to;
+  }
+  // Count the number of lines in the view whose DOM representation is
+  // out of date (or nonexistent).
+  function countDirtyView(cm) {
+    var view = cm.display.view, dirty = 0;
+    for (var i = 0; i < view.length; i++) {
+      var lineView = view[i];
+      if (!lineView.hidden && (!lineView.node || lineView.changes))
+        ++dirty;
+    }
+    return dirty;
   }
   // INPUT HANDLING
+  // Poll for input changes, using the normal rate of polling. This
+  // runs as long as the editor is focused.
   function slowPoll(cm) {
     if (cm.display.pollingFast)
       return;
@@ -60187,6 +63328,9 @@ window.CodeMirror = function () {
         slowPoll(cm);
     });
   }
+  // When an event has just come in that is likely to add or change
+  // something in the input textarea, we poll faster, to ensure that
+  // the change appears on the screen quickly.
   function fastPoll(cm) {
     var missed = false;
     cm.display.pollingFast = true;
@@ -60202,83 +63346,135 @@ window.CodeMirror = function () {
     }
     cm.display.poll.set(20, p);
   }
-  // prevInput is a hack to work with IME. If we reset the textarea
-  // on every change, that breaks IME. So we look for changes
-  // compared to the previous content instead. (Modern browsers have
-  // events that indicate IME taking place, but these are not widely
-  // supported or compatible enough yet to rely on.)
+  // Read input from the textarea, and update the document to match.
+  // When something is selected, it is present in the textarea, and
+  // selected (unless it is huge, in which case a placeholder is
+  // used). When nothing is selected, the cursor sits after previously
+  // seen text (can be empty), which is stored in prevInput (we must
+  // not reset the textarea when typing, because that breaks IME).
   function readInput(cm) {
-    var input = cm.display.input, prevInput = cm.display.prevInput, doc = cm.doc, sel = doc.sel;
-    if (!cm.state.focused || hasSelection(input) || isReadOnly(cm) || cm.state.disableInput)
+    var input = cm.display.input, prevInput = cm.display.prevInput, doc = cm.doc;
+    // Since this is called a *lot*, try to bail out as cheaply as
+    // possible when it is clear that nothing happened. hasSelection
+    // will be the case when there is a lot of text in the textarea,
+    // in which case reading its value would be expensive.
+    if (!cm.state.focused || hasSelection(input) && !prevInput || isReadOnly(cm) || cm.options.disableInput)
       return false;
+    // See paste handler for more on the fakedLastChar kludge
+    if (cm.state.pasteIncoming && cm.state.fakedLastChar) {
+      input.value = input.value.substring(0, input.value.length - 1);
+      cm.state.fakedLastChar = false;
+    }
     var text = input.value;
-    if (text == prevInput && posEq(sel.from, sel.to))
+    // If nothing changed, bail.
+    if (text == prevInput && !cm.somethingSelected())
       return false;
-    if (ie && !ie_lt9 && cm.display.inputHasSelection === text) {
-      resetInput(cm, true);
+    // Work around nonsensical selection resetting in IE9/10
+    if (ie && !ie_upto8 && cm.display.inputHasSelection === text) {
+      resetInput(cm);
       return false;
     }
     var withOp = !cm.curOp;
     if (withOp)
       startOperation(cm);
-    sel.shift = false;
+    cm.display.shift = false;
+    if (text.charCodeAt(0) == 8203 && doc.sel == cm.display.selForContextMenu && !prevInput)
+      prevInput = '\u200b';
+    // Find the part of the input that is actually new
     var same = 0, l = Math.min(prevInput.length, text.length);
     while (same < l && prevInput.charCodeAt(same) == text.charCodeAt(same))
       ++same;
-    var from = sel.from, to = sel.to;
-    if (same < prevInput.length)
-      from = Pos(from.line, from.ch - (prevInput.length - same));
-    else if (cm.state.overwrite && posEq(from, to) && !cm.state.pasteIncoming)
-      to = Pos(to.line, Math.min(getLine(doc, to.line).text.length, to.ch + (text.length - same)));
-    var updateInput = cm.curOp.updateInput;
-    var changeEvent = {
-        from: from,
-        to: to,
-        text: splitLines(text.slice(same)),
-        origin: cm.state.pasteIncoming ? 'paste' : '+input'
-      };
-    makeChange(cm.doc, changeEvent, 'end');
+    var inserted = text.slice(same), textLines = splitLines(inserted);
+    // When pasing N lines into N selections, insert one line per selection
+    var multiPaste = cm.state.pasteIncoming && textLines.length > 1 && doc.sel.ranges.length == textLines.length;
+    // Normal behavior is to insert the new text into every selection
+    for (var i = doc.sel.ranges.length - 1; i >= 0; i--) {
+      var range = doc.sel.ranges[i];
+      var from = range.from(), to = range.to();
+      // Handle deletion
+      if (same < prevInput.length)
+        from = Pos(from.line, from.ch - (prevInput.length - same));  // Handle overwrite
+      else if (cm.state.overwrite && range.empty() && !cm.state.pasteIncoming)
+        to = Pos(to.line, Math.min(getLine(doc, to.line).text.length, to.ch + lst(textLines).length));
+      var updateInput = cm.curOp.updateInput;
+      var changeEvent = {
+          from: from,
+          to: to,
+          text: multiPaste ? [textLines[i]] : textLines,
+          origin: cm.state.pasteIncoming ? 'paste' : cm.state.cutIncoming ? 'cut' : '+input'
+        };
+      makeChange(cm.doc, changeEvent);
+      signalLater(cm, 'inputRead', cm, changeEvent);
+      // When an 'electric' character is inserted, immediately trigger a reindent
+      if (inserted && !cm.state.pasteIncoming && cm.options.electricChars && cm.options.smartIndent && range.head.ch < 100 && (!i || doc.sel.ranges[i - 1].head.line != range.head.line)) {
+        var mode = cm.getModeAt(range.head);
+        if (mode.electricChars) {
+          for (var j = 0; j < mode.electricChars.length; j++)
+            if (inserted.indexOf(mode.electricChars.charAt(j)) > -1) {
+              indentLine(cm, range.head.line, 'smart');
+              break;
+            }
+        } else if (mode.electricInput) {
+          var end = changeEnd(changeEvent);
+          if (mode.electricInput.test(getLine(doc, end.line).text.slice(0, end.ch)))
+            indentLine(cm, range.head.line, 'smart');
+        }
+      }
+    }
+    ensureCursorVisible(cm);
     cm.curOp.updateInput = updateInput;
-    signalLater(cm, 'inputRead', cm, changeEvent);
+    cm.curOp.typing = true;
+    // Don't leave long text in the textarea, since it makes further polling slow
     if (text.length > 1000 || text.indexOf('\n') > -1)
       input.value = cm.display.prevInput = '';
     else
       cm.display.prevInput = text;
     if (withOp)
       endOperation(cm);
-    cm.state.pasteIncoming = false;
+    cm.state.pasteIncoming = cm.state.cutIncoming = false;
     return true;
   }
-  function resetInput(cm, user) {
+  // Reset the input to correspond to the selection (or to be empty,
+  // when not typing and nothing is selected)
+  function resetInput(cm, typing) {
     var minimal, selected, doc = cm.doc;
-    if (!posEq(doc.sel.from, doc.sel.to)) {
+    if (cm.somethingSelected()) {
       cm.display.prevInput = '';
-      minimal = hasCopyEvent && (doc.sel.to.line - doc.sel.from.line > 100 || (selected = cm.getSelection()).length > 1000);
+      var range = doc.sel.primary();
+      minimal = hasCopyEvent && (range.to().line - range.from().line > 100 || (selected = cm.getSelection()).length > 1000);
       var content = minimal ? '-' : selected || cm.getSelection();
       cm.display.input.value = content;
       if (cm.state.focused)
         selectInput(cm.display.input);
-      if (ie && !ie_lt9)
+      if (ie && !ie_upto8)
         cm.display.inputHasSelection = content;
-    } else if (user) {
+    } else if (!typing) {
       cm.display.prevInput = cm.display.input.value = '';
-      if (ie && !ie_lt9)
+      if (ie && !ie_upto8)
         cm.display.inputHasSelection = null;
     }
     cm.display.inaccurateSelection = minimal;
   }
   function focusInput(cm) {
-    if (cm.options.readOnly != 'nocursor' && (!mobile || document.activeElement != cm.display.input))
+    if (cm.options.readOnly != 'nocursor' && (!mobile || activeElt() != cm.display.input))
       cm.display.input.focus();
+  }
+  function ensureFocus(cm) {
+    if (!cm.state.focused) {
+      focusInput(cm);
+      onFocus(cm);
+    }
   }
   function isReadOnly(cm) {
     return cm.options.readOnly || cm.doc.cantEdit;
   }
   // EVENT HANDLERS
+  // Attach the necessary event handlers when initializing the editor
   function registerEventHandlers(cm) {
     var d = cm.display;
     on(d.scroller, 'mousedown', operation(cm, onMouseDown));
-    if (ie)
+    // Older IE's will not fire a second mousedown for a double click
+    if (ie_upto10)
       on(d.scroller, 'dblclick', operation(cm, function (e) {
         if (signalDOMEvent(cm, e))
           return;
@@ -60286,24 +63482,27 @@ window.CodeMirror = function () {
         if (!pos || clickInGutter(cm, e) || eventInWidget(cm.display, e))
           return;
         e_preventDefault(e);
-        var word = findWordAt(getLine(cm.doc, pos.line).text, pos);
-        extendSelection(cm.doc, word.from, word.to);
+        var word = findWordAt(cm, pos);
+        extendSelection(cm.doc, word.anchor, word.head);
       }));
     else
       on(d.scroller, 'dblclick', function (e) {
         signalDOMEvent(cm, e) || e_preventDefault(e);
       });
+    // Prevent normal selection in the editor (we handle our own)
     on(d.lineSpace, 'selectstart', function (e) {
       if (!eventInWidget(d, e))
         e_preventDefault(e);
     });
-    // Gecko browsers fire contextmenu *after* opening the menu, at
+    // Some browsers fire contextmenu *after* opening the menu, at
     // which point we can't mess with it anymore. Context menu is
-    // handled in onMouseDown for Gecko.
-    if (!captureMiddleClick)
+    // handled in onMouseDown for these browsers.
+    if (!captureRightClick)
       on(d.scroller, 'contextmenu', function (e) {
         onContextMenu(cm, e);
       });
+    // Sync scrolling between fake scrollbars and real scrollable
+    // area, ensure viewport is updated when scrolling.
     on(d.scroller, 'scroll', function () {
       if (d.scroller.clientHeight) {
         setScrollTop(cm, d.scroller.scrollTop);
@@ -60319,12 +63518,14 @@ window.CodeMirror = function () {
       if (d.scroller.clientHeight)
         setScrollLeft(cm, d.scrollbarH.scrollLeft);
     });
+    // Listen to wheel events in order to try and update the viewport on time.
     on(d.scroller, 'mousewheel', function (e) {
       onScrollWheel(cm, e);
     });
     on(d.scroller, 'DOMMouseScroll', function (e) {
       onScrollWheel(cm, e);
     });
+    // Prevent clicks in the scrollbars from killing focus
     function reFocus() {
       if (cm.state.focused)
         setTimeout(bind(focusInput, cm), 0);
@@ -60335,45 +63536,19 @@ window.CodeMirror = function () {
     on(d.wrapper, 'scroll', function () {
       d.wrapper.scrollTop = d.wrapper.scrollLeft = 0;
     });
-    var resizeTimer;
-    function onResize() {
-      if (resizeTimer == null)
-        resizeTimer = setTimeout(function () {
-          resizeTimer = null;
-          // Might be a text scaling operation, clear size caches.
-          d.cachedCharWidth = d.cachedTextHeight = knownScrollbarWidth = null;
-          clearCaches(cm);
-          runInOp(cm, bind(regChange, cm));
-        }, 100);
-    }
-    on(window, 'resize', onResize);
-    // Above handler holds on to the editor and its data structures.
-    // Here we poll to unregister it when the editor is no longer in
-    // the document, so that it can be garbage-collected.
-    function unregister() {
-      for (var p = d.wrapper.parentNode; p && p != document.body; p = p.parentNode) {
-      }
-      if (p)
-        setTimeout(unregister, 5000);
-      else
-        off(window, 'resize', onResize);
-    }
-    setTimeout(unregister, 5000);
-    on(d.input, 'keyup', operation(cm, function (e) {
-      if (signalDOMEvent(cm, e) || cm.options.onKeyEvent && cm.options.onKeyEvent(cm, addStop(e)))
-        return;
-      if (e.keyCode == 16)
-        cm.doc.sel.shift = false;
-    }));
-    on(d.input, 'input', bind(fastPoll, cm));
+    on(d.input, 'keyup', operation(cm, onKeyUp));
+    on(d.input, 'input', function () {
+      if (ie && !ie_upto8 && cm.display.inputHasSelection)
+        cm.display.inputHasSelection = null;
+      fastPoll(cm);
+    });
     on(d.input, 'keydown', operation(cm, onKeyDown));
     on(d.input, 'keypress', operation(cm, onKeyPress));
     on(d.input, 'focus', bind(onFocus, cm));
     on(d.input, 'blur', bind(onBlur, cm));
     function drag_(e) {
-      if (signalDOMEvent(cm, e) || cm.options.onDragEvent && cm.options.onDragEvent(cm, addStop(e)))
-        return;
-      e_stop(e);
+      if (!signalDOMEvent(cm, e))
+        e_stop(e);
     }
     if (cm.options.dragDrop) {
       on(d.scroller, 'dragstart', function (e) {
@@ -60386,62 +63561,120 @@ window.CodeMirror = function () {
     on(d.scroller, 'paste', function (e) {
       if (eventInWidget(d, e))
         return;
+      cm.state.pasteIncoming = true;
       focusInput(cm);
       fastPoll(cm);
     });
     on(d.input, 'paste', function () {
+      // Workaround for webkit bug https://bugs.webkit.org/show_bug.cgi?id=90206
+      // Add a char to the end of textarea before paste occur so that
+      // selection doesn't span to the end of textarea.
+      if (webkit && !cm.state.fakedLastChar && !(new Date() - cm.state.lastMiddleDown < 200)) {
+        var start = d.input.selectionStart, end = d.input.selectionEnd;
+        d.input.value += '$';
+        d.input.selectionStart = start;
+        d.input.selectionEnd = end;
+        cm.state.fakedLastChar = true;
+      }
       cm.state.pasteIncoming = true;
       fastPoll(cm);
     });
-    function prepareCopy() {
-      if (d.inaccurateSelection) {
-        d.prevInput = '';
-        d.inaccurateSelection = false;
-        d.input.value = cm.getSelection();
-        selectInput(d.input);
+    function prepareCopyCut(e) {
+      if (cm.somethingSelected()) {
+        if (d.inaccurateSelection) {
+          d.prevInput = '';
+          d.inaccurateSelection = false;
+          d.input.value = cm.getSelection();
+          selectInput(d.input);
+        }
+      } else {
+        var text = '', ranges = [];
+        for (var i = 0; i < cm.doc.sel.ranges.length; i++) {
+          var line = cm.doc.sel.ranges[i].head.line;
+          var lineRange = {
+              anchor: Pos(line, 0),
+              head: Pos(line + 1, 0)
+            };
+          ranges.push(lineRange);
+          text += cm.getRange(lineRange.anchor, lineRange.head);
+        }
+        if (e.type == 'cut') {
+          cm.setSelections(ranges, null, sel_dontScroll);
+        } else {
+          d.prevInput = '';
+          d.input.value = text;
+          selectInput(d.input);
+        }
       }
+      if (e.type == 'cut')
+        cm.state.cutIncoming = true;
     }
-    on(d.input, 'cut', prepareCopy);
-    on(d.input, 'copy', prepareCopy);
+    on(d.input, 'cut', prepareCopyCut);
+    on(d.input, 'copy', prepareCopyCut);
     // Needed to handle Tab key in KHTML
     if (khtml)
       on(d.sizer, 'mouseup', function () {
-        if (document.activeElement == d.input)
+        if (activeElt() == d.input)
           d.input.blur();
         focusInput(cm);
       });
   }
+  // Called when the window resizes
+  function onResize(cm) {
+    // Might be a text scaling operation, clear size caches.
+    var d = cm.display;
+    d.cachedCharWidth = d.cachedTextHeight = d.cachedPaddingH = null;
+    cm.setSize();
+  }
+  // MOUSE EVENTS
+  // Return true when the given mouse event happened in a widget
   function eventInWidget(display, e) {
     for (var n = e_target(e); n != display.wrapper; n = n.parentNode) {
       if (!n || n.ignoreEvents || n.parentNode == display.sizer && n != display.mover)
         return true;
     }
   }
-  function posFromMouse(cm, e, liberal) {
+  // Given a mouse event, find the corresponding position. If liberal
+  // is false, it checks whether a gutter or scrollbar was clicked,
+  // and returns null if it was. forRect is used by rectangular
+  // selections, and tries to estimate a character position even for
+  // coordinates beyond the right of the text.
+  function posFromMouse(cm, e, liberal, forRect) {
     var display = cm.display;
     if (!liberal) {
       var target = e_target(e);
-      if (target == display.scrollbarH || target == display.scrollbarH.firstChild || target == display.scrollbarV || target == display.scrollbarV.firstChild || target == display.scrollbarFiller || target == display.gutterFiller)
+      if (target == display.scrollbarH || target == display.scrollbarV || target == display.scrollbarFiller || target == display.gutterFiller)
         return null;
     }
-    var x, y, space = getRect(display.lineSpace);
+    var x, y, space = display.lineSpace.getBoundingClientRect();
     // Fails unpredictably on IE[67] when mouse is dragged around quickly.
     try {
-      x = e.clientX;
-      y = e.clientY;
+      x = e.clientX - space.left;
+      y = e.clientY - space.top;
     } catch (e) {
       return null;
     }
-    return coordsChar(cm, x - space.left, y - space.top);
+    var coords = coordsChar(cm, x, y), line;
+    if (forRect && coords.xRel == 1 && (line = getLine(cm.doc, coords.line).text).length == coords.ch) {
+      var colDiff = countColumn(line, line.length, cm.options.tabSize) - line.length;
+      coords = Pos(coords.line, Math.max(0, Math.round((x - paddingH(cm.display).left) / charWidth(cm.display)) - colDiff));
+    }
+    return coords;
   }
-  var lastClick, lastDoubleClick;
+  // A mouse down can be a single click, double click, triple click,
+  // start of selection drag, start of text drag, new cursor
+  // (ctrl-click), rectangle drag (alt-drag), or xwin
+  // middle-click-paste. Or it might be a click on something we should
+  // not interfere with, such as a scrollbar or widget.
   function onMouseDown(e) {
     if (signalDOMEvent(this, e))
       return;
-    var cm = this, display = cm.display, doc = cm.doc, sel = doc.sel;
-    sel.shift = e.shiftKey;
+    var cm = this, display = cm.display;
+    display.shift = e.shiftKey;
     if (eventInWidget(display, e)) {
       if (!webkit) {
+        // Briefly turn off draggability, to allow widgets to do
+        // normal dragging things.
         display.scroller.draggable = false;
         setTimeout(function () {
           display.scroller.draggable = true;
@@ -60452,102 +63685,180 @@ window.CodeMirror = function () {
     if (clickInGutter(cm, e))
       return;
     var start = posFromMouse(cm, e);
+    window.focus();
     switch (e_button(e)) {
-    case 3:
-      if (captureMiddleClick)
-        onContextMenu.call(cm, cm, e);
-      return;
+    case 1:
+      if (start)
+        leftButtonDown(cm, e, start);
+      else if (e_target(e) == display.scroller)
+        e_preventDefault(e);
+      break;
     case 2:
+      if (webkit)
+        cm.state.lastMiddleDown = +new Date();
       if (start)
         extendSelection(cm.doc, start);
       setTimeout(bind(focusInput, cm), 20);
       e_preventDefault(e);
-      return;
+      break;
+    case 3:
+      if (captureRightClick)
+        onContextMenu(cm, e);
+      break;
     }
-    // For button 1, if it was clicked inside the editor
-    // (posFromMouse returning non-null), we have to adjust the
-    // selection.
-    if (!start) {
-      if (e_target(e) == display.scroller)
-        e_preventDefault(e);
-      return;
-    }
-    if (!cm.state.focused)
-      onFocus(cm);
-    var now = +new Date(), type = 'single';
-    if (lastDoubleClick && lastDoubleClick.time > now - 400 && posEq(lastDoubleClick.pos, start)) {
+  }
+  var lastClick, lastDoubleClick;
+  function leftButtonDown(cm, e, start) {
+    setTimeout(bind(ensureFocus, cm), 0);
+    var now = +new Date(), type;
+    if (lastDoubleClick && lastDoubleClick.time > now - 400 && cmp(lastDoubleClick.pos, start) == 0) {
       type = 'triple';
-      e_preventDefault(e);
-      setTimeout(bind(focusInput, cm), 20);
-      selectLine(cm, start.line);
-    } else if (lastClick && lastClick.time > now - 400 && posEq(lastClick.pos, start)) {
+    } else if (lastClick && lastClick.time > now - 400 && cmp(lastClick.pos, start) == 0) {
       type = 'double';
       lastDoubleClick = {
         time: now,
         pos: start
       };
-      e_preventDefault(e);
-      var word = findWordAt(getLine(doc, start.line).text, start);
-      extendSelection(cm.doc, word.from, word.to);
     } else {
+      type = 'single';
       lastClick = {
         time: now,
         pos: start
       };
     }
-    var last = start;
-    if (cm.options.dragDrop && dragAndDrop && !isReadOnly(cm) && !posEq(sel.from, sel.to) && !posLess(start, sel.from) && !posLess(sel.to, start) && type == 'single') {
-      var dragEnd = operation(cm, function (e2) {
-          if (webkit)
-            display.scroller.draggable = false;
-          cm.state.draggingText = false;
-          off(document, 'mouseup', dragEnd);
-          off(display.scroller, 'drop', dragEnd);
-          if (Math.abs(e.clientX - e2.clientX) + Math.abs(e.clientY - e2.clientY) < 10) {
-            e_preventDefault(e2);
+    var sel = cm.doc.sel, modifier = mac ? e.metaKey : e.ctrlKey;
+    if (cm.options.dragDrop && dragAndDrop && !isReadOnly(cm) && type == 'single' && sel.contains(start) > -1 && sel.somethingSelected())
+      leftButtonStartDrag(cm, e, start, modifier);
+    else
+      leftButtonSelect(cm, e, start, type, modifier);
+  }
+  // Start a text drag. When it ends, see if any dragging actually
+  // happen, and treat as a click if it didn't.
+  function leftButtonStartDrag(cm, e, start, modifier) {
+    var display = cm.display;
+    var dragEnd = operation(cm, function (e2) {
+        if (webkit)
+          display.scroller.draggable = false;
+        cm.state.draggingText = false;
+        off(document, 'mouseup', dragEnd);
+        off(display.scroller, 'drop', dragEnd);
+        if (Math.abs(e.clientX - e2.clientX) + Math.abs(e.clientY - e2.clientY) < 10) {
+          e_preventDefault(e2);
+          if (!modifier)
             extendSelection(cm.doc, start);
-            focusInput(cm);
-          }
-        });
-      // Let the drag handler handle this.
-      if (webkit)
-        display.scroller.draggable = true;
-      cm.state.draggingText = dragEnd;
-      // IE's approach to draggable
-      if (display.scroller.dragDrop)
-        display.scroller.dragDrop();
-      on(document, 'mouseup', dragEnd);
-      on(display.scroller, 'drop', dragEnd);
-      return;
-    }
+          focusInput(cm);
+          // Work around unexplainable focus problem in IE9 (#2127)
+          if (ie_upto10 && !ie_upto8)
+            setTimeout(function () {
+              document.body.focus();
+              focusInput(cm);
+            }, 20);
+        }
+      });
+    // Let the drag handler handle this.
+    if (webkit)
+      display.scroller.draggable = true;
+    cm.state.draggingText = dragEnd;
+    // IE's approach to draggable
+    if (display.scroller.dragDrop)
+      display.scroller.dragDrop();
+    on(document, 'mouseup', dragEnd);
+    on(display.scroller, 'drop', dragEnd);
+  }
+  // Normal selection, as opposed to text dragging.
+  function leftButtonSelect(cm, e, start, type, addNew) {
+    var display = cm.display, doc = cm.doc;
     e_preventDefault(e);
-    if (type == 'single')
-      extendSelection(cm.doc, clipPos(doc, start));
-    var startstart = sel.from, startend = sel.to, lastPos = start;
-    function doSelect(cur) {
-      if (posEq(lastPos, cur))
+    var ourRange, ourIndex, startSel = doc.sel;
+    if (addNew && !e.shiftKey) {
+      ourIndex = doc.sel.contains(start);
+      if (ourIndex > -1)
+        ourRange = doc.sel.ranges[ourIndex];
+      else
+        ourRange = new Range(start, start);
+    } else {
+      ourRange = doc.sel.primary();
+    }
+    if (e.altKey) {
+      type = 'rect';
+      if (!addNew)
+        ourRange = new Range(start, start);
+      start = posFromMouse(cm, e, true, true);
+      ourIndex = -1;
+    } else if (type == 'double') {
+      var word = findWordAt(cm, start);
+      if (cm.display.shift || doc.extend)
+        ourRange = extendRange(doc, ourRange, word.anchor, word.head);
+      else
+        ourRange = word;
+    } else if (type == 'triple') {
+      var line = new Range(Pos(start.line, 0), clipPos(doc, Pos(start.line + 1, 0)));
+      if (cm.display.shift || doc.extend)
+        ourRange = extendRange(doc, ourRange, line.anchor, line.head);
+      else
+        ourRange = line;
+    } else {
+      ourRange = extendRange(doc, ourRange, start);
+    }
+    if (!addNew) {
+      ourIndex = 0;
+      setSelection(doc, new Selection([ourRange], 0), sel_mouse);
+      startSel = doc.sel;
+    } else if (ourIndex > -1) {
+      replaceOneSelection(doc, ourIndex, ourRange, sel_mouse);
+    } else {
+      ourIndex = doc.sel.ranges.length;
+      setSelection(doc, normalizeSelection(doc.sel.ranges.concat([ourRange]), ourIndex), {
+        scroll: false,
+        origin: '*mouse'
+      });
+    }
+    var lastPos = start;
+    function extendTo(pos) {
+      if (cmp(lastPos, pos) == 0)
         return;
-      lastPos = cur;
-      if (type == 'single') {
-        extendSelection(cm.doc, clipPos(doc, start), cur);
-        return;
-      }
-      startstart = clipPos(doc, startstart);
-      startend = clipPos(doc, startend);
-      if (type == 'double') {
-        var word = findWordAt(getLine(doc, cur.line).text, cur);
-        if (posLess(cur, startstart))
-          extendSelection(cm.doc, word.from, startend);
-        else
-          extendSelection(cm.doc, startstart, word.to);
-      } else if (type == 'triple') {
-        if (posLess(cur, startstart))
-          extendSelection(cm.doc, startend, clipPos(doc, Pos(cur.line, 0)));
-        else
-          extendSelection(cm.doc, startstart, clipPos(doc, Pos(cur.line + 1, 0)));
+      lastPos = pos;
+      if (type == 'rect') {
+        var ranges = [], tabSize = cm.options.tabSize;
+        var startCol = countColumn(getLine(doc, start.line).text, start.ch, tabSize);
+        var posCol = countColumn(getLine(doc, pos.line).text, pos.ch, tabSize);
+        var left = Math.min(startCol, posCol), right = Math.max(startCol, posCol);
+        for (var line = Math.min(start.line, pos.line), end = Math.min(cm.lastLine(), Math.max(start.line, pos.line)); line <= end; line++) {
+          var text = getLine(doc, line).text, leftPos = findColumn(text, left, tabSize);
+          if (left == right)
+            ranges.push(new Range(Pos(line, leftPos), Pos(line, leftPos)));
+          else if (text.length > leftPos)
+            ranges.push(new Range(Pos(line, leftPos), Pos(line, findColumn(text, right, tabSize))));
+        }
+        if (!ranges.length)
+          ranges.push(new Range(start, start));
+        setSelection(doc, normalizeSelection(startSel.ranges.slice(0, ourIndex).concat(ranges), ourIndex), {
+          origin: '*mouse',
+          scroll: false
+        });
+        cm.scrollIntoView(pos);
+      } else {
+        var oldRange = ourRange;
+        var anchor = oldRange.anchor, head = pos;
+        if (type != 'single') {
+          if (type == 'double')
+            var range = findWordAt(cm, pos);
+          else
+            var range = new Range(Pos(pos.line, 0), clipPos(doc, Pos(pos.line + 1, 0)));
+          if (cmp(range.anchor, anchor) > 0) {
+            head = range.head;
+            anchor = minPos(oldRange.from(), range.anchor);
+          } else {
+            head = range.anchor;
+            anchor = maxPos(oldRange.to(), range.head);
+          }
+        }
+        var ranges = startSel.ranges.slice(0);
+        ranges[ourIndex] = new Range(clipPos(doc, anchor), head);
+        setSelection(doc, normalizeSelection(ranges, ourIndex), sel_mouse);
       }
     }
-    var editorSize = getRect(display.wrapper);
+    var editorSize = display.wrapper.getBoundingClientRect();
     // Used to ensure timeout re-tries don't fire when another extend
     // happened in the meantime (clearTimeout isn't reliable -- at
     // least on Chrome, the timeouts still happen even when cleared,
@@ -60555,14 +63866,12 @@ window.CodeMirror = function () {
     var counter = 0;
     function extend(e) {
       var curCount = ++counter;
-      var cur = posFromMouse(cm, e, true);
+      var cur = posFromMouse(cm, e, true, type == 'rect');
       if (!cur)
         return;
-      if (!posEq(cur, last)) {
-        if (!cm.state.focused)
-          onFocus(cm);
-        last = cur;
-        doSelect(cur);
+      if (cmp(cur, lastPos) != 0) {
+        ensureFocus(cm);
+        extendTo(cur);
         var visible = visibleLines(display, doc);
         if (cur.line >= visible.to || cur.line < visible.from)
           setTimeout(operation(cm, function () {
@@ -60586,9 +63895,10 @@ window.CodeMirror = function () {
       focusInput(cm);
       off(document, 'mousemove', move);
       off(document, 'mouseup', up);
+      doc.history.lastSelOrigin = null;
     }
     var move = operation(cm, function (e) {
-        if (!ie && !e_button(e))
+        if (ie && !ie_upto9 ? !e.buttons : !e_button(e))
           done(e);
         else
           extend(e);
@@ -60597,39 +63907,42 @@ window.CodeMirror = function () {
     on(document, 'mousemove', move);
     on(document, 'mouseup', up);
   }
-  function clickInGutter(cm, e) {
-    var display = cm.display;
+  // Determines whether an event happened in the gutter, and fires the
+  // handlers for the corresponding event.
+  function gutterEvent(cm, e, type, prevent, signalfn) {
     try {
       var mX = e.clientX, mY = e.clientY;
     } catch (e) {
       return false;
     }
-    if (mX >= Math.floor(getRect(display.gutters).right))
+    if (mX >= Math.floor(cm.display.gutters.getBoundingClientRect().right))
       return false;
-    e_preventDefault(e);
-    if (!hasHandler(cm, 'gutterClick'))
-      return true;
-    var lineBox = getRect(display.lineDiv);
-    if (mY > lineBox.bottom)
-      return true;
+    if (prevent)
+      e_preventDefault(e);
+    var display = cm.display;
+    var lineBox = display.lineDiv.getBoundingClientRect();
+    if (mY > lineBox.bottom || !hasHandler(cm, type))
+      return e_defaultPrevented(e);
     mY -= lineBox.top - display.viewOffset;
     for (var i = 0; i < cm.options.gutters.length; ++i) {
       var g = display.gutters.childNodes[i];
-      if (g && getRect(g).right >= mX) {
+      if (g && g.getBoundingClientRect().right >= mX) {
         var line = lineAtHeight(cm.doc, mY);
         var gutter = cm.options.gutters[i];
-        signalLater(cm, 'gutterClick', cm, line, gutter, e);
-        break;
+        signalfn(cm, type, cm, line, gutter, e);
+        return e_defaultPrevented(e);
       }
     }
-    return true;
+  }
+  function clickInGutter(cm, e) {
+    return gutterEvent(cm, e, 'gutterClick', true, signalLater);
   }
   // Kludge to work around strange IE behavior where it'll sometimes
   // re-fire a series of drag-related events right after the drop (#1551)
   var lastDrop = 0;
   function onDrop(e) {
     var cm = this;
-    if (signalDOMEvent(cm, e) || eventInWidget(cm.display, e) || cm.options.onDragEvent && cm.options.onDragEvent(cm, addStop(e)))
+    if (signalDOMEvent(cm, e) || eventInWidget(cm.display, e))
       return;
     e_preventDefault(e);
     if (ie)
@@ -60637,29 +63950,34 @@ window.CodeMirror = function () {
     var pos = posFromMouse(cm, e, true), files = e.dataTransfer.files;
     if (!pos || isReadOnly(cm))
       return;
+    // Might be a file drop, in which case we simply extract the text
+    // and insert it.
     if (files && files.length && window.FileReader && window.File) {
       var n = files.length, text = Array(n), read = 0;
       var loadFile = function (file, i) {
         var reader = new FileReader();
-        reader.onload = function () {
+        reader.onload = operation(cm, function () {
           text[i] = reader.result;
           if (++read == n) {
             pos = clipPos(cm.doc, pos);
-            makeChange(cm.doc, {
-              from: pos,
-              to: pos,
-              text: splitLines(text.join('\n')),
-              origin: 'paste'
-            }, 'around');
+            var change = {
+                from: pos,
+                to: pos,
+                text: splitLines(text.join('\n')),
+                origin: 'paste'
+              };
+            makeChange(cm.doc, change);
+            setSelectionReplaceHistory(cm.doc, simpleSelection(pos, changeEnd(change)));
           }
-        };
+        });
         reader.readAsText(file);
       };
       for (var i = 0; i < n; ++i)
         loadFile(files[i], i);
     } else {
+      // Normal drop
       // Don't do a replace if the drop happened inside of the selected text.
-      if (cm.state.draggingText && !(posLess(pos, cm.doc.sel.from) || posLess(cm.doc.sel.to, pos))) {
+      if (cm.state.draggingText && cm.doc.sel.contains(pos) > -1) {
         cm.state.draggingText(e);
         // Ensure the editor is re-focused
         setTimeout(bind(focusInput, cm), 20);
@@ -60668,13 +63986,14 @@ window.CodeMirror = function () {
       try {
         var text = e.dataTransfer.getData('Text');
         if (text) {
-          var curFrom = cm.doc.sel.from, curTo = cm.doc.sel.to;
-          setSelection(cm.doc, pos, pos);
-          if (cm.state.draggingText)
-            replaceRange(cm.doc, '', curFrom, curTo, 'paste');
-          cm.replaceSelection(text, null, 'paste');
+          if (cm.state.draggingText && !(mac ? e.metaKey : e.ctrlKey))
+            var selected = cm.listSelections();
+          setSelectionNoUndo(cm.doc, simpleSelection(pos, pos));
+          if (selected)
+            for (var i = 0; i < selected.length; ++i)
+              replaceRange(cm.doc, '', selected[i].anchor, selected[i].head, 'drag');
+          cm.replaceSelection(text, 'around', 'paste');
           focusInput(cm);
-          onFocus(cm);
         }
       } catch (e) {
       }
@@ -60687,37 +64006,42 @@ window.CodeMirror = function () {
     }
     if (signalDOMEvent(cm, e) || eventInWidget(cm.display, e))
       return;
-    var txt = cm.getSelection();
-    e.dataTransfer.setData('Text', txt);
+    e.dataTransfer.setData('Text', cm.getSelection());
     // Use dummy image instead of default browsers image.
     // Recent Safari (~6.0.2) have a tendency to segfault when this happens, so we don't do it there.
     if (e.dataTransfer.setDragImage && !safari) {
       var img = elt('img', null, null, 'position: fixed; left: 0; top: 0;');
-      if (opera) {
+      img.src = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+      if (presto) {
         img.width = img.height = 1;
         cm.display.wrapper.appendChild(img);
         // Force a relayout, or Opera won't use our image for some obscure reason
         img._top = img.offsetTop;
       }
       e.dataTransfer.setDragImage(img, 0, 0);
-      if (opera)
+      if (presto)
         img.parentNode.removeChild(img);
     }
   }
+  // SCROLL EVENTS
+  // Sync the scrollable area and scrollbars, ensure the viewport
+  // covers the visible area.
   function setScrollTop(cm, val) {
     if (Math.abs(cm.doc.scrollTop - val) < 2)
       return;
     cm.doc.scrollTop = val;
     if (!gecko)
-      updateDisplay(cm, [], val);
+      updateDisplay(cm, { top: val });
     if (cm.display.scroller.scrollTop != val)
       cm.display.scroller.scrollTop = val;
     if (cm.display.scrollbarV.scrollTop != val)
       cm.display.scrollbarV.scrollTop = val;
     if (gecko)
-      updateDisplay(cm, []);
+      updateDisplay(cm);
     startWorker(cm, 100);
   }
+  // Sync scroller and scrollbar, ensure the gutter elements are
+  // aligned.
   function setScrollLeft(cm, val, isScroller) {
     if (isScroller ? val == cm.doc.scrollLeft : Math.abs(cm.doc.scrollLeft - val) < 2)
       return;
@@ -60769,12 +64093,15 @@ window.CodeMirror = function () {
     // This hack (see related code in patchDisplay) makes sure the
     // element is kept around.
     if (dy && mac && webkit) {
-      for (var cur = e.target; cur != scroll; cur = cur.parentNode) {
-        if (cur.lineObj) {
-          cm.display.currentWheelTarget = cur;
-          break;
+      outer:
+        for (var cur = e.target, view = display.view; cur != scroll; cur = cur.parentNode) {
+          for (var i = 0; i < view.length; i++) {
+            if (view[i].node == cur) {
+              cm.display.currentWheelTarget = cur;
+              break outer;
+            }
+          }
         }
-      }
     }
     // On some browsers, horizontal scrolling will cause redraws to
     // happen before the gutter has been realigned, causing it to
@@ -60782,7 +64109,7 @@ window.CodeMirror = function () {
     // estimated pixels/delta value, we just handle horizontal
     // scrolling entirely here. It'll be slightly off from native, but
     // better than glitching out.
-    if (dx && !gecko && !opera && wheelPixelsPerUnit != null) {
+    if (dx && !gecko && !presto && wheelPixelsPerUnit != null) {
       if (dy)
         setScrollTop(cm, Math.max(0, Math.min(scroll.scrollTop + dy * wheelPixelsPerUnit, scroll.scrollHeight - scroll.clientHeight)));
       setScrollLeft(cm, Math.max(0, Math.min(scroll.scrollLeft + dx * wheelPixelsPerUnit, scroll.scrollWidth - scroll.clientWidth)));
@@ -60791,6 +64118,8 @@ window.CodeMirror = function () {
       // Abort measurement, if in progress
       return;
     }
+    // 'Project' the visible viewport to cover the area that is being
+    // scrolled into view (if we know enough to estimate it).
     if (dy && wheelPixelsPerUnit != null) {
       var pixels = dy * wheelPixelsPerUnit;
       var top = cm.doc.scrollTop, bot = top + display.wrapper.clientHeight;
@@ -60798,7 +64127,7 @@ window.CodeMirror = function () {
         top = Math.max(0, top + pixels - 50);
       else
         bot = Math.min(cm.doc.height, bot + pixels + 50);
-      updateDisplay(cm, [], {
+      updateDisplay(cm, {
         top: top,
         bottom: bot
       });
@@ -60827,6 +64156,8 @@ window.CodeMirror = function () {
       }
     }
   }
+  // KEY EVENTS
+  // Run a handler that was bound to a key.
   function doHandleBinding(cm, bound, dropShift) {
     if (typeof bound == 'string') {
       bound = commands[bound];
@@ -60837,19 +64168,20 @@ window.CodeMirror = function () {
     // consistent view of the document
     if (cm.display.pollingFast && readInput(cm))
       cm.display.pollingFast = false;
-    var doc = cm.doc, prevShift = doc.sel.shift, done = false;
+    var prevShift = cm.display.shift, done = false;
     try {
       if (isReadOnly(cm))
         cm.state.suppressEdits = true;
       if (dropShift)
-        doc.sel.shift = false;
+        cm.display.shift = false;
       done = bound(cm) != Pass;
     } finally {
-      doc.sel.shift = prevShift;
+      cm.display.shift = prevShift;
       cm.state.suppressEdits = false;
     }
     return done;
   }
+  // Collect the currently active keymaps.
   function allKeyMaps(cm) {
     var maps = cm.state.keyMaps.slice(0);
     if (cm.options.extraKeys)
@@ -60858,8 +64190,9 @@ window.CodeMirror = function () {
     return maps;
   }
   var maybeTransition;
+  // Handle a key from the keydown event.
   function handleKeyBinding(cm, e) {
-    // Handle auto keymap transitions
+    // Handle automatic keymap transitions
     var startMap = getKeyMap(cm.options.keyMap), next = startMap.auto;
     clearTimeout(maybeTransition);
     if (next && !isModifierKey(e))
@@ -60891,14 +64224,11 @@ window.CodeMirror = function () {
     if (handled) {
       e_preventDefault(e);
       restartBlink(cm);
-      if (ie_lt9) {
-        e.oldKeyCode = e.keyCode;
-        e.keyCode = 0;
-      }
       signalLater(cm, 'keyHandled', cm, name, e);
     }
     return handled;
   }
+  // Handle a key from the keypress event
   function handleCharBinding(cm, e, ch) {
     var handled = lookupKey('\'' + ch + '\'', allKeyMaps(cm), function (b) {
         return doHandleBinding(cm, b, true);
@@ -60913,57 +64243,79 @@ window.CodeMirror = function () {
   var lastStoppedKey = null;
   function onKeyDown(e) {
     var cm = this;
-    if (!cm.state.focused)
-      onFocus(cm);
-    if (ie && e.keyCode == 27) {
-      e.returnValue = false;
-    }
-    if (signalDOMEvent(cm, e) || cm.options.onKeyEvent && cm.options.onKeyEvent(cm, addStop(e)))
+    ensureFocus(cm);
+    if (signalDOMEvent(cm, e))
       return;
-    var code = e.keyCode;
     // IE does strange things with escape.
-    cm.doc.sel.shift = code == 16 || e.shiftKey;
-    // First give onKeyEvent option a chance to handle this.
+    if (ie_upto10 && e.keyCode == 27)
+      e.returnValue = false;
+    var code = e.keyCode;
+    cm.display.shift = code == 16 || e.shiftKey;
     var handled = handleKeyBinding(cm, e);
-    if (opera) {
+    if (presto) {
       lastStoppedKey = handled ? code : null;
       // Opera has no cut event... we try to at least catch the key combo
       if (!handled && code == 88 && !hasCopyEvent && (mac ? e.metaKey : e.ctrlKey))
-        cm.replaceSelection('');
+        cm.replaceSelection('', null, 'cut');
     }
+    // Turn mouse into crosshair when Alt is held on Mac.
+    if (code == 18 && !/\bCodeMirror-crosshair\b/.test(cm.display.lineDiv.className))
+      showCrossHair(cm);
+  }
+  function showCrossHair(cm) {
+    var lineDiv = cm.display.lineDiv;
+    addClass(lineDiv, 'CodeMirror-crosshair');
+    function up(e) {
+      if (e.keyCode == 18 || !e.altKey) {
+        rmClass(lineDiv, 'CodeMirror-crosshair');
+        off(document, 'keyup', up);
+        off(document, 'mouseover', up);
+      }
+    }
+    on(document, 'keyup', up);
+    on(document, 'mouseover', up);
+  }
+  function onKeyUp(e) {
+    if (signalDOMEvent(this, e))
+      return;
+    if (e.keyCode == 16)
+      this.doc.sel.shift = false;
   }
   function onKeyPress(e) {
     var cm = this;
-    if (signalDOMEvent(cm, e) || cm.options.onKeyEvent && cm.options.onKeyEvent(cm, addStop(e)))
+    if (signalDOMEvent(cm, e))
       return;
     var keyCode = e.keyCode, charCode = e.charCode;
-    if (opera && keyCode == lastStoppedKey) {
+    if (presto && keyCode == lastStoppedKey) {
       lastStoppedKey = null;
       e_preventDefault(e);
       return;
     }
-    if ((opera && (!e.which || e.which < 10) || khtml) && handleKeyBinding(cm, e))
+    if ((presto && (!e.which || e.which < 10) || khtml) && handleKeyBinding(cm, e))
       return;
     var ch = String.fromCharCode(charCode == null ? keyCode : charCode);
-    if (this.options.electricChars && this.doc.mode.electricChars && this.options.smartIndent && !isReadOnly(this) && this.doc.mode.electricChars.indexOf(ch) > -1)
-      setTimeout(operation(cm, function () {
-        indentLine(cm, cm.doc.sel.to.line, 'smart');
-      }), 75);
     if (handleCharBinding(cm, e, ch))
       return;
-    if (ie && !ie_lt9)
+    if (ie && !ie_upto8)
       cm.display.inputHasSelection = null;
     fastPoll(cm);
   }
+  // FOCUS/BLUR EVENTS
   function onFocus(cm) {
     if (cm.options.readOnly == 'nocursor')
       return;
     if (!cm.state.focused) {
       signal(cm, 'focus', cm);
       cm.state.focused = true;
-      if (cm.display.wrapper.className.search(/\bCodeMirror-focused\b/) == -1)
-        cm.display.wrapper.className += ' CodeMirror-focused';
-      resetInput(cm, true);
+      addClass(cm.display.wrapper, 'CodeMirror-focused');
+      // The prevInput test prevents this from firing when a context
+      // menu is closed (since the resetInput would kill the
+      // select-all detection hack)
+      if (!cm.curOp && cm.display.selForContextMenu != cm.doc.sel) {
+        resetInput(cm);
+        if (webkit)
+          setTimeout(bind(resetInput, cm, true), 0);  // Issue #1730
+      }
     }
     slowPoll(cm);
     restartBlink(cm);
@@ -60972,68 +64324,82 @@ window.CodeMirror = function () {
     if (cm.state.focused) {
       signal(cm, 'blur', cm);
       cm.state.focused = false;
-      cm.display.wrapper.className = cm.display.wrapper.className.replace(' CodeMirror-focused', '');
+      rmClass(cm.display.wrapper, 'CodeMirror-focused');
     }
     clearInterval(cm.display.blinker);
     setTimeout(function () {
       if (!cm.state.focused)
-        cm.doc.sel.shift = false;
+        cm.display.shift = false;
     }, 150);
   }
-  var detectingSelectAll;
+  // CONTEXT MENU HANDLING
+  // To make the context menu work, we need to briefly unhide the
+  // textarea (making it as unobtrusive as possible) to let the
+  // right-click take effect on it.
   function onContextMenu(cm, e) {
     if (signalDOMEvent(cm, e, 'contextmenu'))
       return;
-    var display = cm.display, sel = cm.doc.sel;
-    if (eventInWidget(display, e))
+    var display = cm.display;
+    if (eventInWidget(display, e) || contextMenuInGutter(cm, e))
       return;
     var pos = posFromMouse(cm, e), scrollPos = display.scroller.scrollTop;
-    if (!pos || opera)
+    if (!pos || presto)
       return;
     // Opera is difficult.
-    if (posEq(sel.from, sel.to) || posLess(pos, sel.from) || !posLess(pos, sel.to))
-      operation(cm, setSelection)(cm.doc, pos, pos);
+    // Reset the current text selection only if the click is done outside of the selection
+    // and 'resetSelectionOnContextMenu' option is true.
+    var reset = cm.options.resetSelectionOnContextMenu;
+    if (reset && cm.doc.sel.contains(pos) == -1)
+      operation(cm, setSelection)(cm.doc, simpleSelection(pos), sel_dontScroll);
     var oldCSS = display.input.style.cssText;
     display.inputDiv.style.position = 'absolute';
-    display.input.style.cssText = 'position: fixed; width: 30px; height: 30px; top: ' + (e.clientY - 5) + 'px; left: ' + (e.clientX - 5) + 'px; z-index: 1000; background: white; outline: none;' + 'border-width: 0; outline: none; overflow: hidden; opacity: .05; -ms-opacity: .05; filter: alpha(opacity=5);';
+    display.input.style.cssText = 'position: fixed; width: 30px; height: 30px; top: ' + (e.clientY - 5) + 'px; left: ' + (e.clientX - 5) + 'px; z-index: 1000; background: ' + (ie ? 'rgba(255, 255, 255, .05)' : 'transparent') + '; outline: none; border-width: 0; outline: none; overflow: hidden; opacity: .05; filter: alpha(opacity=5);';
     focusInput(cm);
-    resetInput(cm, true);
+    resetInput(cm);
     // Adds "Select all" to context menu in FF
-    if (posEq(sel.from, sel.to))
+    if (!cm.somethingSelected())
       display.input.value = display.prevInput = ' ';
+    display.selForContextMenu = cm.doc.sel;
+    clearTimeout(display.detectingSelectAll);
+    // Select-all will be greyed out if there's nothing to select, so
+    // this adds a zero-width space so that we can later check whether
+    // it got selected.
     function prepareSelectAllHack() {
       if (display.input.selectionStart != null) {
-        var extval = display.input.value = ' ' + (posEq(sel.from, sel.to) ? '' : display.input.value);
-        display.prevInput = ' ';
+        var selected = cm.somethingSelected();
+        var extval = display.input.value = '\u200b' + (selected ? display.input.value : '');
+        display.prevInput = selected ? '' : '\u200b';
         display.input.selectionStart = 1;
         display.input.selectionEnd = extval.length;
+        // Re-set this, in case some other handler touched the
+        // selection in the meantime.
+        display.selForContextMenu = cm.doc.sel;
       }
     }
     function rehide() {
       display.inputDiv.style.position = 'relative';
       display.input.style.cssText = oldCSS;
-      if (ie_lt9)
+      if (ie_upto8)
         display.scrollbarV.scrollTop = display.scroller.scrollTop = scrollPos;
       slowPoll(cm);
       // Try to detect the user choosing select-all
       if (display.input.selectionStart != null) {
-        if (!ie || ie_lt9)
+        if (!ie || ie_upto8)
           prepareSelectAllHack();
-        clearTimeout(detectingSelectAll);
         var i = 0, poll = function () {
-            if (display.prevInput == ' ' && display.input.selectionStart == 0)
+            if (display.selForContextMenu == cm.doc.sel && display.input.selectionStart == 0)
               operation(cm, commands.selectAll)(cm);
             else if (i++ < 10)
-              detectingSelectAll = setTimeout(poll, 500);
+              display.detectingSelectAll = setTimeout(poll, 500);
             else
               resetInput(cm);
           };
-        detectingSelectAll = setTimeout(poll, 200);
+        display.detectingSelectAll = setTimeout(poll, 200);
       }
     }
-    if (ie && !ie_lt9)
+    if (ie && !ie_upto8)
       prepareSelectAllHack();
-    if (captureMiddleClick) {
+    if (captureRightClick) {
       e_stop(e);
       var mouseup = function () {
         off(window, 'mouseup', mouseup);
@@ -61044,68 +64410,66 @@ window.CodeMirror = function () {
       setTimeout(rehide, 50);
     }
   }
+  function contextMenuInGutter(cm, e) {
+    if (!hasHandler(cm, 'gutterContextMenu'))
+      return false;
+    return gutterEvent(cm, e, 'gutterContextMenu', false, signal);
+  }
   // UPDATING
+  // Compute the position of the end of a change (its 'to' property
+  // refers to the pre-change end).
   var changeEnd = CodeMirror.changeEnd = function (change) {
       if (!change.text)
         return change.to;
       return Pos(change.from.line + change.text.length - 1, lst(change.text).length + (change.text.length == 1 ? change.from.ch : 0));
     };
-  // Make sure a position will be valid after the given change.
-  function clipPostChange(doc, change, pos) {
-    if (!posLess(change.from, pos))
-      return clipPos(doc, pos);
-    var diff = change.text.length - 1 - (change.to.line - change.from.line);
-    if (pos.line > change.to.line + diff) {
-      var preLine = pos.line - diff, lastLine = doc.first + doc.size - 1;
-      if (preLine > lastLine)
-        return Pos(lastLine, getLine(doc, lastLine).text.length);
-      return clipToLen(pos, getLine(doc, preLine).text.length);
+  // Adjust a position to refer to the post-change position of the
+  // same text, or the end of the change if the change covers it.
+  function adjustForChange(pos, change) {
+    if (cmp(pos, change.from) < 0)
+      return pos;
+    if (cmp(pos, change.to) <= 0)
+      return changeEnd(change);
+    var line = pos.line + change.text.length - (change.to.line - change.from.line) - 1, ch = pos.ch;
+    if (pos.line == change.to.line)
+      ch += changeEnd(change).ch - change.to.ch;
+    return Pos(line, ch);
+  }
+  function computeSelAfterChange(doc, change) {
+    var out = [];
+    for (var i = 0; i < doc.sel.ranges.length; i++) {
+      var range = doc.sel.ranges[i];
+      out.push(new Range(adjustForChange(range.anchor, change), adjustForChange(range.head, change)));
     }
-    if (pos.line == change.to.line + diff)
-      return clipToLen(pos, lst(change.text).length + (change.text.length == 1 ? change.from.ch : 0) + getLine(doc, change.to.line).text.length - change.to.ch);
-    var inside = pos.line - change.from.line;
-    return clipToLen(pos, change.text[inside].length + (inside ? 0 : change.from.ch));
+    return normalizeSelection(out, doc.sel.primIndex);
   }
-  // Hint can be null|"end"|"start"|"around"|{anchor,head}
-  function computeSelAfterChange(doc, change, hint) {
-    if (hint && typeof hint == 'object')
-      // Assumed to be {anchor, head} object
-      return {
-        anchor: clipPostChange(doc, change, hint.anchor),
-        head: clipPostChange(doc, change, hint.head)
-      };
-    if (hint == 'start')
-      return {
-        anchor: change.from,
-        head: change.from
-      };
-    var end = changeEnd(change);
-    if (hint == 'around')
-      return {
-        anchor: change.from,
-        head: end
-      };
-    if (hint == 'end')
-      return {
-        anchor: end,
-        head: end
-      };
-    // hint is null, leave the selection alone as much as possible
-    var adjustPos = function (pos) {
-      if (posLess(pos, change.from))
-        return pos;
-      if (!posLess(change.to, pos))
-        return end;
-      var line = pos.line + change.text.length - (change.to.line - change.from.line) - 1, ch = pos.ch;
-      if (pos.line == change.to.line)
-        ch += end.ch - change.to.ch;
-      return Pos(line, ch);
-    };
-    return {
-      anchor: adjustPos(doc.sel.anchor),
-      head: adjustPos(doc.sel.head)
-    };
+  function offsetPos(pos, old, nw) {
+    if (pos.line == old.line)
+      return Pos(nw.line, pos.ch - old.ch + nw.ch);
+    else
+      return Pos(nw.line + (pos.line - old.line), pos.ch);
   }
+  // Used by replaceSelections to allow moving the selection to the
+  // start or around the replaced test. Hint may be "start" or "around".
+  function computeReplacedSel(doc, changes, hint) {
+    var out = [];
+    var oldPrev = Pos(doc.first, 0), newPrev = oldPrev;
+    for (var i = 0; i < changes.length; i++) {
+      var change = changes[i];
+      var from = offsetPos(change.from, oldPrev, newPrev);
+      var to = offsetPos(changeEnd(change), oldPrev, newPrev);
+      oldPrev = change.to;
+      newPrev = to;
+      if (hint == 'around') {
+        var range = doc.sel.ranges[i], inv = cmp(range.head, range.anchor) < 0;
+        out[i] = new Range(inv ? to : from, inv ? from : to);
+      } else {
+        out[i] = new Range(from, from);
+      }
+    }
+    return new Selection(out, doc.sel.primIndex);
+  }
+  // Allow "beforeChange" event handlers to influence a change
   function filterChange(doc, change, update) {
     var obj = {
         canceled: false,
@@ -61140,12 +64504,12 @@ window.CodeMirror = function () {
       origin: obj.origin
     };
   }
-  // Replace the range from from to to by the strings in replacement.
-  // change is a {from, to, text [, origin]} object
-  function makeChange(doc, change, selUpdate, ignoreReadOnly) {
+  // Apply a change to a document, and add it to the document's
+  // history, and propagating it to all linked documents.
+  function makeChange(doc, change, ignoreReadOnly) {
     if (doc.cm) {
       if (!doc.cm.curOp)
-        return operation(doc.cm, makeChange)(doc, change, selUpdate, ignoreReadOnly);
+        return operation(doc.cm, makeChange)(doc, change, ignoreReadOnly);
       if (doc.cm.state.suppressEdits)
         return;
     }
@@ -61158,25 +64522,21 @@ window.CodeMirror = function () {
     // of read-only spans in its range.
     var split = sawReadOnlySpans && !ignoreReadOnly && removeReadOnlyRanges(doc, change.from, change.to);
     if (split) {
-      for (var i = split.length - 1; i >= 1; --i)
-        makeChangeNoReadonly(doc, {
+      for (var i = split.length - 1; i >= 0; --i)
+        makeChangeInner(doc, {
           from: split[i].from,
           to: split[i].to,
-          text: ['']
+          text: i ? [''] : change.text
         });
-      if (split.length)
-        makeChangeNoReadonly(doc, {
-          from: split[0].from,
-          to: split[0].to,
-          text: change.text
-        }, selUpdate);
     } else {
-      makeChangeNoReadonly(doc, change, selUpdate);
+      makeChangeInner(doc, change);
     }
   }
-  function makeChangeNoReadonly(doc, change, selUpdate) {
-    var selAfter = computeSelAfterChange(doc, change, selUpdate);
-    addToHistory(doc, change, selAfter, doc.cm ? doc.cm.curOp.id : NaN);
+  function makeChangeInner(doc, change) {
+    if (change.text.length == 1 && change.text[0] == '' && cmp(change.from, change.to) == 0)
+      return;
+    var selAfter = computeSelAfterChange(doc, change);
+    addChangeToHistory(doc, change, selAfter, doc.cm ? doc.cm.curOp.id : NaN);
     makeChangeSingleDoc(doc, change, selAfter, stretchSpansOverChange(doc, change));
     var rebased = [];
     linkedDocs(doc, function (doc, sharedHist) {
@@ -61187,38 +64547,58 @@ window.CodeMirror = function () {
       makeChangeSingleDoc(doc, change, null, stretchSpansOverChange(doc, change));
     });
   }
-  function makeChangeFromHistory(doc, type) {
+  // Revert a change stored in a document's history.
+  function makeChangeFromHistory(doc, type, allowSelectionOnly) {
     if (doc.cm && doc.cm.state.suppressEdits)
       return;
-    var hist = doc.history;
-    var event = (type == 'undo' ? hist.done : hist.undone).pop();
-    if (!event)
+    var hist = doc.history, event, selAfter = doc.sel;
+    var source = type == 'undo' ? hist.done : hist.undone, dest = type == 'undo' ? hist.undone : hist.done;
+    // Verify that there is a useable event (so that ctrl-z won't
+    // needlessly clear selection events)
+    for (var i = 0; i < source.length; i++) {
+      event = source[i];
+      if (allowSelectionOnly ? event.ranges && !event.equals(doc.sel) : !event.ranges)
+        break;
+    }
+    if (i == source.length)
       return;
-    var anti = {
-        changes: [],
-        anchorBefore: event.anchorAfter,
-        headBefore: event.headAfter,
-        anchorAfter: event.anchorBefore,
-        headAfter: event.headBefore,
-        generation: hist.generation
-      };
-    (type == 'undo' ? hist.undone : hist.done).push(anti);
+    hist.lastOrigin = hist.lastSelOrigin = null;
+    for (;;) {
+      event = source.pop();
+      if (event.ranges) {
+        pushSelectionToHistory(event, dest);
+        if (allowSelectionOnly && !event.equals(doc.sel)) {
+          setSelection(doc, event, { clearRedo: false });
+          return;
+        }
+        selAfter = event;
+      } else
+        break;
+    }
+    // Build up a reverse change object to add to the opposite history
+    // stack (redo when undoing, and vice versa).
+    var antiChanges = [];
+    pushSelectionToHistory(selAfter, dest);
+    dest.push({
+      changes: antiChanges,
+      generation: hist.generation
+    });
     hist.generation = event.generation || ++hist.maxGeneration;
     var filter = hasHandler(doc, 'beforeChange') || doc.cm && hasHandler(doc.cm, 'beforeChange');
     for (var i = event.changes.length - 1; i >= 0; --i) {
       var change = event.changes[i];
       change.origin = type;
       if (filter && !filterChange(doc, change, false)) {
-        (type == 'undo' ? hist.done : hist.undone).length = 0;
+        source.length = 0;
         return;
       }
-      anti.changes.push(historyChangeFromChange(doc, change));
-      var after = i ? computeSelAfterChange(doc, change, null) : {
-          anchor: event.anchorBefore,
-          head: event.headBefore
-        };
+      antiChanges.push(historyChangeFromChange(doc, change));
+      var after = i ? computeSelAfterChange(doc, change, null) : lst(source);
       makeChangeSingleDoc(doc, change, after, mergeOldSpans(doc, change));
+      if (!i && doc.cm)
+        doc.cm.scrollIntoView(change);
       var rebased = [];
+      // Propagate to the linked documents
       linkedDocs(doc, function (doc, sharedHist) {
         if (!sharedHist && indexOf(rebased, doc.history) == -1) {
           rebaseHist(doc.history, change);
@@ -61228,18 +64608,23 @@ window.CodeMirror = function () {
       });
     }
   }
+  // Sub-views need their line numbers shifted when text is added
+  // above or below them in the parent document.
   function shiftDoc(doc, distance) {
-    function shiftPos(pos) {
-      return Pos(pos.line + distance, pos.ch);
-    }
+    if (distance == 0)
+      return;
     doc.first += distance;
-    if (doc.cm)
-      regChange(doc.cm, doc.first, doc.first, distance);
-    doc.sel.head = shiftPos(doc.sel.head);
-    doc.sel.anchor = shiftPos(doc.sel.anchor);
-    doc.sel.from = shiftPos(doc.sel.from);
-    doc.sel.to = shiftPos(doc.sel.to);
+    doc.sel = new Selection(map(doc.sel.ranges, function (range) {
+      return new Range(Pos(range.anchor.line + distance, range.anchor.ch), Pos(range.head.line + distance, range.head.ch));
+    }), doc.sel.primIndex);
+    if (doc.cm) {
+      regChange(doc.cm, doc.first, doc.first - distance, distance);
+      for (var d = doc.cm.display, l = d.viewFrom; l < d.viewTo; l++)
+        regLineChange(doc.cm, l, 'gutter');
+    }
   }
+  // More lower-level change function, handling only a single document
+  // (not linked ones).
   function makeChangeSingleDoc(doc, change, selAfter, spans) {
     if (doc.cm && !doc.cm.curOp)
       return operation(doc.cm, makeChangeSingleDoc)(doc, change, selAfter, spans);
@@ -61273,15 +64658,18 @@ window.CodeMirror = function () {
     if (!selAfter)
       selAfter = computeSelAfterChange(doc, change, null);
     if (doc.cm)
-      makeChangeSingleDocInEditor(doc.cm, change, spans, selAfter);
+      makeChangeSingleDocInEditor(doc.cm, change, spans);
     else
-      updateDoc(doc, change, spans, selAfter);
+      updateDoc(doc, change, spans);
+    setSelectionNoUndo(doc, selAfter, sel_dontScroll);
   }
-  function makeChangeSingleDocInEditor(cm, change, spans, selAfter) {
+  // Handle the interaction of a change to a document with the editor
+  // that this document is part of.
+  function makeChangeSingleDocInEditor(cm, change, spans) {
     var doc = cm.doc, display = cm.display, from = change.from, to = change.to;
     var recomputeMaxLength = false, checkWidthStart = from.line;
     if (!cm.options.lineWrapping) {
-      checkWidthStart = lineNo(visualLine(doc, getLine(doc, from.line)));
+      checkWidthStart = lineNo(visualLine(getLine(doc, from.line)));
       doc.iter(checkWidthStart, to.line + 1, function (line) {
         if (line == display.maxLine) {
           recomputeMaxLength = true;
@@ -61289,12 +64677,12 @@ window.CodeMirror = function () {
         }
       });
     }
-    if (!posLess(doc.sel.head, change.from) && !posLess(change.to, doc.sel.head))
-      cm.curOp.cursorActivity = true;
-    updateDoc(doc, change, spans, selAfter, estimateHeight(cm));
+    if (doc.sel.contains(change.from, change.to) > -1)
+      signalCursorActivity(cm);
+    updateDoc(doc, change, spans, estimateHeight(cm));
     if (!cm.options.lineWrapping) {
       doc.iter(checkWidthStart, from.line + change.text.length, function (line) {
-        var len = lineLength(doc, line);
+        var len = lineLength(line);
         if (len > display.maxLineLength) {
           display.maxLine = line;
           display.maxLineLength = len;
@@ -61310,27 +64698,30 @@ window.CodeMirror = function () {
     startWorker(cm, 400);
     var lendiff = change.text.length - (to.line - from.line) - 1;
     // Remember that these lines changed, for updating the display
-    regChange(cm, from.line, to.line + 1, lendiff);
-    if (hasHandler(cm, 'change')) {
-      var changeObj = {
+    if (from.line == to.line && change.text.length == 1 && !isWholeLineUpdate(cm.doc, change))
+      regLineChange(cm, from.line, 'text');
+    else
+      regChange(cm, from.line, to.line + 1, lendiff);
+    var changesHandler = hasHandler(cm, 'changes'), changeHandler = hasHandler(cm, 'change');
+    if (changeHandler || changesHandler) {
+      var obj = {
           from: from,
           to: to,
           text: change.text,
           removed: change.removed,
           origin: change.origin
         };
-      if (cm.curOp.textChanged) {
-        for (var cur = cm.curOp.textChanged; cur.next; cur = cur.next) {
-        }
-        cur.next = changeObj;
-      } else
-        cm.curOp.textChanged = changeObj;
+      if (changeHandler)
+        signalLater(cm, 'change', cm, obj);
+      if (changesHandler)
+        (cm.curOp.changeObjs || (cm.curOp.changeObjs = [])).push(obj);
     }
+    cm.display.selForContextMenu = null;
   }
   function replaceRange(doc, code, from, to, origin) {
     if (!to)
       to = from;
-    if (posLess(to, from)) {
+    if (cmp(to, from) < 0) {
       var tmp = to;
       to = from;
       from = tmp;
@@ -61342,201 +64733,34 @@ window.CodeMirror = function () {
       to: to,
       text: code,
       origin: origin
-    }, null);
+    });
   }
-  // POSITION OBJECT
-  function Pos(line, ch) {
-    if (!(this instanceof Pos))
-      return new Pos(line, ch);
-    this.line = line;
-    this.ch = ch;
-  }
-  CodeMirror.Pos = Pos;
-  function posEq(a, b) {
-    return a.line == b.line && a.ch == b.ch;
-  }
-  function posLess(a, b) {
-    return a.line < b.line || a.line == b.line && a.ch < b.ch;
-  }
-  function copyPos(x) {
-    return Pos(x.line, x.ch);
-  }
-  // SELECTION
-  function clipLine(doc, n) {
-    return Math.max(doc.first, Math.min(n, doc.first + doc.size - 1));
-  }
-  function clipPos(doc, pos) {
-    if (pos.line < doc.first)
-      return Pos(doc.first, 0);
-    var last = doc.first + doc.size - 1;
-    if (pos.line > last)
-      return Pos(last, getLine(doc, last).text.length);
-    return clipToLen(pos, getLine(doc, pos.line).text.length);
-  }
-  function clipToLen(pos, linelen) {
-    var ch = pos.ch;
-    if (ch == null || ch > linelen)
-      return Pos(pos.line, linelen);
-    else if (ch < 0)
-      return Pos(pos.line, 0);
-    else
-      return pos;
-  }
-  function isLine(doc, l) {
-    return l >= doc.first && l < doc.first + doc.size;
-  }
-  // If shift is held, this will move the selection anchor. Otherwise,
-  // it'll set the whole selection.
-  function extendSelection(doc, pos, other, bias) {
-    if (doc.sel.shift || doc.sel.extend) {
-      var anchor = doc.sel.anchor;
-      if (other) {
-        var posBefore = posLess(pos, anchor);
-        if (posBefore != posLess(other, anchor)) {
-          anchor = pos;
-          pos = other;
-        } else if (posBefore != posLess(pos, other)) {
-          pos = other;
-        }
-      }
-      setSelection(doc, anchor, pos, bias);
-    } else {
-      setSelection(doc, pos, other || pos, bias);
-    }
-    if (doc.cm)
-      doc.cm.curOp.userSelChange = true;
-  }
-  function filterSelectionChange(doc, anchor, head) {
-    var obj = {
-        anchor: anchor,
-        head: head
-      };
-    signal(doc, 'beforeSelectionChange', doc, obj);
-    if (doc.cm)
-      signal(doc.cm, 'beforeSelectionChange', doc.cm, obj);
-    obj.anchor = clipPos(doc, obj.anchor);
-    obj.head = clipPos(doc, obj.head);
-    return obj;
-  }
-  // Update the selection. Last two args are only used by
-  // updateDoc, since they have to be expressed in the line
-  // numbers before the update.
-  function setSelection(doc, anchor, head, bias, checkAtomic) {
-    if (!checkAtomic && hasHandler(doc, 'beforeSelectionChange') || doc.cm && hasHandler(doc.cm, 'beforeSelectionChange')) {
-      var filtered = filterSelectionChange(doc, anchor, head);
-      head = filtered.head;
-      anchor = filtered.anchor;
-    }
-    var sel = doc.sel;
-    sel.goalColumn = null;
-    // Skip over atomic spans.
-    if (checkAtomic || !posEq(anchor, sel.anchor))
-      anchor = skipAtomic(doc, anchor, bias, checkAtomic != 'push');
-    if (checkAtomic || !posEq(head, sel.head))
-      head = skipAtomic(doc, head, bias, checkAtomic != 'push');
-    if (posEq(sel.anchor, anchor) && posEq(sel.head, head))
-      return;
-    sel.anchor = anchor;
-    sel.head = head;
-    var inv = posLess(head, anchor);
-    sel.from = inv ? head : anchor;
-    sel.to = inv ? anchor : head;
-    if (doc.cm)
-      doc.cm.curOp.updateInput = doc.cm.curOp.selectionChanged = doc.cm.curOp.cursorActivity = true;
-    signalLater(doc, 'cursorActivity', doc);
-  }
-  function reCheckSelection(cm) {
-    setSelection(cm.doc, cm.doc.sel.from, cm.doc.sel.to, null, 'push');
-  }
-  function skipAtomic(doc, pos, bias, mayClear) {
-    var flipped = false, curPos = pos;
-    var dir = bias || 1;
-    doc.cantEdit = false;
-    search:
-      for (;;) {
-        var line = getLine(doc, curPos.line);
-        if (line.markedSpans) {
-          for (var i = 0; i < line.markedSpans.length; ++i) {
-            var sp = line.markedSpans[i], m = sp.marker;
-            if ((sp.from == null || (m.inclusiveLeft ? sp.from <= curPos.ch : sp.from < curPos.ch)) && (sp.to == null || (m.inclusiveRight ? sp.to >= curPos.ch : sp.to > curPos.ch))) {
-              if (mayClear) {
-                signal(m, 'beforeCursorEnter');
-                if (m.explicitlyCleared) {
-                  if (!line.markedSpans)
-                    break;
-                  else {
-                    --i;
-                    continue;
-                  }
-                }
-              }
-              if (!m.atomic)
-                continue;
-              var newPos = m.find()[dir < 0 ? 'from' : 'to'];
-              if (posEq(newPos, curPos)) {
-                newPos.ch += dir;
-                if (newPos.ch < 0) {
-                  if (newPos.line > doc.first)
-                    newPos = clipPos(doc, Pos(newPos.line - 1));
-                  else
-                    newPos = null;
-                } else if (newPos.ch > line.text.length) {
-                  if (newPos.line < doc.first + doc.size - 1)
-                    newPos = Pos(newPos.line + 1, 0);
-                  else
-                    newPos = null;
-                }
-                if (!newPos) {
-                  if (flipped) {
-                    // Driven in a corner -- no valid cursor position found at all
-                    // -- try again *with* clearing, if we didn't already
-                    if (!mayClear)
-                      return skipAtomic(doc, pos, bias, true);
-                    // Otherwise, turn off editing until further notice, and return the start of the doc
-                    doc.cantEdit = true;
-                    return Pos(doc.first, 0);
-                  }
-                  flipped = true;
-                  newPos = pos;
-                  dir = -dir;
-                }
-              }
-              curPos = newPos;
-              continue search;
-            }
-          }
-        }
-        return curPos;
-      }
-  }
-  // SCROLLING
-  function scrollCursorIntoView(cm) {
-    var coords = scrollPosIntoView(cm, cm.doc.sel.head, cm.options.cursorScrollMargin);
-    if (!cm.state.focused)
-      return;
-    var display = cm.display, box = getRect(display.sizer), doScroll = null;
+  // SCROLLING THINGS INTO VIEW
+  // If an editor sits on the top or bottom of the window, partially
+  // scrolled out of view, this ensures that the cursor is visible.
+  function maybeScrollWindow(cm, coords) {
+    var display = cm.display, box = display.sizer.getBoundingClientRect(), doScroll = null;
     if (coords.top + box.top < 0)
       doScroll = true;
     else if (coords.bottom + box.top > (window.innerHeight || document.documentElement.clientHeight))
       doScroll = false;
     if (doScroll != null && !phantom) {
-      var hidden = display.cursor.style.display == 'none';
-      if (hidden) {
-        display.cursor.style.display = '';
-        display.cursor.style.left = coords.left + 'px';
-        display.cursor.style.top = coords.top - display.viewOffset + 'px';
-      }
-      display.cursor.scrollIntoView(doScroll);
-      if (hidden)
-        display.cursor.style.display = 'none';
+      var scrollNode = elt('div', '\u200b', null, 'position: absolute; top: ' + (coords.top - display.viewOffset - paddingTop(cm.display)) + 'px; height: ' + (coords.bottom - coords.top + scrollerCutOff) + 'px; left: ' + coords.left + 'px; width: 2px;');
+      cm.display.lineSpace.appendChild(scrollNode);
+      scrollNode.scrollIntoView(doScroll);
+      cm.display.lineSpace.removeChild(scrollNode);
     }
   }
-  function scrollPosIntoView(cm, pos, margin) {
+  // Scroll a given position into view (immediately), verifying that
+  // it actually became visible (as line heights are accurately
+  // measured, the position of something may 'drift' during drawing).
+  function scrollPosIntoView(cm, pos, end, margin) {
     if (margin == null)
       margin = 0;
     for (;;) {
       var changed = false, coords = cursorCoords(cm, pos);
-      var scrollPos = calculateScrollPos(cm, coords.left, coords.top - margin, coords.left, coords.bottom + margin);
+      var endCoords = !end || end == pos ? coords : cursorCoords(cm, end);
+      var scrollPos = calculateScrollPos(cm, Math.min(coords.left, endCoords.left), Math.min(coords.top, endCoords.top) - margin, Math.max(coords.left, endCoords.left), Math.max(coords.bottom, endCoords.bottom) + margin);
       var startTop = cm.doc.scrollTop, startLeft = cm.doc.scrollLeft;
       if (scrollPos.scrollTop != null) {
         setScrollTop(cm, scrollPos.scrollTop);
@@ -61552,6 +64776,7 @@ window.CodeMirror = function () {
         return coords;
     }
   }
+  // Scroll a given set of coordinates into view (immediately).
   function scrollIntoView(cm, x1, y1, x2, y2) {
     var scrollPos = calculateScrollPos(cm, x1, y1, x2, y2);
     if (scrollPos.scrollTop != null)
@@ -61559,11 +64784,16 @@ window.CodeMirror = function () {
     if (scrollPos.scrollLeft != null)
       setScrollLeft(cm, scrollPos.scrollLeft);
   }
+  // Calculate a new scroll position needed to scroll the given
+  // rectangle into view. Returns an object with scrollTop and
+  // scrollLeft properties. When these are undefined, the
+  // vertical/horizontal position does not need to be adjusted.
   function calculateScrollPos(cm, x1, y1, x2, y2) {
     var display = cm.display, snapMargin = textHeight(cm.display);
     if (y1 < 0)
       y1 = 0;
-    var screen = display.scroller.clientHeight - scrollerCutOff, screentop = display.scroller.scrollTop, result = {};
+    var screentop = cm.curOp && cm.curOp.scrollTop != null ? cm.curOp.scrollTop : display.scroller.scrollTop;
+    var screen = display.scroller.clientHeight - scrollerCutOff, result = {};
     var docBottom = cm.doc.height + paddingVert(display);
     var atTop = y1 < snapMargin, atBottom = y2 > docBottom - snapMargin;
     if (y1 < screentop) {
@@ -61573,7 +64803,8 @@ window.CodeMirror = function () {
       if (newTop != screentop)
         result.scrollTop = newTop;
     }
-    var screenw = display.scroller.clientWidth - scrollerCutOff, screenleft = display.scroller.scrollLeft;
+    var screenleft = cm.curOp && cm.curOp.scrollLeft != null ? cm.curOp.scrollLeft : display.scroller.scrollLeft;
+    var screenw = display.scroller.clientWidth - scrollerCutOff;
     x1 += display.gutters.offsetWidth;
     x2 += display.gutters.offsetWidth;
     var gutterw = display.gutters.offsetWidth;
@@ -61587,36 +64818,72 @@ window.CodeMirror = function () {
     }
     return result;
   }
-  function updateScrollPos(cm, left, top) {
-    cm.curOp.updateScrollPos = {
-      scrollLeft: left == null ? cm.doc.scrollLeft : left,
-      scrollTop: top == null ? cm.doc.scrollTop : top
+  // Store a relative adjustment to the scroll position in the current
+  // operation (to be applied when the operation finishes).
+  function addToScrollPos(cm, left, top) {
+    if (left != null || top != null)
+      resolveScrollToPos(cm);
+    if (left != null)
+      cm.curOp.scrollLeft = (cm.curOp.scrollLeft == null ? cm.doc.scrollLeft : cm.curOp.scrollLeft) + left;
+    if (top != null)
+      cm.curOp.scrollTop = (cm.curOp.scrollTop == null ? cm.doc.scrollTop : cm.curOp.scrollTop) + top;
+  }
+  // Make sure that at the end of the operation the current cursor is
+  // shown.
+  function ensureCursorVisible(cm) {
+    resolveScrollToPos(cm);
+    var cur = cm.getCursor(), from = cur, to = cur;
+    if (!cm.options.lineWrapping) {
+      from = cur.ch ? Pos(cur.line, cur.ch - 1) : cur;
+      to = Pos(cur.line, cur.ch + 1);
+    }
+    cm.curOp.scrollToPos = {
+      from: from,
+      to: to,
+      margin: cm.options.cursorScrollMargin,
+      isCursor: true
     };
   }
-  function addToScrollPos(cm, left, top) {
-    var pos = cm.curOp.updateScrollPos || (cm.curOp.updateScrollPos = {
-        scrollLeft: cm.doc.scrollLeft,
-        scrollTop: cm.doc.scrollTop
-      });
-    var scroll = cm.display.scroller;
-    pos.scrollTop = Math.max(0, Math.min(scroll.scrollHeight - scroll.clientHeight, pos.scrollTop + top));
-    pos.scrollLeft = Math.max(0, Math.min(scroll.scrollWidth - scroll.clientWidth, pos.scrollLeft + left));
+  // When an operation has its scrollToPos property set, and another
+  // scroll action is applied before the end of the operation, this
+  // 'simulates' scrolling that position into view in a cheap way, so
+  // that the effect of intermediate scroll commands is not ignored.
+  function resolveScrollToPos(cm) {
+    var range = cm.curOp.scrollToPos;
+    if (range) {
+      cm.curOp.scrollToPos = null;
+      var from = estimateCoords(cm, range.from), to = estimateCoords(cm, range.to);
+      var sPos = calculateScrollPos(cm, Math.min(from.left, to.left), Math.min(from.top, to.top) - range.margin, Math.max(from.right, to.right), Math.max(from.bottom, to.bottom) + range.margin);
+      cm.scrollTo(sPos.scrollLeft, sPos.scrollTop);
+    }
   }
   // API UTILITIES
+  // Indent the given line. The how parameter can be "smart",
+  // "add"/null, "subtract", or "prev". When aggressive is false
+  // (typically set to true for forced single-line indents), empty
+  // lines are not indented, and places where the mode returns Pass
+  // are left alone.
   function indentLine(cm, n, how, aggressive) {
-    var doc = cm.doc;
+    var doc = cm.doc, state;
     if (how == null)
       how = 'add';
     if (how == 'smart') {
+      // Fall back to "prev" when the mode doesn't have an indentation
+      // method.
       if (!cm.doc.mode.indent)
         how = 'prev';
       else
-        var state = getStateBefore(cm, n);
+        state = getStateBefore(cm, n);
     }
     var tabSize = cm.options.tabSize;
     var line = getLine(doc, n), curSpace = countColumn(line.text, null, tabSize);
+    if (line.stateAfter)
+      line.stateAfter = null;
     var curSpaceString = line.text.match(/^\s*/)[0], indentation;
-    if (how == 'smart') {
+    if (!aggressive && !/\S/.test(line.text)) {
+      indentation = 0;
+      how = 'not';
+    } else if (how == 'smart') {
       indentation = cm.doc.mode.indent(state, line.text.slice(curSpaceString.length), line.text);
       if (indentation == Pass) {
         if (!aggressive)
@@ -61645,11 +64912,26 @@ window.CodeMirror = function () {
       }
     if (pos < indentation)
       indentString += spaceStr(indentation - pos);
-    if (indentString != curSpaceString)
+    if (indentString != curSpaceString) {
       replaceRange(cm.doc, indentString, Pos(n, 0), Pos(n, curSpaceString.length), '+input');
+    } else {
+      // Ensure that, if the cursor was in the whitespace at the start
+      // of the line, it is moved to the end of that space.
+      for (var i = 0; i < doc.sel.ranges.length; i++) {
+        var range = doc.sel.ranges[i];
+        if (range.head.line == n && range.head.ch < curSpaceString.length) {
+          var pos = Pos(n, curSpaceString.length);
+          replaceOneSelection(doc, i, new Range(pos, pos));
+          break;
+        }
+      }
+    }
     line.stateAfter = null;
   }
-  function changeLine(cm, handle, op) {
+  // Utility for applying a change to a line by handle or number,
+  // returning the number and optionally registering the line as
+  // changed.
+  function changeLine(cm, handle, changeType, op) {
     var no = handle, line = handle, doc = cm.doc;
     if (typeof handle == 'number')
       line = getLine(doc, clipLine(doc, handle));
@@ -61658,11 +64940,42 @@ window.CodeMirror = function () {
     if (no == null)
       return null;
     if (op(line, no))
-      regChange(cm, no, no + 1);
-    else
-      return null;
+      regLineChange(cm, no, changeType);
     return line;
   }
+  // Helper for deleting text near the selection(s), used to implement
+  // backspace, delete, and similar functionality.
+  function deleteNearSelection(cm, compute) {
+    var ranges = cm.doc.sel.ranges, kill = [];
+    // Build up a set of ranges to kill first, merging overlapping
+    // ranges.
+    for (var i = 0; i < ranges.length; i++) {
+      var toKill = compute(ranges[i]);
+      while (kill.length && cmp(toKill.from, lst(kill).to) <= 0) {
+        var replaced = kill.pop();
+        if (cmp(replaced.from, toKill.from) < 0) {
+          toKill.from = replaced.from;
+          break;
+        }
+      }
+      kill.push(toKill);
+    }
+    // Next, remove those actual ranges.
+    runInOp(cm, function () {
+      for (var i = kill.length - 1; i >= 0; i--)
+        replaceRange(cm.doc, '', kill[i].from, kill[i].to, '+delete');
+      ensureCursorVisible(cm);
+    });
+  }
+  // Used for horizontal relative motion. Dir is -1 or 1 (left or
+  // right), unit can be "char", "column" (like char, but doesn't
+  // cross line boundaries), "word" (across next word), or "group" (to
+  // the start of next group of word or non-word-non-whitespace
+  // chars). The visually param controls whether, in right-to-left
+  // text, direction 1 means to move towards the next index in the
+  // string, or towards the character to the right of the current
+  // position. The resulting position will have a hitSide=true
+  // property if it reached the end of the document.
   function findPosH(doc, pos, dir, unit, visually) {
     var line = pos.line, ch = pos.ch, origDir = dir;
     var lineObj = getLine(doc, line);
@@ -61694,11 +65007,14 @@ window.CodeMirror = function () {
       moveOnce(true);
     else if (unit == 'word' || unit == 'group') {
       var sawType = null, group = unit == 'group';
+      var helper = doc.cm && doc.cm.getHelper(pos, 'wordChars');
       for (var first = true;; first = false) {
         if (dir < 0 && !moveOnce(!first))
           break;
         var cur = lineObj.text.charAt(ch) || '\n';
-        var type = isWordChar(cur) ? 'w' : !group ? null : /\s/.test(cur) ? null : 'p';
+        var type = isWordChar(cur, helper) ? 'w' : group && cur == '\n' ? 'n' : !group || /\s/.test(cur) ? null : 'p';
+        if (group && !first && !type)
+          type = 's';
         if (sawType && sawType != type) {
           if (dir < 0) {
             dir = 1;
@@ -61717,6 +65033,9 @@ window.CodeMirror = function () {
       result.hitSide = true;
     return result;
   }
+  // For relative vertical movement. Dir may be -1 or 1. Unit can be
+  // "page" or "line". The resulting position will have a hitSide=true
+  // property if it reached the end of the document.
   function findPosV(cm, pos, dir, unit) {
     var doc = cm.doc, x = pos.left, y;
     if (unit == 'page') {
@@ -61737,15 +65056,20 @@ window.CodeMirror = function () {
     }
     return target;
   }
-  function findWordAt(line, pos) {
+  // Find the word at the given position (as returned by coordsChar).
+  function findWordAt(cm, pos) {
+    var doc = cm.doc, line = getLine(doc, pos.line).text;
     var start = pos.ch, end = pos.ch;
     if (line) {
+      var helper = cm.getHelper(pos, 'wordChars');
       if ((pos.xRel < 0 || end == line.length) && start)
         --start;
       else
         ++end;
       var startChar = line.charAt(start);
-      var check = isWordChar(startChar) ? isWordChar : /\s/.test(startChar) ? function (ch) {
+      var check = isWordChar(startChar, helper) ? function (ch) {
+          return isWordChar(ch, helper);
+        } : /\s/.test(startChar) ? function (ch) {
           return /\s/.test(ch);
         } : function (ch) {
           return !/\s/.test(ch) && !isWordChar(ch);
@@ -61755,23 +65079,20 @@ window.CodeMirror = function () {
       while (end < line.length && check(line.charAt(end)))
         ++end;
     }
-    return {
-      from: Pos(pos.line, start),
-      to: Pos(pos.line, end)
-    };
+    return new Range(Pos(pos.line, start), Pos(pos.line, end));
   }
-  function selectLine(cm, line) {
-    extendSelection(cm.doc, Pos(line, 0), clipPos(cm.doc, Pos(line + 1, 0)));
-  }
-  // PROTOTYPE
-  // The publicly visible API. Note that operation(null, f) means
-  // 'wrap f in an operation, performed on its `this` parameter'
+  // EDITOR METHODS
+  // The publicly visible API. Note that methodOp(f) means
+  // 'wrap f in an operation, performed on its `this` parameter'.
+  // This is not the complete set of editor methods. Most of the
+  // methods defined on the Doc type are also injected into
+  // CodeMirror.prototype, for backwards compatibility and
+  // convenience.
   CodeMirror.prototype = {
     constructor: CodeMirror,
     focus: function () {
       window.focus();
       focusInput(this);
-      onFocus(this);
       fastPoll(this);
     },
     setOption: function (option, value) {
@@ -61799,7 +65120,7 @@ window.CodeMirror = function () {
           return true;
         }
     },
-    addOverlay: operation(null, function (spec, options) {
+    addOverlay: methodOp(function (spec, options) {
       var mode = spec.token ? spec : CodeMirror.getMode(this.options, spec);
       if (mode.startState)
         throw new Error('Overlays may not be stateful.');
@@ -61811,7 +65132,7 @@ window.CodeMirror = function () {
       this.state.modeGen++;
       regChange(this);
     }),
-    removeOverlay: operation(null, function (spec) {
+    removeOverlay: methodOp(function (spec) {
       var overlays = this.state.overlays;
       for (var i = 0; i < overlays.length; ++i) {
         var cur = overlays[i].modeSpec;
@@ -61823,7 +65144,7 @@ window.CodeMirror = function () {
         }
       }
     }),
-    indentLine: operation(null, function (n, dir, aggressive) {
+    indentLine: methodOp(function (n, dir, aggressive) {
       if (typeof dir != 'string' && typeof dir != 'number') {
         if (dir == null)
           dir = this.options.smartIndent ? 'smart' : 'prev';
@@ -61833,13 +65154,23 @@ window.CodeMirror = function () {
       if (isLine(this.doc, n))
         indentLine(this, n, dir, aggressive);
     }),
-    indentSelection: operation(null, function (how) {
-      var sel = this.doc.sel;
-      if (posEq(sel.from, sel.to))
-        return indentLine(this, sel.from.line, how);
-      var e = sel.to.line - (sel.to.ch ? 0 : 1);
-      for (var i = sel.from.line; i <= e; ++i)
-        indentLine(this, i, how);
+    indentSelection: methodOp(function (how) {
+      var ranges = this.doc.sel.ranges, end = -1;
+      for (var i = 0; i < ranges.length; i++) {
+        var range = ranges[i];
+        if (!range.empty()) {
+          var start = Math.max(end, range.from().line);
+          var to = range.to();
+          end = Math.min(this.lastLine(), to.line - (to.ch ? 0 : 1)) + 1;
+          for (var j = start; j < end; ++j)
+            indentLine(this, j, how);
+        } else if (range.head.line > end) {
+          indentLine(this, range.head.line, how, true);
+          end = range.head.line;
+          if (i == this.doc.sel.primIndex)
+            ensureCursorVisible(this);
+        }
+      }
     }),
     getTokenAt: function (pos, precise) {
       var doc = this.doc;
@@ -61849,13 +65180,12 @@ window.CodeMirror = function () {
       var stream = new StringStream(line.text, this.options.tabSize);
       while (stream.pos < pos.ch && !stream.eol()) {
         stream.start = stream.pos;
-        var style = mode.token(stream, state);
+        var style = readToken(mode, stream, state);
       }
       return {
         start: stream.start,
         end: stream.pos,
         string: stream.current(),
-        className: style || null,
         type: style || null,
         state: state
       };
@@ -61864,17 +65194,23 @@ window.CodeMirror = function () {
       pos = clipPos(this.doc, pos);
       var styles = getLineStyles(this, getLine(this.doc, pos.line));
       var before = 0, after = (styles.length - 1) / 2, ch = pos.ch;
+      var type;
       if (ch == 0)
-        return styles[2];
-      for (;;) {
-        var mid = before + after >> 1;
-        if ((mid ? styles[mid * 2 - 1] : 0) >= ch)
-          after = mid;
-        else if (styles[mid * 2 + 1] < ch)
-          before = mid + 1;
-        else
-          return styles[mid * 2 + 2];
-      }
+        type = styles[2];
+      else
+        for (;;) {
+          var mid = before + after >> 1;
+          if ((mid ? styles[mid * 2 - 1] : 0) >= ch)
+            after = mid;
+          else if (styles[mid * 2 + 1] < ch)
+            before = mid + 1;
+          else {
+            type = styles[mid * 2 + 2];
+            break;
+          }
+        }
+      var cut = type ? type.indexOf('cm-overlay ') : -1;
+      return cut < 0 ? type : cut == 0 ? null : type.slice(0, cut - 1);
     },
     getModeAt: function (pos) {
       var mode = this.doc.mode;
@@ -61883,10 +65219,33 @@ window.CodeMirror = function () {
       return CodeMirror.innerMode(mode, this.getTokenAt(pos).state).mode;
     },
     getHelper: function (pos, type) {
+      return this.getHelpers(pos, type)[0];
+    },
+    getHelpers: function (pos, type) {
+      var found = [];
       if (!helpers.hasOwnProperty(type))
-        return;
+        return helpers;
       var help = helpers[type], mode = this.getModeAt(pos);
-      return mode[type] && help[mode[type]] || mode.helperType && help[mode.helperType] || help[mode.name];
+      if (typeof mode[type] == 'string') {
+        if (help[mode[type]])
+          found.push(help[mode[type]]);
+      } else if (mode[type]) {
+        for (var i = 0; i < mode[type].length; i++) {
+          var val = help[mode[type][i]];
+          if (val)
+            found.push(val);
+        }
+      } else if (mode.helperType && help[mode.helperType]) {
+        found.push(help[mode.helperType]);
+      } else if (help[mode.name]) {
+        found.push(help[mode.name]);
+      }
+      for (var i = 0; i < help._global.length; i++) {
+        var cur = help._global[i];
+        if (cur.pred(mode, this) && indexOf(found, cur.val) == -1)
+          found.push(cur.val);
+      }
+      return found;
     },
     getStateAfter: function (line, precise) {
       var doc = this.doc;
@@ -61894,13 +65253,13 @@ window.CodeMirror = function () {
       return getStateBefore(this, line + 1, precise);
     },
     cursorCoords: function (start, mode) {
-      var pos, sel = this.doc.sel;
+      var pos, range = this.doc.sel.primary();
       if (start == null)
-        pos = sel.head;
+        pos = range.head;
       else if (typeof start == 'object')
         pos = clipPos(this.doc, start);
       else
-        pos = start ? sel.from : sel.to;
+        pos = start ? range.from() : range.to();
       return cursorCoords(this, pos, mode || 'page');
     },
     charCoords: function (pos, mode) {
@@ -61926,10 +65285,10 @@ window.CodeMirror = function () {
         end = true;
       }
       var lineObj = getLine(this.doc, line);
-      return intoCoordSystem(this, getLine(this.doc, line), {
+      return intoCoordSystem(this, lineObj, {
         top: 0,
         left: 0
-      }, mode || 'page').top + (end ? lineObj.height : 0);
+      }, mode || 'page').top + (end ? this.doc.height - heightAtLine(lineObj) : 0);
     },
     defaultTextHeight: function () {
       return textHeight(this.display);
@@ -61937,8 +65296,8 @@ window.CodeMirror = function () {
     defaultCharWidth: function () {
       return charWidth(this.display);
     },
-    setGutterMarker: operation(null, function (line, gutterID, value) {
-      return changeLine(this, line, function (line) {
+    setGutterMarker: methodOp(function (line, gutterID, value) {
+      return changeLine(this, line, 'gutter', function (line) {
         var markers = line.gutterMarkers || (line.gutterMarkers = {});
         markers[gutterID] = value;
         if (!value && isEmpty(markers))
@@ -61946,20 +65305,20 @@ window.CodeMirror = function () {
         return true;
       });
     }),
-    clearGutter: operation(null, function (gutterID) {
+    clearGutter: methodOp(function (gutterID) {
       var cm = this, doc = cm.doc, i = doc.first;
       doc.iter(function (line) {
         if (line.gutterMarkers && line.gutterMarkers[gutterID]) {
           line.gutterMarkers[gutterID] = null;
-          regChange(cm, i, i + 1);
+          regLineChange(cm, i, 'gutter');
           if (isEmpty(line.gutterMarkers))
             line.gutterMarkers = null;
         }
         ++i;
       });
     }),
-    addLineClass: operation(null, function (handle, where, cls) {
-      return changeLine(this, handle, function (line) {
+    addLineClass: methodOp(function (handle, where, cls) {
+      return changeLine(this, handle, 'class', function (line) {
         var prop = where == 'text' ? 'textClass' : where == 'background' ? 'bgClass' : 'wrapClass';
         if (!line[prop])
           line[prop] = cls;
@@ -61970,8 +65329,8 @@ window.CodeMirror = function () {
         return true;
       });
     }),
-    removeLineClass: operation(null, function (handle, where, cls) {
-      return changeLine(this, handle, function (line) {
+    removeLineClass: methodOp(function (handle, where, cls) {
+      return changeLine(this, handle, 'class', function (line) {
         var prop = where == 'text' ? 'textClass' : where == 'background' ? 'bgClass' : 'wrapClass';
         var cur = line[prop];
         if (!cur)
@@ -61988,7 +65347,7 @@ window.CodeMirror = function () {
         return true;
       });
     }),
-    addLineWidget: operation(null, function (handle, node, options) {
+    addLineWidget: methodOp(function (handle, node, options) {
       return addLineWidget(this, handle, node, options);
     }),
     removeLineWidget: function (widget) {
@@ -62020,8 +65379,8 @@ window.CodeMirror = function () {
     },
     getViewport: function () {
       return {
-        from: this.display.showingFrom,
-        to: this.display.showingTo
+        from: this.display.viewFrom,
+        to: this.display.viewTo
       };
     },
     addWidget: function (pos, node, scroll, vert, horiz) {
@@ -62057,9 +65416,12 @@ window.CodeMirror = function () {
       if (scroll)
         scrollIntoView(this, left, top, left + node.offsetWidth, top + node.offsetHeight);
     },
-    triggerOnKeyDown: operation(null, onKeyDown),
+    triggerOnKeyDown: methodOp(onKeyDown),
+    triggerOnKeyPress: methodOp(onKeyPress),
+    triggerOnKeyUp: methodOp(onKeyUp),
     execCommand: function (cmd) {
-      return commands[cmd](this);
+      if (commands.hasOwnProperty(cmd))
+        return commands[cmd](this);
     },
     findPosH: function (from, amount, unit, visually) {
       var dir = 1;
@@ -62074,21 +65436,30 @@ window.CodeMirror = function () {
       }
       return cur;
     },
-    moveH: operation(null, function (dir, unit) {
-      var sel = this.doc.sel, pos;
-      if (sel.shift || sel.extend || posEq(sel.from, sel.to))
-        pos = findPosH(this.doc, sel.head, dir, unit, this.options.rtlMoveVisually);
-      else
-        pos = dir < 0 ? sel.from : sel.to;
-      extendSelection(this.doc, pos, pos, dir);
+    moveH: methodOp(function (dir, unit) {
+      var cm = this;
+      cm.extendSelectionsBy(function (range) {
+        if (cm.display.shift || cm.doc.extend || range.empty())
+          return findPosH(cm.doc, range.head, dir, unit, cm.options.rtlMoveVisually);
+        else
+          return dir < 0 ? range.from() : range.to();
+      }, sel_move);
     }),
-    deleteH: operation(null, function (dir, unit) {
-      var sel = this.doc.sel;
-      if (!posEq(sel.from, sel.to))
-        replaceRange(this.doc, '', sel.from, sel.to, '+delete');
+    deleteH: methodOp(function (dir, unit) {
+      var sel = this.doc.sel, doc = this.doc;
+      if (sel.somethingSelected())
+        doc.replaceSelection('', null, '+delete');
       else
-        replaceRange(this.doc, '', sel.from, findPosH(this.doc, sel.head, dir, unit, false), '+delete');
-      this.curOp.userSelChange = true;
+        deleteNearSelection(this, function (range) {
+          var other = findPosH(doc, range.head, dir, unit, false);
+          return dir < 0 ? {
+            from: other,
+            to: range.head
+          } : {
+            from: range.head,
+            to: other
+          };
+        });
     }),
     findPosV: function (from, amount, unit, goalColumn) {
       var dir = 1, x = goalColumn;
@@ -62108,30 +65479,44 @@ window.CodeMirror = function () {
       }
       return cur;
     },
-    moveV: operation(null, function (dir, unit) {
-      var sel = this.doc.sel;
-      var pos = cursorCoords(this, sel.head, 'div');
-      if (sel.goalColumn != null)
-        pos.left = sel.goalColumn;
-      var target = findPosV(this, pos, dir, unit);
-      if (unit == 'page')
-        addToScrollPos(this, 0, charCoords(this, target, 'div').top - pos.top);
-      extendSelection(this.doc, target, target, dir);
-      sel.goalColumn = pos.left;
+    moveV: methodOp(function (dir, unit) {
+      var cm = this, doc = this.doc, goals = [];
+      var collapse = !cm.display.shift && !doc.extend && doc.sel.somethingSelected();
+      doc.extendSelectionsBy(function (range) {
+        if (collapse)
+          return dir < 0 ? range.from() : range.to();
+        var headPos = cursorCoords(cm, range.head, 'div');
+        if (range.goalColumn != null)
+          headPos.left = range.goalColumn;
+        goals.push(headPos.left);
+        var pos = findPosV(cm, headPos, dir, unit);
+        if (unit == 'page' && range == doc.sel.primary())
+          addToScrollPos(cm, null, charCoords(cm, pos, 'div').top - headPos.top);
+        return pos;
+      }, sel_move);
+      if (goals.length)
+        for (var i = 0; i < doc.sel.ranges.length; i++)
+          doc.sel.ranges[i].goalColumn = goals[i];
     }),
     toggleOverwrite: function (value) {
       if (value != null && value == this.state.overwrite)
         return;
       if (this.state.overwrite = !this.state.overwrite)
-        this.display.cursor.className += ' CodeMirror-overwrite';
+        addClass(this.display.cursorDiv, 'CodeMirror-overwrite');
       else
-        this.display.cursor.className = this.display.cursor.className.replace(' CodeMirror-overwrite', '');
+        rmClass(this.display.cursorDiv, 'CodeMirror-overwrite');
+      signal(this, 'overwriteToggle', this, this.state.overwrite);
     },
     hasFocus: function () {
-      return this.state.focused;
+      return activeElt() == this.display.input;
     },
-    scrollTo: operation(null, function (x, y) {
-      updateScrollPos(this, x, y);
+    scrollTo: methodOp(function (x, y) {
+      if (x != null || y != null)
+        resolveScrollToPos(this);
+      if (x != null)
+        this.curOp.scrollLeft = x;
+      if (y != null)
+        this.curOp.scrollTop = y;
     }),
     getScrollInfo: function () {
       var scroller = this.display.scroller, co = scrollerCutOff;
@@ -62144,21 +65529,37 @@ window.CodeMirror = function () {
         clientWidth: scroller.clientWidth - co
       };
     },
-    scrollIntoView: operation(null, function (pos, margin) {
-      if (typeof pos == 'number')
-        pos = Pos(pos, 0);
-      if (!margin)
-        margin = 0;
-      var coords = pos;
-      if (!pos || pos.line != null) {
-        this.curOp.scrollToPos = pos ? clipPos(this.doc, pos) : this.doc.sel.head;
-        this.curOp.scrollToPosMargin = margin;
-        coords = cursorCoords(this, this.curOp.scrollToPos);
+    scrollIntoView: methodOp(function (range, margin) {
+      if (range == null) {
+        range = {
+          from: this.doc.sel.primary().head,
+          to: null
+        };
+        if (margin == null)
+          margin = this.options.cursorScrollMargin;
+      } else if (typeof range == 'number') {
+        range = {
+          from: Pos(range, 0),
+          to: null
+        };
+      } else if (range.from == null) {
+        range = {
+          from: range,
+          to: null
+        };
       }
-      var sPos = calculateScrollPos(this, coords.left, coords.top - margin, coords.right, coords.bottom + margin);
-      updateScrollPos(this, sPos.scrollLeft, sPos.scrollTop);
+      if (!range.to)
+        range.to = range.from;
+      range.margin = margin || 0;
+      if (range.from.line != null) {
+        resolveScrollToPos(this);
+        this.curOp.scrollToPos = range;
+      } else {
+        var sPos = calculateScrollPos(this, Math.min(range.from.left, range.to.left), Math.min(range.from.top, range.to.top) - range.margin, Math.max(range.from.right, range.to.right), Math.max(range.from.bottom, range.to.bottom) + range.margin);
+        this.scrollTo(sPos.scrollLeft, sPos.scrollTop);
+      }
     }),
-    setSize: operation(null, function (width, height) {
+    setSize: methodOp(function (width, height) {
       function interpret(val) {
         return typeof val == 'number' || /^\d+$/.test(String(val)) ? val + 'px' : val;
       }
@@ -62167,24 +65568,32 @@ window.CodeMirror = function () {
       if (height != null)
         this.display.wrapper.style.height = interpret(height);
       if (this.options.lineWrapping)
-        this.display.measureLineCache.length = this.display.measureLineCachePos = 0;
+        clearLineMeasurementCache(this);
       this.curOp.forceUpdate = true;
+      signal(this, 'refresh', this);
     }),
     operation: function (f) {
       return runInOp(this, f);
     },
-    refresh: operation(null, function () {
-      clearCaches(this);
-      updateScrollPos(this, this.doc.scrollLeft, this.doc.scrollTop);
+    refresh: methodOp(function () {
+      var oldHeight = this.display.cachedTextHeight;
       regChange(this);
+      this.curOp.forceUpdate = true;
+      clearCaches(this);
+      this.scrollTo(this.doc.scrollLeft, this.doc.scrollTop);
+      updateGutterSpace(this);
+      if (oldHeight == null || Math.abs(oldHeight - textHeight(this.display)) > 0.5)
+        estimateLineHeights(this);
+      signal(this, 'refresh', this);
     }),
-    swapDoc: operation(null, function (doc) {
+    swapDoc: methodOp(function (doc) {
       var old = this.doc;
       old.cm = null;
       attachDoc(this, doc);
       clearCaches(this);
-      resetInput(this, true);
-      updateScrollPos(this, doc.scrollLeft, doc.scrollTop);
+      resetInput(this);
+      this.scrollTo(doc.scrollLeft, doc.scrollTop);
+      signalLater(this, 'swapDoc', this, old);
       return old;
     }),
     getInputField: function () {
@@ -62202,9 +65611,10 @@ window.CodeMirror = function () {
   };
   eventMixin(CodeMirror);
   // OPTION DEFAULTS
-  var optionHandlers = CodeMirror.optionHandlers = {};
   // The default configuration options.
   var defaults = CodeMirror.defaults = {};
+  // Functions to run when options are changed.
+  var optionHandlers = CodeMirror.optionHandlers = {};
   function option(name, deflt, handle, notOnInit) {
     CodeMirror.defaults[name] = deflt;
     if (handle)
@@ -62213,6 +65623,7 @@ window.CodeMirror = function () {
           handle(cm, val, old);
       } : handle;
   }
+  // Passed to option handlers when there is no old value.
   var Init = CodeMirror.Init = {
       toString: function () {
         return 'CodeMirror.Init';
@@ -62231,20 +65642,26 @@ window.CodeMirror = function () {
   option('indentWithTabs', false);
   option('smartIndent', true);
   option('tabSize', 4, function (cm) {
-    loadMode(cm);
+    resetModeState(cm);
     clearCaches(cm);
     regChange(cm);
   }, true);
+  option('specialChars', /[\t\u0000-\u0019\u00ad\u200b\u2028\u2029\ufeff]/g, function (cm, val) {
+    cm.options.specialChars = new RegExp(val.source + (val.test('\t') ? '' : '|\t'), 'g');
+    cm.refresh();
+  }, true);
+  option('specialCharPlaceholder', defaultSpecialCharPlaceholder, function (cm) {
+    cm.refresh();
+  }, true);
   option('electricChars', true);
   option('rtlMoveVisually', !windows);
+  option('wholeLineUpdateBefore', true);
   option('theme', 'default', function (cm) {
     themeChanged(cm);
     guttersChanged(cm);
   }, true);
   option('keyMap', 'default', keyMapChanged);
   option('extraKeys', null);
-  option('onKeyEvent', null);
-  option('onDragEvent', null);
   option('lineWrapping', false, wrappingChanged, true);
   option('gutters', [], function (cm) {
     setGuttersForLineNumbers(cm.options);
@@ -62264,32 +65681,39 @@ window.CodeMirror = function () {
     return integer;
   }, guttersChanged, true);
   option('showCursorWhenSelecting', false, updateSelection, true);
+  option('resetSelectionOnContextMenu', true);
   option('readOnly', false, function (cm, val) {
     if (val == 'nocursor') {
       onBlur(cm);
       cm.display.input.blur();
-    } else if (!val)
-      resetInput(cm, true);
+      cm.display.disabled = true;
+    } else {
+      cm.display.disabled = false;
+      if (!val)
+        resetInput(cm);
+    }
   });
+  option('disableInput', false, function (cm, val) {
+    if (!val)
+      resetInput(cm);
+  }, true);
   option('dragDrop', true);
   option('cursorBlinkRate', 530);
   option('cursorScrollMargin', 0);
   option('cursorHeight', 1);
   option('workTime', 100);
   option('workDelay', 100);
-  option('flattenSpans', true);
+  option('flattenSpans', true, resetModeState, true);
+  option('addModeClass', false, resetModeState, true);
   option('pollInterval', 100);
-  option('undoDepth', 40, function (cm, val) {
+  option('undoDepth', 200, function (cm, val) {
     cm.doc.history.undoDepth = val;
   });
-  option('historyEventDelay', 500);
+  option('historyEventDelay', 1250);
   option('viewportMargin', 10, function (cm) {
     cm.refresh();
   }, true);
-  option('maxHighlightLength', 10000, function (cm) {
-    loadMode(cm);
-    cm.refresh();
-  }, true);
+  option('maxHighlightLength', 10000, resetModeState, true);
   option('moveInputWithCursor', true, function (cm, val) {
     if (!val)
       cm.display.inputDiv.style.top = cm.display.inputDiv.style.left = 0;
@@ -62301,6 +65725,9 @@ window.CodeMirror = function () {
   // MODE DEFINITION AND QUERYING
   // Known modes, by name and by MIME
   var modes = CodeMirror.modes = {}, mimeModes = CodeMirror.mimeModes = {};
+  // Extra arguments are stored as the mode's dependencies, which is
+  // used by (legacy) mechanisms like loadmode.js to automatically
+  // load a mode. (Preferred mechanism is the require/define calls.)
   CodeMirror.defineMode = function (name, mode) {
     if (!CodeMirror.defaults.mode && name != 'null')
       CodeMirror.defaults.mode = name;
@@ -62314,11 +65741,15 @@ window.CodeMirror = function () {
   CodeMirror.defineMIME = function (mime, spec) {
     mimeModes[mime] = spec;
   };
+  // Given a MIME type, a {name, ...options} config object, or a name
+  // string, return a mode config object.
   CodeMirror.resolveMode = function (spec) {
     if (typeof spec == 'string' && mimeModes.hasOwnProperty(spec)) {
       spec = mimeModes[spec];
     } else if (spec && typeof spec.name == 'string' && mimeModes.hasOwnProperty(spec.name)) {
       var found = mimeModes[spec.name];
+      if (typeof found == 'string')
+        found = { name: found };
       spec = createObj(found, spec);
       spec.name = found.name;
     } else if (typeof spec == 'string' && /^[\w\-]+\/[\w\-]+\+xml$/.test(spec)) {
@@ -62329,6 +65760,8 @@ window.CodeMirror = function () {
     else
       return spec || { name: 'null' };
   };
+  // Given a mode spec (anything that resolveMode accepts), find and
+  // initialize an actual mode object.
   CodeMirror.getMode = function (options, spec) {
     var spec = CodeMirror.resolveMode(spec);
     var mfactory = modes[spec.name];
@@ -62346,8 +65779,14 @@ window.CodeMirror = function () {
       }
     }
     modeObj.name = spec.name;
+    if (spec.helperType)
+      modeObj.helperType = spec.helperType;
+    if (spec.modeProps)
+      for (var prop in spec.modeProps)
+        modeObj[prop] = spec.modeProps[prop];
     return modeObj;
   };
+  // Minimal default mode.
   CodeMirror.defineMode('null', function () {
     return {
       token: function (stream) {
@@ -62356,6 +65795,8 @@ window.CodeMirror = function () {
     };
   });
   CodeMirror.defineMIME('text/plain', 'null');
+  // This can be used to attach properties to mode objects from
+  // outside the actual mode definition.
   var modeExtensions = CodeMirror.modeExtensions = {};
   CodeMirror.extendMode = function (mode, properties) {
     var exts = modeExtensions.hasOwnProperty(mode) ? modeExtensions[mode] : modeExtensions[mode] = {};
@@ -62376,33 +65817,38 @@ window.CodeMirror = function () {
   var helpers = CodeMirror.helpers = {};
   CodeMirror.registerHelper = function (type, name, value) {
     if (!helpers.hasOwnProperty(type))
-      helpers[type] = CodeMirror[type] = {};
+      helpers[type] = CodeMirror[type] = { _global: [] };
     helpers[type][name] = value;
   };
-  // UTILITIES
-  CodeMirror.isWordChar = isWordChar;
+  CodeMirror.registerGlobalHelper = function (type, name, predicate, value) {
+    CodeMirror.registerHelper(type, name, value);
+    helpers[type]._global.push({
+      pred: predicate,
+      val: value
+    });
+  };
   // MODE STATE HANDLING
-  // Utility functions for working with state. Exported because modes
-  // sometimes need to do this.
-  function copyState(mode, state) {
-    if (state === true)
-      return state;
-    if (mode.copyState)
-      return mode.copyState(state);
-    var nstate = {};
-    for (var n in state) {
-      var val = state[n];
-      if (val instanceof Array)
-        val = val.concat([]);
-      nstate[n] = val;
-    }
-    return nstate;
-  }
-  CodeMirror.copyState = copyState;
-  function startState(mode, a1, a2) {
-    return mode.startState ? mode.startState(a1, a2) : true;
-  }
-  CodeMirror.startState = startState;
+  // Utility functions for working with state. Exported because nested
+  // modes need to do this for their inner modes.
+  var copyState = CodeMirror.copyState = function (mode, state) {
+      if (state === true)
+        return state;
+      if (mode.copyState)
+        return mode.copyState(state);
+      var nstate = {};
+      for (var n in state) {
+        var val = state[n];
+        if (val instanceof Array)
+          val = val.concat([]);
+        nstate[n] = val;
+      }
+      return nstate;
+    };
+  var startState = CodeMirror.startState = function (mode, a1, a2) {
+      return mode.startState ? mode.startState(a1, a2) : true;
+    };
+  // Given a mode and a state (for that mode), find the inner mode and
+  // state at the position that the state refers to.
   CodeMirror.innerMode = function (mode, state) {
     while (mode.innerMode) {
       var info = mode.innerMode(state);
@@ -62417,30 +65863,64 @@ window.CodeMirror = function () {
     };
   };
   // STANDARD COMMANDS
+  // Commands are parameter-less actions that can be performed on an
+  // editor, mostly used for keybindings.
   var commands = CodeMirror.commands = {
       selectAll: function (cm) {
-        cm.setSelection(Pos(cm.firstLine(), 0), Pos(cm.lastLine()));
+        cm.setSelection(Pos(cm.firstLine(), 0), Pos(cm.lastLine()), sel_dontScroll);
+      },
+      singleSelection: function (cm) {
+        cm.setSelection(cm.getCursor('anchor'), cm.getCursor('head'), sel_dontScroll);
       },
       killLine: function (cm) {
-        var from = cm.getCursor(true), to = cm.getCursor(false), sel = !posEq(from, to);
-        if (!sel && cm.getLine(from.line).length == from.ch)
-          cm.replaceRange('', from, Pos(from.line + 1, 0), '+delete');
-        else
-          cm.replaceRange('', from, sel ? to : Pos(from.line), '+delete');
+        deleteNearSelection(cm, function (range) {
+          if (range.empty()) {
+            var len = getLine(cm.doc, range.head.line).text.length;
+            if (range.head.ch == len && range.head.line < cm.lastLine())
+              return {
+                from: range.head,
+                to: Pos(range.head.line + 1, 0)
+              };
+            else
+              return {
+                from: range.head,
+                to: Pos(range.head.line, len)
+              };
+          } else {
+            return {
+              from: range.from(),
+              to: range.to()
+            };
+          }
+        });
       },
       deleteLine: function (cm) {
-        var l = cm.getCursor().line;
-        cm.replaceRange('', Pos(l, 0), Pos(l), '+delete');
+        deleteNearSelection(cm, function (range) {
+          return {
+            from: Pos(range.from().line, 0),
+            to: clipPos(cm.doc, Pos(range.to().line + 1, 0))
+          };
+        });
       },
       delLineLeft: function (cm) {
-        var cur = cm.getCursor();
-        cm.replaceRange('', Pos(cur.line, 0), cur, '+delete');
+        deleteNearSelection(cm, function (range) {
+          return {
+            from: Pos(range.from().line, 0),
+            to: range.from()
+          };
+        });
       },
       undo: function (cm) {
         cm.undo();
       },
       redo: function (cm) {
         cm.redo();
+      },
+      undoSelection: function (cm) {
+        cm.undoSelection();
+      },
+      redoSelection: function (cm) {
+        cm.redoSelection();
       },
       goDocStart: function (cm) {
         cm.extendSelection(Pos(cm.firstLine(), 0));
@@ -62449,35 +65929,45 @@ window.CodeMirror = function () {
         cm.extendSelection(Pos(cm.lastLine()));
       },
       goLineStart: function (cm) {
-        cm.extendSelection(lineStart(cm, cm.getCursor().line));
+        cm.extendSelectionsBy(function (range) {
+          return lineStart(cm, range.head.line);
+        }, sel_move);
       },
       goLineStartSmart: function (cm) {
-        var cur = cm.getCursor(), start = lineStart(cm, cur.line);
-        var line = cm.getLineHandle(start.line);
-        var order = getOrder(line);
-        if (!order || order[0].level == 0) {
-          var firstNonWS = Math.max(0, line.text.search(/\S/));
-          var inWS = cur.line == start.line && cur.ch <= firstNonWS && cur.ch;
-          cm.extendSelection(Pos(start.line, inWS ? 0 : firstNonWS));
-        } else
-          cm.extendSelection(start);
+        cm.extendSelectionsBy(function (range) {
+          var start = lineStart(cm, range.head.line);
+          var line = cm.getLineHandle(start.line);
+          var order = getOrder(line);
+          if (!order || order[0].level == 0) {
+            var firstNonWS = Math.max(0, line.text.search(/\S/));
+            var inWS = range.head.line == start.line && range.head.ch <= firstNonWS && range.head.ch;
+            return Pos(start.line, inWS ? 0 : firstNonWS);
+          }
+          return start;
+        }, sel_move);
       },
       goLineEnd: function (cm) {
-        cm.extendSelection(lineEnd(cm, cm.getCursor().line));
+        cm.extendSelectionsBy(function (range) {
+          return lineEnd(cm, range.head.line);
+        }, sel_move);
       },
       goLineRight: function (cm) {
-        var top = cm.charCoords(cm.getCursor(), 'div').top + 5;
-        cm.extendSelection(cm.coordsChar({
-          left: cm.display.lineDiv.offsetWidth + 100,
-          top: top
-        }, 'div'));
+        cm.extendSelectionsBy(function (range) {
+          var top = cm.charCoords(range.head, 'div').top + 5;
+          return cm.coordsChar({
+            left: cm.display.lineDiv.offsetWidth + 100,
+            top: top
+          }, 'div');
+        }, sel_move);
       },
       goLineLeft: function (cm) {
-        var top = cm.charCoords(cm.getCursor(), 'div').top + 5;
-        cm.extendSelection(cm.coordsChar({
-          left: 0,
-          top: top
-        }, 'div'));
+        cm.extendSelectionsBy(function (range) {
+          var top = cm.charCoords(range.head, 'div').top + 5;
+          return cm.coordsChar({
+            left: 0,
+            top: top
+          }, 'div');
+        }, sel_move);
       },
       goLineUp: function (cm) {
         cm.moveV(-1, 'line');
@@ -62543,24 +66033,55 @@ window.CodeMirror = function () {
         cm.indentSelection('subtract');
       },
       insertTab: function (cm) {
-        cm.replaceSelection('\t', 'end', '+input');
+        cm.replaceSelection('\t');
+      },
+      insertSoftTab: function (cm) {
+        var spaces = [], ranges = cm.listSelections(), tabSize = cm.options.tabSize;
+        for (var i = 0; i < ranges.length; i++) {
+          var pos = ranges[i].from();
+          var col = countColumn(cm.getLine(pos.line), pos.ch, tabSize);
+          spaces.push(new Array(tabSize - col % tabSize + 1).join(' '));
+        }
+        cm.replaceSelections(spaces);
       },
       defaultTab: function (cm) {
         if (cm.somethingSelected())
           cm.indentSelection('add');
         else
-          cm.replaceSelection('\t', 'end', '+input');
+          cm.execCommand('insertTab');
       },
       transposeChars: function (cm) {
-        var cur = cm.getCursor(), line = cm.getLine(cur.line);
-        if (cur.ch > 0 && cur.ch < line.length - 1)
-          cm.replaceRange(line.charAt(cur.ch) + line.charAt(cur.ch - 1), Pos(cur.line, cur.ch - 1), Pos(cur.line, cur.ch + 1));
+        runInOp(cm, function () {
+          var ranges = cm.listSelections(), newSel = [];
+          for (var i = 0; i < ranges.length; i++) {
+            var cur = ranges[i].head, line = getLine(cm.doc, cur.line).text;
+            if (line) {
+              if (cur.ch == line.length)
+                cur = new Pos(cur.line, cur.ch - 1);
+              if (cur.ch > 0) {
+                cur = new Pos(cur.line, cur.ch + 1);
+                cm.replaceRange(line.charAt(cur.ch - 1) + line.charAt(cur.ch - 2), Pos(cur.line, cur.ch - 2), cur, '+transpose');
+              } else if (cur.line > cm.doc.first) {
+                var prev = getLine(cm.doc, cur.line - 1).text;
+                if (prev)
+                  cm.replaceRange(line.charAt(0) + '\n' + prev.charAt(prev.length - 1), Pos(cur.line - 1, prev.length - 1), Pos(cur.line, 1), '+transpose');
+              }
+            }
+            newSel.push(new Range(cur, cur));
+          }
+          cm.setSelections(newSel);
+        });
       },
       newlineAndIndent: function (cm) {
-        operation(cm, function () {
-          cm.replaceSelection('\n', 'end', '+input');
-          cm.indentLine(cm.getCursor().line, null, true);
-        })();
+        runInOp(cm, function () {
+          var len = cm.listSelections().length;
+          for (var i = 0; i < len; i++) {
+            var range = cm.listSelections()[i];
+            cm.replaceRange('\n', range.anchor, range.head, '+input');
+            cm.indentLine(range.from().line + 1, null, true);
+            ensureCursorVisible(cm);
+          }
+        });
       },
       toggleOverwrite: function (cm) {
         cm.toggleOverwrite();
@@ -62579,13 +66100,16 @@ window.CodeMirror = function () {
     'PageDown': 'goPageDown',
     'Delete': 'delCharAfter',
     'Backspace': 'delCharBefore',
+    'Shift-Backspace': 'delCharBefore',
     'Tab': 'defaultTab',
     'Shift-Tab': 'indentAuto',
     'Enter': 'newlineAndIndent',
-    'Insert': 'toggleOverwrite'
+    'Insert': 'toggleOverwrite',
+    'Esc': 'singleSelection'
   };
   // Note that the save and find-related commands aren't defined by
-  // default. Unknown commands are simply ignored.
+  // default. User code or addons can define them. Unknown commands
+  // are simply ignored.
   keyMap.pcDefault = {
     'Ctrl-A': 'selectAll',
     'Ctrl-D': 'deleteLine',
@@ -62593,7 +66117,7 @@ window.CodeMirror = function () {
     'Shift-Ctrl-Z': 'redo',
     'Ctrl-Y': 'redo',
     'Ctrl-Home': 'goDocStart',
-    'Alt-Up': 'goDocStart',
+    'Ctrl-Up': 'goDocStart',
     'Ctrl-End': 'goDocEnd',
     'Ctrl-Down': 'goDocEnd',
     'Ctrl-Left': 'goGroupLeft',
@@ -62610,6 +66134,9 @@ window.CodeMirror = function () {
     'Shift-Ctrl-R': 'replaceAll',
     'Ctrl-[': 'indentLess',
     'Ctrl-]': 'indentMore',
+    'Ctrl-U': 'undoSelection',
+    'Shift-Ctrl-U': 'redoSelection',
+    'Alt-U': 'redoSelection',
     fallthrough: 'basic'
   };
   keyMap.macDefault = {
@@ -62637,12 +66164,14 @@ window.CodeMirror = function () {
     'Cmd-[': 'indentLess',
     'Cmd-]': 'indentMore',
     'Cmd-Backspace': 'delLineLeft',
+    'Cmd-U': 'undoSelection',
+    'Shift-Cmd-U': 'redoSelection',
     fallthrough: [
       'basic',
       'emacsy'
     ]
   };
-  keyMap['default'] = mac ? keyMap.macDefault : keyMap.pcDefault;
+  // Very basic readline/emacs-style bindings, which are standard on Mac.
   keyMap.emacsy = {
     'Ctrl-F': 'goCharRight',
     'Ctrl-B': 'goCharLeft',
@@ -62661,6 +66190,7 @@ window.CodeMirror = function () {
     'Ctrl-K': 'killLine',
     'Ctrl-T': 'transposeChars'
   };
+  keyMap['default'] = mac ? keyMap.macDefault : keyMap.pcDefault;
   // KEYMAP DISPATCH
   function getKeyMap(val) {
     if (typeof val == 'string')
@@ -62668,57 +66198,61 @@ window.CodeMirror = function () {
     else
       return val;
   }
-  function lookupKey(name, maps, handle) {
-    function lookup(map) {
-      map = getKeyMap(map);
-      var found = map[name];
-      if (found === false)
-        return 'stop';
-      if (found != null && handle(found))
-        return true;
-      if (map.nofallthrough)
-        return 'stop';
-      var fallthrough = map.fallthrough;
-      if (fallthrough == null)
+  // Given an array of keymaps and a key name, call handle on any
+  // bindings found, until that returns a truthy value, at which point
+  // we consider the key handled. Implements things like binding a key
+  // to false stopping further handling and keymap fallthrough.
+  var lookupKey = CodeMirror.lookupKey = function (name, maps, handle) {
+      function lookup(map) {
+        map = getKeyMap(map);
+        var found = map[name];
+        if (found === false)
+          return 'stop';
+        if (found != null && handle(found))
+          return true;
+        if (map.nofallthrough)
+          return 'stop';
+        var fallthrough = map.fallthrough;
+        if (fallthrough == null)
+          return false;
+        if (Object.prototype.toString.call(fallthrough) != '[object Array]')
+          return lookup(fallthrough);
+        for (var i = 0; i < fallthrough.length; ++i) {
+          var done = lookup(fallthrough[i]);
+          if (done)
+            return done;
+        }
         return false;
-      if (Object.prototype.toString.call(fallthrough) != '[object Array]')
-        return lookup(fallthrough);
-      for (var i = 0, e = fallthrough.length; i < e; ++i) {
-        var done = lookup(fallthrough[i]);
-        if (done)
-          return done;
       }
-      return false;
-    }
-    for (var i = 0; i < maps.length; ++i) {
-      var done = lookup(maps[i]);
-      if (done)
-        return done != 'stop';
-    }
-  }
-  function isModifierKey(event) {
-    var name = keyNames[event.keyCode];
-    return name == 'Ctrl' || name == 'Alt' || name == 'Shift' || name == 'Mod';
-  }
-  function keyName(event, noShift) {
-    if (opera && event.keyCode == 34 && event['char'])
-      return false;
-    var name = keyNames[event.keyCode];
-    if (name == null || event.altGraphKey)
-      return false;
-    if (event.altKey)
-      name = 'Alt-' + name;
-    if (flipCtrlCmd ? event.metaKey : event.ctrlKey)
-      name = 'Ctrl-' + name;
-    if (flipCtrlCmd ? event.ctrlKey : event.metaKey)
-      name = 'Cmd-' + name;
-    if (!noShift && event.shiftKey)
-      name = 'Shift-' + name;
-    return name;
-  }
-  CodeMirror.lookupKey = lookupKey;
-  CodeMirror.isModifierKey = isModifierKey;
-  CodeMirror.keyName = keyName;
+      for (var i = 0; i < maps.length; ++i) {
+        var done = lookup(maps[i]);
+        if (done)
+          return done != 'stop';
+      }
+    };
+  // Modifier key presses don't count as 'real' key presses for the
+  // purpose of keymap fallthrough.
+  var isModifierKey = CodeMirror.isModifierKey = function (event) {
+      var name = keyNames[event.keyCode];
+      return name == 'Ctrl' || name == 'Alt' || name == 'Shift' || name == 'Mod';
+    };
+  // Look up the name of a key as indicated by an event object.
+  var keyName = CodeMirror.keyName = function (event, noShift) {
+      if (presto && event.keyCode == 34 && event['char'])
+        return false;
+      var name = keyNames[event.keyCode];
+      if (name == null || event.altGraphKey)
+        return false;
+      if (event.altKey)
+        name = 'Alt-' + name;
+      if (flipCtrlCmd ? event.metaKey : event.ctrlKey)
+        name = 'Ctrl-' + name;
+      if (flipCtrlCmd ? event.ctrlKey : event.metaKey)
+        name = 'Cmd-' + name;
+      if (!noShift && event.shiftKey)
+        name = 'Shift-' + name;
+      return name;
+    };
   // FROMTEXTAREA
   CodeMirror.fromTextArea = function (textarea, options) {
     if (!options)
@@ -62731,12 +66265,7 @@ window.CodeMirror = function () {
     // Set autofocus to true if this textarea is focused, or if it has
     // autofocus and no other element is focused.
     if (options.autofocus == null) {
-      var hasFocus = document.body;
-      // doc.activeElement occasionally throws on IE
-      try {
-        hasFocus = document.activeElement;
-      } catch (e) {
-      }
+      var hasFocus = activeElt();
       options.autofocus = hasFocus == textarea || textarea.getAttribute('autofocus') != null && hasFocus == document.body;
     }
     function save() {
@@ -62781,19 +66310,19 @@ window.CodeMirror = function () {
   // STRING STREAM
   // Fed to the mode parsers, provides helper functions to make
   // parsers more succinct.
-  // The character stream used by a mode's parser.
-  function StringStream(string, tabSize) {
-    this.pos = this.start = 0;
-    this.string = string;
-    this.tabSize = tabSize || 8;
-    this.lastColumnPos = this.lastColumnValue = 0;
-  }
+  var StringStream = CodeMirror.StringStream = function (string, tabSize) {
+      this.pos = this.start = 0;
+      this.string = string;
+      this.tabSize = tabSize || 8;
+      this.lastColumnPos = this.lastColumnValue = 0;
+      this.lineStart = 0;
+    };
   StringStream.prototype = {
     eol: function () {
       return this.pos >= this.string.length;
     },
     sol: function () {
-      return this.pos == 0;
+      return this.pos == this.lineStart;
     },
     peek: function () {
       return this.string.charAt(this.pos) || undefined;
@@ -62843,10 +66372,10 @@ window.CodeMirror = function () {
         this.lastColumnValue = countColumn(this.string, this.start, this.tabSize, this.lastColumnPos, this.lastColumnValue);
         this.lastColumnPos = this.start;
       }
-      return this.lastColumnValue;
+      return this.lastColumnValue - (this.lineStart ? countColumn(this.string, this.lineStart, this.tabSize) : 0);
     },
     indentation: function () {
-      return countColumn(this.string, null, this.tabSize);
+      return countColumn(this.string, null, this.tabSize) - (this.lineStart ? countColumn(this.string, this.lineStart, this.tabSize) : 0);
     },
     match: function (pattern, consume, caseInsensitive) {
       if (typeof pattern == 'string') {
@@ -62870,17 +66399,33 @@ window.CodeMirror = function () {
     },
     current: function () {
       return this.string.slice(this.start, this.pos);
+    },
+    hideFirstChars: function (n, inner) {
+      this.lineStart += n;
+      try {
+        return inner();
+      } finally {
+        this.lineStart -= n;
+      }
     }
   };
-  CodeMirror.StringStream = StringStream;
   // TEXTMARKERS
-  function TextMarker(doc, type) {
-    this.lines = [];
-    this.type = type;
-    this.doc = doc;
-  }
-  CodeMirror.TextMarker = TextMarker;
+  // Created with markText and setBookmark methods. A TextMarker is a
+  // handle that can be used to clear or find a marked position in the
+  // document. Line objects hold arrays (markedSpans) containing
+  // {from, to, marker} object pointing to such marker objects, and
+  // indicating that such a marker is present on that line. Multiple
+  // lines may point to the same marker when it spans across lines.
+  // The spans will have null for their from/to properties when the
+  // marker continues beyond the start/end of the line. Markers have
+  // links back to the lines they currently touch.
+  var TextMarker = CodeMirror.TextMarker = function (doc, type) {
+      this.lines = [];
+      this.type = type;
+      this.doc = doc;
+    };
   eventMixin(TextMarker);
+  // Clear the marker.
   TextMarker.prototype.clear = function () {
     if (this.explicitlyCleared)
       return;
@@ -62896,72 +66441,93 @@ window.CodeMirror = function () {
     for (var i = 0; i < this.lines.length; ++i) {
       var line = this.lines[i];
       var span = getMarkedSpanFor(line.markedSpans, this);
-      if (span.to != null)
-        max = lineNo(line);
+      if (cm && !this.collapsed)
+        regLineChange(cm, lineNo(line), 'text');
+      else if (cm) {
+        if (span.to != null)
+          max = lineNo(line);
+        if (span.from != null)
+          min = lineNo(line);
+      }
       line.markedSpans = removeMarkedSpan(line.markedSpans, span);
-      if (span.from != null)
-        min = lineNo(line);
-      else if (this.collapsed && !lineIsHidden(this.doc, line) && cm)
+      if (span.from == null && this.collapsed && !lineIsHidden(this.doc, line) && cm)
         updateLineHeight(line, textHeight(cm.display));
     }
     if (cm && this.collapsed && !cm.options.lineWrapping)
       for (var i = 0; i < this.lines.length; ++i) {
-        var visual = visualLine(cm.doc, this.lines[i]), len = lineLength(cm.doc, visual);
+        var visual = visualLine(this.lines[i]), len = lineLength(visual);
         if (len > cm.display.maxLineLength) {
           cm.display.maxLine = visual;
           cm.display.maxLineLength = len;
           cm.display.maxLineChanged = true;
         }
       }
-    if (min != null && cm)
+    if (min != null && cm && this.collapsed)
       regChange(cm, min, max + 1);
     this.lines.length = 0;
     this.explicitlyCleared = true;
     if (this.atomic && this.doc.cantEdit) {
       this.doc.cantEdit = false;
       if (cm)
-        reCheckSelection(cm);
+        reCheckSelection(cm.doc);
     }
+    if (cm)
+      signalLater(cm, 'markerCleared', cm, this);
     if (withOp)
       endOperation(cm);
+    if (this.parent)
+      this.parent.clear();
   };
-  TextMarker.prototype.find = function () {
+  // Find the position of the marker in the document. Returns a {from,
+  // to} object by default. Side can be passed to get a specific side
+  // -- 0 (both), -1 (left), or 1 (right). When lineObj is true, the
+  // Pos objects returned contain a line object, rather than a line
+  // number (used to prevent looking up the same line twice).
+  TextMarker.prototype.find = function (side, lineObj) {
+    if (side == null && this.type == 'bookmark')
+      side = 1;
     var from, to;
     for (var i = 0; i < this.lines.length; ++i) {
       var line = this.lines[i];
       var span = getMarkedSpanFor(line.markedSpans, this);
-      if (span.from != null || span.to != null) {
-        var found = lineNo(line);
-        if (span.from != null)
-          from = Pos(found, span.from);
-        if (span.to != null)
-          to = Pos(found, span.to);
+      if (span.from != null) {
+        from = Pos(lineObj ? line : lineNo(line), span.from);
+        if (side == -1)
+          return from;
+      }
+      if (span.to != null) {
+        to = Pos(lineObj ? line : lineNo(line), span.to);
+        if (side == 1)
+          return to;
       }
     }
-    if (this.type == 'bookmark')
-      return from;
     return from && {
       from: from,
       to: to
     };
   };
+  // Signals that the marker's widget changed, and surrounding layout
+  // should be recomputed.
   TextMarker.prototype.changed = function () {
-    var pos = this.find(), cm = this.doc.cm;
+    var pos = this.find(-1, true), widget = this, cm = this.doc.cm;
     if (!pos || !cm)
       return;
-    var line = getLine(this.doc, pos.from.line);
-    clearCachedMeasurement(cm, line);
-    if (pos.from.line >= cm.display.showingFrom && pos.from.line < cm.display.showingTo) {
-      for (var node = cm.display.lineDiv.firstChild; node; node = node.nextSibling)
-        if (node.lineObj == line) {
-          if (node.offsetHeight != line.height)
-            updateLineHeight(line, node.offsetHeight);
-          break;
-        }
-      runInOp(cm, function () {
-        cm.curOp.selectionChanged = cm.curOp.forceUpdate = cm.curOp.updateMaxLine = true;
-      });
-    }
+    runInOp(cm, function () {
+      var line = pos.line, lineN = lineNo(pos.line);
+      var view = findViewForLine(cm, lineN);
+      if (view) {
+        clearLineMeasurementCacheFor(view);
+        cm.curOp.selectionChanged = cm.curOp.forceUpdate = true;
+      }
+      cm.curOp.updateMaxLine = true;
+      if (!lineIsHidden(widget.doc, line) && widget.height != null) {
+        var oldHeight = widget.height;
+        widget.height = null;
+        var dHeight = widgetHeight(widget) - oldHeight;
+        if (dHeight)
+          updateLineHeight(line, line.height + dHeight);
+      }
+    });
   };
   TextMarker.prototype.attachLine = function (line) {
     if (!this.lines.length && this.doc.cm) {
@@ -62978,62 +66544,56 @@ window.CodeMirror = function () {
       (op.maybeHiddenMarkers || (op.maybeHiddenMarkers = [])).push(this);
     }
   };
+  // Collapsed markers have unique ids, in order to be able to order
+  // them, which is needed for uniquely determining an outer marker
+  // when they overlap (they may nest, but not partially overlap).
+  var nextMarkerId = 0;
+  // Create a marker, wire it up to the right lines, and
   function markText(doc, from, to, options, type) {
+    // Shared markers (across linked documents) are handled separately
+    // (markTextShared will call out to this again, once per
+    // document).
     if (options && options.shared)
       return markTextShared(doc, from, to, options, type);
+    // Ensure we are in an operation.
     if (doc.cm && !doc.cm.curOp)
       return operation(doc.cm, markText)(doc, from, to, options, type);
-    var marker = new TextMarker(doc, type);
-    if (type == 'range' && !posLess(from, to))
-      return marker;
+    var marker = new TextMarker(doc, type), diff = cmp(from, to);
     if (options)
-      copyObj(options, marker);
+      copyObj(options, marker, false);
+    // Don't connect empty markers unless clearWhenEmpty is false
+    if (diff > 0 || diff == 0 && marker.clearWhenEmpty !== false)
+      return marker;
     if (marker.replacedWith) {
+      // Showing up as a widget implies collapsed (widget replaces text)
       marker.collapsed = true;
-      marker.replacedWith = elt('span', [marker.replacedWith], 'CodeMirror-widget');
+      marker.widgetNode = elt('span', [marker.replacedWith], 'CodeMirror-widget');
       if (!options.handleMouseEvents)
-        marker.replacedWith.ignoreEvents = true;
+        marker.widgetNode.ignoreEvents = true;
+      if (options.insertLeft)
+        marker.widgetNode.insertLeft = true;
     }
-    if (marker.collapsed)
+    if (marker.collapsed) {
+      if (conflictingCollapsedRange(doc, from.line, from, to, marker) || from.line != to.line && conflictingCollapsedRange(doc, to.line, from, to, marker))
+        throw new Error('Inserting collapsed marker partially overlapping an existing one');
       sawCollapsedSpans = true;
+    }
     if (marker.addToHistory)
-      addToHistory(doc, {
+      addChangeToHistory(doc, {
         from: from,
         to: to,
         origin: 'markText'
-      }, {
-        head: doc.sel.head,
-        anchor: doc.sel.anchor
-      }, NaN);
-    var curLine = from.line, size = 0, collapsedAtStart, collapsedAtEnd, cm = doc.cm, updateMaxLine;
+      }, doc.sel, NaN);
+    var curLine = from.line, cm = doc.cm, updateMaxLine;
     doc.iter(curLine, to.line + 1, function (line) {
-      if (cm && marker.collapsed && !cm.options.lineWrapping && visualLine(doc, line) == cm.display.maxLine)
+      if (cm && marker.collapsed && !cm.options.lineWrapping && visualLine(line) == cm.display.maxLine)
         updateMaxLine = true;
-      var span = {
-          from: null,
-          to: null,
-          marker: marker
-        };
-      size += line.text.length;
-      if (curLine == from.line) {
-        span.from = from.ch;
-        size -= from.ch;
-      }
-      if (curLine == to.line) {
-        span.to = to.ch;
-        size -= line.text.length - to.ch;
-      }
-      if (marker.collapsed) {
-        if (curLine == to.line)
-          collapsedAtEnd = collapsedSpanAt(line, to.ch);
-        if (curLine == from.line)
-          collapsedAtStart = collapsedSpanAt(line, from.ch);
-        else
-          updateLineHeight(line, 0);
-      }
-      addMarkedSpan(line, span);
+      if (marker.collapsed && curLine != from.line)
+        updateLineHeight(line, 0);
+      addMarkedSpan(line, new MarkedSpan(marker, curLine == from.line ? from.ch : null, curLine == to.line ? to.ch : null));
       ++curLine;
     });
+    // lineIsHidden depends on the presence of the spans, so needs a second pass
     if (marker.collapsed)
       doc.iter(from.line, to.line + 1, function (line) {
         if (lineIsHidden(doc, line))
@@ -63049,33 +66609,34 @@ window.CodeMirror = function () {
         doc.clearHistory();
     }
     if (marker.collapsed) {
-      if (collapsedAtStart != collapsedAtEnd)
-        throw new Error('Inserting collapsed marker overlapping an existing one');
-      marker.size = size;
+      marker.id = ++nextMarkerId;
       marker.atomic = true;
     }
     if (cm) {
+      // Sync editor state
       if (updateMaxLine)
         cm.curOp.updateMaxLine = true;
-      if (marker.className || marker.title || marker.startStyle || marker.endStyle || marker.collapsed)
+      if (marker.collapsed)
         regChange(cm, from.line, to.line + 1);
+      else if (marker.className || marker.title || marker.startStyle || marker.endStyle)
+        for (var i = from.line; i <= to.line; i++)
+          regLineChange(cm, i, 'text');
       if (marker.atomic)
-        reCheckSelection(cm);
+        reCheckSelection(cm.doc);
+      signalLater(cm, 'markerAdded', cm, marker);
     }
     return marker;
   }
   // SHARED TEXTMARKERS
-  function SharedTextMarker(markers, primary) {
-    this.markers = markers;
-    this.primary = primary;
-    for (var i = 0, me = this; i < markers.length; ++i) {
-      markers[i].parent = this;
-      on(markers[i], 'clear', function () {
-        me.clear();
-      });
-    }
-  }
-  CodeMirror.SharedTextMarker = SharedTextMarker;
+  // A shared marker spans multiple linked documents. It is
+  // implemented as a meta-marker-object controlling multiple normal
+  // markers.
+  var SharedTextMarker = CodeMirror.SharedTextMarker = function (markers, primary) {
+      this.markers = markers;
+      this.primary = primary;
+      for (var i = 0; i < markers.length; ++i)
+        markers[i].parent = this;
+    };
   eventMixin(SharedTextMarker);
   SharedTextMarker.prototype.clear = function () {
     if (this.explicitlyCleared)
@@ -63085,17 +66646,17 @@ window.CodeMirror = function () {
       this.markers[i].clear();
     signalLater(this, 'clear');
   };
-  SharedTextMarker.prototype.find = function () {
-    return this.primary.find();
+  SharedTextMarker.prototype.find = function (side, lineObj) {
+    return this.primary.find(side, lineObj);
   };
   function markTextShared(doc, from, to, options, type) {
     options = copyObj(options);
     options.shared = false;
     var markers = [markText(doc, from, to, options, type)], primary = markers[0];
-    var widget = options.replacedWith;
+    var widget = options.widgetNode;
     linkedDocs(doc, function (doc) {
       if (widget)
-        options.replacedWith = widget.cloneNode(true);
+        options.widgetNode = widget.cloneNode(true);
       markers.push(markText(doc, clipPos(doc, from), clipPos(doc, to), options, type));
       for (var i = 0; i < doc.linked.length; ++i)
         if (doc.linked[i].isParent)
@@ -63104,7 +66665,45 @@ window.CodeMirror = function () {
     });
     return new SharedTextMarker(markers, primary);
   }
+  function findSharedMarkers(doc) {
+    return doc.findMarks(Pos(doc.first, 0), doc.clipPos(Pos(doc.lastLine())), function (m) {
+      return m.parent;
+    });
+  }
+  function copySharedMarkers(doc, markers) {
+    for (var i = 0; i < markers.length; i++) {
+      var marker = markers[i], pos = marker.find();
+      var mFrom = doc.clipPos(pos.from), mTo = doc.clipPos(pos.to);
+      if (cmp(mFrom, mTo)) {
+        var subMark = markText(doc, mFrom, mTo, marker.primary, marker.primary.type);
+        marker.markers.push(subMark);
+        subMark.parent = marker;
+      }
+    }
+  }
+  function detachSharedMarkers(markers) {
+    for (var i = 0; i < markers.length; i++) {
+      var marker = markers[i], linked = [marker.primary.doc];
+      ;
+      linkedDocs(marker.primary.doc, function (d) {
+        linked.push(d);
+      });
+      for (var j = 0; j < marker.markers.length; j++) {
+        var subMarker = marker.markers[j];
+        if (indexOf(linked, subMarker.doc) == -1) {
+          subMarker.parent = null;
+          marker.markers.splice(j--, 1);
+        }
+      }
+    }
+  }
   // TEXTMARKER SPANS
+  function MarkedSpan(marker, from, to) {
+    this.marker = marker;
+    this.from = from;
+    this.to = to;
+  }
+  // Search an array of spans for a span matching the given marker.
   function getMarkedSpanFor(spans, marker) {
     if (spans)
       for (var i = 0; i < spans.length; ++i) {
@@ -63113,28 +66712,31 @@ window.CodeMirror = function () {
           return span;
       }
   }
+  // Remove a span from an array, returning undefined if no spans are
+  // left (we don't store arrays for lines without spans).
   function removeMarkedSpan(spans, span) {
     for (var r, i = 0; i < spans.length; ++i)
       if (spans[i] != span)
         (r || (r = [])).push(spans[i]);
     return r;
   }
+  // Add a span to a line.
   function addMarkedSpan(line, span) {
     line.markedSpans = line.markedSpans ? line.markedSpans.concat([span]) : [span];
     span.marker.attachLine(line);
   }
+  // Used for the algorithm that adjusts markers for a change in the
+  // document. These functions cut an array of spans at a given
+  // character position, returning an array of remaining chunks (or
+  // undefined if nothing remains).
   function markedSpansBefore(old, startCh, isInsert) {
     if (old)
       for (var i = 0, nw; i < old.length; ++i) {
         var span = old[i], marker = span.marker;
         var startsBefore = span.from == null || (marker.inclusiveLeft ? span.from <= startCh : span.from < startCh);
-        if (startsBefore || marker.type == 'bookmark' && span.from == startCh && (!isInsert || !span.marker.insertLeft)) {
+        if (startsBefore || span.from == startCh && marker.type == 'bookmark' && (!isInsert || !span.marker.insertLeft)) {
           var endsAfter = span.to == null || (marker.inclusiveRight ? span.to >= startCh : span.to > startCh);
-          (nw || (nw = [])).push({
-            from: span.from,
-            to: endsAfter ? null : span.to,
-            marker: marker
-          });
+          (nw || (nw = [])).push(new MarkedSpan(marker, span.from, endsAfter ? null : span.to));
         }
       }
     return nw;
@@ -63144,23 +66746,25 @@ window.CodeMirror = function () {
       for (var i = 0, nw; i < old.length; ++i) {
         var span = old[i], marker = span.marker;
         var endsAfter = span.to == null || (marker.inclusiveRight ? span.to >= endCh : span.to > endCh);
-        if (endsAfter || marker.type == 'bookmark' && span.from == endCh && (!isInsert || span.marker.insertLeft)) {
+        if (endsAfter || span.from == endCh && marker.type == 'bookmark' && (!isInsert || span.marker.insertLeft)) {
           var startsBefore = span.from == null || (marker.inclusiveLeft ? span.from <= endCh : span.from < endCh);
-          (nw || (nw = [])).push({
-            from: startsBefore ? null : span.from - endCh,
-            to: span.to == null ? null : span.to - endCh,
-            marker: marker
-          });
+          (nw || (nw = [])).push(new MarkedSpan(marker, startsBefore ? null : span.from - endCh, span.to == null ? null : span.to - endCh));
         }
       }
     return nw;
   }
+  // Given a change object, compute the new set of marker spans that
+  // cover the line in which the change took place. Removes spans
+  // entirely within the change, reconnects spans belonging to the
+  // same marker that appear on both sides of the change, and cuts off
+  // spans partially within the change. Returns an array of span
+  // arrays with one element for each line in (after) the change.
   function stretchSpansOverChange(doc, change) {
     var oldFirst = isLine(doc, change.from.line) && getLine(doc, change.from.line).markedSpans;
     var oldLast = isLine(doc, change.to.line) && getLine(doc, change.to.line).markedSpans;
     if (!oldFirst && !oldLast)
       return null;
-    var startCh = change.from.ch, endCh = change.to.ch, isInsert = posEq(change.from, change.to);
+    var startCh = change.from.ch, endCh = change.to.ch, isInsert = cmp(change.from, change.to) == 0;
     // Get the spans that 'stick out' on both sides
     var first = markedSpansBefore(oldFirst, startCh, isInsert);
     var last = markedSpansAfter(oldLast, endCh, isInsert);
@@ -63199,14 +66803,11 @@ window.CodeMirror = function () {
         }
       }
     }
-    if (sameLine && first) {
-      // Make sure we didn't create any zero-length spans
-      for (var i = 0; i < first.length; ++i)
-        if (first[i].from != null && first[i].from == first[i].to && first[i].marker.type != 'bookmark')
-          first.splice(i--, 1);
-      if (!first.length)
-        first = null;
-    }
+    // Make sure we didn't create any zero-length spans
+    if (first)
+      first = clearEmptySpans(first);
+    if (last && last != first)
+      last = clearEmptySpans(last);
     var newMarkers = [first];
     if (!sameLine) {
       // Fill gap with whole-line-spans
@@ -63214,17 +66815,29 @@ window.CodeMirror = function () {
       if (gap > 0 && first)
         for (var i = 0; i < first.length; ++i)
           if (first[i].to == null)
-            (gapMarkers || (gapMarkers = [])).push({
-              from: null,
-              to: null,
-              marker: first[i].marker
-            });
+            (gapMarkers || (gapMarkers = [])).push(new MarkedSpan(first[i].marker, null, null));
       for (var i = 0; i < gap; ++i)
         newMarkers.push(gapMarkers);
       newMarkers.push(last);
     }
     return newMarkers;
   }
+  // Remove spans that are empty and don't have a clearWhenEmpty
+  // option of false.
+  function clearEmptySpans(spans) {
+    for (var i = 0; i < spans.length; ++i) {
+      var span = spans[i];
+      if (span.from != null && span.from == span.to && span.marker.clearWhenEmpty !== false)
+        spans.splice(i--, 1);
+    }
+    if (!spans.length)
+      return null;
+    return spans;
+  }
+  // Used for un/re-doing changes from the history. Combines the
+  // result of computing the existing spans with the set of spans that
+  // existed in the history (so that deleting around a span and then
+  // undoing brings back the span).
   function mergeOldSpans(doc, change) {
     var old = getOldSpans(doc, change);
     var stretched = stretchSpansOverChange(doc, change);
@@ -63249,6 +66862,7 @@ window.CodeMirror = function () {
     }
     return old;
   }
+  // Used to 'clip' out readOnly ranges when making a change.
   function removeReadOnlyRanges(doc, from, to) {
     var markers = null;
     doc.iter(from.line, to.line + 1, function (line) {
@@ -63266,21 +66880,21 @@ window.CodeMirror = function () {
           to: to
         }];
     for (var i = 0; i < markers.length; ++i) {
-      var mk = markers[i], m = mk.find();
+      var mk = markers[i], m = mk.find(0);
       for (var j = 0; j < parts.length; ++j) {
         var p = parts[j];
-        if (posLess(p.to, m.from) || posLess(m.to, p.from))
+        if (cmp(p.to, m.from) < 0 || cmp(p.from, m.to) > 0)
           continue;
         var newParts = [
             j,
             1
-          ];
-        if (posLess(p.from, m.from) || !mk.inclusiveLeft && posEq(p.from, m.from))
+          ], dfrom = cmp(p.from, m.from), dto = cmp(p.to, m.to);
+        if (dfrom < 0 || !mk.inclusiveLeft && !dfrom)
           newParts.push({
             from: p.from,
             to: m.from
           });
-        if (posLess(m.to, p.to) || !mk.inclusiveRight && posEq(p.to, m.to))
+        if (dto > 0 || !mk.inclusiveRight && !dto)
           newParts.push({
             from: m.to,
             to: p.to
@@ -63291,58 +66905,7 @@ window.CodeMirror = function () {
     }
     return parts;
   }
-  function collapsedSpanAt(line, ch) {
-    var sps = sawCollapsedSpans && line.markedSpans, found;
-    if (sps)
-      for (var sp, i = 0; i < sps.length; ++i) {
-        sp = sps[i];
-        if (!sp.marker.collapsed)
-          continue;
-        if ((sp.from == null || sp.from < ch) && (sp.to == null || sp.to > ch) && (!found || found.width < sp.marker.width))
-          found = sp.marker;
-      }
-    return found;
-  }
-  function collapsedSpanAtStart(line) {
-    return collapsedSpanAt(line, -1);
-  }
-  function collapsedSpanAtEnd(line) {
-    return collapsedSpanAt(line, line.text.length + 1);
-  }
-  function visualLine(doc, line) {
-    var merged;
-    while (merged = collapsedSpanAtStart(line))
-      line = getLine(doc, merged.find().from.line);
-    return line;
-  }
-  function lineIsHidden(doc, line) {
-    var sps = sawCollapsedSpans && line.markedSpans;
-    if (sps)
-      for (var sp, i = 0; i < sps.length; ++i) {
-        sp = sps[i];
-        if (!sp.marker.collapsed)
-          continue;
-        if (sp.from == null)
-          return true;
-        if (sp.marker.replacedWith)
-          continue;
-        if (sp.from == 0 && sp.marker.inclusiveLeft && lineIsHiddenInner(doc, line, sp))
-          return true;
-      }
-  }
-  function lineIsHiddenInner(doc, line, span) {
-    if (span.to == null) {
-      var end = span.marker.find().to, endLine = getLine(doc, end.line);
-      return lineIsHiddenInner(doc, endLine, getMarkedSpanFor(endLine.markedSpans, span.marker));
-    }
-    if (span.marker.inclusiveRight && span.to == line.text.length)
-      return true;
-    for (var sp, i = 0; i < line.markedSpans.length; ++i) {
-      sp = line.markedSpans[i];
-      if (sp.marker.collapsed && !sp.marker.replacedWith && sp.from == span.to && (sp.marker.inclusiveLeft || span.marker.inclusiveRight) && lineIsHiddenInner(doc, line, sp))
-        return true;
-    }
-  }
+  // Connect or disconnect spans from a line.
   function detachMarkedSpans(line) {
     var spans = line.markedSpans;
     if (!spans)
@@ -63358,7 +66921,141 @@ window.CodeMirror = function () {
       spans[i].marker.attachLine(line);
     line.markedSpans = spans;
   }
+  // Helpers used when computing which overlapping collapsed span
+  // counts as the larger one.
+  function extraLeft(marker) {
+    return marker.inclusiveLeft ? -1 : 0;
+  }
+  function extraRight(marker) {
+    return marker.inclusiveRight ? 1 : 0;
+  }
+  // Returns a number indicating which of two overlapping collapsed
+  // spans is larger (and thus includes the other). Falls back to
+  // comparing ids when the spans cover exactly the same range.
+  function compareCollapsedMarkers(a, b) {
+    var lenDiff = a.lines.length - b.lines.length;
+    if (lenDiff != 0)
+      return lenDiff;
+    var aPos = a.find(), bPos = b.find();
+    var fromCmp = cmp(aPos.from, bPos.from) || extraLeft(a) - extraLeft(b);
+    if (fromCmp)
+      return -fromCmp;
+    var toCmp = cmp(aPos.to, bPos.to) || extraRight(a) - extraRight(b);
+    if (toCmp)
+      return toCmp;
+    return b.id - a.id;
+  }
+  // Find out whether a line ends or starts in a collapsed span. If
+  // so, return the marker for that span.
+  function collapsedSpanAtSide(line, start) {
+    var sps = sawCollapsedSpans && line.markedSpans, found;
+    if (sps)
+      for (var sp, i = 0; i < sps.length; ++i) {
+        sp = sps[i];
+        if (sp.marker.collapsed && (start ? sp.from : sp.to) == null && (!found || compareCollapsedMarkers(found, sp.marker) < 0))
+          found = sp.marker;
+      }
+    return found;
+  }
+  function collapsedSpanAtStart(line) {
+    return collapsedSpanAtSide(line, true);
+  }
+  function collapsedSpanAtEnd(line) {
+    return collapsedSpanAtSide(line, false);
+  }
+  // Test whether there exists a collapsed span that partially
+  // overlaps (covers the start or end, but not both) of a new span.
+  // Such overlap is not allowed.
+  function conflictingCollapsedRange(doc, lineNo, from, to, marker) {
+    var line = getLine(doc, lineNo);
+    var sps = sawCollapsedSpans && line.markedSpans;
+    if (sps)
+      for (var i = 0; i < sps.length; ++i) {
+        var sp = sps[i];
+        if (!sp.marker.collapsed)
+          continue;
+        var found = sp.marker.find(0);
+        var fromCmp = cmp(found.from, from) || extraLeft(sp.marker) - extraLeft(marker);
+        var toCmp = cmp(found.to, to) || extraRight(sp.marker) - extraRight(marker);
+        if (fromCmp >= 0 && toCmp <= 0 || fromCmp <= 0 && toCmp >= 0)
+          continue;
+        if (fromCmp <= 0 && (cmp(found.to, from) || extraRight(sp.marker) - extraLeft(marker)) > 0 || fromCmp >= 0 && (cmp(found.from, to) || extraLeft(sp.marker) - extraRight(marker)) < 0)
+          return true;
+      }
+  }
+  // A visual line is a line as drawn on the screen. Folding, for
+  // example, can cause multiple logical lines to appear on the same
+  // visual line. This finds the start of the visual line that the
+  // given line is part of (usually that is the line itself).
+  function visualLine(line) {
+    var merged;
+    while (merged = collapsedSpanAtStart(line))
+      line = merged.find(-1, true).line;
+    return line;
+  }
+  // Returns an array of logical lines that continue the visual line
+  // started by the argument, or undefined if there are no such lines.
+  function visualLineContinued(line) {
+    var merged, lines;
+    while (merged = collapsedSpanAtEnd(line)) {
+      line = merged.find(1, true).line;
+      (lines || (lines = [])).push(line);
+    }
+    return lines;
+  }
+  // Get the line number of the start of the visual line that the
+  // given line number is part of.
+  function visualLineNo(doc, lineN) {
+    var line = getLine(doc, lineN), vis = visualLine(line);
+    if (line == vis)
+      return lineN;
+    return lineNo(vis);
+  }
+  // Get the line number of the start of the next visual line after
+  // the given line.
+  function visualLineEndNo(doc, lineN) {
+    if (lineN > doc.lastLine())
+      return lineN;
+    var line = getLine(doc, lineN), merged;
+    if (!lineIsHidden(doc, line))
+      return lineN;
+    while (merged = collapsedSpanAtEnd(line))
+      line = merged.find(1, true).line;
+    return lineNo(line) + 1;
+  }
+  // Compute whether a line is hidden. Lines count as hidden when they
+  // are part of a visual line that starts with another line, or when
+  // they are entirely covered by collapsed, non-widget span.
+  function lineIsHidden(doc, line) {
+    var sps = sawCollapsedSpans && line.markedSpans;
+    if (sps)
+      for (var sp, i = 0; i < sps.length; ++i) {
+        sp = sps[i];
+        if (!sp.marker.collapsed)
+          continue;
+        if (sp.from == null)
+          return true;
+        if (sp.marker.widgetNode)
+          continue;
+        if (sp.from == 0 && sp.marker.inclusiveLeft && lineIsHiddenInner(doc, line, sp))
+          return true;
+      }
+  }
+  function lineIsHiddenInner(doc, line, span) {
+    if (span.to == null) {
+      var end = span.marker.find(1, true);
+      return lineIsHiddenInner(doc, end.line, getMarkedSpanFor(end.line.markedSpans, span.marker));
+    }
+    if (span.marker.inclusiveRight && span.to == line.text.length)
+      return true;
+    for (var sp, i = 0; i < line.markedSpans.length; ++i) {
+      sp = line.markedSpans[i];
+      if (sp.marker.collapsed && !sp.marker.widgetNode && sp.from == span.to && (sp.to == null || sp.to != span.from) && (sp.marker.inclusiveLeft || span.marker.inclusiveRight) && lineIsHiddenInner(doc, line, sp))
+        return true;
+    }
+  }
   // LINE WIDGETS
+  // Line widgets are block elements displayed above or below a line.
   var LineWidget = CodeMirror.LineWidget = function (cm, node, options) {
       if (options)
         for (var opt in options)
@@ -63368,49 +67065,42 @@ window.CodeMirror = function () {
       this.node = node;
     };
   eventMixin(LineWidget);
-  function widgetOperation(f) {
-    return function () {
-      var withOp = !this.cm.curOp;
-      if (withOp)
-        startOperation(this.cm);
-      try {
-        var result = f.apply(this, arguments);
-      } finally {
-        if (withOp)
-          endOperation(this.cm);
-      }
-      return result;
-    };
+  function adjustScrollWhenAboveVisible(cm, line, diff) {
+    if (heightAtLine(line) < (cm.curOp && cm.curOp.scrollTop || cm.doc.scrollTop))
+      addToScrollPos(cm, null, diff);
   }
-  LineWidget.prototype.clear = widgetOperation(function () {
-    var ws = this.line.widgets, no = lineNo(this.line);
+  LineWidget.prototype.clear = function () {
+    var cm = this.cm, ws = this.line.widgets, line = this.line, no = lineNo(line);
     if (no == null || !ws)
       return;
     for (var i = 0; i < ws.length; ++i)
       if (ws[i] == this)
         ws.splice(i--, 1);
     if (!ws.length)
-      this.line.widgets = null;
-    var aboveVisible = heightAtLine(this.cm, this.line) < this.cm.doc.scrollTop;
-    updateLineHeight(this.line, Math.max(0, this.line.height - widgetHeight(this)));
-    if (aboveVisible)
-      addToScrollPos(this.cm, 0, -this.height);
-    regChange(this.cm, no, no + 1);
-  });
-  LineWidget.prototype.changed = widgetOperation(function () {
-    var oldH = this.height;
+      line.widgets = null;
+    var height = widgetHeight(this);
+    runInOp(cm, function () {
+      adjustScrollWhenAboveVisible(cm, line, -height);
+      regLineChange(cm, no, 'widget');
+      updateLineHeight(line, Math.max(0, line.height - height));
+    });
+  };
+  LineWidget.prototype.changed = function () {
+    var oldH = this.height, cm = this.cm, line = this.line;
     this.height = null;
     var diff = widgetHeight(this) - oldH;
     if (!diff)
       return;
-    updateLineHeight(this.line, this.line.height + diff);
-    var no = lineNo(this.line);
-    regChange(this.cm, no, no + 1);
-  });
+    runInOp(cm, function () {
+      cm.curOp.forceUpdate = true;
+      adjustScrollWhenAboveVisible(cm, line, diff);
+      updateLineHeight(line, line.height + diff);
+    });
+  };
   function widgetHeight(widget) {
     if (widget.height != null)
       return widget.height;
-    if (!widget.node.parentNode || widget.node.parentNode.nodeType != 1)
+    if (!contains(document.body, widget.node))
       removeChildrenAndAdd(widget.cm.display.measure, elt('div', [widget.node], null, 'position: relative'));
     return widget.height = widget.node.offsetHeight;
   }
@@ -63418,18 +67108,19 @@ window.CodeMirror = function () {
     var widget = new LineWidget(cm, node, options);
     if (widget.noHScroll)
       cm.display.alignWidgets = true;
-    changeLine(cm, handle, function (line) {
+    changeLine(cm, handle, 'widget', function (line) {
       var widgets = line.widgets || (line.widgets = []);
       if (widget.insertAt == null)
         widgets.push(widget);
       else
         widgets.splice(Math.min(widgets.length - 1, Math.max(0, widget.insertAt)), 0, widget);
       widget.line = line;
-      if (!lineIsHidden(cm.doc, line) || widget.showIfHidden) {
-        var aboveVisible = heightAtLine(cm, line) < cm.doc.scrollTop;
+      if (!lineIsHidden(cm.doc, line)) {
+        var aboveVisible = heightAtLine(line) < cm.doc.scrollTop;
         updateLineHeight(line, line.height + widgetHeight(widget));
         if (aboveVisible)
-          addToScrollPos(cm, 0, widget.height);
+          addToScrollPos(cm, null, widget.height);
+        cm.curOp.forceUpdate = true;
       }
       return true;
     });
@@ -63444,6 +67135,12 @@ window.CodeMirror = function () {
       this.height = estimateHeight ? estimateHeight(this) : 1;
     };
   eventMixin(Line);
+  Line.prototype.lineNo = function () {
+    return lineNo(this);
+  };
+  // Change the content (text, markers) of a line. Automatically
+  // invalidates cached information and tries to re-estimate the
+  // line's height.
   function updateLine(line, text, markedSpans, estimateHeight) {
     line.text = text;
     if (line.stateAfter)
@@ -63458,29 +67155,66 @@ window.CodeMirror = function () {
     if (estHeight != line.height)
       updateLineHeight(line, estHeight);
   }
+  // Detach a line from the document tree and its markers.
   function cleanUpLine(line) {
     line.parent = null;
     detachMarkedSpans(line);
   }
-  // Run the given mode's parser over a line, update the styles
-  // array, which contains alternating fragments of text and CSS
-  // classes.
-  function runMode(cm, text, mode, state, f) {
+  function extractLineClasses(type, output) {
+    if (type)
+      for (;;) {
+        var lineClass = type.match(/(?:^|\s+)line-(background-)?(\S+)/);
+        if (!lineClass)
+          break;
+        type = type.slice(0, lineClass.index) + type.slice(lineClass.index + lineClass[0].length);
+        var prop = lineClass[1] ? 'bgClass' : 'textClass';
+        if (output[prop] == null)
+          output[prop] = lineClass[2];
+        else if (!new RegExp('(?:^|s)' + lineClass[2] + '(?:$|s)').test(output[prop]))
+          output[prop] += ' ' + lineClass[2];
+      }
+    return type;
+  }
+  function callBlankLine(mode, state) {
+    if (mode.blankLine)
+      return mode.blankLine(state);
+    if (!mode.innerMode)
+      return;
+    var inner = CodeMirror.innerMode(mode, state);
+    if (inner.mode.blankLine)
+      return inner.mode.blankLine(inner.state);
+  }
+  function readToken(mode, stream, state) {
+    for (var i = 0; i < 10; i++) {
+      var style = mode.token(stream, state);
+      if (stream.pos > stream.start)
+        return style;
+    }
+    throw new Error('Mode ' + mode.name + ' failed to advance stream.');
+  }
+  // Run the given mode's parser over a line, calling f for each token.
+  function runMode(cm, text, mode, state, f, lineClasses, forceToEnd) {
     var flattenSpans = mode.flattenSpans;
     if (flattenSpans == null)
       flattenSpans = cm.options.flattenSpans;
     var curStart = 0, curStyle = null;
     var stream = new StringStream(text, cm.options.tabSize), style;
-    if (text == '' && mode.blankLine)
-      mode.blankLine(state);
+    if (text == '')
+      extractLineClasses(callBlankLine(mode, state), lineClasses);
     while (!stream.eol()) {
       if (stream.pos > cm.options.maxHighlightLength) {
         flattenSpans = false;
-        // Webkit seems to refuse to render text nodes longer than 57444 characters
-        stream.pos = Math.min(text.length, stream.start + 50000);
+        if (forceToEnd)
+          processLine(cm, text, state, stream.pos);
+        stream.pos = text.length;
         style = null;
       } else {
-        style = mode.token(stream, state);
+        style = extractLineClasses(readToken(mode, stream, state), lineClasses);
+      }
+      if (cm.options.addModeClass) {
+        var mName = CodeMirror.innerMode(mode, state).mode.name;
+        if (mName)
+          style = 'm-' + (style ? mName + ' ' + style : mName);
       }
       if (!flattenSpans || curStyle != style) {
         if (curStart < stream.start)
@@ -63490,17 +67224,25 @@ window.CodeMirror = function () {
       }
       stream.start = stream.pos;
     }
-    if (curStart < stream.pos)
-      f(stream.pos, curStyle);
+    while (curStart < stream.pos) {
+      // Webkit seems to refuse to render text nodes longer than 57444 characters
+      var pos = Math.min(stream.pos, curStart + 50000);
+      f(pos, curStyle);
+      curStart = pos;
+    }
   }
-  function highlightLine(cm, line, state) {
+  // Compute a style array (an array starting with a mode generation
+  // -- for invalidation -- followed by pairs of end positions and
+  // style strings), which is used to highlight the tokens on the
+  // line.
+  function highlightLine(cm, line, state, forceToEnd) {
     // A styles array always starts with a number identifying the
     // mode/overlays that it is based on (for easy invalidation).
-    var st = [cm.state.modeGen];
+    var st = [cm.state.modeGen], lineClasses = {};
     // Compute the base array of styles
     runMode(cm, line.text, cm.doc.mode, state, function (end, style) {
       st.push(end, style);
-    });
+    }, lineClasses, forceToEnd);
     // Run overlays, adjust style array.
     for (var o = 0; o < cm.state.overlays.length; ++o) {
       var overlay = cm.state.overlays[o], i = 1, at = 0;
@@ -63517,127 +67259,164 @@ window.CodeMirror = function () {
         if (!style)
           return;
         if (overlay.opaque) {
-          st.splice(start, i - start, end, style);
+          st.splice(start, i - start, end, 'cm-overlay ' + style);
           i = start + 2;
         } else {
           for (; start < i; start += 2) {
             var cur = st[start + 1];
-            st[start + 1] = cur ? cur + ' ' + style : style;
+            st[start + 1] = (cur ? cur + ' ' : '') + 'cm-overlay ' + style;
           }
         }
-      });
+      }, lineClasses);
     }
-    return st;
+    return {
+      styles: st,
+      classes: lineClasses.bgClass || lineClasses.textClass ? lineClasses : null
+    };
   }
   function getLineStyles(cm, line) {
-    if (!line.styles || line.styles[0] != cm.state.modeGen)
-      line.styles = highlightLine(cm, line, line.stateAfter = getStateBefore(cm, lineNo(line)));
+    if (!line.styles || line.styles[0] != cm.state.modeGen) {
+      var result = highlightLine(cm, line, line.stateAfter = getStateBefore(cm, lineNo(line)));
+      line.styles = result.styles;
+      if (result.classes)
+        line.styleClasses = result.classes;
+      else if (line.styleClasses)
+        line.styleClasses = null;
+    }
     return line.styles;
   }
   // Lightweight form of highlight -- proceed over this line and
-  // update state, but don't save a style array.
-  function processLine(cm, line, state) {
+  // update state, but don't save a style array. Used for lines that
+  // aren't currently visible.
+  function processLine(cm, text, state, startAt) {
     var mode = cm.doc.mode;
-    var stream = new StringStream(line.text, cm.options.tabSize);
-    if (line.text == '' && mode.blankLine)
-      mode.blankLine(state);
+    var stream = new StringStream(text, cm.options.tabSize);
+    stream.start = stream.pos = startAt || 0;
+    if (text == '')
+      callBlankLine(mode, state);
     while (!stream.eol() && stream.pos <= cm.options.maxHighlightLength) {
-      mode.token(stream, state);
+      readToken(mode, stream, state);
       stream.start = stream.pos;
     }
   }
-  var styleToClassCache = {};
-  function styleToClass(style) {
-    if (!style)
+  // Convert a style as returned by a mode (either null, or a string
+  // containing one or more styles) to a CSS style. This is cached,
+  // and also looks for line-wide styles.
+  var styleToClassCache = {}, styleToClassCacheWithMode = {};
+  function interpretTokenStyle(style, options) {
+    if (!style || /^\s*$/.test(style))
       return null;
-    return styleToClassCache[style] || (styleToClassCache[style] = 'cm-' + style.replace(/ +/g, ' cm-'));
+    var cache = options.addModeClass ? styleToClassCacheWithMode : styleToClassCache;
+    return cache[style] || (cache[style] = style.replace(/\S+/g, 'cm-$&'));
   }
-  function lineContent(cm, realLine, measure, copyWidgets) {
-    var merged, line = realLine, empty = true;
-    while (merged = collapsedSpanAtStart(line))
-      line = getLine(cm.doc, merged.find().from.line);
+  // Render the DOM representation of the text of a line. Also builds
+  // up a 'line map', which points at the DOM nodes that represent
+  // specific stretches of text, and is used by the measuring code.
+  // The returned object contains the DOM node, this map, and
+  // information about line-wide styles that were set by the mode.
+  function buildLineContent(cm, lineView) {
+    // The padding-right forces the element to have a 'border', which
+    // is needed on Webkit to be able to get line-level bounding
+    // rectangles for it (in measureChar).
+    var content = elt('span', null, null, webkit ? 'padding-right: .1px' : null);
     var builder = {
-        pre: elt('pre'),
+        pre: elt('pre', [content]),
+        content: content,
         col: 0,
         pos: 0,
-        measure: null,
-        measuredSomething: false,
-        cm: cm,
-        copyWidgets: copyWidgets
+        cm: cm
       };
-    if (line.textClass)
-      builder.pre.className = line.textClass;
-    do {
-      if (line.text)
-        empty = false;
-      builder.measure = line == realLine && measure;
+    lineView.measure = {};
+    // Iterate over the logical lines that make up this visual line.
+    for (var i = 0; i <= (lineView.rest ? lineView.rest.length : 0); i++) {
+      var line = i ? lineView.rest[i - 1] : lineView.line, order;
       builder.pos = 0;
-      builder.addToken = builder.measure ? buildTokenMeasure : buildToken;
+      builder.addToken = buildToken;
+      // Optionally wire in some hacks into the token-rendering
+      // algorithm, to deal with browser quirks.
       if ((ie || webkit) && cm.getOption('lineWrapping'))
         builder.addToken = buildTokenSplitSpaces(builder.addToken);
-      var next = insertLineContent(line, builder, getLineStyles(cm, line));
-      if (measure && line == realLine && !builder.measuredSomething) {
-        measure[0] = builder.pre.appendChild(zeroWidthElement(cm.display.measure));
-        builder.measuredSomething = true;
+      if (hasBadBidiRects(cm.display.measure) && (order = getOrder(line)))
+        builder.addToken = buildTokenBadBidi(builder.addToken, order);
+      builder.map = [];
+      insertLineContent(line, builder, getLineStyles(cm, line));
+      if (line.styleClasses) {
+        if (line.styleClasses.bgClass)
+          builder.bgClass = joinClasses(line.styleClasses.bgClass, builder.bgClass || '');
+        if (line.styleClasses.textClass)
+          builder.textClass = joinClasses(line.styleClasses.textClass, builder.textClass || '');
       }
-      if (next)
-        line = getLine(cm.doc, next.to.line);
-    } while (next);
-    if (measure && !builder.measuredSomething && !measure[0])
-      measure[0] = builder.pre.appendChild(empty ? elt('span', '\xa0') : zeroWidthElement(cm.display.measure));
-    if (!builder.pre.firstChild && !lineIsHidden(cm.doc, realLine))
-      builder.pre.appendChild(document.createTextNode('\xa0'));
-    var order;
-    // Work around problem with the reported dimensions of single-char
-    // direction spans on IE (issue #1129). See also the comment in
-    // cursorCoords.
-    if (measure && ie && (order = getOrder(line))) {
-      var l = order.length - 1;
-      if (order[l].from == order[l].to)
-        --l;
-      var last = order[l], prev = order[l - 1];
-      if (last.from + 1 == last.to && prev && last.level < prev.level) {
-        var span = measure[builder.pos - 1];
-        if (span)
-          span.parentNode.insertBefore(span.measureRight = zeroWidthElement(cm.display.measure), span.nextSibling);
+      // Ensure at least a single node is present, for measuring.
+      if (builder.map.length == 0)
+        builder.map.push(0, 0, builder.content.appendChild(zeroWidthElement(cm.display.measure)));
+      // Store the map and a cache object for the current logical line
+      if (i == 0) {
+        lineView.measure.map = builder.map;
+        lineView.measure.cache = {};
+      } else {
+        (lineView.measure.maps || (lineView.measure.maps = [])).push(builder.map);
+        (lineView.measure.caches || (lineView.measure.caches = [])).push({});
       }
     }
-    signal(cm, 'renderLine', cm, realLine, builder.pre);
-    return builder.pre;
+    signal(cm, 'renderLine', cm, lineView.line, builder.pre);
+    if (builder.pre.className)
+      builder.textClass = joinClasses(builder.pre.className, builder.textClass || '');
+    return builder;
   }
-  var tokenSpecialChars = /[\t\u0000-\u0019\u00ad\u200b\u2028\u2029\uFEFF]/g;
+  function defaultSpecialCharPlaceholder(ch) {
+    var token = elt('span', '\u2022', 'cm-invalidchar');
+    token.title = '\\u' + ch.charCodeAt(0).toString(16);
+    return token;
+  }
+  // Build up the DOM representation for a single token, and add it to
+  // the line map. Takes care to render special characters separately.
   function buildToken(builder, text, style, startStyle, endStyle, title) {
     if (!text)
       return;
-    if (!tokenSpecialChars.test(text)) {
+    var special = builder.cm.options.specialChars, mustWrap = false;
+    if (!special.test(text)) {
       builder.col += text.length;
       var content = document.createTextNode(text);
+      builder.map.push(builder.pos, builder.pos + text.length, content);
+      if (ie_upto8)
+        mustWrap = true;
+      builder.pos += text.length;
     } else {
       var content = document.createDocumentFragment(), pos = 0;
       while (true) {
-        tokenSpecialChars.lastIndex = pos;
-        var m = tokenSpecialChars.exec(text);
+        special.lastIndex = pos;
+        var m = special.exec(text);
         var skipped = m ? m.index - pos : text.length - pos;
         if (skipped) {
-          content.appendChild(document.createTextNode(text.slice(pos, pos + skipped)));
+          var txt = document.createTextNode(text.slice(pos, pos + skipped));
+          if (ie_upto8)
+            content.appendChild(elt('span', [txt]));
+          else
+            content.appendChild(txt);
+          builder.map.push(builder.pos, builder.pos + skipped, txt);
           builder.col += skipped;
+          builder.pos += skipped;
         }
         if (!m)
           break;
         pos += skipped + 1;
         if (m[0] == '\t') {
           var tabSize = builder.cm.options.tabSize, tabWidth = tabSize - builder.col % tabSize;
-          content.appendChild(elt('span', spaceStr(tabWidth), 'cm-tab'));
+          var txt = content.appendChild(elt('span', spaceStr(tabWidth), 'cm-tab'));
           builder.col += tabWidth;
         } else {
-          var token = elt('span', '\u2022', 'cm-invalidchar');
-          token.title = '\\u' + m[0].charCodeAt(0).toString(16);
-          content.appendChild(token);
+          var txt = builder.cm.options.specialCharPlaceholder(m[0]);
+          if (ie_upto8)
+            content.appendChild(elt('span', [txt]));
+          else
+            content.appendChild(txt);
           builder.col += 1;
         }
+        builder.map.push(builder.pos, builder.pos + 1, txt);
+        builder.pos++;
       }
     }
-    if (style || startStyle || endStyle || builder.measure) {
+    if (style || startStyle || endStyle || mustWrap) {
       var fullStyle = style || '';
       if (startStyle)
         fullStyle += startStyle;
@@ -63646,33 +67425,9 @@ window.CodeMirror = function () {
       var token = elt('span', [content], fullStyle);
       if (title)
         token.title = title;
-      return builder.pre.appendChild(token);
+      return builder.content.appendChild(token);
     }
-    builder.pre.appendChild(content);
-  }
-  function buildTokenMeasure(builder, text, style, startStyle, endStyle) {
-    var wrapping = builder.cm.options.lineWrapping;
-    for (var i = 0; i < text.length; ++i) {
-      var ch = text.charAt(i), start = i == 0;
-      if (ch >= '\ud800' && ch < '\udbff' && i < text.length - 1) {
-        ch = text.slice(i, i + 2);
-        ++i;
-      } else if (i && wrapping && spanAffectsWrapping(text, i)) {
-        builder.pre.appendChild(elt('wbr'));
-      }
-      var old = builder.measure[builder.pos];
-      var span = builder.measure[builder.pos] = buildToken(builder, ch, style, start && startStyle, i == text.length - 1 && endStyle);
-      if (old)
-        span.leftSide = old.leftSide || old;
-      // In IE single-space nodes wrap differently than spaces
-      // embedded in larger text nodes, except when set to
-      // white-space: normal (issue #1268).
-      if (ie && wrapping && ch == ' ' && i && !/\s/.test(text.charAt(i - 1)) && i < text.length - 1 && !/\s/.test(text.charAt(i + 1)))
-        span.style.whiteSpace = 'normal';
-      builder.pos += ch.length;
-    }
-    if (text.length)
-      builder.measuredSomething = true;
+    builder.content.appendChild(content);
   }
   function buildTokenSplitSpaces(inner) {
     function split(old) {
@@ -63683,27 +67438,36 @@ window.CodeMirror = function () {
       return out;
     }
     return function (builder, text, style, startStyle, endStyle, title) {
-      return inner(builder, text.replace(/ {3,}/, split), style, startStyle, endStyle, title);
+      inner(builder, text.replace(/ {3,}/g, split), style, startStyle, endStyle, title);
+    };
+  }
+  // Work around nonsense dimensions being reported for stretches of
+  // right-to-left text.
+  function buildTokenBadBidi(inner, order) {
+    return function (builder, text, style, startStyle, endStyle, title) {
+      style = style ? style + ' cm-force-border' : 'cm-force-border';
+      var start = builder.pos, end = start + text.length;
+      for (;;) {
+        // Find the part that overlaps with the start of this text
+        for (var i = 0; i < order.length; i++) {
+          var part = order[i];
+          if (part.to > start && part.from <= start)
+            break;
+        }
+        if (part.to >= end)
+          return inner(builder, text, style, startStyle, endStyle, title);
+        inner(builder, text.slice(0, part.to - start), style, startStyle, null, title);
+        startStyle = null;
+        text = text.slice(part.to - start);
+        start = part.to;
+      }
     };
   }
   function buildCollapsedSpan(builder, size, marker, ignoreWidget) {
-    var widget = !ignoreWidget && marker.replacedWith;
+    var widget = !ignoreWidget && marker.widgetNode;
     if (widget) {
-      if (builder.copyWidgets)
-        widget = widget.cloneNode(true);
-      builder.pre.appendChild(widget);
-      if (builder.measure) {
-        if (size) {
-          builder.measure[builder.pos] = widget;
-        } else {
-          var elt = builder.measure[builder.pos] = zeroWidthElement(builder.cm.display.measure);
-          if (marker.type != 'bookmark' || marker.insertLeft)
-            builder.pre.insertBefore(elt, widget);
-          else
-            builder.pre.appendChild(elt);
-        }
-        builder.measuredSomething = true;
-      }
+      builder.map.push(builder.pos, builder.pos + size, widget);
+      builder.content.appendChild(widget);
     }
     builder.pos += size;
   }
@@ -63713,7 +67477,7 @@ window.CodeMirror = function () {
     var spans = line.markedSpans, allText = line.text, at = 0;
     if (!spans) {
       for (var i = 1; i < styles.length; i += 2)
-        builder.addToken(builder, allText.slice(at, at = styles[i]), styleToClass(styles[i + 1]));
+        builder.addToken(builder, allText.slice(at, at = styles[i]), interpretTokenStyle(styles[i + 1], builder.cm.options));
       return;
     }
     var len = allText.length, pos = 0, i = 1, text = '', style;
@@ -63724,7 +67488,7 @@ window.CodeMirror = function () {
         spanStyle = spanEndStyle = spanStartStyle = title = '';
         collapsed = null;
         nextChange = Infinity;
-        var foundBookmark = null;
+        var foundBookmarks = [];
         for (var j = 0; j < spans.length; ++j) {
           var sp = spans[j], m = sp.marker;
           if (sp.from <= pos && (sp.to == null || sp.to > pos)) {
@@ -63740,21 +67504,22 @@ window.CodeMirror = function () {
               spanEndStyle += ' ' + m.endStyle;
             if (m.title && !title)
               title = m.title;
-            if (m.collapsed && (!collapsed || collapsed.marker.size < m.size))
+            if (m.collapsed && (!collapsed || compareCollapsedMarkers(collapsed.marker, m) < 0))
               collapsed = sp;
           } else if (sp.from > pos && nextChange > sp.from) {
             nextChange = sp.from;
           }
-          if (m.type == 'bookmark' && sp.from == pos && m.replacedWith)
-            foundBookmark = m;
+          if (m.type == 'bookmark' && sp.from == pos && m.widgetNode)
+            foundBookmarks.push(m);
         }
         if (collapsed && (collapsed.from || 0) == pos) {
-          buildCollapsedSpan(builder, (collapsed.to == null ? len : collapsed.to) - pos, collapsed.marker, collapsed.from == null);
+          buildCollapsedSpan(builder, (collapsed.to == null ? len + 1 : collapsed.to) - pos, collapsed.marker, collapsed.from == null);
           if (collapsed.to == null)
-            return collapsed.marker.find();
+            return;
         }
-        if (foundBookmark && !collapsed)
-          buildCollapsedSpan(builder, 0, foundBookmark);
+        if (!collapsed && foundBookmarks.length)
+          for (var j = 0; j < foundBookmarks.length; ++j)
+            buildCollapsedSpan(builder, 0, foundBookmarks[j]);
       }
       if (pos >= len)
         break;
@@ -63775,12 +67540,19 @@ window.CodeMirror = function () {
           spanStartStyle = '';
         }
         text = allText.slice(at, at = styles[i++]);
-        style = styleToClass(styles[i++]);
+        style = interpretTokenStyle(styles[i++], builder.cm.options);
       }
     }
   }
   // DOCUMENT DATA STRUCTURE
-  function updateDoc(doc, change, markedSpans, selAfter, estimateHeight) {
+  // By default, updates that start and end at the beginning of a line
+  // are treated specially, in order to make the association of line
+  // widgets and marker elements with the text behave more intuitive.
+  function isWholeLineUpdate(doc, change) {
+    return change.from.ch == 0 && change.to.ch == 0 && lst(change.text) == '' && (!doc.cm || doc.cm.options.wholeLineUpdateBefore);
+  }
+  // Perform a change on the document data structure.
+  function updateDoc(doc, change, markedSpans, estimateHeight) {
     function spansFor(n) {
       return markedSpans ? markedSpans[n] : null;
     }
@@ -63791,11 +67563,11 @@ window.CodeMirror = function () {
     var from = change.from, to = change.to, text = change.text;
     var firstLine = getLine(doc, from.line), lastLine = getLine(doc, to.line);
     var lastText = lst(text), lastSpans = spansFor(text.length - 1), nlines = to.line - from.line;
-    // First adjust the line structure
-    if (from.ch == 0 && to.ch == 0 && lastText == '') {
+    // Adjust the line structure
+    if (isWholeLineUpdate(doc, change)) {
       // This is a whole-line replace. Treated specially to make
       // sure line objects move the way they are supposed to.
-      for (var i = 0, e = text.length - 1, added = []; i < e; ++i)
+      for (var i = 0, added = []; i < text.length - 1; ++i)
         added.push(new Line(text[i], spansFor(i), estimateHeight));
       update(lastLine, lastLine.text, lastSpans);
       if (nlines)
@@ -63806,7 +67578,7 @@ window.CodeMirror = function () {
       if (text.length == 1) {
         update(firstLine, firstLine.text.slice(0, from.ch) + lastText + firstLine.text.slice(to.ch), lastSpans);
       } else {
-        for (var added = [], i = 1, e = text.length - 1; i < e; ++i)
+        for (var added = [], i = 1; i < text.length - 1; ++i)
           added.push(new Line(text[i], spansFor(i), estimateHeight));
         added.push(new Line(lastText + firstLine.text.slice(to.ch), lastSpans, estimateHeight));
         update(firstLine, firstLine.text.slice(0, from.ch) + text[0], spansFor(0));
@@ -63818,19 +67590,30 @@ window.CodeMirror = function () {
     } else {
       update(firstLine, firstLine.text.slice(0, from.ch) + text[0], spansFor(0));
       update(lastLine, lastText + lastLine.text.slice(to.ch), lastSpans);
-      for (var i = 1, e = text.length - 1, added = []; i < e; ++i)
+      for (var i = 1, added = []; i < text.length - 1; ++i)
         added.push(new Line(text[i], spansFor(i), estimateHeight));
       if (nlines > 1)
         doc.remove(from.line + 1, nlines - 1);
       doc.insert(from.line + 1, added);
     }
     signalLater(doc, 'change', doc, change);
-    setSelection(doc, selAfter.anchor, selAfter.head, null, true);
   }
+  // The document is represented as a BTree consisting of leaves, with
+  // chunk of lines in them, and branches, with up to ten leaves or
+  // other branch nodes below them. The top node is always a branch
+  // node, and is the document object itself (meaning it has
+  // additional methods and properties).
+  //
+  // All nodes have parent links. The tree is used both to go from
+  // line numbers to line objects, and to go from objects to numbers.
+  // It also indexes by height, and is used to convert between height
+  // and line object, and to find the total height of the document.
+  //
+  // See also http://marijnhaverbeke.nl/blog/codemirror-line-tree.html
   function LeafChunk(lines) {
     this.lines = lines;
     this.parent = null;
-    for (var i = 0, e = lines.length, height = 0; i < e; ++i) {
+    for (var i = 0, height = 0; i < lines.length; ++i) {
       lines[i].parent = this;
       height += lines[i].height;
     }
@@ -63850,15 +67633,12 @@ window.CodeMirror = function () {
       this.lines.splice(at, n);
     },
     collapse: function (lines) {
-      lines.splice.apply(lines, [
-        lines.length,
-        0
-      ].concat(this.lines));
+      lines.push.apply(lines, this.lines);
     },
     insertInner: function (at, lines, height) {
       this.height += height;
       this.lines = this.lines.slice(0, at).concat(lines).concat(this.lines.slice(at));
-      for (var i = 0, e = lines.length; i < e; ++i)
+      for (var i = 0; i < lines.length; ++i)
         lines[i].parent = this;
     },
     iterN: function (at, n, op) {
@@ -63870,7 +67650,7 @@ window.CodeMirror = function () {
   function BranchChunk(children) {
     this.children = children;
     var size = 0, height = 0;
-    for (var i = 0, e = children.length; i < e; ++i) {
+    for (var i = 0; i < children.length; ++i) {
       var ch = children[i];
       size += ch.chunkSize();
       height += ch.height;
@@ -63902,7 +67682,9 @@ window.CodeMirror = function () {
         } else
           at -= sz;
       }
-      if (this.size - n < 25) {
+      // If the result is smaller than 25 lines, ensure that it is a
+      // single leaf node.
+      if (this.size - n < 25 && (this.children.length > 1 || !(this.children[0] instanceof LeafChunk))) {
         var lines = [];
         this.collapse(lines);
         this.children = [new LeafChunk(lines)];
@@ -63910,13 +67692,13 @@ window.CodeMirror = function () {
       }
     },
     collapse: function (lines) {
-      for (var i = 0, e = this.children.length; i < e; ++i)
+      for (var i = 0; i < this.children.length; ++i)
         this.children[i].collapse(lines);
     },
     insertInner: function (at, lines, height) {
       this.size += lines.length;
       this.height += height;
-      for (var i = 0, e = this.children.length; i < e; ++i) {
+      for (var i = 0; i < this.children.length; ++i) {
         var child = this.children[i], sz = child.chunkSize();
         if (at <= sz) {
           child.insertInner(at, lines, height);
@@ -63962,7 +67744,7 @@ window.CodeMirror = function () {
       me.parent.maybeSpill();
     },
     iterN: function (at, n, op) {
-      for (var i = 0, e = this.children.length; i < e; ++i) {
+      for (var i = 0; i < this.children.length; ++i) {
         var child = this.children[i], sz = child.chunkSize();
         if (at < sz) {
           var used = Math.min(n, sz - at);
@@ -63986,19 +67768,11 @@ window.CodeMirror = function () {
       this.first = firstLine;
       this.scrollTop = this.scrollLeft = 0;
       this.cantEdit = false;
-      this.history = makeHistory();
       this.cleanGeneration = 1;
       this.frontier = firstLine;
       var start = Pos(firstLine, 0);
-      this.sel = {
-        from: start,
-        to: start,
-        head: start,
-        anchor: start,
-        shift: false,
-        extend: false,
-        goalColumn: null
-      };
+      this.sel = simpleSelection(start);
+      this.history = new History(null);
       this.id = ++nextDocId;
       this.modeOption = mode;
       if (typeof text == 'string')
@@ -64007,10 +67781,8 @@ window.CodeMirror = function () {
         from: start,
         to: start,
         text: text
-      }, null, {
-        head: start,
-        anchor: start
       });
+      setSelection(this, simpleSelection(start), sel_dontScroll);
     };
   Doc.prototype = createObj(BranchChunk.prototype, {
     constructor: Doc,
@@ -64022,7 +67794,7 @@ window.CodeMirror = function () {
     },
     insert: function (at, lines) {
       var height = 0;
-      for (var i = 0, e = lines.length; i < e; ++i)
+      for (var i = 0; i < lines.length; ++i)
         height += lines[i].height;
       this.insertInner(at - this.first, lines, height);
     },
@@ -64035,18 +67807,16 @@ window.CodeMirror = function () {
         return lines;
       return lines.join(lineSep || '\n');
     },
-    setValue: function (code) {
+    setValue: docMethodOp(function (code) {
       var top = Pos(this.first, 0), last = this.first + this.size - 1;
       makeChange(this, {
         from: top,
         to: Pos(last, getLine(this, last).text.length),
         text: splitLines(code),
         origin: 'setValue'
-      }, {
-        head: top,
-        anchor: top
       }, true);
-    },
+      setSelection(this, simpleSelection(top));
+    }),
     replaceRange: function (code, from, to, origin) {
       from = clipPos(this, from);
       to = to ? clipPos(this, to) : from;
@@ -64062,16 +67832,6 @@ window.CodeMirror = function () {
       var l = this.getLineHandle(line);
       return l && l.text;
     },
-    setLine: function (line, text) {
-      if (isLine(this, line))
-        replaceRange(this, text, Pos(line, 0), clipPos(this, Pos(line)));
-    },
-    removeLine: function (line) {
-      if (line)
-        replaceRange(this, '', clipPos(this, Pos(line - 1)), clipPos(this, Pos(line)));
-      else
-        replaceRange(this, '', Pos(0, 0), clipPos(this, Pos(1, 0)));
-    },
     getLineHandle: function (line) {
       if (isLine(this, line))
         return getLine(this, line);
@@ -64082,7 +67842,7 @@ window.CodeMirror = function () {
     getLineHandleVisualStart: function (line) {
       if (typeof line == 'number')
         line = getLine(this, line);
-      return visualLine(this, line);
+      return visualLine(line);
     },
     lineCount: function () {
       return this.size;
@@ -64097,68 +67857,138 @@ window.CodeMirror = function () {
       return clipPos(this, pos);
     },
     getCursor: function (start) {
-      var sel = this.sel, pos;
+      var range = this.sel.primary(), pos;
       if (start == null || start == 'head')
-        pos = sel.head;
+        pos = range.head;
       else if (start == 'anchor')
-        pos = sel.anchor;
-      else if (start == 'end' || start === false)
-        pos = sel.to;
+        pos = range.anchor;
+      else if (start == 'end' || start == 'to' || start === false)
+        pos = range.to();
       else
-        pos = sel.from;
-      return copyPos(pos);
+        pos = range.from();
+      return pos;
+    },
+    listSelections: function () {
+      return this.sel.ranges;
     },
     somethingSelected: function () {
-      return !posEq(this.sel.head, this.sel.anchor);
+      return this.sel.somethingSelected();
     },
-    setCursor: docOperation(function (line, ch, extend) {
-      var pos = clipPos(this, typeof line == 'number' ? Pos(line, ch || 0) : line);
-      if (extend)
-        extendSelection(this, pos);
-      else
-        setSelection(this, pos, pos);
+    setCursor: docMethodOp(function (line, ch, options) {
+      setSimpleSelection(this, clipPos(this, typeof line == 'number' ? Pos(line, ch || 0) : line), null, options);
     }),
-    setSelection: docOperation(function (anchor, head) {
-      setSelection(this, clipPos(this, anchor), clipPos(this, head || anchor));
+    setSelection: docMethodOp(function (anchor, head, options) {
+      setSimpleSelection(this, clipPos(this, anchor), clipPos(this, head || anchor), options);
     }),
-    extendSelection: docOperation(function (from, to) {
-      extendSelection(this, clipPos(this, from), to && clipPos(this, to));
+    extendSelection: docMethodOp(function (head, other, options) {
+      extendSelection(this, clipPos(this, head), other && clipPos(this, other), options);
+    }),
+    extendSelections: docMethodOp(function (heads, options) {
+      extendSelections(this, clipPosArray(this, heads, options));
+    }),
+    extendSelectionsBy: docMethodOp(function (f, options) {
+      extendSelections(this, map(this.sel.ranges, f), options);
+    }),
+    setSelections: docMethodOp(function (ranges, primary, options) {
+      if (!ranges.length)
+        return;
+      for (var i = 0, out = []; i < ranges.length; i++)
+        out[i] = new Range(clipPos(this, ranges[i].anchor), clipPos(this, ranges[i].head));
+      if (primary == null)
+        primary = Math.min(ranges.length - 1, this.sel.primIndex);
+      setSelection(this, normalizeSelection(out, primary), options);
+    }),
+    addSelection: docMethodOp(function (anchor, head, options) {
+      var ranges = this.sel.ranges.slice(0);
+      ranges.push(new Range(clipPos(this, anchor), clipPos(this, head || anchor)));
+      setSelection(this, normalizeSelection(ranges, ranges.length - 1), options);
     }),
     getSelection: function (lineSep) {
-      return this.getRange(this.sel.from, this.sel.to, lineSep);
+      var ranges = this.sel.ranges, lines;
+      for (var i = 0; i < ranges.length; i++) {
+        var sel = getBetween(this, ranges[i].from(), ranges[i].to());
+        lines = lines ? lines.concat(sel) : sel;
+      }
+      if (lineSep === false)
+        return lines;
+      else
+        return lines.join(lineSep || '\n');
+    },
+    getSelections: function (lineSep) {
+      var parts = [], ranges = this.sel.ranges;
+      for (var i = 0; i < ranges.length; i++) {
+        var sel = getBetween(this, ranges[i].from(), ranges[i].to());
+        if (lineSep !== false)
+          sel = sel.join(lineSep || '\n');
+        parts[i] = sel;
+      }
+      return parts;
     },
     replaceSelection: function (code, collapse, origin) {
-      makeChange(this, {
-        from: this.sel.from,
-        to: this.sel.to,
-        text: splitLines(code),
-        origin: origin
-      }, collapse || 'around');
+      var dup = [];
+      for (var i = 0; i < this.sel.ranges.length; i++)
+        dup[i] = code;
+      this.replaceSelections(dup, collapse, origin || '+input');
     },
-    undo: docOperation(function () {
+    replaceSelections: docMethodOp(function (code, collapse, origin) {
+      var changes = [], sel = this.sel;
+      for (var i = 0; i < sel.ranges.length; i++) {
+        var range = sel.ranges[i];
+        changes[i] = {
+          from: range.from(),
+          to: range.to(),
+          text: splitLines(code[i]),
+          origin: origin
+        };
+      }
+      var newSel = collapse && collapse != 'end' && computeReplacedSel(this, changes, collapse);
+      for (var i = changes.length - 1; i >= 0; i--)
+        makeChange(this, changes[i]);
+      if (newSel)
+        setSelectionReplaceHistory(this, newSel);
+      else if (this.cm)
+        ensureCursorVisible(this.cm);
+    }),
+    undo: docMethodOp(function () {
       makeChangeFromHistory(this, 'undo');
     }),
-    redo: docOperation(function () {
+    redo: docMethodOp(function () {
       makeChangeFromHistory(this, 'redo');
     }),
+    undoSelection: docMethodOp(function () {
+      makeChangeFromHistory(this, 'undo', true);
+    }),
+    redoSelection: docMethodOp(function () {
+      makeChangeFromHistory(this, 'redo', true);
+    }),
     setExtending: function (val) {
-      this.sel.extend = val;
+      this.extend = val;
+    },
+    getExtending: function () {
+      return this.extend;
     },
     historySize: function () {
-      var hist = this.history;
+      var hist = this.history, done = 0, undone = 0;
+      for (var i = 0; i < hist.done.length; i++)
+        if (!hist.done[i].ranges)
+          ++done;
+      for (var i = 0; i < hist.undone.length; i++)
+        if (!hist.undone[i].ranges)
+          ++undone;
       return {
-        undo: hist.done.length,
-        redo: hist.undone.length
+        undo: done,
+        redo: undone
       };
     },
     clearHistory: function () {
-      this.history = makeHistory(this.history.maxGeneration);
+      this.history = new History(this.history.maxGeneration);
     },
     markClean: function () {
-      this.cleanGeneration = this.changeGeneration();
+      this.cleanGeneration = this.changeGeneration(true);
     },
-    changeGeneration: function () {
-      this.history.lastOp = this.history.lastOrigin = null;
+    changeGeneration: function (forceSplit) {
+      if (forceSplit)
+        this.history.lastOp = this.history.lastOrigin = null;
       return this.history.generation;
     },
     isClean: function (gen) {
@@ -64171,9 +68001,9 @@ window.CodeMirror = function () {
       };
     },
     setHistory: function (histData) {
-      var hist = this.history = makeHistory(this.history.maxGeneration);
-      hist.done = histData.done.slice(0);
-      hist.undone = histData.undone.slice(0);
+      var hist = this.history = new History(this.history.maxGeneration);
+      hist.done = copyHistoryArray(histData.done.slice(0), null, true);
+      hist.undone = copyHistoryArray(histData.undone.slice(0), null, true);
     },
     markText: function (from, to, options) {
       return markText(this, clipPos(this, from), clipPos(this, to), options, 'range');
@@ -64181,7 +68011,9 @@ window.CodeMirror = function () {
     setBookmark: function (pos, options) {
       var realOpts = {
           replacedWith: options && (options.nodeType == null ? options.widget : options),
-          insertLeft: options && options.insertLeft
+          insertLeft: options && options.insertLeft,
+          clearWhenEmpty: false,
+          shared: options && options.shared
         };
       pos = clipPos(this, pos);
       return markText(this, pos, pos, realOpts, 'bookmark');
@@ -64196,6 +68028,22 @@ window.CodeMirror = function () {
             markers.push(span.marker.parent || span.marker);
         }
       return markers;
+    },
+    findMarks: function (from, to, filter) {
+      from = clipPos(this, from);
+      to = clipPos(this, to);
+      var found = [], lineNo = from.line;
+      this.iter(from.line, to.line + 1, function (line) {
+        var spans = line.markedSpans;
+        if (spans)
+          for (var i = 0; i < spans.length; i++) {
+            var span = spans[i];
+            if (!(lineNo == from.line && from.ch > span.to || span.from == null && lineNo != from.line || lineNo == to.line && span.from > to.ch) && (!filter || filter(span.marker)))
+              found.push(span.marker.parent || span.marker);
+          }
+        ++lineNo;
+      });
+      return found;
     },
     getAllMarks: function () {
       var markers = [];
@@ -64235,15 +68083,8 @@ window.CodeMirror = function () {
       var doc = new Doc(getLines(this, this.first, this.first + this.size), this.modeOption, this.first);
       doc.scrollTop = this.scrollTop;
       doc.scrollLeft = this.scrollLeft;
-      doc.sel = {
-        from: this.sel.from,
-        to: this.sel.to,
-        head: this.sel.head,
-        anchor: this.sel.anchor,
-        shift: this.sel.shift,
-        extend: false,
-        goalColumn: this.sel.goalColumn
-      };
+      doc.sel = this.sel;
+      doc.extend = false;
       if (copyHistory) {
         doc.history.undoDepth = this.history.undoDepth;
         doc.setHistory(this.getHistory());
@@ -64270,6 +68111,7 @@ window.CodeMirror = function () {
           isParent: true,
           sharedHist: options.sharedHist
         }];
+      copySharedMarkers(copy, findSharedMarkers(this));
       return copy;
     },
     unlinkDoc: function (other) {
@@ -64282,6 +68124,7 @@ window.CodeMirror = function () {
             continue;
           this.linked.splice(i, 1);
           other.unlinkDoc(this);
+          detachSharedMarkers(findSharedMarkers(this));
           break;
         }
       // If the histories were shared, split them again
@@ -64290,7 +68133,7 @@ window.CodeMirror = function () {
         linkedDocs(other, function (doc) {
           splitIds.push(doc.id);
         }, true);
-        other.history = makeHistory();
+        other.history = new History(null);
         other.history.done = copyHistoryArray(this.history.done, splitIds);
         other.history.undone = copyHistoryArray(this.history.undone, splitIds);
       }
@@ -64305,8 +68148,9 @@ window.CodeMirror = function () {
       return this.cm;
     }
   });
+  // Public alias.
   Doc.prototype.eachLine = Doc.prototype.iter;
-  // The Doc methods that should be available on CodeMirror instances
+  // Set up methods on CodeMirror's prototype to redirect to the editor's document.
   var dontDelegate = 'iter insert remove copy getEditor'.split(' ');
   for (var prop in Doc.prototype)
     if (Doc.prototype.hasOwnProperty(prop) && indexOf(dontDelegate, prop) < 0)
@@ -64316,6 +68160,7 @@ window.CodeMirror = function () {
         };
       }(Doc.prototype[prop]);
   eventMixin(Doc);
+  // Call f for all linked documents.
   function linkedDocs(doc, f, sharedHistOnly) {
     function propagate(doc, skip, sharedHist) {
       if (doc.linked)
@@ -64332,6 +68177,7 @@ window.CodeMirror = function () {
     }
     propagate(doc, null, true);
   }
+  // Attach a document to an editor.
   function attachDoc(cm, doc) {
     if (doc.cm)
       throw new Error('This document is already in use.');
@@ -64340,14 +68186,17 @@ window.CodeMirror = function () {
     estimateLineHeights(cm);
     loadMode(cm);
     if (!cm.options.lineWrapping)
-      computeMaxLength(cm);
+      findMaxLine(cm);
     cm.options.mode = doc.modeOption;
     regChange(cm);
   }
   // LINE UTILITIES
-  function getLine(chunk, n) {
-    n -= chunk.first;
-    while (!chunk.lines) {
+  // Find the line object corresponding to the given line number.
+  function getLine(doc, n) {
+    n -= doc.first;
+    if (n < 0 || n >= doc.size)
+      throw new Error('There is no line ' + (n + doc.first) + ' in the document.');
+    for (var chunk = doc; !chunk.lines;) {
       for (var i = 0;; ++i) {
         var child = chunk.children[i], sz = child.chunkSize();
         if (n < sz) {
@@ -64359,6 +68208,8 @@ window.CodeMirror = function () {
     }
     return chunk.lines[n];
   }
+  // Get the part of a document between two positions, as an array of
+  // strings.
   function getBetween(doc, start, end) {
     var out = [], n = start.line;
     doc.iter(start.line, end.line + 1, function (line) {
@@ -64372,6 +68223,7 @@ window.CodeMirror = function () {
     });
     return out;
   }
+  // Get the lines between from and to, as array of strings.
   function getLines(doc, from, to) {
     var out = [];
     doc.iter(from, to, function (line) {
@@ -64379,11 +68231,16 @@ window.CodeMirror = function () {
     });
     return out;
   }
+  // Update the height of a line, propagating the height change
+  // upwards to parent nodes.
   function updateLineHeight(line, height) {
     var diff = height - line.height;
-    for (var n = line; n; n = n.parent)
-      n.height += diff;
+    if (diff)
+      for (var n = line; n; n = n.parent)
+        n.height += diff;
   }
+  // Given a line object, find its line number by walking up through
+  // its parent links.
   function lineNo(line) {
     if (line.parent == null)
       return null;
@@ -64397,11 +68254,13 @@ window.CodeMirror = function () {
     }
     return no + cur.first;
   }
+  // Find the line at the given vertical position, using the height
+  // information in the document tree.
   function lineAtHeight(chunk, h) {
     var n = chunk.first;
     outer:
       do {
-        for (var i = 0, e = chunk.children.length; i < e; ++i) {
+        for (var i = 0; i < chunk.children.length; ++i) {
           var child = chunk.children[i], ch = child.height;
           if (h < ch) {
             chunk = child;
@@ -64412,7 +68271,7 @@ window.CodeMirror = function () {
         }
         return n;
       } while (!chunk.lines);
-    for (var i = 0, e = chunk.lines.length; i < e; ++i) {
+    for (var i = 0; i < chunk.lines.length; ++i) {
       var line = chunk.lines[i], lh = line.height;
       if (h < lh)
         break;
@@ -64420,8 +68279,9 @@ window.CodeMirror = function () {
     }
     return n + i;
   }
-  function heightAtLine(cm, lineObj) {
-    lineObj = visualLine(cm.doc, lineObj);
+  // Find the height above the given line.
+  function heightAtLine(lineObj) {
+    lineObj = visualLine(lineObj);
     var h = 0, chunk = lineObj.parent;
     for (var i = 0; i < chunk.lines.length; ++i) {
       var line = chunk.lines[i];
@@ -64441,6 +68301,9 @@ window.CodeMirror = function () {
     }
     return h;
   }
+  // Get the bidi ordering for the given line (and cache it). Returns
+  // false for lines that are fully left-to-right, and an array of
+  // BidiSpan objects otherwise.
   function getOrder(line) {
     var order = line.order;
     if (order == null)
@@ -64448,33 +68311,26 @@ window.CodeMirror = function () {
     return order;
   }
   // HISTORY
-  function makeHistory(startGen) {
-    return {
-      done: [],
-      undone: [],
-      undoDepth: Infinity,
-      lastTime: 0,
-      lastOp: null,
-      lastOrigin: null,
-      generation: startGen || 1,
-      maxGeneration: startGen || 1
-    };
+  function History(startGen) {
+    // Arrays of change events and selections. Doing something adds an
+    // event to done and clears undo. Undoing moves events from done
+    // to undone, redoing moves them in the other direction.
+    this.done = [];
+    this.undone = [];
+    this.undoDepth = Infinity;
+    // Used to track when changes can be merged into a single undo
+    // event
+    this.lastModTime = this.lastSelTime = 0;
+    this.lastOp = null;
+    this.lastOrigin = this.lastSelOrigin = null;
+    // Used by the isClean() method
+    this.generation = this.maxGeneration = startGen || 1;
   }
-  function attachLocalSpans(doc, change, from, to) {
-    var existing = change['spans_' + doc.id], n = 0;
-    doc.iter(Math.max(doc.first, from), Math.min(doc.first + doc.size, to), function (line) {
-      if (line.markedSpans)
-        (existing || (existing = change['spans_' + doc.id] = {}))[n] = line.markedSpans;
-      ++n;
-    });
-  }
+  // Create a history change event from an updateDoc-style change
+  // object.
   function historyChangeFromChange(doc, change) {
-    var from = {
-        line: change.from.line,
-        ch: change.from.ch
-      };
     var histChange = {
-        from: from,
+        from: copyPos(change.from),
         to: changeEnd(change),
         text: getBetween(doc, change.from, change.to)
       };
@@ -64484,14 +68340,41 @@ window.CodeMirror = function () {
     }, true);
     return histChange;
   }
-  function addToHistory(doc, change, selAfter, opId) {
+  // Pop all selection events off the end of a history array. Stop at
+  // a change event.
+  function clearSelectionEvents(array) {
+    while (array.length) {
+      var last = lst(array);
+      if (last.ranges)
+        array.pop();
+      else
+        break;
+    }
+  }
+  // Find the top change event in the history. Pop off selection
+  // events that are in the way.
+  function lastChangeEvent(hist, force) {
+    if (force) {
+      clearSelectionEvents(hist.done);
+      return lst(hist.done);
+    } else if (hist.done.length && !lst(hist.done).ranges) {
+      return lst(hist.done);
+    } else if (hist.done.length > 1 && !hist.done[hist.done.length - 2].ranges) {
+      hist.done.pop();
+      return lst(hist.done);
+    }
+  }
+  // Register a change in the history. Merges changes that are within
+  // a single operation, ore are close together with an origin that
+  // allows merging (starting with "+") into a single event.
+  function addChangeToHistory(doc, change, selAfter, opId) {
     var hist = doc.history;
     hist.undone.length = 0;
-    var time = +new Date(), cur = lst(hist.done);
-    if (cur && (hist.lastOp == opId || hist.lastOrigin == change.origin && change.origin && (change.origin.charAt(0) == '+' && doc.cm && hist.lastTime > time - doc.cm.options.historyEventDelay || change.origin.charAt(0) == '*'))) {
+    var time = +new Date(), cur;
+    if ((hist.lastOp == opId || hist.lastOrigin == change.origin && change.origin && (change.origin.charAt(0) == '+' && doc.cm && hist.lastModTime > time - doc.cm.options.historyEventDelay || change.origin.charAt(0) == '*')) && (cur = lastChangeEvent(hist, hist.lastOp == opId))) {
       // Merge this change into the last event
       var last = lst(cur.changes);
-      if (posEq(change.from, change.to) && posEq(change.from, last.to)) {
+      if (cmp(change.from, change.to) == 0 && cmp(change.from, last.to) == 0) {
         // Optimized case for simple insertion -- don't want to add
         // new changesets for every character typed
         last.to = changeEnd(change);
@@ -64499,27 +68382,70 @@ window.CodeMirror = function () {
         // Add new sub-event
         cur.changes.push(historyChangeFromChange(doc, change));
       }
-      cur.anchorAfter = selAfter.anchor;
-      cur.headAfter = selAfter.head;
     } else {
       // Can not be merged, start a new event.
+      var before = lst(hist.done);
+      if (!before || !before.ranges)
+        pushSelectionToHistory(doc.sel, hist.done);
       cur = {
         changes: [historyChangeFromChange(doc, change)],
-        generation: hist.generation,
-        anchorBefore: doc.sel.anchor,
-        headBefore: doc.sel.head,
-        anchorAfter: selAfter.anchor,
-        headAfter: selAfter.head
+        generation: hist.generation
       };
       hist.done.push(cur);
-      hist.generation = ++hist.maxGeneration;
-      while (hist.done.length > hist.undoDepth)
+      while (hist.done.length > hist.undoDepth) {
         hist.done.shift();
+        if (!hist.done[0].ranges)
+          hist.done.shift();
+      }
     }
-    hist.lastTime = time;
+    hist.done.push(selAfter);
+    hist.generation = ++hist.maxGeneration;
+    hist.lastModTime = hist.lastSelTime = time;
     hist.lastOp = opId;
-    hist.lastOrigin = change.origin;
+    hist.lastOrigin = hist.lastSelOrigin = change.origin;
+    if (!last)
+      signal(doc, 'historyAdded');
   }
+  function selectionEventCanBeMerged(doc, origin, prev, sel) {
+    var ch = origin.charAt(0);
+    return ch == '*' || ch == '+' && prev.ranges.length == sel.ranges.length && prev.somethingSelected() == sel.somethingSelected() && new Date() - doc.history.lastSelTime <= (doc.cm ? doc.cm.options.historyEventDelay : 500);
+  }
+  // Called whenever the selection changes, sets the new selection as
+  // the pending selection in the history, and pushes the old pending
+  // selection into the 'done' array when it was significantly
+  // different (in number of selected ranges, emptiness, or time).
+  function addSelectionToHistory(doc, sel, opId, options) {
+    var hist = doc.history, origin = options && options.origin;
+    // A new event is started when the previous origin does not match
+    // the current, or the origins don't allow matching. Origins
+    // starting with * are always merged, those starting with + are
+    // merged when similar and close together in time.
+    if (opId == hist.lastOp || origin && hist.lastSelOrigin == origin && (hist.lastModTime == hist.lastSelTime && hist.lastOrigin == origin || selectionEventCanBeMerged(doc, origin, lst(hist.done), sel)))
+      hist.done[hist.done.length - 1] = sel;
+    else
+      pushSelectionToHistory(sel, hist.done);
+    hist.lastSelTime = +new Date();
+    hist.lastSelOrigin = origin;
+    hist.lastOp = opId;
+    if (options && options.clearRedo !== false)
+      clearSelectionEvents(hist.undone);
+  }
+  function pushSelectionToHistory(sel, dest) {
+    var top = lst(dest);
+    if (!(top && top.ranges && top.equals(sel)))
+      dest.push(sel);
+  }
+  // Used to store marked span information in the history.
+  function attachLocalSpans(doc, change, from, to) {
+    var existing = change['spans_' + doc.id], n = 0;
+    doc.iter(Math.max(doc.first, from), Math.min(doc.first + doc.size, to), function (line) {
+      if (line.markedSpans)
+        (existing || (existing = change['spans_' + doc.id] = {}))[n] = line.markedSpans;
+      ++n;
+    });
+  }
+  // When un/re-doing restores text containing marked spans, those
+  // that have been explicitly cleared should not be restored.
   function removeClearedSpans(spans) {
     if (!spans)
       return null;
@@ -64532,6 +68458,7 @@ window.CodeMirror = function () {
     }
     return !out ? spans : out.length ? out : null;
   }
+  // Retrieve and filter the old marked spans stored in a change event.
   function getOldSpans(doc, change) {
     var found = change['spans_' + doc.id];
     if (!found)
@@ -64542,16 +68469,15 @@ window.CodeMirror = function () {
   }
   // Used both to provide a JSON-safe object in .getHistory, and, when
   // detaching a document, to split the history in two
-  function copyHistoryArray(events, newGroup) {
+  function copyHistoryArray(events, newGroup, instantiateSel) {
     for (var i = 0, copy = []; i < events.length; ++i) {
-      var event = events[i], changes = event.changes, newChanges = [];
-      copy.push({
-        changes: newChanges,
-        anchorBefore: event.anchorBefore,
-        headBefore: event.headBefore,
-        anchorAfter: event.anchorAfter,
-        headAfter: event.headAfter
-      });
+      var event = events[i];
+      if (event.ranges) {
+        copy.push(instantiateSel ? Selection.prototype.deepCopy.call(event) : event);
+        continue;
+      }
+      var changes = event.changes, newChanges = [];
+      copy.push({ changes: newChanges });
       for (var j = 0; j < changes.length; ++j) {
         var change = changes[j], m;
         newChanges.push({
@@ -64572,7 +68498,7 @@ window.CodeMirror = function () {
     return copy;
   }
   // Rebasing/resetting history to deal with externally-sourced changes
-  function rebaseHistSel(pos, from, to, diff) {
+  function rebaseHistSelSingle(pos, from, to, diff) {
     if (to < pos.line) {
       pos.line += diff;
     } else if (from < pos.line) {
@@ -64590,35 +68516,30 @@ window.CodeMirror = function () {
   function rebaseHistArray(array, from, to, diff) {
     for (var i = 0; i < array.length; ++i) {
       var sub = array[i], ok = true;
+      if (sub.ranges) {
+        if (!sub.copied) {
+          sub = array[i] = sub.deepCopy();
+          sub.copied = true;
+        }
+        for (var j = 0; j < sub.ranges.length; j++) {
+          rebaseHistSelSingle(sub.ranges[j].anchor, from, to, diff);
+          rebaseHistSelSingle(sub.ranges[j].head, from, to, diff);
+        }
+        continue;
+      }
       for (var j = 0; j < sub.changes.length; ++j) {
         var cur = sub.changes[j];
-        if (!sub.copied) {
-          cur.from = copyPos(cur.from);
-          cur.to = copyPos(cur.to);
-        }
         if (to < cur.from.line) {
-          cur.from.line += diff;
-          cur.to.line += diff;
+          cur.from = Pos(cur.from.line + diff, cur.from.ch);
+          cur.to = Pos(cur.to.line + diff, cur.to.ch);
         } else if (from <= cur.to.line) {
           ok = false;
           break;
         }
       }
-      if (!sub.copied) {
-        sub.anchorBefore = copyPos(sub.anchorBefore);
-        sub.headBefore = copyPos(sub.headBefore);
-        sub.anchorAfter = copyPos(sub.anchorAfter);
-        sub.readAfter = copyPos(sub.headAfter);
-        sub.copied = true;
-      }
       if (!ok) {
         array.splice(0, i + 1);
         i = 0;
-      } else {
-        rebaseHistSel(sub.anchorBefore);
-        rebaseHistSel(sub.headBefore);
-        rebaseHistSel(sub.anchorAfter);
-        rebaseHistSel(sub.headAfter);
       }
     }
   }
@@ -64627,38 +68548,28 @@ window.CodeMirror = function () {
     rebaseHistArray(hist.done, from, to, diff);
     rebaseHistArray(hist.undone, from, to, diff);
   }
-  // EVENT OPERATORS
-  function stopMethod() {
-    e_stop(this);
-  }
-  // Ensure an event has a stop method.
-  function addStop(event) {
-    if (!event.stop)
-      event.stop = stopMethod;
-    return event;
-  }
-  function e_preventDefault(e) {
-    if (e.preventDefault)
-      e.preventDefault();
-    else
-      e.returnValue = false;
-  }
-  function e_stopPropagation(e) {
-    if (e.stopPropagation)
-      e.stopPropagation();
-    else
-      e.cancelBubble = true;
-  }
+  // EVENT UTILITIES
+  // Due to the fact that we still support jurassic IE versions, some
+  // compatibility wrappers are needed.
+  var e_preventDefault = CodeMirror.e_preventDefault = function (e) {
+      if (e.preventDefault)
+        e.preventDefault();
+      else
+        e.returnValue = false;
+    };
+  var e_stopPropagation = CodeMirror.e_stopPropagation = function (e) {
+      if (e.stopPropagation)
+        e.stopPropagation();
+      else
+        e.cancelBubble = true;
+    };
   function e_defaultPrevented(e) {
     return e.defaultPrevented != null ? e.defaultPrevented : e.returnValue == false;
   }
-  function e_stop(e) {
-    e_preventDefault(e);
-    e_stopPropagation(e);
-  }
-  CodeMirror.e_stop = e_stop;
-  CodeMirror.e_preventDefault = e_preventDefault;
-  CodeMirror.e_stopPropagation = e_stopPropagation;
+  var e_stop = CodeMirror.e_stop = function (e) {
+      e_preventDefault(e);
+      e_stopPropagation(e);
+    };
   function e_target(e) {
     return e.target || e.srcElement;
   }
@@ -64677,41 +68588,50 @@ window.CodeMirror = function () {
     return b;
   }
   // EVENT HANDLING
-  function on(emitter, type, f) {
-    if (emitter.addEventListener)
-      emitter.addEventListener(type, f, false);
-    else if (emitter.attachEvent)
-      emitter.attachEvent('on' + type, f);
-    else {
-      var map = emitter._handlers || (emitter._handlers = {});
-      var arr = map[type] || (map[type] = []);
-      arr.push(f);
-    }
-  }
-  function off(emitter, type, f) {
-    if (emitter.removeEventListener)
-      emitter.removeEventListener(type, f, false);
-    else if (emitter.detachEvent)
-      emitter.detachEvent('on' + type, f);
-    else {
+  // Lightweight event framework. on/off also work on DOM nodes,
+  // registering native DOM handlers.
+  var on = CodeMirror.on = function (emitter, type, f) {
+      if (emitter.addEventListener)
+        emitter.addEventListener(type, f, false);
+      else if (emitter.attachEvent)
+        emitter.attachEvent('on' + type, f);
+      else {
+        var map = emitter._handlers || (emitter._handlers = {});
+        var arr = map[type] || (map[type] = []);
+        arr.push(f);
+      }
+    };
+  var off = CodeMirror.off = function (emitter, type, f) {
+      if (emitter.removeEventListener)
+        emitter.removeEventListener(type, f, false);
+      else if (emitter.detachEvent)
+        emitter.detachEvent('on' + type, f);
+      else {
+        var arr = emitter._handlers && emitter._handlers[type];
+        if (!arr)
+          return;
+        for (var i = 0; i < arr.length; ++i)
+          if (arr[i] == f) {
+            arr.splice(i, 1);
+            break;
+          }
+      }
+    };
+  var signal = CodeMirror.signal = function (emitter, type) {
       var arr = emitter._handlers && emitter._handlers[type];
       if (!arr)
         return;
+      var args = Array.prototype.slice.call(arguments, 2);
       for (var i = 0; i < arr.length; ++i)
-        if (arr[i] == f) {
-          arr.splice(i, 1);
-          break;
-        }
-    }
-  }
-  function signal(emitter, type) {
-    var arr = emitter._handlers && emitter._handlers[type];
-    if (!arr)
-      return;
-    var args = Array.prototype.slice.call(arguments, 2);
-    for (var i = 0; i < arr.length; ++i)
-      arr[i].apply(null, args);
-  }
+        arr[i].apply(null, args);
+    };
+  // Often, we want to signal events at a point where we are in the
+  // middle of some work, but don't want the handler to start calling
+  // other methods on the editor, which might be in an inconsistent
+  // state or simply not expect any other events to happen.
+  // signalLater looks whether there are any handlers, and schedules
+  // them to be executed when the last operation ends, or, if no
+  // operation is active, when a timeout fires.
   var delayedCallbacks, delayedCallbackDepth = 0;
   function signalLater(emitter, type) {
     var arr = emitter._handlers && emitter._handlers[type];
@@ -64732,10 +68652,6 @@ window.CodeMirror = function () {
     for (var i = 0; i < arr.length; ++i)
       delayedCallbacks.push(bnd(arr[i]));
   }
-  function signalDOMEvent(cm, e, override) {
-    signal(cm, override || e.type, cm, e);
-    return e_defaultPrevented(e) || e.codemirrorIgnore;
-  }
   function fireDelayed() {
     --delayedCallbackDepth;
     var delayed = delayedCallbacks;
@@ -64743,13 +68659,28 @@ window.CodeMirror = function () {
     for (var i = 0; i < delayed.length; ++i)
       delayed[i]();
   }
+  // The DOM events that CodeMirror handles can be overridden by
+  // registering a (non-DOM) handler on the editor for the event name,
+  // and preventDefault-ing the event in that handler.
+  function signalDOMEvent(cm, e, override) {
+    signal(cm, override || e.type, cm, e);
+    return e_defaultPrevented(e) || e.codemirrorIgnore;
+  }
+  function signalCursorActivity(cm) {
+    var arr = cm._handlers && cm._handlers.cursorActivity;
+    if (!arr)
+      return;
+    var set = cm.curOp.cursorActivityHandlers || (cm.curOp.cursorActivityHandlers = []);
+    for (var i = 0; i < arr.length; ++i)
+      if (indexOf(set, arr[i]) == -1)
+        set.push(arr[i]);
+  }
   function hasHandler(emitter, type) {
     var arr = emitter._handlers && emitter._handlers[type];
     return arr && arr.length > 0;
   }
-  CodeMirror.on = on;
-  CodeMirror.off = off;
-  CodeMirror.signal = signal;
+  // Add on and off methods to a constructor's prototype, to make
+  // registering events on such objects more convenient.
   function eventMixin(ctor) {
     ctor.prototype.on = function (type, f) {
       on(this, type, f);
@@ -64768,32 +68699,49 @@ window.CodeMirror = function () {
         return 'CodeMirror.Pass';
       }
     };
+  // Reused option objects for setSelection & friends
+  var sel_dontScroll = { scroll: false }, sel_mouse = { origin: '*mouse' }, sel_move = { origin: '+move' };
   function Delayed() {
     this.id = null;
   }
-  Delayed.prototype = {
-    set: function (ms, f) {
-      clearTimeout(this.id);
-      this.id = setTimeout(f, ms);
-    }
+  Delayed.prototype.set = function (ms, f) {
+    clearTimeout(this.id);
+    this.id = setTimeout(f, ms);
   };
   // Counts the column offset in a string, taking tabs into account.
   // Used mostly to find indentation.
-  function countColumn(string, end, tabSize, startIndex, startValue) {
-    if (end == null) {
-      end = string.search(/[^\s\u00a0]/);
-      if (end == -1)
-        end = string.length;
-    }
-    for (var i = startIndex || 0, n = startValue || 0; i < end; ++i) {
-      if (string.charAt(i) == '\t')
+  var countColumn = CodeMirror.countColumn = function (string, end, tabSize, startIndex, startValue) {
+      if (end == null) {
+        end = string.search(/[^\s\u00a0]/);
+        if (end == -1)
+          end = string.length;
+      }
+      for (var i = startIndex || 0, n = startValue || 0;;) {
+        var nextTab = string.indexOf('\t', i);
+        if (nextTab < 0 || nextTab >= end)
+          return n + (end - i);
+        n += nextTab - i;
         n += tabSize - n % tabSize;
-      else
-        ++n;
+        i = nextTab + 1;
+      }
+    };
+  // The inverse of countColumn -- find the offset that corresponds to
+  // a particular column.
+  function findColumn(string, goal, tabSize) {
+    for (var pos = 0, col = 0;;) {
+      var nextTab = string.indexOf('\t', pos);
+      if (nextTab == -1)
+        nextTab = string.length;
+      var skipped = nextTab - pos;
+      if (nextTab == string.length || col + skipped >= goal)
+        return pos + Math.min(skipped, goal - col);
+      col += nextTab - pos;
+      col += tabSize - col % tabSize;
+      pos = nextTab + 1;
+      if (col >= goal)
+        return pos;
     }
-    return n;
   }
-  CodeMirror.countColumn = countColumn;
   var spaceStrs = [''];
   function spaceStr(n) {
     while (spaceStrs.length <= n)
@@ -64803,48 +68751,65 @@ window.CodeMirror = function () {
   function lst(arr) {
     return arr[arr.length - 1];
   }
-  function selectInput(node) {
-    if (ios) {
-      // Mobile Safari apparently has a bug where select() is broken.
+  var selectInput = function (node) {
+    node.select();
+  };
+  if (ios)
+    // Mobile Safari apparently has a bug where select() is broken.
+    selectInput = function (node) {
       node.selectionStart = 0;
       node.selectionEnd = node.value.length;
-    } else {
-      // Suppress mysterious IE10 errors
+    };
+  else if (ie)
+    // Suppress mysterious IE10 errors
+    selectInput = function (node) {
       try {
         node.select();
       } catch (_e) {
       }
-    }
-  }
-  function indexOf(collection, elt) {
-    if (collection.indexOf)
-      return collection.indexOf(elt);
-    for (var i = 0, e = collection.length; i < e; ++i)
-      if (collection[i] == elt)
+    };
+  function indexOf(array, elt) {
+    for (var i = 0; i < array.length; ++i)
+      if (array[i] == elt)
         return i;
     return -1;
   }
+  if ([].indexOf)
+    indexOf = function (array, elt) {
+      return array.indexOf(elt);
+    };
+  function map(array, f) {
+    var out = [];
+    for (var i = 0; i < array.length; i++)
+      out[i] = f(array[i], i);
+    return out;
+  }
+  if ([].map)
+    map = function (array, f) {
+      return array.map(f);
+    };
   function createObj(base, props) {
-    function Obj() {
+    var inst;
+    if (Object.create) {
+      inst = Object.create(base);
+    } else {
+      var ctor = function () {
+      };
+      ctor.prototype = base;
+      inst = new ctor();
     }
-    Obj.prototype = base;
-    var inst = new Obj();
     if (props)
       copyObj(props, inst);
     return inst;
   }
-  function copyObj(obj, target) {
+  ;
+  function copyObj(obj, target, overwrite) {
     if (!target)
       target = {};
     for (var prop in obj)
-      if (obj.hasOwnProperty(prop))
+      if (obj.hasOwnProperty(prop) && (overwrite !== false || !target.hasOwnProperty(prop)))
         target[prop] = obj[prop];
     return target;
-  }
-  function emptyArray(size) {
-    for (var a = [], i = 0; i < size; ++i)
-      a.push(undefined);
-    return a;
   }
   function bind(f) {
     var args = Array.prototype.slice.call(arguments, 1);
@@ -64852,9 +68817,16 @@ window.CodeMirror = function () {
       return f.apply(null, args);
     };
   }
-  var nonASCIISingleCaseWordChar = /[\u3040-\u309f\u30a0-\u30ff\u3400-\u4db5\u4e00-\u9fcc\uac00-\ud7af]/;
-  function isWordChar(ch) {
-    return /\w/.test(ch) || ch > '\x80' && (ch.toUpperCase() != ch.toLowerCase() || nonASCIISingleCaseWordChar.test(ch));
+  var nonASCIISingleCaseWordChar = /[\u00df\u3040-\u309f\u30a0-\u30ff\u3400-\u4db5\u4e00-\u9fcc\uac00-\ud7af]/;
+  var isWordCharBasic = CodeMirror.isWordChar = function (ch) {
+      return /\w/.test(ch) || ch > '\x80' && (ch.toUpperCase() != ch.toLowerCase() || nonASCIISingleCaseWordChar.test(ch));
+    };
+  function isWordChar(ch, helper) {
+    if (!helper)
+      return isWordCharBasic(ch);
+    if (helper.source.indexOf('\\w') > -1 && isWordCharBasic(ch))
+      return true;
+    return helper.test(ch);
   }
   function isEmpty(obj) {
     for (var n in obj)
@@ -64862,7 +68834,15 @@ window.CodeMirror = function () {
         return false;
     return true;
   }
-  var isExtendingChar = /[\u0300-\u036F\u0483-\u0487\u0488-\u0489\u0591-\u05BD\u05BF\u05C1-\u05C2\u05C4-\u05C5\u05C7\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7-\u06E8\u06EA-\u06ED\uA66F\uA670-\uA672\uA674-\uA67D\uA69F\udc00-\udfff]/;
+  // Extending unicode characters. A series of a non-extending char +
+  // any number of extending chars is treated as a single unit as far
+  // as editing and measuring is concerned. This is not fully correct,
+  // since some scripts/fonts/browsers also treat other configurations
+  // of code points as a group.
+  var extendingChars = /[\u0300-\u036f\u0483-\u0489\u0591-\u05bd\u05bf\u05c1\u05c2\u05c4\u05c5\u05c7\u0610-\u061a\u064b-\u065e\u0670\u06d6-\u06dc\u06de-\u06e4\u06e7\u06e8\u06ea-\u06ed\u0711\u0730-\u074a\u07a6-\u07b0\u07eb-\u07f3\u0816-\u0819\u081b-\u0823\u0825-\u0827\u0829-\u082d\u0900-\u0902\u093c\u0941-\u0948\u094d\u0951-\u0955\u0962\u0963\u0981\u09bc\u09be\u09c1-\u09c4\u09cd\u09d7\u09e2\u09e3\u0a01\u0a02\u0a3c\u0a41\u0a42\u0a47\u0a48\u0a4b-\u0a4d\u0a51\u0a70\u0a71\u0a75\u0a81\u0a82\u0abc\u0ac1-\u0ac5\u0ac7\u0ac8\u0acd\u0ae2\u0ae3\u0b01\u0b3c\u0b3e\u0b3f\u0b41-\u0b44\u0b4d\u0b56\u0b57\u0b62\u0b63\u0b82\u0bbe\u0bc0\u0bcd\u0bd7\u0c3e-\u0c40\u0c46-\u0c48\u0c4a-\u0c4d\u0c55\u0c56\u0c62\u0c63\u0cbc\u0cbf\u0cc2\u0cc6\u0ccc\u0ccd\u0cd5\u0cd6\u0ce2\u0ce3\u0d3e\u0d41-\u0d44\u0d4d\u0d57\u0d62\u0d63\u0dca\u0dcf\u0dd2-\u0dd4\u0dd6\u0ddf\u0e31\u0e34-\u0e3a\u0e47-\u0e4e\u0eb1\u0eb4-\u0eb9\u0ebb\u0ebc\u0ec8-\u0ecd\u0f18\u0f19\u0f35\u0f37\u0f39\u0f71-\u0f7e\u0f80-\u0f84\u0f86\u0f87\u0f90-\u0f97\u0f99-\u0fbc\u0fc6\u102d-\u1030\u1032-\u1037\u1039\u103a\u103d\u103e\u1058\u1059\u105e-\u1060\u1071-\u1074\u1082\u1085\u1086\u108d\u109d\u135f\u1712-\u1714\u1732-\u1734\u1752\u1753\u1772\u1773\u17b7-\u17bd\u17c6\u17c9-\u17d3\u17dd\u180b-\u180d\u18a9\u1920-\u1922\u1927\u1928\u1932\u1939-\u193b\u1a17\u1a18\u1a56\u1a58-\u1a5e\u1a60\u1a62\u1a65-\u1a6c\u1a73-\u1a7c\u1a7f\u1b00-\u1b03\u1b34\u1b36-\u1b3a\u1b3c\u1b42\u1b6b-\u1b73\u1b80\u1b81\u1ba2-\u1ba5\u1ba8\u1ba9\u1c2c-\u1c33\u1c36\u1c37\u1cd0-\u1cd2\u1cd4-\u1ce0\u1ce2-\u1ce8\u1ced\u1dc0-\u1de6\u1dfd-\u1dff\u200c\u200d\u20d0-\u20f0\u2cef-\u2cf1\u2de0-\u2dff\u302a-\u302f\u3099\u309a\ua66f-\ua672\ua67c\ua67d\ua6f0\ua6f1\ua802\ua806\ua80b\ua825\ua826\ua8c4\ua8e0-\ua8f1\ua926-\ua92d\ua947-\ua951\ua980-\ua982\ua9b3\ua9b6-\ua9b9\ua9bc\uaa29-\uaa2e\uaa31\uaa32\uaa35\uaa36\uaa43\uaa4c\uaab0\uaab2-\uaab4\uaab7\uaab8\uaabe\uaabf\uaac1\uabe5\uabe8\uabed\udc00-\udfff\ufb1e\ufe00-\ufe0f\ufe20-\ufe26\uff9e\uff9f]/;
+  function isExtendingChar(ch) {
+    return ch.charCodeAt(0) >= 768 && extendingChars.test(ch);
+  }
   // DOM UTILITIES
   function elt(tag, content, className, style) {
     var e = document.createElement(tag);
@@ -64871,12 +68851,29 @@ window.CodeMirror = function () {
     if (style)
       e.style.cssText = style;
     if (typeof content == 'string')
-      setTextContent(e, content);
+      e.appendChild(document.createTextNode(content));
     else if (content)
       for (var i = 0; i < content.length; ++i)
         e.appendChild(content[i]);
     return e;
   }
+  var range;
+  if (document.createRange)
+    range = function (node, start, end) {
+      var r = document.createRange();
+      r.setEnd(node, end);
+      r.setStart(node, start);
+      return r;
+    };
+  else
+    range = function (node, start, end) {
+      var r = document.body.createTextRange();
+      r.moveToElementText(node.parentNode);
+      r.collapse(true);
+      r.moveEnd('character', end);
+      r.moveStart('character', start);
+      return r;
+    };
   function removeChildren(e) {
     for (var count = e.childNodes.length; count > 0; --count)
       e.removeChild(e.firstChild);
@@ -64885,58 +68882,92 @@ window.CodeMirror = function () {
   function removeChildrenAndAdd(parent, e) {
     return removeChildren(parent).appendChild(e);
   }
-  function setTextContent(e, str) {
-    if (ie_lt9) {
-      e.innerHTML = '';
-      e.appendChild(document.createTextNode(str));
-    } else
-      e.textContent = str;
+  function contains(parent, child) {
+    if (parent.contains)
+      return parent.contains(child);
+    while (child = child.parentNode)
+      if (child == parent)
+        return true;
   }
-  function getRect(node) {
-    return node.getBoundingClientRect();
+  function activeElt() {
+    return document.activeElement;
   }
-  CodeMirror.replaceGetRect = function (f) {
-    getRect = f;
-  };
+  // Older versions of IE throws unspecified error when touching
+  // document.activeElement in some cases (during loading, in iframe)
+  if (ie_upto10)
+    activeElt = function () {
+      try {
+        return document.activeElement;
+      } catch (e) {
+        return document.body;
+      }
+    };
+  function classTest(cls) {
+    return new RegExp('\\b' + cls + '\\b\\s*');
+  }
+  function rmClass(node, cls) {
+    var test = classTest(cls);
+    if (test.test(node.className))
+      node.className = node.className.replace(test, '');
+  }
+  function addClass(node, cls) {
+    if (!classTest(cls).test(node.className))
+      node.className += ' ' + cls;
+  }
+  function joinClasses(a, b) {
+    var as = a.split(' ');
+    for (var i = 0; i < as.length; i++)
+      if (as[i] && !classTest(as[i]).test(b))
+        b += ' ' + as[i];
+    return b;
+  }
+  // WINDOW-WIDE EVENTS
+  // These must be handled carefully, because naively registering a
+  // handler for each editor will cause the editors to never be
+  // garbage collected.
+  function forEachCodeMirror(f) {
+    if (!document.body.getElementsByClassName)
+      return;
+    var byClass = document.body.getElementsByClassName('CodeMirror');
+    for (var i = 0; i < byClass.length; i++) {
+      var cm = byClass[i].CodeMirror;
+      if (cm)
+        f(cm);
+    }
+  }
+  var globalsRegistered = false;
+  function ensureGlobalHandlers() {
+    if (globalsRegistered)
+      return;
+    registerGlobalHandlers();
+    globalsRegistered = true;
+  }
+  function registerGlobalHandlers() {
+    // When the window resizes, we need to refresh active editors.
+    var resizeTimer;
+    on(window, 'resize', function () {
+      if (resizeTimer == null)
+        resizeTimer = setTimeout(function () {
+          resizeTimer = null;
+          knownScrollbarWidth = null;
+          forEachCodeMirror(onResize);
+        }, 100);
+    });
+    // When the window loses focus, we want to show the editor as blurred
+    on(window, 'blur', function () {
+      forEachCodeMirror(onBlur);
+    });
+  }
   // FEATURE DETECTION
   // Detect drag-and-drop
   var dragAndDrop = function () {
       // There is *some* kind of drag-and-drop support in IE6-8, but I
       // couldn't get it to work yet.
-      if (ie_lt9)
+      if (ie_upto8)
         return false;
       var div = elt('div');
       return 'draggable' in div || 'dragDrop' in div;
     }();
-  // For a reason I have yet to figure out, some browsers disallow
-  // word wrapping between certain characters *only* if a new inline
-  // element is started between them. This makes it hard to reliably
-  // measure the position of things, since that requires inserting an
-  // extra span. This terribly fragile set of tests matches the
-  // character combinations that suffer from this phenomenon on the
-  // various browsers.
-  function spanAffectsWrapping() {
-    return false;
-  }
-  if (gecko)
-    // Only for "$'"
-    spanAffectsWrapping = function (str, i) {
-      return str.charCodeAt(i - 1) == 36 && str.charCodeAt(i) == 39;
-    };
-  else if (safari && !/Version\/([6-9]|\d\d)\b/.test(navigator.userAgent))
-    spanAffectsWrapping = function (str, i) {
-      return /\-[^ \-?]|\?[^ !\'\"\),.\-\/:;\?\]\}]/.test(str.slice(i - 1, i + 1));
-    };
-  else if (webkit && !/Chrome\/(?:29|[3-9]\d|\d\d\d)\./.test(navigator.userAgent))
-    spanAffectsWrapping = function (str, i) {
-      if (i > 1 && str.charCodeAt(i - 1) == 45) {
-        if (/\w/.test(str.charAt(i - 2)) && /[^\-?\.]/.test(str.charAt(i)))
-          return true;
-        if (i > 2 && /[\d\.,]/.test(str.charAt(i - 2)) && /[\d\.,]/.test(str.charAt(i)))
-          return false;
-      }
-      return /[~!#%&*)=+}\]|\"\.>,:;][({[<]|-[^\-?\.\u2010-\u201f\u2026]|\?[\w~`@#$%\^&*(_=+{[|><]|…[\w~`@#$%\^&*(_=+{[><]/.test(str.slice(i - 1, i + 1));
-    };
   var knownScrollbarWidth;
   function scrollbarWidth(measure) {
     if (knownScrollbarWidth != null)
@@ -64956,16 +68987,28 @@ window.CodeMirror = function () {
         document.createTextNode('x')
       ]));
       if (measure.firstChild.offsetHeight != 0)
-        zwspSupported = test.offsetWidth <= 1 && test.offsetHeight > 2 && !ie_lt8;
+        zwspSupported = test.offsetWidth <= 1 && test.offsetHeight > 2 && !ie_upto7;
     }
     if (zwspSupported)
       return elt('span', '\u200b');
     else
       return elt('span', '\xa0', null, 'display: inline-block; width: 1px; margin-right: -1px');
   }
+  // Feature-detect IE's crummy client rect reporting for bidi text
+  var badBidiRects;
+  function hasBadBidiRects(measure) {
+    if (badBidiRects != null)
+      return badBidiRects;
+    var txt = removeChildrenAndAdd(measure, document.createTextNode('A\u062eA'));
+    var r0 = range(txt, 0, 1).getBoundingClientRect();
+    if (r0.left == r0.right)
+      return false;
+    var r1 = range(txt, 1, 2).getBoundingClientRect();
+    return badBidiRects = r1.right - r0.right < 3;
+  }
   // See if "".split is the broken IE version, if so, provide an
   // alternative way to split lines.
-  var splitLines = '\n\nb'.split(/\n/).length != 3 ? function (string) {
+  var splitLines = CodeMirror.splitLines = '\n\nb'.split(/\n/).length != 3 ? function (string) {
       var pos = 0, result = [], l = string.length;
       while (pos <= l) {
         var nl = string.indexOf('\n', pos);
@@ -64985,7 +69028,6 @@ window.CodeMirror = function () {
     } : function (string) {
       return string.split(/\r\n?|\n/);
     };
-  CodeMirror.splitLines = splitLines;
   var hasSelection = window.getSelection ? function (te) {
       try {
         return te.selectionStart != te.selectionEnd;
@@ -65008,7 +69050,7 @@ window.CodeMirror = function () {
       e.setAttribute('oncopy', 'return;');
       return typeof e.oncopy == 'function';
     }();
-  // KEY NAMING
+  // KEY NAMES
   var keyNames = {
       3: 'Enter',
       8: 'Backspace',
@@ -65033,12 +69075,14 @@ window.CodeMirror = function () {
       45: 'Insert',
       46: 'Delete',
       59: ';',
+      61: '=',
       91: 'Mod',
       92: 'Mod',
       93: 'Mod',
-      109: '-',
       107: '=',
+      109: '-',
       127: 'Delete',
+      173: '-',
       186: ';',
       187: '=',
       188: ',',
@@ -65050,22 +69094,22 @@ window.CodeMirror = function () {
       220: '\\',
       221: ']',
       222: '\'',
+      63232: 'Up',
+      63233: 'Down',
+      63234: 'Left',
+      63235: 'Right',
+      63272: 'Delete',
+      63273: 'Home',
+      63275: 'End',
       63276: 'PageUp',
       63277: 'PageDown',
-      63275: 'End',
-      63273: 'Home',
-      63234: 'Left',
-      63232: 'Up',
-      63235: 'Right',
-      63233: 'Down',
-      63302: 'Insert',
-      63272: 'Delete'
+      63302: 'Insert'
     };
   CodeMirror.keyNames = keyNames;
   (function () {
     // Number keys
     for (var i = 0; i < 10; i++)
-      keyNames[i + 48] = String(i);
+      keyNames[i + 48] = keyNames[i + 96] = String(i);
     // Alphabetic keys
     for (var i = 65; i <= 90; i++)
       keyNames[i] = String.fromCharCode(i);
@@ -65106,7 +69150,7 @@ window.CodeMirror = function () {
   }
   function lineStart(cm, lineN) {
     var line = getLine(cm.doc, lineN);
-    var visual = visualLine(cm.doc, line);
+    var visual = visualLine(line);
     if (visual != line)
       lineN = lineNo(visual);
     var order = getOrder(visual);
@@ -65114,12 +69158,14 @@ window.CodeMirror = function () {
     return Pos(lineN, ch);
   }
   function lineEnd(cm, lineN) {
-    var merged, line;
-    while (merged = collapsedSpanAtEnd(line = getLine(cm.doc, lineN)))
-      lineN = merged.find().to.line;
+    var merged, line = getLine(cm.doc, lineN);
+    while (merged = collapsedSpanAtEnd(line)) {
+      line = merged.find(1, true).line;
+      lineN = null;
+    }
     var order = getOrder(line);
     var ch = !order ? line.text.length : order[0].level % 2 ? lineLeft(line) : lineRight(line);
-    return Pos(lineN, ch);
+    return Pos(lineN == null ? lineNo(line) : lineN, ch);
   }
   function compareBidiLevel(order, a, b) {
     var linedir = order[0].level;
@@ -65131,25 +69177,25 @@ window.CodeMirror = function () {
   }
   var bidiOther;
   function getBidiPartAt(order, pos) {
+    bidiOther = null;
     for (var i = 0, found; i < order.length; ++i) {
       var cur = order[i];
-      if (cur.from < pos && cur.to > pos) {
-        bidiOther = null;
+      if (cur.from < pos && cur.to > pos)
         return i;
-      }
       if (cur.from == pos || cur.to == pos) {
         if (found == null) {
           found = i;
         } else if (compareBidiLevel(order, cur.level, order[found].level)) {
-          bidiOther = found;
+          if (cur.from != cur.to)
+            bidiOther = found;
           return i;
         } else {
-          bidiOther = i;
+          if (cur.from != cur.to)
+            bidiOther = i;
           return found;
         }
       }
     }
-    bidiOther = null;
     return found;
   }
   function moveInLine(line, pos, dir, byUnit) {
@@ -65157,15 +69203,14 @@ window.CodeMirror = function () {
       return pos + dir;
     do
       pos += dir;
-    while (pos > 0 && isExtendingChar.test(line.text.charAt(pos)));
+    while (pos > 0 && isExtendingChar(line.text.charAt(pos)));
     return pos;
   }
-  // This is somewhat involved. It is needed in order to move
-  // 'visually' through bi-directional text -- i.e., pressing left
-  // should make the cursor go left, even when in RTL text. The
-  // tricky part is the 'jumps', where RTL and LTR text touch each
-  // other. This often requires the cursor offset to move more than
-  // one unit, in order to visually move one unit.
+  // This is needed in order to move 'visually' through bi-directional
+  // text -- i.e., pressing left should make the cursor go left, even
+  // when in RTL text. The tricky part is the 'jumps', where RTL and
+  // LTR text touch each other. This often requires the cursor offset
+  // to move more than one unit, in order to visually move one unit.
   function moveVisually(line, start, dir, byUnit) {
     var bidi = getOrder(line);
     if (!bidi)
@@ -65194,7 +69239,7 @@ window.CodeMirror = function () {
   function moveLogically(line, start, dir, byUnit) {
     var target = start + dir;
     if (byUnit)
-      while (target > 0 && isExtendingChar.test(line.text.charAt(target)))
+      while (target > 0 && isExtendingChar(line.text.charAt(target)))
         target += dir;
     return target < 0 || target > line.text.length ? null : target;
   }
@@ -65221,18 +69266,22 @@ window.CodeMirror = function () {
   // objects) in the order in which they occur visually.
   var bidiOrdering = function () {
       // Character types for codepoints 0 to 0xff
-      var lowTypes = 'bbbbbbbbbtstwsbbbbbbbbbbbbbbssstwNN%%%NNNNNN,N,N1111111111NNNNNNNLLLLLLLLLLLLLLLLLLLLLLLLLLNNNNNNLLLLLLLLLLLLLLLLLLLLLLLLLLNNNNbbbbbbsbbbbbbbbbbbbbbbbbbbbbbbbbb,N%%%%NNNNLNNNNN%%11NLNNN1LNNNNNLLLLLLLLLLLLLLLLLLLLLLLNLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLNLLLLLLLL';
+      var lowTypes = 'bbbbbbbbbtstwsbbbbbbbbbbbbbbssstwNN%%%NNNNNN,N,N1111111111NNNNNNNLLLLLLLLLLLLLLLLLLLLLLLLLLNNNNNNLLLLLLLLLLLLLLLLLLLLLLLLLLNNNNbbbbbbsbbbbbbbbbbbbbbbbbbbbbbbbbb,N%%%%NNNNLNNNNN%%11NLNNN1LNNNNNLLLLLLLLLLLLLLLLLLLLLLLNLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLN';
       // Character types for codepoints 0x600 to 0x6ff
-      var arabicTypes = 'rrrrrrrrrrrr,rNNmmmmmmrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrmmmmmmmmmmmmmmrrrrrrrnnnnnnnnnn%nnrrrmrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrmmmmmmmmmmmmmmmmmmmNmmmmrrrrrrrrrrrrrrrrrr';
+      var arabicTypes = 'rrrrrrrrrrrr,rNNmmmmmmrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrmmmmmmmmmmmmmmrrrrrrrnnnnnnnnnn%nnrrrmrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrmmmmmmmmmmmmmmmmmmmNmmmm';
       function charType(code) {
-        if (code <= 255)
+        if (code <= 247)
           return lowTypes.charAt(code);
         else if (1424 <= code && code <= 1524)
           return 'R';
-        else if (1536 <= code && code <= 1791)
+        else if (1536 <= code && code <= 1773)
           return arabicTypes.charAt(code - 1536);
-        else if (1792 <= code && code <= 2220)
+        else if (1774 <= code && code <= 2220)
           return 'r';
+        else if (8192 <= code && code <= 8203)
+          return 'w';
+        else if (code == 8204)
+          return 'b';
         else
           return 'L';
       }
@@ -65240,6 +69289,11 @@ window.CodeMirror = function () {
       var isNeutral = /[stwN]/, isStrong = /[LRr]/, countsAsLeft = /[Lb1n]/, countsAsNum = /[1n]/;
       // Browsers seem to always treat the boundaries of block elements as being L.
       var outerType = 'L';
+      function BidiSpan(level, from, to) {
+        this.level = level;
+        this.from = from;
+        this.to = to;
+      }
       return function (str) {
         if (!bidiRE.test(str))
           return false;
@@ -65294,7 +69348,7 @@ window.CodeMirror = function () {
           else if (type == '%') {
             for (var end = i + 1; end < len && types[end] == '%'; ++end) {
             }
-            var replace = i && types[i - 1] == '!' || end < len - 1 && types[end] == '1' ? '1' : 'N';
+            var replace = i && types[i - 1] == '!' || end < len && types[end] == '1' ? '1' : 'N';
             for (var j = i; j < end; ++j)
               types[j] = replace;
             i = end - 1;
@@ -65321,7 +69375,7 @@ window.CodeMirror = function () {
             for (var end = i + 1; end < len && isNeutral.test(types[end]); ++end) {
             }
             var before = (i ? types[i - 1] : outerType) == 'L';
-            var after = (end < len - 1 ? types[end] : outerType) == 'L';
+            var after = (end < len ? types[end] : outerType) == 'L';
             var replace = before || after ? 'L' : 'R';
             for (var j = i; j < end; ++j)
               types[j] = replace;
@@ -65339,11 +69393,7 @@ window.CodeMirror = function () {
             var start = i;
             for (++i; i < len && countsAsLeft.test(types[i]); ++i) {
             }
-            order.push({
-              from: start,
-              to: i,
-              level: 0
-            });
+            order.push(new BidiSpan(0, start, i));
           } else {
             var pos = i, at = order.length;
             for (++i; i < len && types[i] != 'L'; ++i) {
@@ -65351,60 +69401,36 @@ window.CodeMirror = function () {
             for (var j = pos; j < i;) {
               if (countsAsNum.test(types[j])) {
                 if (pos < j)
-                  order.splice(at, 0, {
-                    from: pos,
-                    to: j,
-                    level: 1
-                  });
+                  order.splice(at, 0, new BidiSpan(1, pos, j));
                 var nstart = j;
                 for (++j; j < i && countsAsNum.test(types[j]); ++j) {
                 }
-                order.splice(at, 0, {
-                  from: nstart,
-                  to: j,
-                  level: 2
-                });
+                order.splice(at, 0, new BidiSpan(2, nstart, j));
                 pos = j;
               } else
                 ++j;
             }
             if (pos < i)
-              order.splice(at, 0, {
-                from: pos,
-                to: i,
-                level: 1
-              });
+              order.splice(at, 0, new BidiSpan(1, pos, i));
           }
         }
         if (order[0].level == 1 && (m = str.match(/^\s+/))) {
           order[0].from = m[0].length;
-          order.unshift({
-            from: 0,
-            to: m[0].length,
-            level: 0
-          });
+          order.unshift(new BidiSpan(0, 0, m[0].length));
         }
         if (lst(order).level == 1 && (m = str.match(/\s+$/))) {
           lst(order).to -= m[0].length;
-          order.push({
-            from: len - m[0].length,
-            to: len,
-            level: 0
-          });
+          order.push(new BidiSpan(0, len - m[0].length, len));
         }
         if (order[0].level != lst(order).level)
-          order.push({
-            from: len,
-            to: len,
-            level: order[0].level
-          });
+          order.push(new BidiSpan(order[0].level, len, len));
         return order;
       };
     }();
   // THE END
-  CodeMirror.version = '3.15.0';
+  CodeMirror.version = '4.2.0';
   return CodeMirror;
-}();
+}));
 (function () {
   'use strict';
   function doFold(cm, pos, options) {
@@ -66869,42 +70895,67 @@ CodeMirror.overlayMode = CodeMirror.overlayParser = function (base, overlay, com
     }
   };
 };
-(function () {
+// CodeMirror, copyright (c) by Marijn Haverbeke and others
+// Distributed under an MIT license: http://codemirror.net/LICENSE
+(function (mod) {
+  if (typeof exports == 'object' && typeof module == 'object')
+    // CommonJS
+    mod(require('../../lib/codemirror'));
+  else if (typeof define == 'function' && define.amd)
+    // AMD
+    define(['../../lib/codemirror'], mod);
+  else
+    // Plain browser env
+    mod(CodeMirror);
+}(function (CodeMirror) {
   'use strict';
+  var HINT_ELEMENT_CLASS = 'CodeMirror-hint';
+  var ACTIVE_HINT_ELEMENT_CLASS = 'CodeMirror-hint-active';
+  // This is the old interface, kept around for now to stay
+  // backwards-compatible.
   CodeMirror.showHint = function (cm, getHints, options) {
+    if (!getHints)
+      return cm.showHint(options);
+    if (options && options.async)
+      getHints.async = true;
+    var newOpts = { hint: getHints };
+    if (options)
+      for (var prop in options)
+        newOpts[prop] = options[prop];
+    return cm.showHint(newOpts);
+  };
+  CodeMirror.defineExtension('showHint', function (options) {
     // We want a single cursor position.
-    if (cm.somethingSelected())
+    if (this.listSelections().length > 1 || this.somethingSelected())
       return;
-    if (getHints == null)
-      getHints = cm.getHelper(cm.getCursor(), 'hint');
-    if (getHints == null)
+    if (this.state.completionActive)
+      this.state.completionActive.close();
+    var completion = this.state.completionActive = new Completion(this, options);
+    var getHints = completion.options.hint;
+    if (!getHints)
       return;
-    if (cm.state.completionActive)
-      cm.state.completionActive.close();
-    var completion = cm.state.completionActive = new Completion(cm, getHints, options || {});
-    CodeMirror.signal(cm, 'startCompletion', cm);
-    if (completion.options.async)
-      getHints(cm, function (hints) {
+    CodeMirror.signal(this, 'startCompletion', this);
+    if (getHints.async)
+      getHints(this, function (hints) {
         completion.showHints(hints);
       }, completion.options);
     else
-      return completion.showHints(getHints(cm, completion.options));
-  };
-  function Completion(cm, getHints, options) {
+      return completion.showHints(getHints(this, completion.options));
+  });
+  function Completion(cm, options) {
     this.cm = cm;
-    this.getHints = getHints;
-    this.options = options;
+    this.options = this.buildOptions(options);
     this.widget = this.onClose = null;
   }
   Completion.prototype = {
     close: function () {
       if (!this.active())
         return;
+      this.cm.state.completionActive = null;
       if (this.widget)
         this.widget.close();
       if (this.onClose)
         this.onClose();
-      this.cm.state.completionActive = null;
       CodeMirror.signal(this.cm, 'endCompletion', this.cm);
     },
     active: function () {
@@ -66915,13 +70966,14 @@ CodeMirror.overlayMode = CodeMirror.overlayParser = function (base, overlay, com
       if (completion.hint)
         completion.hint(this.cm, data, completion);
       else
-        this.cm.replaceRange(getText(completion), data.from, data.to);
+        this.cm.replaceRange(getText(completion), completion.from || data.from, completion.to || data.to, 'complete');
+      CodeMirror.signal(data, 'pick', completion);
       this.close();
     },
     showHints: function (data) {
       if (!data || !data.list.length || !this.active())
         return this.close();
-      if (!this.options.ghosting && this.options.completeSingle != false && data.list.length == 1)
+      if (this.options.completeSingle && data.list.length == 1)
         this.pick(data, 0);
       else
         this.showWidget(data);
@@ -66929,51 +70981,76 @@ CodeMirror.overlayMode = CodeMirror.overlayParser = function (base, overlay, com
     showWidget: function (data) {
       this.widget = new Widget(this, data);
       CodeMirror.signal(data, 'shown');
-      var debounce = null, completion = this, finished;
-      var closeOn = this.options.closeCharacters || /[\s()\[\]{};:>,]/;
+      var debounce = 0, completion = this, finished;
+      var closeOn = this.options.closeCharacters;
       var startPos = this.cm.getCursor(), startLen = this.cm.getLine(startPos.line).length;
+      var requestAnimationFrame = window.requestAnimationFrame || function (fn) {
+          return setTimeout(fn, 1000 / 60);
+        };
+      var cancelAnimationFrame = window.cancelAnimationFrame || clearTimeout;
       function done() {
         if (finished)
           return;
         finished = true;
         completion.close();
         completion.cm.off('cursorActivity', activity);
-        CodeMirror.signal(data, 'close');
-      }
-      function isDone() {
-        if (finished)
-          return true;
-        if (!completion.widget) {
-          done();
-          return true;
-        }
+        if (data)
+          CodeMirror.signal(data, 'close');
       }
       function update() {
-        if (isDone())
+        if (finished)
           return;
-        if (completion.options.async)
-          completion.getHints(completion.cm, finishUpdate, completion.options);
+        CodeMirror.signal(data, 'update');
+        var getHints = completion.options.hint;
+        if (getHints.async)
+          getHints(completion.cm, finishUpdate, completion.options);
         else
-          finishUpdate(completion.getHints(completion.cm, completion.options));
+          finishUpdate(getHints(completion.cm, completion.options));
       }
-      function finishUpdate(data) {
-        if (isDone())
+      function finishUpdate(data_) {
+        data = data_;
+        if (finished)
           return;
         if (!data || !data.list.length)
           return done();
-        completion.widget.close();
+        if (completion.widget)
+          completion.widget.close();
         completion.widget = new Widget(completion, data);
       }
+      function clearDebounce() {
+        if (debounce) {
+          cancelAnimationFrame(debounce);
+          debounce = 0;
+        }
+      }
       function activity() {
-        clearTimeout(debounce);
+        clearDebounce();
         var pos = completion.cm.getCursor(), line = completion.cm.getLine(pos.line);
-        if (pos.line != startPos.line || line.length - pos.ch != startLen - startPos.ch || pos.ch < startPos.ch || completion.cm.somethingSelected() || pos.ch && closeOn.test(line.charAt(pos.ch - 1)))
+        if (pos.line != startPos.line || line.length - pos.ch != startLen - startPos.ch || pos.ch < startPos.ch || completion.cm.somethingSelected() || pos.ch && closeOn.test(line.charAt(pos.ch - 1))) {
           completion.close();
-        else
-          debounce = setTimeout(update, 170);
+        } else {
+          debounce = requestAnimationFrame(update);
+          if (completion.widget)
+            completion.widget.close();
+        }
       }
       this.cm.on('cursorActivity', activity);
       this.onClose = done;
+    },
+    buildOptions: function (options) {
+      var editor = this.cm.options.hintOptions;
+      var out = {};
+      for (var prop in defaultOptions)
+        out[prop] = defaultOptions[prop];
+      if (editor)
+        for (var prop in editor)
+          if (editor[prop] !== undefined)
+            out[prop] = editor[prop];
+      if (options)
+        for (var prop in options)
+          if (options[prop] !== undefined)
+            out[prop] = options[prop];
+      return out;
     }
   };
   function getText(completion) {
@@ -66982,7 +71059,7 @@ CodeMirror.overlayMode = CodeMirror.overlayParser = function (base, overlay, com
     else
       return completion.text;
   }
-  function buildKeyMap(options, handle) {
+  function buildKeyMap(completion, handle) {
     var baseMap = {
         Up: function () {
           handle.moveFocus(-1);
@@ -66991,21 +71068,22 @@ CodeMirror.overlayMode = CodeMirror.overlayParser = function (base, overlay, com
           handle.moveFocus(1);
         },
         PageUp: function () {
-          handle.moveFocus(-handle.menuSize());
+          handle.moveFocus(-handle.menuSize() + 1, true);
         },
         PageDown: function () {
-          handle.moveFocus(handle.menuSize());
+          handle.moveFocus(handle.menuSize() - 1, true);
         },
         Home: function () {
           handle.setFocus(0);
         },
         End: function () {
-          handle.setFocus(handle.length);
+          handle.setFocus(handle.length - 1);
         },
         Enter: handle.pick,
         Esc: handle.close
       };
-    var ourMap = options.customKeys ? {} : baseMap;
+    var custom = completion.options.customKeys;
+    var ourMap = custom ? {} : baseMap;
     function addBinding(key, val) {
       var bound;
       if (typeof val != 'string')
@@ -67018,28 +71096,35 @@ CodeMirror.overlayMode = CodeMirror.overlayParser = function (base, overlay, com
         bound = val;
       ourMap[key] = bound;
     }
-    if (options.customKeys)
-      for (var key in options.customKeys)
-        if (options.customKeys.hasOwnProperty(key))
-          addBinding(key, options.customKeys[key]);
-    if (options.extraKeys)
-      for (var key in options.extraKeys)
-        if (options.extraKeys.hasOwnProperty(key))
-          addBinding(key, options.extraKeys[key]);
+    if (custom)
+      for (var key in custom)
+        if (custom.hasOwnProperty(key))
+          addBinding(key, custom[key]);
+    var extra = completion.options.extraKeys;
+    if (extra)
+      for (var key in extra)
+        if (extra.hasOwnProperty(key))
+          addBinding(key, extra[key]);
     return ourMap;
+  }
+  function getHintElement(hintsElement, el) {
+    while (el && el != hintsElement) {
+      if (el.nodeName.toUpperCase() === 'LI' && el.parentNode == hintsElement)
+        return el;
+      el = el.parentNode;
+    }
   }
   function Widget(completion, data) {
     this.completion = completion;
     this.data = data;
-    this.options = completion.options || {};
-    var widget = this, cm = completion.cm, options = completion.options;
+    var widget = this, cm = completion.cm;
     var hints = this.hints = document.createElement('ul');
     hints.className = 'CodeMirror-hints';
-    this.selectedHint = 0;
+    this.selectedHint = data.selectedHint || 0;
     var completions = data.list;
     for (var i = 0; i < completions.length; ++i) {
       var elt = hints.appendChild(document.createElement('li')), cur = completions[i];
-      var className = 'CodeMirror-hint' + (i ? '' : ' CodeMirror-hint-active');
+      var className = HINT_ELEMENT_CLASS + (i != this.selectedHint ? '' : ' ' + ACTIVE_HINT_ELEMENT_CLASS);
       if (cur.className != null)
         className = cur.className + ' ' + className;
       elt.className = className;
@@ -67049,18 +71134,33 @@ CodeMirror.overlayMode = CodeMirror.overlayParser = function (base, overlay, com
         elt.appendChild(document.createTextNode(cur.displayText || getText(cur)));
       elt.hintId = i;
     }
-    var pos = cm.cursorCoords(options.alignWithWord !== false ? data.from : null);
+    var pos = cm.cursorCoords(completion.options.alignWithWord ? data.from : null);
     var left = pos.left, top = pos.bottom, below = true;
     hints.style.left = left + 'px';
     hints.style.top = top + 'px';
-    if (this.options.ghosting) {
-      hints.style.display = completions.length > 1 ? 'block' : 'none';
-    }
     // If we're at the edge of the screen, then we want the menu to appear on the left of the cursor.
     var winW = window.innerWidth || Math.max(document.body.offsetWidth, document.documentElement.offsetWidth);
     var winH = window.innerHeight || Math.max(document.body.offsetHeight, document.documentElement.offsetHeight);
-    var box = hints.getBoundingClientRect();
-    var overlapX = box.right - winW, overlapY = box.bottom - winH;
+    (completion.options.container || document.body).appendChild(hints);
+    var box = hints.getBoundingClientRect(), overlapY = box.bottom - winH;
+    if (overlapY > 0) {
+      var height = box.bottom - box.top, curTop = box.top - (pos.bottom - pos.top);
+      if (curTop - height > 0) {
+        // Fits above cursor
+        hints.style.top = (top = curTop - height) + 'px';
+        below = false;
+      } else if (height > winH) {
+        hints.style.height = winH - 5 + 'px';
+        hints.style.top = (top = pos.bottom - box.top) + 'px';
+        var cursor = cm.getCursor();
+        if (data.from.ch != cursor.ch) {
+          pos = cm.cursorCoords(cursor);
+          hints.style.left = (left = pos.left) + 'px';
+          box = hints.getBoundingClientRect();
+        }
+      }
+    }
+    var overlapX = box.left - winW;
     if (overlapX > 0) {
       if (box.right - box.left > winW) {
         hints.style.width = winW - 5 + 'px';
@@ -67068,21 +71168,9 @@ CodeMirror.overlayMode = CodeMirror.overlayParser = function (base, overlay, com
       }
       hints.style.left = (left = pos.left - overlapX) + 'px';
     }
-    if (overlapY > 0) {
-      var height = box.bottom - box.top;
-      if (box.top - (pos.bottom - pos.top) - height > 0) {
-        overlapY = height + (pos.bottom - pos.top);
-        below = false;
-      } else if (height > winH) {
-        hints.style.height = winH - 5 + 'px';
-        overlapY -= height - winH;
-      }
-      hints.style.top = (top = pos.bottom - overlapY) + 'px';
-    }
-    (options.container || document.body).appendChild(hints);
-    cm.addKeyMap(this.keyMap = buildKeyMap(options, {
-      moveFocus: function (n) {
-        widget.changeActive(widget.selectedHint + n);
+    cm.addKeyMap(this.keyMap = buildKeyMap(completion, {
+      moveFocus: function (n, avoidWrap) {
+        widget.changeActive(widget.selectedHint + n, avoidWrap);
       },
       setFocus: function (n) {
         widget.changeActive(n);
@@ -67096,9 +71184,10 @@ CodeMirror.overlayMode = CodeMirror.overlayParser = function (base, overlay, com
       },
       pick: function () {
         widget.pick();
-      }
+      },
+      data: data
     }));
-    if (options.closeOnUnfocus !== false) {
+    if (completion.options.closeOnUnfocus) {
       var closingOnBlur;
       cm.on('blur', this.onBlur = function () {
         closingOnBlur = setTimeout(function () {
@@ -67122,16 +71211,19 @@ CodeMirror.overlayMode = CodeMirror.overlayParser = function (base, overlay, com
       hints.style.left = left + startScroll.left - curScroll.left + 'px';
     });
     CodeMirror.on(hints, 'dblclick', function (e) {
-      var t = widget.getHintElement(hints, e.target || e.srcElement);
+      var t = getHintElement(hints, e.target || e.srcElement);
       if (t && t.hintId != null) {
         widget.changeActive(t.hintId);
         widget.pick();
       }
     });
     CodeMirror.on(hints, 'click', function (e) {
-      var t = widget.getHintElement(hints, e.target || e.srcElement);
-      if (t && t.hintId != null)
+      var t = getHintElement(hints, e.target || e.srcElement);
+      if (t && t.hintId != null) {
         widget.changeActive(t.hintId);
+        if (completion.options.completeOnSingleClick)
+          widget.pick();
+      }
     });
     CodeMirror.on(hints, 'mousedown', function () {
       setTimeout(function () {
@@ -67139,10 +71231,6 @@ CodeMirror.overlayMode = CodeMirror.overlayParser = function (base, overlay, com
       }, 20);
     });
     CodeMirror.signal(data, 'select', completions[0], hints.firstChild);
-    if (this.options.ghosting && this.data.list[0]) {
-      this.removeGhost();
-      this.ghost = new Ghost(this, this.data, this.data.list[0].displayText, this.pick.bind(this));
-    }
     return true;
   }
   Widget.prototype = {
@@ -67152,9 +71240,8 @@ CodeMirror.overlayMode = CodeMirror.overlayParser = function (base, overlay, com
       this.completion.widget = null;
       this.hints.parentNode.removeChild(this.hints);
       this.completion.cm.removeKeyMap(this.keyMap);
-      this.removeGhost();
       var cm = this.completion.cm;
-      if (this.options.closeOnUnfocus !== false) {
+      if (this.completion.options.closeOnUnfocus) {
         cm.off('blur', this.onBlur);
         cm.off('focus', this.onFocus);
       }
@@ -67163,18 +71250,17 @@ CodeMirror.overlayMode = CodeMirror.overlayParser = function (base, overlay, com
     pick: function () {
       this.completion.pick(this.data, this.selectedHint);
     },
-    changeActive: function (i) {
-      i = Math.max(0, Math.min(i, this.data.list.length - 1));
+    changeActive: function (i, avoidWrap) {
+      if (i >= this.data.list.length)
+        i = avoidWrap ? this.data.list.length - 1 : 0;
+      else if (i < 0)
+        i = avoidWrap ? 0 : this.data.list.length - 1;
       if (this.selectedHint == i)
         return;
       var node = this.hints.childNodes[this.selectedHint];
-      node.className = node.className.replace(' CodeMirror-hint-active', '');
+      node.className = node.className.replace(' ' + ACTIVE_HINT_ELEMENT_CLASS, '');
       node = this.hints.childNodes[this.selectedHint = i];
-      node.className += ' CodeMirror-hint-active';
-      if (this.options.ghosting) {
-        this.removeGhost();
-        this.ghost = new Ghost(this, this.data, this.data.list[i].displayText, this.pick.bind(this));
-      }
+      node.className += ' ' + ACTIVE_HINT_ELEMENT_CLASS;
       if (node.offsetTop < this.hints.scrollTop)
         this.hints.scrollTop = node.offsetTop - 3;
       else if (node.offsetTop + node.offsetHeight > this.hints.scrollTop + this.hints.clientHeight)
@@ -67183,78 +71269,52 @@ CodeMirror.overlayMode = CodeMirror.overlayParser = function (base, overlay, com
     },
     screenAmount: function () {
       return Math.floor(this.hints.clientHeight / this.hints.firstChild.offsetHeight) || 1;
-    },
-    removeGhost: function () {
-      if (!this.ghost) {
-        return;
-      }
-      this.ghost.remove();
-      return this;
-    },
-    getHintElement: function (parent, el) {
-      while (el && el !== parent && !this.isHintElement(el)) {
-        el = el.parentNode;
-      }
-      return el === parent ? void 0 : el;
-      ;
-    },
-    isHintElement: function (el) {
-      return el.nodeName && el.nodeName.toUpperCase() === 'LI' && el.className.split(/\s/).indexOf('CodeMirror-hint') !== -1;
-      ;
     }
   };
-  function Ghost(widget, data, text, accept) {
-    var that = this;
-    this.cm = widget.completion.cm;
-    this.data = data;
-    this.widget = widget;
-    this.completion = widget.completion;
-    this.cm.addKeyMap(this.keyMap = {
-      'Tab': accept || function () {
-        that.accept();
-      },
-      'Right': accept || function () {
-        that.accept();
+  CodeMirror.registerHelper('hint', 'auto', function (cm, options) {
+    var helpers = cm.getHelpers(cm.getCursor(), 'hint'), words;
+    if (helpers.length) {
+      for (var i = 0; i < helpers.length; i++) {
+        var cur = helpers[i](cm, options);
+        if (cur && cur.list.length)
+          return cur;
       }
-    });
-    if (!text) {
-      return this.remove();
+    } else if (words = cm.getHelper(cm.getCursor(), 'hintWords')) {
+      if (words)
+        return CodeMirror.hint.fromList(cm, { words: words });
+    } else if (CodeMirror.hint.anyword) {
+      return CodeMirror.hint.anyword(cm, options);
     }
-    // At the moment, the ghost is going to assume the prefix text is accurate
-    var suffix = this.suffix = text.substr(data.word.length);
-    if (!suffix.length) {
-      return this.remove();
+  });
+  CodeMirror.registerHelper('hint', 'fromList', function (cm, options) {
+    var cur = cm.getCursor(), token = cm.getTokenAt(cur);
+    var found = [];
+    for (var i = 0; i < options.words.length; i++) {
+      var word = options.words[i];
+      if (word.slice(0, token.string.length) == token.string)
+        found.push(word);
     }
-    // Creates the ghost element to be styled.
-    var ghostHint = document.createElement('span');
-    ghostHint.className = 'CodeMirror-hint-ghost';
-    ghostHint.appendChild(document.createTextNode(suffix));
-    // Abuse the bookmark feature of CodeMirror to achieve the desired completion
-    // effect without modifying source code.
-    this._ghost = this.cm.setBookmark(this.data.to, {
-      widget: ghostHint,
-      insertLeft: true
-    });
-  }
-  Ghost.prototype = {
-    accept: function () {
-      if (this.suffix && this.data) {
-        this.cm.replaceRange(this.suffix, this.data.to, this.data.to);
-      }
-      return this.remove();
-    },
-    remove: function () {
-      if (this._ghost) {
-        this._ghost.clear();
-      }
-      this.cm.removeKeyMap(this.keyMap);
-      delete this.ghost;
-      delete this.suffix;
-      delete this.widget.ghost;
-      return this;
-    }
-  };
-}());
+    if (found.length)
+      return {
+        list: found,
+        from: CodeMirror.Pos(cur.line, token.start),
+        to: CodeMirror.Pos(cur.line, token.end)
+      };
+  });
+  CodeMirror.commands.autocomplete = CodeMirror.showHint;
+  var defaultOptions = {
+      hint: CodeMirror.hint.auto,
+      completeSingle: true,
+      alignWithWord: true,
+      closeCharacters: /[\s()\[\]{};:>,]/,
+      closeOnUnfocus: true,
+      completeOnSingleClick: false,
+      container: null,
+      customKeys: null,
+      extraKeys: null
+    };
+  CodeMirror.defineOption('hintOptions', null);
+}));
 CodeMirror.defineMode('xml', function (config, parserConfig) {
   var indentUnit = config.indentUnit;
   var multilineTagIndentFactor = parserConfig.multilineTagIndentFactor || 1;
@@ -68717,6 +72777,15 @@ if (!String.prototype.endsWith) {
         editor = window.editor = cm;
         return cm;
       };
+      service.setLine = function (editor, lineNumber, text) {
+        editor.replaceRange(text, {
+          line: lineNumber,
+          ch: 0
+        }, { line: lineNumber });
+      };
+      service.removeLine = function (editor, lineNumber) {
+        editor.replaceRange('', { line: lineNumber === 0 ? lineNumber : lineNumber - 1 }, { line: lineNumber });
+      };
       service.getEditor = function () {
         return editor;
       };
@@ -68764,13 +72833,16 @@ if (!String.prototype.endsWith) {
         var tt = document.createElement('div');
         tt.className = 'CodeMirror-lint-tooltip';
         tt.appendChild(content.cloneNode(true));
+        // need to append element to DOM to get its height
+        tt.style.visibility = 'hidden';
+        document.body.appendChild(tt);
         var offset = $(node).offset();
-        tt.style.top = Math.max(0, offset.top - tt.offsetHeight - 5) + 'px';
+        tt.style.top = Math.max(0, offset.top - tt.offsetHeight) + 'px';
         tt.style.left = offset.left + 20 + 'px';
         if (tt.style.opacity !== null) {
           tt.style.opacity = 1;
         }
-        document.body.appendChild(tt);
+        tt.style.visibility = 'visible';
         return tt;
       }
       function rm(elt) {
@@ -68802,6 +72874,9 @@ if (!String.prototype.endsWith) {
           }
         };
         function isMouseOverElement(element, e) {
+          if (!e) {
+            return false;
+          }
           var left = $(element).offset().left;
           var right = left + $(element).outerWidth();
           var mouseOverX = left <= e.clientX && e.clientX <= right + 5;
@@ -71081,7 +75156,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         return path + '.' + ext;
       }
       function ramlConverter() {
-        return new oasRamlConverter.Converter(oasRamlConverter.Formats.SWAGGER, oasRamlConverter.Formats.RAML10);
+        return new oasRamlConverter.Converter(oasRamlConverter.Formats.OAS, oasRamlConverter.Formats.RAML10);
       }
       function convertZip(root, contents) {
         var decimalRegexp = /^\d+\.\d+$/;
@@ -71203,7 +75278,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       }
       function swaggerConverter(file) {
         var from = ramlEditorMainHelpers.isApiDefinitionV08(file.contents) ? oasRamlConverter.Formats.RAML08 : oasRamlConverter.Formats.RAML10;
-        return new oasRamlConverter.Converter(from, oasRamlConverter.Formats.SWAGGER);
+        return new oasRamlConverter.Converter(from, oasRamlConverter.Formats.OAS);
       }
       function convertData(file, deferred, format) {
         var options = {
@@ -72058,6 +76133,7 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
         $scope.raml = raml;
         $scope.title = raml && raml.title;
         $scope.version = raml && raml.version;
+        $scope.ramlError = undefined;
         $scope.currentError = undefined;
         lineOfCurrentError = undefined;
       }));
@@ -72068,6 +76144,7 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
               message: errors.message,
               isWarning: errors.isWarning
             }];
+        $scope.ramlError = errors;
         codeMirrorErrors.displayAnnotations(parserErrors.map(function mapErrorToAnnotation(error) {
           var errorInfo = error;
           var tracingInfo = {
@@ -72411,11 +76488,12 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
   angular.module('ramlEditorApp').controller('mockingServiceController', [
     '$scope',
     'mockingService',
+    'codeMirror',
     'getNode',
-    function mockingServiceControllerFactory($scope, mockingService, getNode) {
+    function mockingServiceControllerFactory($scope, mockingService, codeMirror, getNode) {
       function addBaseUri() {
         function setLine(lineNumber, line, prefix) {
-          $scope.editor.setLine(lineNumber, (prefix || '') + $scope.editor.getLine(lineNumber) + '\n' + line);
+          codeMirror.setLine($scope.editor, lineNumber, (prefix || '') + $scope.editor.getLine(lineNumber) + '\n' + line);
         }
         var baseUri = 'baseUri: ' + $scope.mock.baseUri;
         var node = getNode($scope.editor, 0);
@@ -72448,7 +76526,7 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
         for (lineNumber = 0; lineNumber < $scope.editor.lineCount(); lineNumber++) {
           line = $scope.editor.getLine(lineNumber).trim();
           if (line === baseUriLine) {
-            $scope.editor.removeLine(lineNumber);
+            codeMirror.removeLine($scope.editor, lineNumber);
             break;
           }
         }
@@ -72457,7 +76535,7 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
         for (lineNumber = Math.min(lineNumber, $scope.editor.lineCount() - 1); lineNumber >= 0; lineNumber--) {
           line = $scope.editor.getLine(lineNumber).trim();
           if (line.indexOf('#') === 0 && line.slice(1).trim().indexOf('baseUri: ') === 0) {
-            $scope.editor.setLine(lineNumber, line.slice(1).trim());
+            codeMirror.setLine($scope.editor, lineNumber, line.slice(1).trim());
             break;
           }
         }
@@ -74035,7 +78113,7 @@ angular.module('ramlEditorApp').run([
     $templateCache.put('views/new-name-modal.html', '<form name="form" novalidate ng-submit="submit(form)">\n' + '  <div class="modal-header">\n' + '    <h3>{{input.title}}</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    <!-- name -->\n' + '    <div class="form-group" ng-class="{\'has-error\': form.$submitted && form.name.$invalid}">\n' + '      <p>\n' + '        {{input.message}}\n' + '      </p>\n' + '      <p ng-if="input.link">\n' + '        Learn more\n' + '        <a target="_blank" href="{{input.link}}">\n' + '          <i class="fa fa-external-link"></i>\n' + '        </a>\n' + '      </p>\n' + '      <!-- label -->\n' + '      <label for="name" class="control-label required-field-label">Name</label>\n' + '\n' + '      <!-- input -->\n' + '      <input id="name" name="name" type="text"\n' + '             ng-model="input.newName" class="form-control"\n' + '             ng-validate="isValid($value)"\n' + '             ng-maxlength="64" ng-auto-focus="true" value="{{input.suggestedName}}" required>\n' + '\n' + '      <!-- error -->\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.required">Please provide a name.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.maxlength">Name must be shorter than 64 characters.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.validate">{{validationErrorMessage}}</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n' + '    <button type="submit" class="btn btn-primary">OK</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/raml-editor-context-menu.tmpl.html', '<ul role="context-menu" ng-show="opened">\n' + '  <li role="context-menu-item" ng-mouseenter="openFileMenu(action)" ng-mouseleave="closeFileMenu()" ng-repeat="action in actions" ng-click="action.execute()">\n' + '    {{ action.label }}\n' + '    <i class="submenu-icon fa fa-caret-right" ng-if="action.fragments !== undefined"></i>\n' + '    <raml-editor-new-file-menu ng-if="action.fragments !== undefined" target="target" show-file-menu="showFileMenu" show-fragment-menu="showFragmentMenu" open-file-menu-condition="showFragmentMenu" menu-role="context-menu"></raml-editor-new-file-menu>\n' + '  </li>\n' + '</ul>\n');
     $templateCache.put('views/raml-editor-file-browser.tmpl.html', '<raml-editor-context-menu></raml-editor-context-menu>\n' + '\n' + '<script type="text/ng-template" id="file-item.html">\n' + '  <div ui-tree-handle class="file-item" ng-right-click="fileBrowser.showContextMenu($event, node)" ng-click="fileBrowser.select(node)"\n' + '    ng-class="{currentfile: fileBrowser.currentTarget.path === node.path && !isDragging,\n' + '      dirty: node.dirty,\n' + '      geared: fileBrowser.contextMenuOpenedFor(node),\n' + '      directory: node.isDirectory,\n' + '      \'no-drop\': fileBrowser.cursorState === \'no\',\n' + '      copy: fileBrowser.cursorState === \'ok\'}"\n' + '    ng-drop="node.isDirectory && fileBrowser.dropFile($event, node)">\n' + '    <span class="file-name" ng-click="toggleFolderCollapse(node)">\n' + '      <i class="fa icon fa-caret-right fa-fw" ng-if="node.isDirectory" ng-class="{\'fa-rotate-90\': !collapsed}"></i>\n' + '      <i class="fa icon fa-fw" ng-class="{\'fa-folder-o\': node.isDirectory, \'fa-file-text-o\': !node.isDirectory}"></i>\n' + '      &nbsp;{{node.name}}\n' + '    </span>\n' + '    <i class="fa fa-cog" ng-click="fileBrowser.showContextMenu($event, node)" ng-class="{hidden: isDragging}" data-nodrag></i>\n' + '  </div>\n' + '\n' + '  <ul ui-tree-nodes ng-if="node.isDirectory" ng-class="{hidden: collapsed}" ng-model="node.children">\n' + '    <li ui-tree-node ng-repeat="node in node.children" ng-include="\'file-item.html\'" data-collapsed="node.collapsed" data-path="{{node.path}}">\n' + '    </li>\n' + '  </ul>\n' + '</script>\n' + '\n' + '<div ui-tree="fileTreeOptions" ng-model="homeDirectory" class="file-list" data-drag-delay="300" data-empty-place-holder-enabled="false" ng-drop="fileBrowser.dropFile($event, homeDirectory)" ng-right-click="fileBrowser.showContextMenu($event, homeDirectory)">\n' + '  <ul ui-tree-nodes ng-model="homeDirectory.children" id="tree-root">\n' + '    <ui-tree-dummy-node class="top"></ui-tree-dummy-node>\n' + '    <li ui-tree-node ng-repeat="node in homeDirectory.children" ng-include="\'file-item.html\'" data-collapsed="node.collapsed"\n' + '     data-path="{{node.path}}"\n' + '     ng-drag-enter="node.collapsed = false"\n' + '     ng-drag-leave="node.collapsed = true"></li>\n' + '    <ui-tree-dummy-node class="bottom" ng-click="fileBrowser.select(homeDirectory)"></ui-tree-dummy-node>\n' + '  </ul>\n' + '</div>\n');
-    $templateCache.put('views/raml-editor-main.tmpl.html', '<div role="raml-editor" class="{{theme}}">\n' + '  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications, error: level === \'error\'}">\n' + '    {{message}}\n' + '    <i class="fa" ng-class="{\'fa-check\': level === \'info\', \'fa-warning\': level === \'error\'}" ng-click="hideNotifications()"></i>\n' + '  </div>\n' + '\n' + '  <header>\n' + '    <h1>\n' + '      <strong>API</strong> Designer\n' + '    </h1>\n' + '\n' + '    <a role="logo" target="_blank" href="http://mulesoft.com"></a>\n' + '  </header>\n' + '\n' + '  <ul class="menubar">\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-project-button></raml-editor-project-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-view-button></raml-editor-view-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-help-button></raml-editor-help-button>\n' + '    </li>\n' + '    <li class="spacer file-absolute-path">{{getSelectedFileAbsolutePath()}}</li>\n' + '    <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">\n' + '      <div class="title">Mocking Service</div>\n' + '      <div class="field-wrapper" ng-class="{loading: loading}">\n' + '        <i class="fa fa-spin fa-spinner" ng-if="loading"></i>\n' + '        <div class="field" ng-if="!loading">\n' + '          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />\n' + '          <label for="mockingServiceEnabled"></label>\n' + '        </div>\n' + '      </div>\n' + '    </li>\n' + '  </ul>\n' + '\n' + '  <div role="flexColumns">\n' + '    <raml-editor-file-browser role="browser"></raml-editor-file-browser>\n' + '\n' + '    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev"><div class="split split-left">&nbsp;</div></div>\n' + '\n' + '    <div role="editor" ng-class="{error: currentError}">\n' + '      <div id="code" role="code"></div>\n' + '\n' + '      <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">\n' + '        <div role="shelf-tab" ng-click="toggleShelf()">\n' + '          <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? \'fa-caret-up\' : \'fa-caret-down\'"></i>\n' + '        </div>\n' + '\n' + '        <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="\'views/raml-editor-shelf.tmpl.html\'"></div>\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="470"><div class="split split-right">&nbsp;</div></div>\n' + '\n' + '    <div ng-show="getIsConsoleVisible()" role="preview-wrapper" class="raml-console-embedded">\n' + '      <div ng-if="!splitterCollapsed_consoleAndEditor && getIsConsoleVisible()">\n' + '        <raml-console raml="raml"\n' + '            options="{ singleView: true, disableThemeSwitcher: true, disableRamlClientGenerator: true, disableTitle: true}"\n' + '            style="padding: 0; margin-top: 0;"></raml-console>\n' + '      </div>\n' + '    </div>\n' + '  </div>\n' + '</div>\n');
+    $templateCache.put('views/raml-editor-main.tmpl.html', '<div role="raml-editor" class="{{theme}}">\n' + '  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications, error: level === \'error\'}">\n' + '    {{message}}\n' + '    <i class="fa" ng-class="{\'fa-check\': level === \'info\', \'fa-warning\': level === \'error\'}" ng-click="hideNotifications()"></i>\n' + '  </div>\n' + '\n' + '  <header>\n' + '    <h1>\n' + '      <strong>API</strong> Designer\n' + '    </h1>\n' + '\n' + '    <a role="logo" target="_blank" href="http://mulesoft.com"></a>\n' + '  </header>\n' + '\n' + '  <ul class="menubar">\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-project-button></raml-editor-project-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-view-button></raml-editor-view-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-help-button></raml-editor-help-button>\n' + '    </li>\n' + '    <li class="spacer file-absolute-path">{{getSelectedFileAbsolutePath()}}</li>\n' + '    <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">\n' + '      <div class="title">Mocking Service</div>\n' + '      <div class="field-wrapper" ng-class="{loading: loading}">\n' + '        <i class="fa fa-spin fa-spinner" ng-if="loading"></i>\n' + '        <div class="field" ng-if="!loading">\n' + '          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />\n' + '          <label for="mockingServiceEnabled"></label>\n' + '        </div>\n' + '      </div>\n' + '    </li>\n' + '  </ul>\n' + '\n' + '  <div role="flexColumns">\n' + '    <raml-editor-file-browser role="browser"></raml-editor-file-browser>\n' + '\n' + '    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev"><div class="split split-left">&nbsp;</div></div>\n' + '\n' + '    <div role="editor" ng-class="{error: currentError}">\n' + '      <div id="code" role="code"></div>\n' + '\n' + '      <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">\n' + '        <div role="shelf-tab" ng-click="toggleShelf()">\n' + '          <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? \'fa-caret-up\' : \'fa-caret-down\'"></i>\n' + '        </div>\n' + '\n' + '        <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="\'views/raml-editor-shelf.tmpl.html\'"></div>\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="470"><div class="split split-right">&nbsp;</div></div>\n' + '\n' + '    <div ng-show="getIsConsoleVisible()" role="preview-wrapper" class="raml-console-embedded">\n' + '      <div ng-if="!splitterCollapsed_consoleAndEditor && getIsConsoleVisible()">\n' + '        <raml-console raml="raml" errors="ramlError" disable-description="true"\n' + '            options="{ singleView: true, disableThemeSwitcher: true, disableRamlClientGenerator: true, disableTitle: true}"\n' + '            style="padding: 0; margin-top: 0;"></raml-console>\n' + '      </div>\n' + '    </div>\n' + '  </div>\n' + '</div>\n');
     $templateCache.put('views/raml-editor-shelf.tmpl.html', '<ul role="sections" ng-controller="ramlEditorShelf">\n' + '  <li role="section" ng-repeat="category in model.categories | orderBy:orderSections" class="{{category.name | dasherize}}">\n' + '    {{category.name}}&nbsp;({{category.items.length}})\n' + '    <ul role="items">\n' + '      <li ng-repeat="item in category.items" ng-click="itemClick(item)"><i class="fa fa-reply"></i><span>{{item.title}}</span></li>\n' + '    </ul>\n' + '  </li>\n' + '</ul>\n');
   }
 ]);

@@ -38,7 +38,7 @@
 
       function swaggerConverter (file) {
         var from = ramlEditorMainHelpers.isApiDefinitionV08(file.contents) ? oasRamlConverter.Formats.RAML08 : oasRamlConverter.Formats.RAML10;
-        return new oasRamlConverter.Converter(from, oasRamlConverter.Formats.SWAGGER);
+        return new oasRamlConverter.Converter(from, oasRamlConverter.Formats.OAS);
       }
 
       function convertData(file, deferred, format) {
