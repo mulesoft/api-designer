@@ -192,12 +192,15 @@
         $scope.raml         = raml;
         $scope.title        = raml && raml.title;
         $scope.version      = raml && raml.version;
+        $scope.ramlError    = undefined;
         $scope.currentError = undefined;
         lineOfCurrentError  = undefined;
       }));
 
       $scope.$on('event:raml-parser-error', safeApplyWrapper($scope, function onRamlParserError(event, errors) {
         var parserErrors = Array.isArray(errors) ? errors : [{line: 0, column: 1, message: errors.message, isWarning: errors.isWarning}];
+
+        $scope.ramlError = errors;
 
         codeMirrorErrors.displayAnnotations(parserErrors.map(function mapErrorToAnnotation(error) {
           var errorInfo = error;

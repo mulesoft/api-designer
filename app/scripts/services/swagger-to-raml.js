@@ -14,7 +14,7 @@
       }
 
       function ramlConverter () {
-        return new oasRamlConverter.Converter(oasRamlConverter.Formats.SWAGGER, oasRamlConverter.Formats.RAML10);
+        return new oasRamlConverter.Converter(oasRamlConverter.Formats.OAS, oasRamlConverter.Formats.RAML10);
       }
 
       function convertZip(root, contents) {
