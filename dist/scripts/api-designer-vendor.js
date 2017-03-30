@@ -81378,11 +81378,14 @@ exports.javascript = require('./javascript');
       restrict: 'E',
       templateUrl: 'directives/documentation.tpl.html',
       controller: ['$scope', function($scope) {
-        var defaultSchemaKey = Object.keys($scope.securitySchemes).sort()[0];
-        var defaultSchema    = $scope.securitySchemes[defaultSchemaKey];
-
         $scope.markedOptions = RAML.Settings.marked;
-        $scope.documentationSchemeSelected = defaultSchema;
+
+        $scope.$watch('securitySchemes', function() {
+          var defaultSchemaKey = Object.keys($scope.securitySchemes).sort()[0];
+          var defaultSchema    = $scope.securitySchemes[defaultSchemaKey];
+
+          $scope.documentationSchemeSelected = defaultSchema;
+        });
 
         function mergeResponseCodes(methodCodes, schemas) {
           var extractSchema = function (key) { return schemas.hasOwnProperty(key) ? schemas[key] : undefined; };
@@ -81421,8 +81424,10 @@ exports.javascript = require('./javascript');
             });
           }
         }
-        $scope.fullResponses = mergeResponseCodes($scope.methodInfo.responses || {}, $scope.methodInfo.securitySchemes());
-        $scope.fullResponseCodes = Object.keys($scope.fullResponses);
+        $scope.$watch('methodInfo', function () {
+          $scope.fullResponses = mergeResponseCodes($scope.methodInfo.responses || {}, $scope.methodInfo.securitySchemes());
+          $scope.fullResponseCodes = Object.keys($scope.fullResponses);
+        });
 
         $scope.isSchemeSelected = function isSchemeSelected(scheme) {
           return scheme.id === $scope.documentationSchemeSelected.id;
@@ -81655,10 +81660,6 @@ exports.javascript = require('./javascript');
       },
       controller: ['$scope', function($scope) {
         $scope.getBeatifiedExample = $scope.getBeatifiedExampleRef();
-        $scope.examples = transformExample($scope.exampleContainer);
-        $scope.currentExample = 0;
-
-        $scope.isXML = $scope.exampleContainer.name === 'application/xml';
 
         $scope.changeExample = function(example) {
           $scope.currentExample = example;
@@ -81666,6 +81667,9 @@ exports.javascript = require('./javascript');
 
         $scope.$watch('exampleContainer', function (value) {
           $scope.examples = transformExample(value);
+          $scope.currentExample = 0;
+
+          $scope.isXML = value.name === 'application/xml';
         });
       }]
     };
@@ -82484,6 +82488,7 @@ exports.javascript = require('./javascript');
         controller:  'RamlConsoleController',
         scope:       {
           raml:    '=',
+          errors:  '=',
           options: '='
         }
       };
@@ -82954,7 +82959,7 @@ exports.javascript = require('./javascript');
             if (success) {
               $scope.vm.raml = api.specification;
             } else {
-              $scope.vm.error           = { message: 'Api contains errors.'};
+              $scope.vm.error           = { message: 'Api contains errors.', errors: issues};
               $scope.vm.codeMirror.lint = lintFromError(issues);
             }
           })
@@ -83896,9 +83901,11 @@ exports.javascript = require('./javascript');
         type: '='
       },
       controller: ['$scope', function ($scope) {
-        $scope.properties = {
-          body: [$scope.type]
-        };
+        $scope.$watch('type', function () {
+          $scope.properties = {
+            body: [$scope.type]
+          };
+        });
       }]
     };
   };
@@ -83958,7 +83965,7 @@ exports.javascript = require('./javascript');
           $rootScope.$broadcast(TOGGLE_POPOVER);
 
           $timeout(function () {
-            $scope.selectedType = RAML.Inspector.Types.mergeProperty({
+            $scope.selectedType = RAML.Inspector.Types.mergeType({
                 displayName: type,
                 type: [type]
               },
@@ -85750,7 +85757,10 @@ RAML.Inspector = (function() {
       if (superType) {
         var superTypeProperties = convertProperties(superType);
         properties = angular.extend({}, superTypeProperties, properties);
-        return getSuperTypesProperties(properties, superType.type[0], types);
+        superType.type.forEach(function (typeName) {
+          var typeProperties = getSuperTypesProperties(properties, typeName, types);
+          properties = angular.extend({}, typeProperties, properties);
+        });
       }
     }
     return properties;
@@ -88403,17 +88413,37 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
 
   $templateCache.put('directives/raml-console.tpl.html',
     "<div>\n" +
-    "  <div class=\"raml-console-meta-button-group\">\n" +
-    "    <theme-switcher ng-if=\"!disableThemeSwitcher\"></theme-switcher>\n" +
-    "    <raml-client-generator ng-if=\"!disableRamlClientGenerator\"></raml-client-generator>\n" +
+    "  <div ng-if=\"errors\">\n" +
+    "    <h1 class=\"raml-console-title\">RAML Console</h1>\n" +
+    "    <header class=\"raml-console-initializer-row raml-console-initializer-subheader\">\n" +
+    "      <h4 class=\"raml-console-initializer-subhead\">Error while parsing</h4>\n" +
+    "    </header>\n" +
+    "\n" +
+    "    <div class=\"raml-console-initializer-row\">\n" +
+    "      <div class=\"raml-console-parser-error\">\n" +
+    "        <span>Api contains errors.</span>\n" +
+    "        <a ng-hide=\"!showErrorDetail == true\" ng-click=\"showErrorDetail = false\">(Show less)</a>\n" +
+    "        <a ng-hide=\"showErrorDetail\" ng-click=\"showErrorDetail = true\">(Show more)</a>\n" +
+    "      </div>\n" +
+    "      <div class=\"raml-console-error-pre\" ng-repeat=\"err in errors\" ng-show=\"showErrorDetail\">\n" +
+    "        [{{err.isWarning && 'warning' || 'error'}}] {{err.message}}\n" +
+    "      </div>\n" +
+    "    </div>\n" +
     "  </div>\n" +
     "\n" +
-    "  <h1 ng-if=\"!disableTitle\" class=\"raml-console-title\">{{raml.title}}</h1>\n" +
+    "  <div ng-if=\"!errors\">\n" +
+    "    <div class=\"raml-console-meta-button-group\">\n" +
+    "      <theme-switcher ng-if=\"!disableThemeSwitcher\"></theme-switcher>\n" +
+    "      <raml-client-generator ng-if=\"!disableRamlClientGenerator\"></raml-client-generator>\n" +
+    "    </div>\n" +
+    "\n" +
+    "    <h1 ng-if=\"!disableTitle\" class=\"raml-console-title\">{{raml.title}}</h1>\n" +
     "\n" +
     "\n" +
-    "  <div ng-if=\"!disableDescription && !!raml.description\" ng-init=\"actualSize = descriptionLimit\" >\n" +
-    "    <div class=\"raml-console-root-description\" markdown=\"raml.description | limitTo : actualSize\"></div>\n" +
-    "    <span>\n" +
+    "    <div ng-if=\"!disableDescription && !!raml.description && raml.description.length > 0\"\n" +
+    "         ng-init=\"actualSize = descriptionLimit\">\n" +
+    "      <div class=\"raml-console-root-description\" markdown=\"raml.description | limitTo : actualSize\"></div>\n" +
+    "      <span>\n" +
     "      <a class=\"raml-console-show-more-less\"\n" +
     "         ng-hide=\"raml.description.length <= descriptionLimit || raml.description.length > actualSize || raml.description.length < actualSize\"\n" +
     "         ng-click=\"actualSize = descriptionLimit\"\n" +
@@ -88423,88 +88453,116 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "         ng-click=\"actualSize = raml.description.length\"\n" +
     "      >show more</a>\n" +
     "    </span>\n" +
-    "  </div>\n" +
+    "    </div>\n" +
     "\n" +
-    "  <root-documentation></root-documentation>\n" +
+    "    <root-documentation></root-documentation>\n" +
     "\n" +
-    "  <root-types types=\"types\" ng-if=\"types\"></root-types>\n" +
+    "    <root-types types=\"types\" ng-if=\"types\"></root-types>\n" +
     "\n" +
-    "  <ol ng-class=\"{'raml-console-resources-container-no-title': disableTitle, 'raml-console-resources-container': !disableTitle}\" id=\"raml-console-resources-container\" class=\"raml-console-resource-list raml-console-resource-list-root raml-console-resources-resourcesCollapsed\">\n" +
-    "    <li id=\"raml_documentation\" class=\"raml-console-resource-list-item raml-console-documentation-header\">\n" +
-    "      <div ng-if=\"proxy\" align=\"right\" class=\"raml-console-resource-proxy\">\n" +
-    "        <label for=\"raml-console-api-behind-firewall\">API is behind a firewall <a href=\"http://www.mulesoft.org/documentation/display/current/Accessing+Your+API+Behind+a+Firewall\" target=\"_blank\">(?)</a></label>\n" +
-    "        <input id=\"raml-console-api-behind-firewall\" type=\"checkbox\" ng-model=\"disableProxy\" ng-change=\"updateProxyConfig(disableProxy)\">\n" +
-    "      </div>\n" +
-    "      <header class=\"raml-console-resource raml-console-resource-root raml-console-clearfix\">\n" +
-    "        <span ng-if=\"hasResourcesWithChilds()\" class=\"raml-console-flag raml-console-resource-heading-flag raml-console-toggle-all\" ng-click=\"collapseAll($event, resourceList, 'resourcesCollapsed')\" ng-class=\"{'raml-console-resources-expanded':!resourcesCollapsed}\">\n" +
+    "    <ol ng-class=\"{'raml-console-resources-container-no-title': disableTitle, 'raml-console-resources-container': !disableTitle}\"\n" +
+    "        id=\"raml-console-resources-container\"\n" +
+    "        class=\"raml-console-resource-list raml-console-resource-list-root raml-console-resources-resourcesCollapsed\">\n" +
+    "      <li id=\"raml_documentation\" class=\"raml-console-resource-list-item raml-console-documentation-header\">\n" +
+    "        <div ng-if=\"proxy\" align=\"right\" class=\"raml-console-resource-proxy\">\n" +
+    "          <label for=\"raml-console-api-behind-firewall\">API is behind a firewall <a\n" +
+    "                  href=\"http://www.mulesoft.org/documentation/display/current/Accessing+Your+API+Behind+a+Firewall\"\n" +
+    "                  target=\"_blank\">(?)</a></label>\n" +
+    "          <input id=\"raml-console-api-behind-firewall\" type=\"checkbox\" ng-model=\"disableProxy\"\n" +
+    "                 ng-change=\"updateProxyConfig(disableProxy)\">\n" +
+    "        </div>\n" +
+    "        <header class=\"raml-console-resource raml-console-resource-root raml-console-clearfix\">\n" +
+    "        <span ng-if=\"hasResourcesWithChilds()\"\n" +
+    "              class=\"raml-console-flag raml-console-resource-heading-flag raml-console-toggle-all\"\n" +
+    "              ng-click=\"collapseAll($event, resourceList, 'resourcesCollapsed')\"\n" +
+    "              ng-class=\"{'raml-console-resources-expanded':!resourcesCollapsed}\">\n" +
     "          <span ng-if=\"!resourcesCollapsed\">collapse</span>\n" +
     "          <span ng-if=\"resourcesCollapsed\">expand</span> all\n" +
     "        </span>\n" +
     "\n" +
-    "        <div class=\"raml-console-resource-path-container\">\n" +
-    "          <h2 class=\"raml-console-resource-section-title\">\n" +
-    "            <span class=\"raml-console-resource-path-active\">Resources</span>\n" +
-    "          </h2>\n" +
-    "        </div>\n" +
-    "        <close-button></close-button>\n" +
-    "      </header>\n" +
-    "    </li>\n" +
+    "          <div class=\"raml-console-resource-path-container\">\n" +
+    "            <h2 class=\"raml-console-resource-section-title\">\n" +
+    "              <span class=\"raml-console-resource-path-active\">Resources</span>\n" +
+    "            </h2>\n" +
+    "          </div>\n" +
+    "          <close-button></close-button>\n" +
+    "        </header>\n" +
+    "      </li>\n" +
     "\n" +
-    "    <li id=\"{{generateId(resource.pathSegments)}}\" class=\"raml-console-resource-list-item\" ng-repeat=\"resourceGroup in inspectedRaml.resourceGroups\">\n" +
-    "      <header class=\"raml-console-resource raml-console-resource-root raml-console-clearfix\" ng-class=\"{ 'raml-console-is-active':showPanel }\" ng-init=\"resource = resourceGroup[0]\">\n" +
-    "        <div class=\"raml-console-resource-path-container\" ng-init=\"index=$index\" ng-class=\"{'raml-console-resource-with-description': resource.description}\">\n" +
-    "          <button class=\"raml-console-resource-root-toggle\" ng-class=\"{'raml-console-is-active': resourceList[$index]}\" ng-if=\"resourceGroup.length > 1\" ng-click=\"toggle($event, index, resourceList, 'resourcesCollapsed')\"></button>\n" +
+    "      <li id=\"{{generateId(resource.pathSegments)}}\" class=\"raml-console-resource-list-item\"\n" +
+    "          ng-repeat=\"resourceGroup in inspectedRaml.resourceGroups\">\n" +
+    "        <header class=\"raml-console-resource raml-console-resource-root raml-console-clearfix\"\n" +
+    "                ng-class=\"{ 'raml-console-is-active':showPanel }\" ng-init=\"resource = resourceGroup[0]\">\n" +
+    "          <div class=\"raml-console-resource-path-container\" ng-init=\"index=$index\"\n" +
+    "               ng-class=\"{'raml-console-resource-with-description': resource.description}\">\n" +
+    "            <button class=\"raml-console-resource-root-toggle\"\n" +
+    "                    ng-class=\"{'raml-console-is-active': resourceList[$index]}\" ng-if=\"resourceGroup.length > 1\"\n" +
+    "                    ng-click=\"toggle($event, index, resourceList, 'resourcesCollapsed')\"></button>\n" +
     "\n" +
-    "          <h2 class=\"raml-console-resource-heading raml-console-resource-heading-large\">\n" +
-    "            <a ng-if=\"resourceGroup.length > 1\" class=\"raml-console-resource-path-active\" ng-class=\"{'raml-console-resource-heading-hover':resourceGroup.length > 1}\" ng-repeat='segment in resource.pathSegments' ng-click=\"toggle($event, index, resourceList, 'resourcesCollapsed')\">{{segment.toString()}}</a>\n" +
+    "            <h2 class=\"raml-console-resource-heading raml-console-resource-heading-large\">\n" +
+    "              <a ng-if=\"resourceGroup.length > 1\" class=\"raml-console-resource-path-active\"\n" +
+    "                 ng-class=\"{'raml-console-resource-heading-hover':resourceGroup.length > 1}\"\n" +
+    "                 ng-repeat='segment in resource.pathSegments'\n" +
+    "                 ng-click=\"toggle($event, index, resourceList, 'resourcesCollapsed')\">{{segment.toString()}}</a>\n" +
     "\n" +
-    "            <a ng-if=\"resourceGroup.length == 1\" style=\"cursor: default;\" class=\"raml-console-resource-path-active\" ng-repeat='segment in resource.pathSegments'>{{segment.toString()}}</a>\n" +
-    "          </h2>\n" +
+    "              <a ng-if=\"resourceGroup.length == 1\" style=\"cursor: default;\" class=\"raml-console-resource-path-active\"\n" +
+    "                 ng-repeat='segment in resource.pathSegments'>{{segment.toString()}}</a>\n" +
+    "            </h2>\n" +
     "\n" +
-    "          <resource-type></resource-type>\n" +
+    "            <resource-type></resource-type>\n" +
     "\n" +
-    "          <span ng-if=\"methodInfo.is\" class=\"raml-console-flag raml-console-resource-heading-flag raml-console-resource-trait\"><b>Traits:</b> {{readTraits(methodInfo.is)}}</span>\n" +
+    "            <span ng-if=\"methodInfo.is\"\n" +
+    "                  class=\"raml-console-flag raml-console-resource-heading-flag raml-console-resource-trait\"><b>Traits:</b> {{readTraits(methodInfo.is)}}</span>\n" +
     "\n" +
-    "          <span ng-hide=\"methodInfo.is\" ng-if=\"resource.traits\" class=\"raml-console-flag raml-console-resource-heading-flag\"><b>Traits:</b> {{readResourceTraits(resource.traits)}}</span>\n" +
+    "            <span ng-hide=\"methodInfo.is\" ng-if=\"resource.traits\"\n" +
+    "                  class=\"raml-console-flag raml-console-resource-heading-flag\"><b>Traits:</b> {{readResourceTraits(resource.traits)}}</span>\n" +
     "\n" +
-    "          <span class=\"raml-console-resource-level-description raml-console-marked-content\" markdown=\"resource.description\"></span>\n" +
+    "            <span class=\"raml-console-resource-level-description raml-console-marked-content\"\n" +
+    "                  markdown=\"resource.description\"></span>\n" +
     "\n" +
-    "        </div>\n" +
-    "        <method-list></method-list>\n" +
-    "        <close-button></close-button>\n" +
-    "      </header>\n" +
+    "          </div>\n" +
+    "          <method-list></method-list>\n" +
+    "          <close-button></close-button>\n" +
+    "        </header>\n" +
     "\n" +
-    "      <resource-panel></resource-panel>\n" +
+    "        <resource-panel></resource-panel>\n" +
     "\n" +
-    "      <!-- Child Resources -->\n" +
-    "      <ol class=\"raml-console-resource-list\" ng-class=\"{'raml-console-is-collapsed': resourcesCollapsed}\">\n" +
+    "        <!-- Child Resources -->\n" +
+    "        <ol class=\"raml-console-resource-list\" ng-class=\"{'raml-console-is-collapsed': resourcesCollapsed}\">\n" +
     "\n" +
-    "        <li id=\"{{generateId(resource.pathSegments)}}\" class=\"raml-console-resource-list-item\" ng-repeat=\"resource in resourceGroup\" ng-if=\"!$first\">\n" +
-    "          <div class=\"raml-console-resource raml-console-clearfix\" ng-class=\"{ 'raml-console-is-active':showPanel }\">\n" +
-    "            <div class=\"raml-console-resource-path-container\" ng-class=\"{'raml-console-resource-with-description': resource.description}\">\n" +
-    "              <h3 class=\"raml-console-resource-heading\" style=\"cursor: default;\">\n" +
-    "                <span ng-repeat-start='segment in resource.pathSegments' ng-if=\"!$last\">{{segment.toString()}}</span><span ng-repeat-end ng-if=\"$last\" class=\"raml-console-resource-path-active\">{{segment.toString()}}</span>\n" +
-    "              </h3>\n" +
+    "          <li id=\"{{generateId(resource.pathSegments)}}\" class=\"raml-console-resource-list-item\"\n" +
+    "              ng-repeat=\"resource in resourceGroup\" ng-if=\"!$first\">\n" +
+    "            <div class=\"raml-console-resource raml-console-clearfix\" ng-class=\"{ 'raml-console-is-active':showPanel }\">\n" +
+    "              <div class=\"raml-console-resource-path-container\"\n" +
+    "                   ng-class=\"{'raml-console-resource-with-description': resource.description}\">\n" +
+    "                <h3 class=\"raml-console-resource-heading\" style=\"cursor: default;\">\n" +
+    "                  <span ng-repeat-start='segment in resource.pathSegments'\n" +
+    "                        ng-if=\"!$last\">{{segment.toString()}}</span><span ng-repeat-end ng-if=\"$last\"\n" +
+    "                                                                          class=\"raml-console-resource-path-active\">{{segment.toString()}}</span>\n" +
+    "                </h3>\n" +
     "\n" +
-    "              <resource-type></resource-type>\n" +
-    "              <span ng-if=\"methodInfo.is\" class=\"raml-console-flag raml-console-resource-heading-flag raml-console-resource-trait\"><b>Traits:</b> {{readTraits(methodInfo.is)}}</span>\n" +
+    "                <resource-type></resource-type>\n" +
+    "                <span ng-if=\"methodInfo.is\"\n" +
+    "                      class=\"raml-console-flag raml-console-resource-heading-flag raml-console-resource-trait\"><b>Traits:</b> {{readTraits(methodInfo.is)}}</span>\n" +
     "\n" +
-    "              <span ng-hide=\"methodInfo.is\" ng-if=\"resource.traits\" class=\"raml-console-flag raml-console-resource-heading-flag\"><b>Traits:</b> {{readResourceTraits(resource.traits)}}</span>\n" +
+    "                <span ng-hide=\"methodInfo.is\" ng-if=\"resource.traits\"\n" +
+    "                      class=\"raml-console-flag raml-console-resource-heading-flag\"><b>Traits:</b> {{readResourceTraits(resource.traits)}}</span>\n" +
     "\n" +
-    "              <span class=\"raml-console-resource-level-description raml-console-marked-content\" markdown=\"resource.description\"></span>\n" +
+    "                <span class=\"raml-console-resource-level-description raml-console-marked-content\"\n" +
+    "                      markdown=\"resource.description\"></span>\n" +
+    "              </div>\n" +
+    "\n" +
+    "              <method-list></method-list>\n" +
+    "              <close-button></close-button>\n" +
     "            </div>\n" +
     "\n" +
-    "            <method-list></method-list>\n" +
-    "            <close-button></close-button>\n" +
-    "          </div>\n" +
+    "            <resource-panel></resource-panel>\n" +
+    "          </li>\n" +
+    "        </ol>\n" +
     "\n" +
-    "          <resource-panel></resource-panel>\n" +
-    "        </li>\n" +
-    "      </ol>\n" +
-    "\n" +
-    "    </li>\n" +
-    "  </ol>\n" +
-    "</div>\n"
+    "      </li>\n" +
+    "    </ol>\n" +
+    "  </div>\n" +
+    "</div>"
   );
 
 
@@ -88569,7 +88627,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
 
   $templateCache.put('directives/raml-initializer.tpl.html',
     "<div class=\"raml-console-initializer-container raml-console-initializer-primary\">\n" +
-    "  <div ng-if=\"!vm.isLoading && !vm.raml\">\n" +
+    "  <div ng-if=\"!vm.isLoading && !vm.raml && !vm.error\">\n" +
     "    <h1 class=\"raml-console-title\">RAML Console</h1>\n" +
     "\n" +
     "    <div class=\"raml-console-initializer-content-wrapper\">\n" +
@@ -88580,12 +88638,9 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "\n" +
     "        <div class=\"raml-console-initializer-row\">\n" +
     "          <form novalidate ng-submit=\"vm.loadFromUrl(vm.ramlUrl)\">\n" +
-    "            <p class=\"raml-console-initializer-input-container\" ng-class=\"{'raml-console-initializer-input-container-error': vm.isLoadedFromUrl && vm.error}\">\n" +
+    "            <p class=\"raml-console-initializer-input-container\">\n" +
     "              <input id=\"ramlPath\" autofocus class=\"raml-console-initializer-input raml-console-initializer-raml-field\" ng-model=\"vm.ramlUrl\">\n" +
     "            </p>\n" +
-    "            <div class=\"raml-console-parser-error\" ng-if=\"vm.isLoadedFromUrl && vm.error\">\n" +
-    "              <span>{{ vm.error.message }}</span>\n" +
-    "            </div>\n" +
     "            <div class=\"raml-console-initializer-action-group\" align=\"right\">\n" +
     "              <button id=\"loadRamlFromUrl\" class=\"raml-console-initializer-action raml-console-initializer-action-btn\" type=\"submit\">Load from URL</button>\n" +
     "            </div>\n" +
@@ -88599,7 +88654,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "        </header>\n" +
     "\n" +
     "        <div class=\"raml-console-initializer-row\">\n" +
-    "          <p class=\"raml-console-initializer-input-container\" ng-class=\"{'raml-console-initializer-input-container-error': !vm.isLoadedFromUrl && vm.error}\">\n" +
+    "          <p class=\"raml-console-initializer-input-container\">\n" +
     "            <textarea id=\"raml\" ui-codemirror=\"vm.codeMirror\" ng-model=\"vm.ramlString\"></textarea>\n" +
     "          </p>\n" +
     "          <div class=\"raml-console-initializer-action-group\" align=\"right\">\n" +
@@ -88610,7 +88665,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "    </div>\n" +
     "  </div>\n" +
     "\n" +
-    "  <raml-console ng-if=\"vm.raml\" raml=\"vm.raml\"></raml-console>\n" +
+    "  <raml-console ng-if=\"vm.raml || vm.error\" errors=\"vm.error.errors\" raml=\"vm.raml\"></raml-console>\n" +
     "\n" +
     "  <raml-console-spinner ng-if=\"vm.isLoading\"></raml-console-spinner>\n" +
     "</div>\n"

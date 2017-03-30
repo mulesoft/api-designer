@@ -2451,7 +2451,12 @@
             var api = parentNode && parentNode.root && parentNode.root();
             api && api.lowLevel() && api.lowLevel().unit() && visibleScopes.push(api.lowLevel().unit().absolutePath());
             api && api.wrapperNode && api.wrapperNode() && api.wrapperNode().uses && api.wrapperNode().uses().forEach(function (usesDeclaration) {
-              usesDeclaration && usesDeclaration.value && usesDeclaration.value() && visibleScopes.push(api.lowLevel().unit().resolve(usesDeclaration.value()).absolutePath());
+              if (usesDeclaration && usesDeclaration.value && usesDeclaration.value()) {
+                var resolvedUnit = api.lowLevel().unit().resolve(usesDeclaration.value());
+                if (resolvedUnit) {
+                  visibleScopes.push(resolvedUnit.absolutePath());
+                }
+              }
             });
             var definitionNodes = parserApi.search.globalDeclarations(parentNode).filter(function (node) {
                 var nodeLocation = node.lowLevel().unit().absolutePath();
@@ -40338,6 +40343,9 @@
                       delete definition['id'];
                     }
                     definition = this.convertRefFromModel(definition, true);
+                    if (definition.hasOwnProperty('description') && _.isEmpty(definition.description)) {
+                      delete definition.description;
+                    }
                     result[schema.NameSpace] = definition;
                   }
                   return result;
@@ -40377,6 +40385,9 @@
                     if (!object.hasOwnProperty(id) || swaggerHelper.isExtension(id))
                       continue;
                     var val = object[id];
+                    if (id == 'type') {
+                      object.type = Swagger.convertTypes(val);
+                    }
                     if (id == 'allOf') {
                       var allOf = object.allOf;
                       for (var key in allOf) {
@@ -40394,6 +40405,9 @@
                         _.merge(object, object.allOf[0]);
                         delete object.allOf;
                       }
+                    } else if ((id === 'oneOf' || id === 'anyOf') && !isProperty) {
+                      delete object[id];
+                      object.type = 'object';
                     } else if (id === 'schemaPath') {
                       this.addExtension(object, 'x-raml-xsd-definition', val);
                       delete object[id];
@@ -40733,9 +40747,22 @@
                     });
                     swaggerDef.schemes = filteredSchemes;
                   } else if (hostUrl.protocol) {
-                    swaggerDef.schemes = [hostUrl.protocol.split(':')[0]];
+                    var scheme = hostUrl.protocol.split(':')[0];
+                    if (acceptedSchemes.includes(scheme))
+                      swaggerDef.schemes = [scheme];
                   } else {
                     delete swaggerDef.schemes;
+                  }
+                }
+              },
+              {
+                key: '_mapHostAnnotations',
+                value: function _mapHostAnnotations(env, swaggerDef) {
+                  for (var id in env) {
+                    if (!env.hasOwnProperty(id))
+                      continue;
+                    if (id.startsWith('x-annotation-'))
+                      swaggerDef[id] = env[id];
                   }
                 }
               },
@@ -40748,6 +40775,7 @@
                   var env = this.project.Environment;
                   swaggerDef.info.version = env.Version;
                   swaggerDef.BasePath = env.BasePath || '';
+                  this._mapHostAnnotations(env, swaggerDef);
                   this._mapHostAndProtocol(env, swaggerDef);
                   if (env.Produces && env.Produces.length > 0) {
                     swaggerDef.produces = env.Produces;
@@ -40988,6 +41016,24 @@
                 }
               },
               {
+                key: 'convertTypes',
+                value: function convertTypes(object) {
+                  if (_.isArray(object)) {
+                    for (var id in object) {
+                      if (!object.hasOwnProperty(id))
+                        continue;
+                      var val = object[id];
+                      if (val === 'null' || val === null) {
+                        if (!object.includes('string'))
+                          object[id] = 'string';
+                        object.splice(id, 1);
+                      }
+                    }
+                  }
+                  return object.length == 1 ? object[0] : object;
+                }
+              },
+              {
                 key: 'convertDefinitions',
                 value: function convertDefinitions(object) {
                   if (object.items.hasOwnProperty('$ref')) {
@@ -41065,7 +41111,7 @@
               import: true,
               export: false
             },
-            'SWAGGER': {
+            'OAS': {
               name: 'OAS 2.0',
               className: 'Swagger',
               formats: [
@@ -41493,7 +41539,7 @@
                   if (/#%RAML[\s]*0\.?8?/.test(data))
                     return Formats.RAML08;
                   if (/swagger:[\s'"]*\d\.?\d?/.test(data) || /{"swagger":[\s'"]*\d\.?\d?/.test(data))
-                    return Formats.SWAGGER;
+                    return Formats.OAS;
                 }
               }]);
             return Auto;
@@ -41564,7 +41610,7 @@
           if (superClass)
             Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
         }
-        var Endpoint = require('../entities/endpoint'), Importer = require('./importer'), Project = require('../entities/project'), jsonHelper = require('../utils/json'), xmlHelper = require('../utils/xml'), ramlHelper = require('../helpers/raml'), url = require('url'), _ = require('lodash');
+        var Endpoint = require('../entities/endpoint'), Importer = require('./importer'), Project = require('../entities/project'), jsonHelper = require('../utils/json'), xmlHelper = require('../utils/xml'), ramlHelper = require('../helpers/raml'), Schema = require('../entities/schema'), url = require('url'), _ = require('lodash');
         var toJSONOptions = { serializeMetadata: false };
         //TODO multi file support isn't justified
         var RAMLImporter = function (_Importer) {
@@ -41788,13 +41834,15 @@
                         else
                           RAMLImporter._mapTypesFormats(header, false);
                         r[header.name] = this._mapQueryString(header);
-                        header = RAMLImporter._mapExamples(header);
                         delete r[header.name]['name'];
+                        header = RAMLImporter._mapExamples(header);
+                        if (header.description && _.isEmpty(header.description))
+                          header.description = '';
                       }
                       result.headers = r;
                     }
                     if (response.description) {
-                      result.description = jsonHelper.stringify(response.description);
+                      result.description = _.isEmpty(response.description) ? '' : jsonHelper.stringify(response.description);
                     }
                     RAMLImporter._addAnnotations(response, result);
                     data.push(result);
@@ -41807,7 +41855,49 @@
                 value: function _mapSchemas(schemData) {
                   //check if type attribute is abscent and fill with default value (type: string).
                   RAMLImporter._checkForDefaultType(schemData);
-                  return this.mapSchemas(schemData);
+                  var schemas = [];
+                  var newSchemas = [];
+                  for (var index in schemData) {
+                    if (!schemData.hasOwnProperty(index))
+                      continue;
+                    for (var schemaName in schemData[index]) {
+                      if (!schemData[index].hasOwnProperty(schemaName))
+                        continue;
+                      var sd = new Schema(schemaName);
+                      sd.Name = schemaName;
+                      var schema = jsonHelper.parse(schemData[index][schemaName]);
+                      if (schema.hasOwnProperty('definitions')) {
+                        newSchemas = this.addDefinitions(schema, newSchemas);
+                      }
+                      sd.Definition = this._mapSchema(schemData[index][schemaName], true, false);
+                      schemas.push(sd);
+                    }
+                  }
+                  if (!_.isEmpty(newSchemas)) {
+                    schemas = _.concat(schemas, this._mapSchemas(newSchemas));
+                  }
+                  return schemas;
+                }
+              },
+              {
+                key: 'addDefinitions',
+                value: function addDefinitions(schema, schemas) {
+                  var definitions = schema.definitions;
+                  if (!schemas)
+                    schemas = [];
+                  for (var def in definitions) {
+                    if (!definitions.hasOwnProperty(def))
+                      continue;
+                    var newSchema = {};
+                    newSchema[def] = jsonHelper.stringify(definitions[def]);
+                    var schemaNames = schemas.map(function (a) {
+                        return Object.keys(a)[0];
+                      });
+                    if (!_.includes(schemaNames, def))
+                      schemas.push(newSchema);
+                  }
+                  delete schema.definitions;
+                  return schemas;
                 }
               },
               {
@@ -42063,6 +42153,13 @@
                   var parsedURL = url.parse(this.data.baseUri || '');
                   project.Environment.Host = parsedURL.protocol && parsedURL.host ? parsedURL.protocol + '//' + parsedURL.host : null;
                   project.Environment.BasePath = parsedURL.path;
+                  if (this.data.hasOwnProperty('scalarsAnnotations') && this.data.scalarsAnnotations.hasOwnProperty('baseUri')) {
+                    var annotations = _.reduce(this.data.scalarsAnnotations.baseUri, function (obj, param) {
+                        obj[param.name] = { structuredValue: param.structuredValue };
+                        return obj;
+                      }, {});
+                    RAMLImporter._addAnnotations({ annotations: annotations }, project.Environment);
+                  }
                 }
               },
               {
@@ -42197,8 +42294,8 @@
                 }  //noinspection JSMethodCanBeStatic
               },
               {
-                key: 'mapSchemas',
-                value: function mapSchemas() {
+                key: '_mapSchema',
+                value: function _mapSchema() {
                   throw new Error('mapSchema method not implemented');
                 }  //noinspection JSMethodCanBeStatic
               },
@@ -42265,6 +42362,8 @@
                       result = this._isParametricTrait(prop);
                     } else {
                       if (_.includes(prop, '<<') && _.includes(prop, '>>'))
+                        result = true;
+                      else if (typeof prop === 'number' && _.isNaN(prop))
                         result = true;
                     }
                   }
@@ -42500,6 +42599,7 @@
       {
         '../entities/endpoint': 219,
         '../entities/project': 221,
+        '../entities/schema': 222,
         '../helpers/raml': 233,
         '../utils/json': 243,
         '../utils/xml': 246,
@@ -42660,11 +42760,6 @@
     239: [
       function (require, module, exports) {
         'use strict';
-        var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
-            return typeof obj;
-          } : function (obj) {
-            return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
-          };
         var _createClass = function () {
             function defineProperties(target, props) {
               for (var i = 0; i < props.length; i++) {
@@ -42710,7 +42805,7 @@
           if (superClass)
             Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
         }
-        var RAMLImporter = require('./baseraml'), Schema = require('../entities/schema'), jsonHelper = require('../utils/json'), ramlHelper = require('../helpers/raml'), Text = require('../entities/text'), _ = require('lodash');
+        var RAMLImporter = require('./baseraml'), jsonHelper = require('../utils/json'), ramlHelper = require('../helpers/raml'), Text = require('../entities/text'), _ = require('lodash');
         var RAML08Importer = function (_RAMLImporter) {
             _inherits(RAML08Importer, _RAMLImporter);
             function RAML08Importer() {
@@ -42731,9 +42826,10 @@
                     data.example = methodBody.example;
                   }
                   if (methodBody.schema) {
-                    if (methodBody.schema.hasOwnProperty('definitions')) {
-                      this.data.types = _.concat(this.data.types, methodBody.schema.definitions);
-                      delete methodBody.schema.definitions;
+                    var schema = jsonHelper.parse(methodBody.schema);
+                    if (schema.hasOwnProperty('definitions')) {
+                      this.data.schemas = this.addDefinitions(schema, this.data.schemas);
+                      methodBody.schema = jsonHelper.stringify(schema);
                     }
                     data.body = this._mapSchema(this.convertRefToModel(jsonHelper.parse(methodBody.schema), false));
                   } else if (methodBody.formParameters) {
@@ -42776,61 +42872,82 @@
                 }
               },
               {
-                key: 'mapSchemas',
-                value: function mapSchemas(schemData) {
-                  var schemas = [];
-                  for (var i in schemData) {
-                    if (!schemData.hasOwnProperty(i))
-                      continue;
-                    for (var schemaName in schemData[i]) {
-                      if (!schemData[i].hasOwnProperty(schemaName))
-                        continue;
-                      var sd = new Schema(schemaName);
-                      sd.Name = schemaName;
-                      var definition = this._mapSchema(schemData[i][schemaName], true);
-                      sd.Definition = jsonHelper.parse(jsonHelper.cleanSchema(definition));
-                      schemas.push(sd);
-                    }
-                  }
-                  return schemas;
-                }
-              },
-              {
                 key: '_mapSchema',
-                value: function _mapSchema(definition, isSchema) {
-                  definition = jsonHelper.parse(definition);
-                  if (definition.properties && !_.isEmpty(definition.properties)) {
-                    definition = RAML08Importer.convertObjectProperty(definition);
-                  }
-                  for (var id in definition) {
-                    if (!definition.hasOwnProperty(id))
+                value: function _mapSchema(definition, isSchema, isProperty) {
+                  if (typeof definition === 'string')
+                    definition = jsonHelper.parse(definition);
+                  if (typeof definition === 'string')
+                    return definition;
+                  if (!isProperty)
+                    definition.required = definition.hasOwnProperty('required') && _.isArray(definition.required) ? definition.required : [];
+                  for (var id in definition.properties) {
+                    if (!definition.properties.hasOwnProperty(id))
                       continue;
-                    var val = definition[id];
-                    if (id === 'items') {
-                      if (_.isArray(val) && val.length == 0)
-                        definition[id] = { type: 'string' };
-                      else if (!_.isArray(val) && (typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object')
-                        val = this._mapSchema(val);
+                    var property = definition.properties[id];
+                    property = _.isArray(property) ? property[0] : property;
+                    definition.properties[id] = property;
+                    if (property.hasOwnProperty('required') && typeof property.required === 'boolean' && !isProperty) {
+                      if (property.required && !definition.required.includes(id)) {
+                        definition.required.push(id);
+                      }
+                      delete property.required;
                     }
-                    if (id === 'type') {
-                      if (_.isArray(val)) {
-                        if (val.length == 1)
-                          val = val[0];
-                        else if (val.length == 0) {
-                          definition[id] = 'array';
-                          definition['items'] = { type: 'string' };
-                          val = 'array';
+                  }
+                  for (var _id in definition) {
+                    if (!definition.hasOwnProperty(_id))
+                      continue;
+                    var val = definition[_id];
+                    if (!isProperty) {
+                      if (_id === 'items') {
+                        if (_.isArray(val) && val.length == 0) {
+                          definition[_id] = { type: 'string' };
+                        } else if (_.isArray(val) || val.hasOwnProperty('0')) {
+                          for (var key in val) {
+                            if (!val.hasOwnProperty(key))
+                              continue;
+                            definition[_id][key] = this._mapSchema(val[key], isSchema, false);
+                          }
+                        } else {
+                          definition[_id] = this._mapSchema(val, isSchema, false);
                         }
+                      } else if (_id === 'type') {
+                        if (_.isArray(val)) {
+                          if (val.length == 1)
+                            val = val[0];
+                          else if (val.length == 0) {
+                            definition[_id] = 'array';
+                            definition['items'] = { type: 'string' };
+                            val = 'array';
+                          }
+                        }
+                        if (typeof val === 'string' && val != 'object' && ramlHelper.getRAML08ScalarTypes.indexOf(val) < 0) {
+                          definition[RAMLImporter.getCustomProperty('type')] = val;
+                          definition.type = 'string';
+                        }
+                        if (typeof val === 'string' && val === 'array' && !definition.hasOwnProperty('items')) {
+                          if (definition.hasOwnProperty('properties')) {
+                            definition.items = {
+                              type: 'object',
+                              properties: this._mapSchema(definition.properties, isSchema, !isProperty)
+                            };
+                            if (definition.hasOwnProperty('required') && !_.isEmpty(definition.required)) {
+                              definition.items.required = definition.required;
+                              delete definition.required;
+                            }
+                            delete definition.properties;
+                          } else {
+                            definition.items = { type: 'string' };
+                          }
+                        }
+                      } else if (_id === 'properties') {
+                        definition[_id] = this._mapSchema(val, isSchema, !isProperty);
                       }
-                      if (typeof val === 'string' && val != 'object' && ramlHelper.getRAML08ScalarTypes.indexOf(val) < 0) {
-                        definition[RAMLImporter.getCustomProperty('type')] = val;
-                        definition.type = 'string';
-                      }
-                      if (typeof val === 'string' && val === 'array' && !definition.hasOwnProperty('items'))
-                        definition['items'] = { type: 'string' };
-                    } else if ((typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object') {
-                      this._mapSchema(val, isSchema);
+                    } else {
+                      definition[_id] = this._mapSchema(val, isSchema, false);
                     }
+                  }
+                  if (definition.required && definition.required.length == 0) {
+                    delete definition.required;
                   }
                   return definition;
                 }  //noinspection JSMethodCanBeStatic
@@ -42883,45 +43000,12 @@
                   }
                 }
               }
-            ], [{
-                key: 'convertObjectProperty',
-                value: function convertObjectProperty(source) {
-                  var target = Object.assign({}, source);
-                  target.properties = {};
-                  target.required = source.hasOwnProperty('required') && _.isArray(source.required) ? source.required : [];
-                  for (var paramName in source.properties) {
-                    if (!source.properties.hasOwnProperty(paramName))
-                      continue;
-                    var parameter = source.properties[paramName];
-                    var param = _.isArray(parameter) ? parameter[0] : parameter;
-                    target.properties[paramName] = param;
-                    if (param.properties && !_.isEmpty(param.properties)) {
-                      target.properties[paramName] = RAML08Importer.convertObjectProperty(param);
-                    } else if (paramName === 'items' && (typeof param === 'undefined' ? 'undefined' : _typeof(param)) === 'object') {
-                      target[paramName] = RAML08Importer.convertObjectProperty(param);
-                    } else if (param.hasOwnProperty('required')) {
-                      //required
-                      if (param.required === true && target.required.indexOf(paramName) < 0) {
-                        target['required'].push(paramName);
-                      }
-                      delete param.required;
-                    }
-                  }
-                  if (target.required && target.required.length == 0) {
-                    delete target.required;
-                  }
-                  if (target.properties && _.isEmpty(target.properties)) {
-                    delete target.properties;
-                  }
-                  return target;
-                }
-              }]);
+            ]);
             return RAML08Importer;
           }(RAMLImporter);
         module.exports = RAML08Importer;
       },
       {
-        '../entities/schema': 222,
         '../entities/text': 225,
         '../helpers/raml': 233,
         '../utils/json': 243,
@@ -42982,7 +43066,7 @@
           if (superClass)
             Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
         }
-        var RAMLImporter = require('./baseraml'), Schema = require('../entities/schema'), jsonHelper = require('../utils/json'), _ = require('lodash');
+        var RAMLImporter = require('./baseraml'), jsonHelper = require('../utils/json'), _ = require('lodash');
         var RAML10Importer = function (_RAMLImporter) {
             _inherits(RAML10Importer, _RAMLImporter);
             function RAML10Importer() {
@@ -43005,7 +43089,7 @@
                   if (methodBody.properties && !_.isEmpty(methodBody.properties)) {
                     switch (data.mimeType) {
                     case 'application/json':
-                      data.body = this._mapSchema(methodBody, true);
+                      data.body = this._mapSchema(methodBody, true, false);
                       // data.body = RAML10Importer.convertObjectProperty(mimeType);
                       delete data.body.description;
                       // delete data.body.type;
@@ -43037,20 +43121,19 @@
                     default:
                     }
                   } else if (RAML10Importer.isArray(methodBody)) {
-                    data.body = this.convertRefToModel(this.convertArray(methodBody), false);
+                    data.body = this.convertRefToModel(this.convertArray(methodBody), false, false);
                   } else if (methodBody.schema && !_.isEmpty(methodBody.schema)) {
                     var schema = _.isArray(methodBody.schema) ? methodBody.schema[0] : methodBody.schema;
                     if ((typeof schema === 'undefined' ? 'undefined' : _typeof(schema)) !== 'object')
                       schema = jsonHelper.parse(schema);
                     if (schema.hasOwnProperty('definitions')) {
-                      this.data.types = _.concat(this.data.types, schema.definitions);
-                      delete schema.definitions;
+                      this.data.types = this.addDefinitions(schema, this.data.types);
                     }
-                    data.body = this._mapSchema(this.convertRefToModel({ type: schema }, false), false);
+                    data.body = this._mapSchema(this.convertRefToModel({ type: schema }, false), false, false);
                   } else if (methodBody.type && !_.isEmpty(methodBody.type) && methodBody.type[0] !== 'object') {
-                    data.body = this._mapSchema(methodBody, false);  // data.body = RAMLImporter.convertRefToModel({
-                                                                     // 	type: mimeType.type[0]
-                                                                     // });
+                    data.body = this._mapSchema(methodBody, false, false);  // data.body = RAMLImporter.convertRefToModel({
+                                                                            // 	type: mimeType.type[0]
+                                                                            // });
                   }
                   return data;
                 }
@@ -43084,22 +43167,23 @@
               {
                 key: 'convertObjectProperty',
                 value: function convertObjectProperty(source) {
+                  var _this2 = this;
                   var target = Object.assign({}, source);
                   target.properties = {};
                   if (source.type !== 'array')
                     target.type = 'object';
                   target.required = [];
-                  if (source.description) {
+                  if (source.hasOwnProperty('description') && !_.isEmpty(source.description)) {
                     target.description = jsonHelper.stringify(source.description);
                   }
-                  for (var paramName in source.properties) {
+                  var _loop = function _loop(paramName) {
                     var skipRequired = false;
                     if (!source.properties.hasOwnProperty(paramName))
-                      continue;
+                      return 'continue';
                     var parameter = source.properties[paramName];
-                    var param = _.isArray(parameter) ? this.convertArrayTypeExpression(parameter) : parameter;
+                    var param = _.isArray(parameter) ? _this2.convertArrayTypeExpression(parameter) : parameter;
                     if (RAML10Importer.isArray(param)) {
-                      target.properties[paramName] = this.convertArray(param);
+                      target.properties[paramName] = _this2.convertArray(param);
                     } else if (RAML10Importer.isFacet(param)) {
                       //check for facets
                       target.properties[paramName] = RAML10Importer.convertFacet(param);
@@ -43113,16 +43197,32 @@
                         param.allOf = param.type;
                         delete param.type;
                       }
+                      if (!_.isArray(param.type) && _typeof(param.type) === 'object') {
+                        param.type = _this2._mapSchema(param.type, false, false);
+                        param = _this2.mapNestedType(param);
+                      }
                       target.properties[paramName] = param;
                     }
                     if (skipRequired)
-                      continue;
+                      return 'continue';
                     //add annotations
                     RAMLImporter._addAnnotations(param, target.properties[paramName]);
                     //required
                     RAMLImporter._convertRequiredToArray(param, paramName, target['required']);
+                    if (param.hasOwnProperty('scalarsAnnotations') && param.scalarsAnnotations.hasOwnProperty('required')) {
+                      var annotations = _.reduce(param.scalarsAnnotations.required, function (obj, prop) {
+                          obj[param.name + '-' + prop.name] = { structuredValue: prop.structuredValue };
+                          return obj;
+                        }, {});
+                      RAMLImporter._addAnnotations({ annotations: annotations }, target);
+                    }
                     if (param.properties && !_.isEmpty(param.properties))
-                      target.properties[paramName] = this.convertObjectProperty(param);
+                      target.properties[paramName] = _this2.convertObjectProperty(param);
+                  };
+                  for (var paramName in source.properties) {
+                    var _ret = _loop(paramName);
+                    if (_ret === 'continue')
+                      continue;
                   }
                   if (target.required && target.required.length == 0) {
                     delete target.required;
@@ -43135,8 +43235,27 @@
                 }
               },
               {
+                key: 'mapNestedType',
+                value: function mapNestedType(param) {
+                  var type = param.type;
+                  var mergeFacets = [
+                      'properties',
+                      'required'
+                    ];
+                  for (var id in type) {
+                    if (!type.hasOwnProperty(id))
+                      continue;
+                    var val = type[id];
+                    param[id] = mergeFacets.indexOf(id) > -1 && param.hasOwnProperty(id) ? _.merge(param[id], val) : val;
+                  }
+                  return param;
+                }
+              },
+              {
                 key: '_mapSchema',
-                value: function _mapSchema(definition, isSchema) {
+                value: function _mapSchema(definition, isSchema, isProperty) {
+                  if (typeof definition === 'string')
+                    definition = jsonHelper.parse(definition);
                   var properties = null;
                   var result = definition;
                   if (definition.properties && !_.isEmpty(definition.properties)) {
@@ -43186,7 +43305,7 @@
                   //add annotations
                   RAMLImporter._addAnnotations(definition, result);
                   result = this._convertCustomTypes(result);
-                  return this.convertRefToModel(result, isSchema);
+                  return this.convertRefToModel(result, isSchema, isProperty);
                 }
               },
               {
@@ -43203,25 +43322,6 @@
                     }
                   }
                   return false;
-                }
-              },
-              {
-                key: 'mapSchemas',
-                value: function mapSchemas(schemData) {
-                  var schemas = [];
-                  for (var index in schemData) {
-                    if (!schemData.hasOwnProperty(index))
-                      continue;
-                    for (var schemaName in schemData[index]) {
-                      if (!schemData[index].hasOwnProperty(schemaName))
-                        continue;
-                      var sd = new Schema(schemaName);
-                      sd.Name = schemaName;
-                      sd.Definition = this._mapSchema(schemData[index][schemaName], true);
-                      schemas.push(sd);
-                    }
-                  }
-                  return schemas;
                 }
               },
               {
@@ -43440,7 +43540,6 @@
         module.exports = RAML10Importer;
       },
       {
-        '../entities/schema': 222,
         '../utils/json': 243,
         './baseraml': 236,
         'lodash': 210
@@ -70796,42 +70895,67 @@ CodeMirror.overlayMode = CodeMirror.overlayParser = function (base, overlay, com
     }
   };
 };
-(function () {
+// CodeMirror, copyright (c) by Marijn Haverbeke and others
+// Distributed under an MIT license: http://codemirror.net/LICENSE
+(function (mod) {
+  if (typeof exports == 'object' && typeof module == 'object')
+    // CommonJS
+    mod(require('../../lib/codemirror'));
+  else if (typeof define == 'function' && define.amd)
+    // AMD
+    define(['../../lib/codemirror'], mod);
+  else
+    // Plain browser env
+    mod(CodeMirror);
+}(function (CodeMirror) {
   'use strict';
+  var HINT_ELEMENT_CLASS = 'CodeMirror-hint';
+  var ACTIVE_HINT_ELEMENT_CLASS = 'CodeMirror-hint-active';
+  // This is the old interface, kept around for now to stay
+  // backwards-compatible.
   CodeMirror.showHint = function (cm, getHints, options) {
+    if (!getHints)
+      return cm.showHint(options);
+    if (options && options.async)
+      getHints.async = true;
+    var newOpts = { hint: getHints };
+    if (options)
+      for (var prop in options)
+        newOpts[prop] = options[prop];
+    return cm.showHint(newOpts);
+  };
+  CodeMirror.defineExtension('showHint', function (options) {
     // We want a single cursor position.
-    if (cm.somethingSelected())
+    if (this.listSelections().length > 1 || this.somethingSelected())
       return;
-    if (getHints == null)
-      getHints = cm.getHelper(cm.getCursor(), 'hint');
-    if (getHints == null)
+    if (this.state.completionActive)
+      this.state.completionActive.close();
+    var completion = this.state.completionActive = new Completion(this, options);
+    var getHints = completion.options.hint;
+    if (!getHints)
       return;
-    if (cm.state.completionActive)
-      cm.state.completionActive.close();
-    var completion = cm.state.completionActive = new Completion(cm, getHints, options || {});
-    CodeMirror.signal(cm, 'startCompletion', cm);
-    if (completion.options.async)
-      getHints(cm, function (hints) {
+    CodeMirror.signal(this, 'startCompletion', this);
+    if (getHints.async)
+      getHints(this, function (hints) {
         completion.showHints(hints);
       }, completion.options);
     else
-      return completion.showHints(getHints(cm, completion.options));
-  };
-  function Completion(cm, getHints, options) {
+      return completion.showHints(getHints(this, completion.options));
+  });
+  function Completion(cm, options) {
     this.cm = cm;
-    this.getHints = getHints;
-    this.options = options;
+    this.options = this.buildOptions(options);
     this.widget = this.onClose = null;
   }
   Completion.prototype = {
     close: function () {
       if (!this.active())
         return;
+      this.cm.state.completionActive = null;
       if (this.widget)
         this.widget.close();
       if (this.onClose)
         this.onClose();
-      this.cm.state.completionActive = null;
       CodeMirror.signal(this.cm, 'endCompletion', this.cm);
     },
     active: function () {
@@ -70842,13 +70966,14 @@ CodeMirror.overlayMode = CodeMirror.overlayParser = function (base, overlay, com
       if (completion.hint)
         completion.hint(this.cm, data, completion);
       else
-        this.cm.replaceRange(getText(completion), data.from, data.to);
+        this.cm.replaceRange(getText(completion), completion.from || data.from, completion.to || data.to, 'complete');
+      CodeMirror.signal(data, 'pick', completion);
       this.close();
     },
     showHints: function (data) {
       if (!data || !data.list.length || !this.active())
         return this.close();
-      if (!this.options.ghosting && this.options.completeSingle != false && data.list.length == 1)
+      if (this.options.completeSingle && data.list.length == 1)
         this.pick(data, 0);
       else
         this.showWidget(data);
@@ -70856,51 +70981,76 @@ CodeMirror.overlayMode = CodeMirror.overlayParser = function (base, overlay, com
     showWidget: function (data) {
       this.widget = new Widget(this, data);
       CodeMirror.signal(data, 'shown');
-      var debounce = null, completion = this, finished;
-      var closeOn = this.options.closeCharacters || /[\s()\[\]{};:>,]/;
+      var debounce = 0, completion = this, finished;
+      var closeOn = this.options.closeCharacters;
       var startPos = this.cm.getCursor(), startLen = this.cm.getLine(startPos.line).length;
+      var requestAnimationFrame = window.requestAnimationFrame || function (fn) {
+          return setTimeout(fn, 1000 / 60);
+        };
+      var cancelAnimationFrame = window.cancelAnimationFrame || clearTimeout;
       function done() {
         if (finished)
           return;
         finished = true;
         completion.close();
         completion.cm.off('cursorActivity', activity);
-        CodeMirror.signal(data, 'close');
-      }
-      function isDone() {
-        if (finished)
-          return true;
-        if (!completion.widget) {
-          done();
-          return true;
-        }
+        if (data)
+          CodeMirror.signal(data, 'close');
       }
       function update() {
-        if (isDone())
+        if (finished)
           return;
-        if (completion.options.async)
-          completion.getHints(completion.cm, finishUpdate, completion.options);
+        CodeMirror.signal(data, 'update');
+        var getHints = completion.options.hint;
+        if (getHints.async)
+          getHints(completion.cm, finishUpdate, completion.options);
         else
-          finishUpdate(completion.getHints(completion.cm, completion.options));
+          finishUpdate(getHints(completion.cm, completion.options));
       }
-      function finishUpdate(data) {
-        if (isDone())
+      function finishUpdate(data_) {
+        data = data_;
+        if (finished)
           return;
         if (!data || !data.list.length)
           return done();
-        completion.widget.close();
+        if (completion.widget)
+          completion.widget.close();
         completion.widget = new Widget(completion, data);
       }
+      function clearDebounce() {
+        if (debounce) {
+          cancelAnimationFrame(debounce);
+          debounce = 0;
+        }
+      }
       function activity() {
-        clearTimeout(debounce);
+        clearDebounce();
         var pos = completion.cm.getCursor(), line = completion.cm.getLine(pos.line);
-        if (pos.line != startPos.line || line.length - pos.ch != startLen - startPos.ch || pos.ch < startPos.ch || completion.cm.somethingSelected() || pos.ch && closeOn.test(line.charAt(pos.ch - 1)))
+        if (pos.line != startPos.line || line.length - pos.ch != startLen - startPos.ch || pos.ch < startPos.ch || completion.cm.somethingSelected() || pos.ch && closeOn.test(line.charAt(pos.ch - 1))) {
           completion.close();
-        else
-          debounce = setTimeout(update, 170);
+        } else {
+          debounce = requestAnimationFrame(update);
+          if (completion.widget)
+            completion.widget.close();
+        }
       }
       this.cm.on('cursorActivity', activity);
       this.onClose = done;
+    },
+    buildOptions: function (options) {
+      var editor = this.cm.options.hintOptions;
+      var out = {};
+      for (var prop in defaultOptions)
+        out[prop] = defaultOptions[prop];
+      if (editor)
+        for (var prop in editor)
+          if (editor[prop] !== undefined)
+            out[prop] = editor[prop];
+      if (options)
+        for (var prop in options)
+          if (options[prop] !== undefined)
+            out[prop] = options[prop];
+      return out;
     }
   };
   function getText(completion) {
@@ -70909,7 +71059,7 @@ CodeMirror.overlayMode = CodeMirror.overlayParser = function (base, overlay, com
     else
       return completion.text;
   }
-  function buildKeyMap(options, handle) {
+  function buildKeyMap(completion, handle) {
     var baseMap = {
         Up: function () {
           handle.moveFocus(-1);
@@ -70918,21 +71068,22 @@ CodeMirror.overlayMode = CodeMirror.overlayParser = function (base, overlay, com
           handle.moveFocus(1);
         },
         PageUp: function () {
-          handle.moveFocus(-handle.menuSize());
+          handle.moveFocus(-handle.menuSize() + 1, true);
         },
         PageDown: function () {
-          handle.moveFocus(handle.menuSize());
+          handle.moveFocus(handle.menuSize() - 1, true);
         },
         Home: function () {
           handle.setFocus(0);
         },
         End: function () {
-          handle.setFocus(handle.length);
+          handle.setFocus(handle.length - 1);
         },
         Enter: handle.pick,
         Esc: handle.close
       };
-    var ourMap = options.customKeys ? {} : baseMap;
+    var custom = completion.options.customKeys;
+    var ourMap = custom ? {} : baseMap;
     function addBinding(key, val) {
       var bound;
       if (typeof val != 'string')
@@ -70945,28 +71096,35 @@ CodeMirror.overlayMode = CodeMirror.overlayParser = function (base, overlay, com
         bound = val;
       ourMap[key] = bound;
     }
-    if (options.customKeys)
-      for (var key in options.customKeys)
-        if (options.customKeys.hasOwnProperty(key))
-          addBinding(key, options.customKeys[key]);
-    if (options.extraKeys)
-      for (var key in options.extraKeys)
-        if (options.extraKeys.hasOwnProperty(key))
-          addBinding(key, options.extraKeys[key]);
+    if (custom)
+      for (var key in custom)
+        if (custom.hasOwnProperty(key))
+          addBinding(key, custom[key]);
+    var extra = completion.options.extraKeys;
+    if (extra)
+      for (var key in extra)
+        if (extra.hasOwnProperty(key))
+          addBinding(key, extra[key]);
     return ourMap;
+  }
+  function getHintElement(hintsElement, el) {
+    while (el && el != hintsElement) {
+      if (el.nodeName.toUpperCase() === 'LI' && el.parentNode == hintsElement)
+        return el;
+      el = el.parentNode;
+    }
   }
   function Widget(completion, data) {
     this.completion = completion;
     this.data = data;
-    this.options = completion.options || {};
-    var widget = this, cm = completion.cm, options = completion.options;
+    var widget = this, cm = completion.cm;
     var hints = this.hints = document.createElement('ul');
     hints.className = 'CodeMirror-hints';
-    this.selectedHint = 0;
+    this.selectedHint = data.selectedHint || 0;
     var completions = data.list;
     for (var i = 0; i < completions.length; ++i) {
       var elt = hints.appendChild(document.createElement('li')), cur = completions[i];
-      var className = 'CodeMirror-hint' + (i ? '' : ' CodeMirror-hint-active');
+      var className = HINT_ELEMENT_CLASS + (i != this.selectedHint ? '' : ' ' + ACTIVE_HINT_ELEMENT_CLASS);
       if (cur.className != null)
         className = cur.className + ' ' + className;
       elt.className = className;
@@ -70976,18 +71134,33 @@ CodeMirror.overlayMode = CodeMirror.overlayParser = function (base, overlay, com
         elt.appendChild(document.createTextNode(cur.displayText || getText(cur)));
       elt.hintId = i;
     }
-    var pos = cm.cursorCoords(options.alignWithWord !== false ? data.from : null);
+    var pos = cm.cursorCoords(completion.options.alignWithWord ? data.from : null);
     var left = pos.left, top = pos.bottom, below = true;
     hints.style.left = left + 'px';
     hints.style.top = top + 'px';
-    if (this.options.ghosting) {
-      hints.style.display = completions.length > 1 ? 'block' : 'none';
-    }
     // If we're at the edge of the screen, then we want the menu to appear on the left of the cursor.
     var winW = window.innerWidth || Math.max(document.body.offsetWidth, document.documentElement.offsetWidth);
     var winH = window.innerHeight || Math.max(document.body.offsetHeight, document.documentElement.offsetHeight);
-    var box = hints.getBoundingClientRect();
-    var overlapX = box.right - winW, overlapY = box.bottom - winH;
+    (completion.options.container || document.body).appendChild(hints);
+    var box = hints.getBoundingClientRect(), overlapY = box.bottom - winH;
+    if (overlapY > 0) {
+      var height = box.bottom - box.top, curTop = box.top - (pos.bottom - pos.top);
+      if (curTop - height > 0) {
+        // Fits above cursor
+        hints.style.top = (top = curTop - height) + 'px';
+        below = false;
+      } else if (height > winH) {
+        hints.style.height = winH - 5 + 'px';
+        hints.style.top = (top = pos.bottom - box.top) + 'px';
+        var cursor = cm.getCursor();
+        if (data.from.ch != cursor.ch) {
+          pos = cm.cursorCoords(cursor);
+          hints.style.left = (left = pos.left) + 'px';
+          box = hints.getBoundingClientRect();
+        }
+      }
+    }
+    var overlapX = box.left - winW;
     if (overlapX > 0) {
       if (box.right - box.left > winW) {
         hints.style.width = winW - 5 + 'px';
@@ -70995,21 +71168,9 @@ CodeMirror.overlayMode = CodeMirror.overlayParser = function (base, overlay, com
       }
       hints.style.left = (left = pos.left - overlapX) + 'px';
     }
-    if (overlapY > 0) {
-      var height = box.bottom - box.top;
-      if (box.top - (pos.bottom - pos.top) - height > 0) {
-        overlapY = height + (pos.bottom - pos.top);
-        below = false;
-      } else if (height > winH) {
-        hints.style.height = winH - 5 + 'px';
-        overlapY -= height - winH;
-      }
-      hints.style.top = (top = pos.bottom - overlapY) + 'px';
-    }
-    (options.container || document.body).appendChild(hints);
-    cm.addKeyMap(this.keyMap = buildKeyMap(options, {
-      moveFocus: function (n) {
-        widget.changeActive(widget.selectedHint + n);
+    cm.addKeyMap(this.keyMap = buildKeyMap(completion, {
+      moveFocus: function (n, avoidWrap) {
+        widget.changeActive(widget.selectedHint + n, avoidWrap);
       },
       setFocus: function (n) {
         widget.changeActive(n);
@@ -71023,9 +71184,10 @@ CodeMirror.overlayMode = CodeMirror.overlayParser = function (base, overlay, com
       },
       pick: function () {
         widget.pick();
-      }
+      },
+      data: data
     }));
-    if (options.closeOnUnfocus !== false) {
+    if (completion.options.closeOnUnfocus) {
       var closingOnBlur;
       cm.on('blur', this.onBlur = function () {
         closingOnBlur = setTimeout(function () {
@@ -71049,16 +71211,19 @@ CodeMirror.overlayMode = CodeMirror.overlayParser = function (base, overlay, com
       hints.style.left = left + startScroll.left - curScroll.left + 'px';
     });
     CodeMirror.on(hints, 'dblclick', function (e) {
-      var t = widget.getHintElement(hints, e.target || e.srcElement);
+      var t = getHintElement(hints, e.target || e.srcElement);
       if (t && t.hintId != null) {
         widget.changeActive(t.hintId);
         widget.pick();
       }
     });
     CodeMirror.on(hints, 'click', function (e) {
-      var t = widget.getHintElement(hints, e.target || e.srcElement);
-      if (t && t.hintId != null)
+      var t = getHintElement(hints, e.target || e.srcElement);
+      if (t && t.hintId != null) {
         widget.changeActive(t.hintId);
+        if (completion.options.completeOnSingleClick)
+          widget.pick();
+      }
     });
     CodeMirror.on(hints, 'mousedown', function () {
       setTimeout(function () {
@@ -71066,10 +71231,6 @@ CodeMirror.overlayMode = CodeMirror.overlayParser = function (base, overlay, com
       }, 20);
     });
     CodeMirror.signal(data, 'select', completions[0], hints.firstChild);
-    if (this.options.ghosting && this.data.list[0]) {
-      this.removeGhost();
-      this.ghost = new Ghost(this, this.data, this.data.list[0].displayText, this.pick.bind(this));
-    }
     return true;
   }
   Widget.prototype = {
@@ -71079,9 +71240,8 @@ CodeMirror.overlayMode = CodeMirror.overlayParser = function (base, overlay, com
       this.completion.widget = null;
       this.hints.parentNode.removeChild(this.hints);
       this.completion.cm.removeKeyMap(this.keyMap);
-      this.removeGhost();
       var cm = this.completion.cm;
-      if (this.options.closeOnUnfocus !== false) {
+      if (this.completion.options.closeOnUnfocus) {
         cm.off('blur', this.onBlur);
         cm.off('focus', this.onFocus);
       }
@@ -71090,18 +71250,17 @@ CodeMirror.overlayMode = CodeMirror.overlayParser = function (base, overlay, com
     pick: function () {
       this.completion.pick(this.data, this.selectedHint);
     },
-    changeActive: function (i) {
-      i = Math.max(0, Math.min(i, this.data.list.length - 1));
+    changeActive: function (i, avoidWrap) {
+      if (i >= this.data.list.length)
+        i = avoidWrap ? this.data.list.length - 1 : 0;
+      else if (i < 0)
+        i = avoidWrap ? 0 : this.data.list.length - 1;
       if (this.selectedHint == i)
         return;
       var node = this.hints.childNodes[this.selectedHint];
-      node.className = node.className.replace(' CodeMirror-hint-active', '');
+      node.className = node.className.replace(' ' + ACTIVE_HINT_ELEMENT_CLASS, '');
       node = this.hints.childNodes[this.selectedHint = i];
-      node.className += ' CodeMirror-hint-active';
-      if (this.options.ghosting) {
-        this.removeGhost();
-        this.ghost = new Ghost(this, this.data, this.data.list[i].displayText, this.pick.bind(this));
-      }
+      node.className += ' ' + ACTIVE_HINT_ELEMENT_CLASS;
       if (node.offsetTop < this.hints.scrollTop)
         this.hints.scrollTop = node.offsetTop - 3;
       else if (node.offsetTop + node.offsetHeight > this.hints.scrollTop + this.hints.clientHeight)
@@ -71110,78 +71269,52 @@ CodeMirror.overlayMode = CodeMirror.overlayParser = function (base, overlay, com
     },
     screenAmount: function () {
       return Math.floor(this.hints.clientHeight / this.hints.firstChild.offsetHeight) || 1;
-    },
-    removeGhost: function () {
-      if (!this.ghost) {
-        return;
-      }
-      this.ghost.remove();
-      return this;
-    },
-    getHintElement: function (parent, el) {
-      while (el && el !== parent && !this.isHintElement(el)) {
-        el = el.parentNode;
-      }
-      return el === parent ? void 0 : el;
-      ;
-    },
-    isHintElement: function (el) {
-      return el.nodeName && el.nodeName.toUpperCase() === 'LI' && el.className.split(/\s/).indexOf('CodeMirror-hint') !== -1;
-      ;
     }
   };
-  function Ghost(widget, data, text, accept) {
-    var that = this;
-    this.cm = widget.completion.cm;
-    this.data = data;
-    this.widget = widget;
-    this.completion = widget.completion;
-    this.cm.addKeyMap(this.keyMap = {
-      'Tab': accept || function () {
-        that.accept();
-      },
-      'Right': accept || function () {
-        that.accept();
+  CodeMirror.registerHelper('hint', 'auto', function (cm, options) {
+    var helpers = cm.getHelpers(cm.getCursor(), 'hint'), words;
+    if (helpers.length) {
+      for (var i = 0; i < helpers.length; i++) {
+        var cur = helpers[i](cm, options);
+        if (cur && cur.list.length)
+          return cur;
       }
-    });
-    if (!text) {
-      return this.remove();
+    } else if (words = cm.getHelper(cm.getCursor(), 'hintWords')) {
+      if (words)
+        return CodeMirror.hint.fromList(cm, { words: words });
+    } else if (CodeMirror.hint.anyword) {
+      return CodeMirror.hint.anyword(cm, options);
     }
-    // At the moment, the ghost is going to assume the prefix text is accurate
-    var suffix = this.suffix = text.substr(data.word.length);
-    if (!suffix.length) {
-      return this.remove();
+  });
+  CodeMirror.registerHelper('hint', 'fromList', function (cm, options) {
+    var cur = cm.getCursor(), token = cm.getTokenAt(cur);
+    var found = [];
+    for (var i = 0; i < options.words.length; i++) {
+      var word = options.words[i];
+      if (word.slice(0, token.string.length) == token.string)
+        found.push(word);
     }
-    // Creates the ghost element to be styled.
-    var ghostHint = document.createElement('span');
-    ghostHint.className = 'CodeMirror-hint-ghost';
-    ghostHint.appendChild(document.createTextNode(suffix));
-    // Abuse the bookmark feature of CodeMirror to achieve the desired completion
-    // effect without modifying source code.
-    this._ghost = this.cm.setBookmark(this.data.to, {
-      widget: ghostHint,
-      insertLeft: true
-    });
-  }
-  Ghost.prototype = {
-    accept: function () {
-      if (this.suffix && this.data) {
-        this.cm.replaceRange(this.suffix, this.data.to, this.data.to);
-      }
-      return this.remove();
-    },
-    remove: function () {
-      if (this._ghost) {
-        this._ghost.clear();
-      }
-      this.cm.removeKeyMap(this.keyMap);
-      delete this.ghost;
-      delete this.suffix;
-      delete this.widget.ghost;
-      return this;
-    }
-  };
-}());
+    if (found.length)
+      return {
+        list: found,
+        from: CodeMirror.Pos(cur.line, token.start),
+        to: CodeMirror.Pos(cur.line, token.end)
+      };
+  });
+  CodeMirror.commands.autocomplete = CodeMirror.showHint;
+  var defaultOptions = {
+      hint: CodeMirror.hint.auto,
+      completeSingle: true,
+      alignWithWord: true,
+      closeCharacters: /[\s()\[\]{};:>,]/,
+      closeOnUnfocus: true,
+      completeOnSingleClick: false,
+      container: null,
+      customKeys: null,
+      extraKeys: null
+    };
+  CodeMirror.defineOption('hintOptions', null);
+}));
 CodeMirror.defineMode('xml', function (config, parserConfig) {
   var indentUnit = config.indentUnit;
   var multilineTagIndentFactor = parserConfig.multilineTagIndentFactor || 1;
@@ -72700,13 +72833,16 @@ if (!String.prototype.endsWith) {
         var tt = document.createElement('div');
         tt.className = 'CodeMirror-lint-tooltip';
         tt.appendChild(content.cloneNode(true));
+        // need to append element to DOM to get its height
+        tt.style.visibility = 'hidden';
+        document.body.appendChild(tt);
         var offset = $(node).offset();
-        tt.style.top = Math.max(0, offset.top - tt.offsetHeight - 5) + 'px';
+        tt.style.top = Math.max(0, offset.top - tt.offsetHeight) + 'px';
         tt.style.left = offset.left + 20 + 'px';
         if (tt.style.opacity !== null) {
           tt.style.opacity = 1;
         }
-        document.body.appendChild(tt);
+        tt.style.visibility = 'visible';
         return tt;
       }
       function rm(elt) {
@@ -75020,7 +75156,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         return path + '.' + ext;
       }
       function ramlConverter() {
-        return new oasRamlConverter.Converter(oasRamlConverter.Formats.SWAGGER, oasRamlConverter.Formats.RAML10);
+        return new oasRamlConverter.Converter(oasRamlConverter.Formats.OAS, oasRamlConverter.Formats.RAML10);
       }
       function convertZip(root, contents) {
         var decimalRegexp = /^\d+\.\d+$/;
@@ -75142,7 +75278,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       }
       function swaggerConverter(file) {
         var from = ramlEditorMainHelpers.isApiDefinitionV08(file.contents) ? oasRamlConverter.Formats.RAML08 : oasRamlConverter.Formats.RAML10;
-        return new oasRamlConverter.Converter(from, oasRamlConverter.Formats.SWAGGER);
+        return new oasRamlConverter.Converter(from, oasRamlConverter.Formats.OAS);
       }
       function convertData(file, deferred, format) {
         var options = {
@@ -75997,6 +76133,7 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
         $scope.raml = raml;
         $scope.title = raml && raml.title;
         $scope.version = raml && raml.version;
+        $scope.ramlError = undefined;
         $scope.currentError = undefined;
         lineOfCurrentError = undefined;
       }));
@@ -76007,6 +76144,7 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
               message: errors.message,
               isWarning: errors.isWarning
             }];
+        $scope.ramlError = errors;
         codeMirrorErrors.displayAnnotations(parserErrors.map(function mapErrorToAnnotation(error) {
           var errorInfo = error;
           var tracingInfo = {
@@ -77975,7 +78113,7 @@ angular.module('ramlEditorApp').run([
     $templateCache.put('views/new-name-modal.html', '<form name="form" novalidate ng-submit="submit(form)">\n' + '  <div class="modal-header">\n' + '    <h3>{{input.title}}</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    <!-- name -->\n' + '    <div class="form-group" ng-class="{\'has-error\': form.$submitted && form.name.$invalid}">\n' + '      <p>\n' + '        {{input.message}}\n' + '      </p>\n' + '      <p ng-if="input.link">\n' + '        Learn more\n' + '        <a target="_blank" href="{{input.link}}">\n' + '          <i class="fa fa-external-link"></i>\n' + '        </a>\n' + '      </p>\n' + '      <!-- label -->\n' + '      <label for="name" class="control-label required-field-label">Name</label>\n' + '\n' + '      <!-- input -->\n' + '      <input id="name" name="name" type="text"\n' + '             ng-model="input.newName" class="form-control"\n' + '             ng-validate="isValid($value)"\n' + '             ng-maxlength="64" ng-auto-focus="true" value="{{input.suggestedName}}" required>\n' + '\n' + '      <!-- error -->\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.required">Please provide a name.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.maxlength">Name must be shorter than 64 characters.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.validate">{{validationErrorMessage}}</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n' + '    <button type="submit" class="btn btn-primary">OK</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/raml-editor-context-menu.tmpl.html', '<ul role="context-menu" ng-show="opened">\n' + '  <li role="context-menu-item" ng-mouseenter="openFileMenu(action)" ng-mouseleave="closeFileMenu()" ng-repeat="action in actions" ng-click="action.execute()">\n' + '    {{ action.label }}\n' + '    <i class="submenu-icon fa fa-caret-right" ng-if="action.fragments !== undefined"></i>\n' + '    <raml-editor-new-file-menu ng-if="action.fragments !== undefined" target="target" show-file-menu="showFileMenu" show-fragment-menu="showFragmentMenu" open-file-menu-condition="showFragmentMenu" menu-role="context-menu"></raml-editor-new-file-menu>\n' + '  </li>\n' + '</ul>\n');
     $templateCache.put('views/raml-editor-file-browser.tmpl.html', '<raml-editor-context-menu></raml-editor-context-menu>\n' + '\n' + '<script type="text/ng-template" id="file-item.html">\n' + '  <div ui-tree-handle class="file-item" ng-right-click="fileBrowser.showContextMenu($event, node)" ng-click="fileBrowser.select(node)"\n' + '    ng-class="{currentfile: fileBrowser.currentTarget.path === node.path && !isDragging,\n' + '      dirty: node.dirty,\n' + '      geared: fileBrowser.contextMenuOpenedFor(node),\n' + '      directory: node.isDirectory,\n' + '      \'no-drop\': fileBrowser.cursorState === \'no\',\n' + '      copy: fileBrowser.cursorState === \'ok\'}"\n' + '    ng-drop="node.isDirectory && fileBrowser.dropFile($event, node)">\n' + '    <span class="file-name" ng-click="toggleFolderCollapse(node)">\n' + '      <i class="fa icon fa-caret-right fa-fw" ng-if="node.isDirectory" ng-class="{\'fa-rotate-90\': !collapsed}"></i>\n' + '      <i class="fa icon fa-fw" ng-class="{\'fa-folder-o\': node.isDirectory, \'fa-file-text-o\': !node.isDirectory}"></i>\n' + '      &nbsp;{{node.name}}\n' + '    </span>\n' + '    <i class="fa fa-cog" ng-click="fileBrowser.showContextMenu($event, node)" ng-class="{hidden: isDragging}" data-nodrag></i>\n' + '  </div>\n' + '\n' + '  <ul ui-tree-nodes ng-if="node.isDirectory" ng-class="{hidden: collapsed}" ng-model="node.children">\n' + '    <li ui-tree-node ng-repeat="node in node.children" ng-include="\'file-item.html\'" data-collapsed="node.collapsed" data-path="{{node.path}}">\n' + '    </li>\n' + '  </ul>\n' + '</script>\n' + '\n' + '<div ui-tree="fileTreeOptions" ng-model="homeDirectory" class="file-list" data-drag-delay="300" data-empty-place-holder-enabled="false" ng-drop="fileBrowser.dropFile($event, homeDirectory)" ng-right-click="fileBrowser.showContextMenu($event, homeDirectory)">\n' + '  <ul ui-tree-nodes ng-model="homeDirectory.children" id="tree-root">\n' + '    <ui-tree-dummy-node class="top"></ui-tree-dummy-node>\n' + '    <li ui-tree-node ng-repeat="node in homeDirectory.children" ng-include="\'file-item.html\'" data-collapsed="node.collapsed"\n' + '     data-path="{{node.path}}"\n' + '     ng-drag-enter="node.collapsed = false"\n' + '     ng-drag-leave="node.collapsed = true"></li>\n' + '    <ui-tree-dummy-node class="bottom" ng-click="fileBrowser.select(homeDirectory)"></ui-tree-dummy-node>\n' + '  </ul>\n' + '</div>\n');
-    $templateCache.put('views/raml-editor-main.tmpl.html', '<div role="raml-editor" class="{{theme}}">\n' + '  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications, error: level === \'error\'}">\n' + '    {{message}}\n' + '    <i class="fa" ng-class="{\'fa-check\': level === \'info\', \'fa-warning\': level === \'error\'}" ng-click="hideNotifications()"></i>\n' + '  </div>\n' + '\n' + '  <header>\n' + '    <h1>\n' + '      <strong>API</strong> Designer\n' + '    </h1>\n' + '\n' + '    <a role="logo" target="_blank" href="http://mulesoft.com"></a>\n' + '  </header>\n' + '\n' + '  <ul class="menubar">\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-project-button></raml-editor-project-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-view-button></raml-editor-view-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-help-button></raml-editor-help-button>\n' + '    </li>\n' + '    <li class="spacer file-absolute-path">{{getSelectedFileAbsolutePath()}}</li>\n' + '    <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">\n' + '      <div class="title">Mocking Service</div>\n' + '      <div class="field-wrapper" ng-class="{loading: loading}">\n' + '        <i class="fa fa-spin fa-spinner" ng-if="loading"></i>\n' + '        <div class="field" ng-if="!loading">\n' + '          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />\n' + '          <label for="mockingServiceEnabled"></label>\n' + '        </div>\n' + '      </div>\n' + '    </li>\n' + '  </ul>\n' + '\n' + '  <div role="flexColumns">\n' + '    <raml-editor-file-browser role="browser"></raml-editor-file-browser>\n' + '\n' + '    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev"><div class="split split-left">&nbsp;</div></div>\n' + '\n' + '    <div role="editor" ng-class="{error: currentError}">\n' + '      <div id="code" role="code"></div>\n' + '\n' + '      <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">\n' + '        <div role="shelf-tab" ng-click="toggleShelf()">\n' + '          <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? \'fa-caret-up\' : \'fa-caret-down\'"></i>\n' + '        </div>\n' + '\n' + '        <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="\'views/raml-editor-shelf.tmpl.html\'"></div>\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="470"><div class="split split-right">&nbsp;</div></div>\n' + '\n' + '    <div ng-show="getIsConsoleVisible()" role="preview-wrapper" class="raml-console-embedded">\n' + '      <div ng-if="!splitterCollapsed_consoleAndEditor && getIsConsoleVisible()">\n' + '        <raml-console raml="raml" disable-description="true"\n' + '            options="{ singleView: true, disableThemeSwitcher: true, disableRamlClientGenerator: true, disableTitle: true}"\n' + '            style="padding: 0; margin-top: 0;"></raml-console>\n' + '      </div>\n' + '    </div>\n' + '  </div>\n' + '</div>\n');
+    $templateCache.put('views/raml-editor-main.tmpl.html', '<div role="raml-editor" class="{{theme}}">\n' + '  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications, error: level === \'error\'}">\n' + '    {{message}}\n' + '    <i class="fa" ng-class="{\'fa-check\': level === \'info\', \'fa-warning\': level === \'error\'}" ng-click="hideNotifications()"></i>\n' + '  </div>\n' + '\n' + '  <header>\n' + '    <h1>\n' + '      <strong>API</strong> Designer\n' + '    </h1>\n' + '\n' + '    <a role="logo" target="_blank" href="http://mulesoft.com"></a>\n' + '  </header>\n' + '\n' + '  <ul class="menubar">\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-project-button></raml-editor-project-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-view-button></raml-editor-view-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-help-button></raml-editor-help-button>\n' + '    </li>\n' + '    <li class="spacer file-absolute-path">{{getSelectedFileAbsolutePath()}}</li>\n' + '    <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">\n' + '      <div class="title">Mocking Service</div>\n' + '      <div class="field-wrapper" ng-class="{loading: loading}">\n' + '        <i class="fa fa-spin fa-spinner" ng-if="loading"></i>\n' + '        <div class="field" ng-if="!loading">\n' + '          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />\n' + '          <label for="mockingServiceEnabled"></label>\n' + '        </div>\n' + '      </div>\n' + '    </li>\n' + '  </ul>\n' + '\n' + '  <div role="flexColumns">\n' + '    <raml-editor-file-browser role="browser"></raml-editor-file-browser>\n' + '\n' + '    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev"><div class="split split-left">&nbsp;</div></div>\n' + '\n' + '    <div role="editor" ng-class="{error: currentError}">\n' + '      <div id="code" role="code"></div>\n' + '\n' + '      <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">\n' + '        <div role="shelf-tab" ng-click="toggleShelf()">\n' + '          <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? \'fa-caret-up\' : \'fa-caret-down\'"></i>\n' + '        </div>\n' + '\n' + '        <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="\'views/raml-editor-shelf.tmpl.html\'"></div>\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="470"><div class="split split-right">&nbsp;</div></div>\n' + '\n' + '    <div ng-show="getIsConsoleVisible()" role="preview-wrapper" class="raml-console-embedded">\n' + '      <div ng-if="!splitterCollapsed_consoleAndEditor && getIsConsoleVisible()">\n' + '        <raml-console raml="raml" errors="ramlError" disable-description="true"\n' + '            options="{ singleView: true, disableThemeSwitcher: true, disableRamlClientGenerator: true, disableTitle: true}"\n' + '            style="padding: 0; margin-top: 0;"></raml-console>\n' + '      </div>\n' + '    </div>\n' + '  </div>\n' + '</div>\n');
     $templateCache.put('views/raml-editor-shelf.tmpl.html', '<ul role="sections" ng-controller="ramlEditorShelf">\n' + '  <li role="section" ng-repeat="category in model.categories | orderBy:orderSections" class="{{category.name | dasherize}}">\n' + '    {{category.name}}&nbsp;({{category.items.length}})\n' + '    <ul role="items">\n' + '      <li ng-repeat="item in category.items" ng-click="itemClick(item)"><i class="fa fa-reply"></i><span>{{item.title}}</span></li>\n' + '    </ul>\n' + '  </li>\n' + '</ul>\n');
   }
 ]);
