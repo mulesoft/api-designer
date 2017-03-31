@@ -52,7 +52,7 @@
     "karma-chai-sinon": "~0.1.4",
     "karma-coverage": "~0.1.5",
     "karma-mocha": "~0.1.1",
-    "karma-phantomjs-launcher": "~0.1.2",
+    "karma-phantomjs-launcher": "~1.0.4",
     "load-grunt-tasks": "~0.5.0",
     "mocha": "~2.0.0",
     "request": "~2.33.0",
