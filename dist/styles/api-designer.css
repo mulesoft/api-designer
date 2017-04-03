@@ -607,7 +607,7 @@ div .noselect {
   -ms-user-select: none;
   user-select: none;
   position: relative;
-  z-index: 200;
+  z-index: 90;
   -webkit-box-flex: 0;
   -webkit-flex: 0;
   -ms-flex: 0;
@@ -1114,6 +1114,20 @@ div.CodeMirror {
 }
 [role=raml-editor] .raml-console-initializer-row.raml-console-initializer-subheader {
   display: none;
+}
+[role=raml-editor] .raml-console-parser-error {
+  background-color: transparent;
+  color: inherit;
+  font-size: 15px;
+  padding-top: 6px;
+  padding-bottom: 4px;
+}
+[role=raml-editor] .raml-console-parser-error a {
+  cursor: pointer;
+  padding-left: 5px;
+  min-width: 90px;
+  display: inline-block;
+  text-align: left;
 }
 [role=raml-editor] .raml-console-error-pre {
   font-size: 12px;
