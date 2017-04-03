@@ -135,6 +135,7 @@ div[role=flexColumns] {
   -webkit-flex: 1;
   -ms-flex: 1;
   flex: 1;
+  overflow: auto;
 }
 div[role=editor] {
   -moz-box-sizing: border-box;
