@@ -88421,7 +88421,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "\n" +
     "    <div class=\"raml-console-initializer-row\">\n" +
     "      <div class=\"raml-console-parser-error\">\n" +
-    "        <span>Api contains errors.</span>\n" +
+    "        <span>API contains errors.</span>\n" +
     "        <a ng-hide=\"!showErrorDetail == true\" ng-click=\"showErrorDetail = false\">(Show less)</a>\n" +
     "        <a ng-hide=\"showErrorDetail\" ng-click=\"showErrorDetail = true\">(Show more)</a>\n" +
     "      </div>\n" +
