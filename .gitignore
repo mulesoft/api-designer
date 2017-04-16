@@ -16,3 +16,4 @@ keyfile
 app/styles/*.css
 app/styles/css
 scenario/Sauce-Connect-latest
+dist/
