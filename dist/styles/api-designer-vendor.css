@@ -2590,6 +2590,43 @@ input.ng-dirty.ng-invalid-pattern + span.raml-console-field-validation-error::af
   text-align: center;
 }
 
+input.ng-dirty.ng-invalid-min-items, input.ng-dirty.ng-invalid-max-items, input.ng-dirty.ng-invalid-unique-items {
+  border: 1px solid red;
+}
+
+input.ng-dirty.ng-invalid-min-items + span.raml-console-field-validation-error::after {
+  content: 'Invalid minItems';
+  color: white;
+  position: absolute;
+  margin-top: -20px;
+  font-size: 13px;
+  background-color: red;
+  width: 100%;
+  text-align: center;
+}
+
+input.ng-dirty.ng-invalid-max-items + span.raml-console-field-validation-error::after {
+  content: 'Invalid maxItems';
+  color: white;
+  position: absolute;
+  margin-top: -20px;
+  font-size: 13px;
+  background-color: red;
+  width: 100%;
+  text-align: center;
+}
+
+input.ng-dirty.ng-invalid-unique-items + span.raml-console-field-validation-error::after {
+  content: 'Repeated items';
+  color: white;
+  position: absolute;
+  margin-top: -20px;
+  font-size: 13px;
+  background-color: red;
+  width: 100%;
+  text-align: center;
+}
+
 input.ng-dirty.ng-invalid-repeat {
   border: 1px solid red;
 }
@@ -5030,6 +5067,48 @@ root
 .raml-console-sidebar-add-btn:hover {
   background-color: #9ea0ad;
   opacity: 1;
+}
+
+.raml-console-sidebar-info-btn {
+  position: absolute;
+  top: 36px;
+  left: 10px;
+  width: 17px;
+  height: 17px;
+  border: none;
+  border-radius: 50%;
+  background: #888a99;
+  color: #f3f4f5;
+  opacity: 0.4;
+  transition: 0.2s ease all;
+}
+
+.raml-console-sidebar-info-btn:before {
+  content: "\02139";
+  position: absolute;
+  top: -1px;
+  left: 2px;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.raml-console-sidebar-info-btn:hover {
+  background-color: #9ea0ad;
+  opacity: 1;
+}
+
+.raml-console-sidebar-info-btn:hover:after {
+  content: attr(tooltip);
+  position: absolute;
+  background: #9ea0ad;
+  color: #333;
+  white-space: nowrap;
+  top: -15px;
+  left: 25px;
+  font-size: 14px;
+  padding: 2px 8px;
+  border-radius: 5px;
+  border: 1px solid #d5d7d9;
 }
 
 .raml-console-sidebar-toggle-group {
