@@ -2474,6 +2474,10 @@ input.ng-dirty.ng-invalid-required {
   border: 1px solid red;
 }
 
+input[type="file"].ng-dirty.ng-invalid-required + span.raml-console-field-validation-error::after {
+  margin-top: 0;
+}
+
 input.ng-dirty.ng-invalid-required + span.raml-console-field-validation-error::after {
   content: 'Required';
   color: white;
@@ -2489,6 +2493,10 @@ input.ng-dirty.ng-invalid-min-length {
   border: 1px solid red;
 }
 
+input[type="file"].ng-invalid-min-length + span.raml-console-field-validation-error::after {
+  margin-top: 0;
+}
+
 input.ng-invalid-min-length + span.raml-console-field-validation-error::after {
   content: 'Invalid min length';
   color: white;
@@ -2502,6 +2510,10 @@ input.ng-invalid-min-length + span.raml-console-field-validation-error::after {
 
 input.ng-dirty.ng-invalid-max-length {
   border: 1px solid red;
+}
+
+input[type="file"].ng-dirty.ng-invalid-max-length + span.raml-console-field-validation-error::after {
+  margin-top: 0;
 }
 
 input.ng-dirty.ng-invalid-max-length + span.raml-console-field-validation-error::after {
@@ -5700,6 +5712,13 @@ root
   padding-left: 0;
   font-size: 14px;
   margin-top: -10px !important;
+}
+
+.raml-console-sidebar-input-file {
+  margin-top: 12px;
+  font-size: 12px;
+  width: 100%;
+  padding: 2px;
 }
 
 /* ==========================================================================
