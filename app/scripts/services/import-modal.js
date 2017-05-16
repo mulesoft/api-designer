@@ -67,7 +67,7 @@
             return $modalInstance.close(true);
           })
           .catch(function (err) {
-            broadcastError(err.message);
+            broadcastError(err.message || err);
           })
           .finally(function () {
             $scope.importing = false;
@@ -168,10 +168,10 @@
         }
 
         try {
-        return $scope.mode.callback($scope.mode);
+          return $scope.mode.callback($scope.mode);
         } catch (err) {
           $scope.importing = false;
-          broadcastError(err);
+          broadcastError(err.message || err);
         }
       };
 
