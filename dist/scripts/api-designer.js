@@ -1174,6 +1174,11 @@
       process.removeListener = noop;
       process.removeAllListeners = noop;
       process.emit = noop;
+      process.prependListener = noop;
+      process.prependOnceListener = noop;
+      process.listeners = function (name) {
+        return [];
+      };
       process.binding = function (name) {
         throw new Error('process.binding is not supported');
       };
@@ -8025,7 +8030,7 @@
           return http.request.call(this, params, cb);
         };
       },
-      { 'http': 300 }
+      { 'http': 302 }
     ],
     16: [
       function (require, module, exports) {
@@ -10122,7 +10127,7 @@
         '../util/url': 39,
         '_process': 281,
         'buffer': 6,
-        'http': 300,
+        'http': 302,
         'https': 15,
         'ono': 279
       }
@@ -10497,7 +10502,7 @@
       },
       {
         '_process': 281,
-        'url': 315
+        'url': 317
       }
     ],
     40: [
@@ -41101,7 +41106,7 @@
         '../utils/xml.js': 246,
         './exporter': 227,
         'lodash': 210,
-        'url': 315
+        'url': 317
       }
     ],
     232: [
@@ -42609,7 +42614,7 @@
         '../utils/xml': 246,
         './importer': 237,
         'lodash': 210,
-        'url': 315
+        'url': 317
       }
     ],
     237: [
@@ -44537,7 +44542,7 @@
         './importer': 237,
         'js-yaml': 247,
         'lodash': 210,
-        'swagger-parser': 306
+        'swagger-parser': 308
       }
     ],
     242: [
@@ -44768,7 +44773,7 @@
           }
         };
       },
-      { 'xml2js': 387 }
+      { 'xml2js': 389 }
     ],
     247: [
       function (require, module, exports) {
@@ -45442,7 +45447,7 @@
           }
         }
       },
-      { 'util': 319 }
+      { 'util': 321 }
     ],
     280: [
       function (require, module, exports) {
@@ -45649,6 +45654,11 @@
         process.removeListener = noop;
         process.removeAllListeners = noop;
         process.emit = noop;
+        process.prependListener = noop;
+        process.prependOnceListener = noop;
+        process.listeners = function (name) {
+          return [];
+        };
         process.binding = function (name) {
           throw new Error('process.binding is not supported');
         };
@@ -47747,7 +47757,7 @@
       {
         'buffer': 6,
         'stream': 287,
-        'string_decoder': 304
+        'string_decoder': 306
       }
     ],
     287: [
@@ -47857,10 +47867,10 @@
         'events': 13,
         'inherits': 18,
         'readable-stream/duplex.js': 289,
-        'readable-stream/passthrough.js': 296,
-        'readable-stream/readable.js': 297,
-        'readable-stream/transform.js': 298,
-        'readable-stream/writable.js': 299
+        'readable-stream/passthrough.js': 297,
+        'readable-stream/readable.js': 298,
+        'readable-stream/transform.js': 299,
+        'readable-stream/writable.js': 300
       }
     ],
     288: [
@@ -47999,16 +48009,7 @@
           };
           /*</replacement>*/
           /*<replacement>*/
-          var Stream;
-          (function () {
-            try {
-              Stream = require('st' + 'ream');
-            } catch (_) {
-            } finally {
-              if (!Stream)
-                Stream = require('events').EventEmitter;
-            }
-          }());
+          var Stream = require('./internal/streams/stream');
           /*</replacement>*/
           var Buffer = require('buffer').Buffer;
           /*<replacement>*/
@@ -48031,6 +48032,13 @@
           var BufferList = require('./internal/streams/BufferList');
           var StringDecoder;
           util.inherits(Readable, Stream);
+          var kProxyEvents = [
+              'error',
+              'close',
+              'destroy',
+              'pause',
+              'resume'
+            ];
           function prependListener(emitter, event, fn) {
             // Sadly this is not cacheable as some libraries bundle their own
             // event emitter implementation with them.
@@ -48716,16 +48724,9 @@
               }
             }
             // proxy certain important events.
-            var events = [
-                'error',
-                'close',
-                'destroy',
-                'pause',
-                'resume'
-              ];
-            forEach(events, function (ev) {
-              stream.on(ev, self.emit.bind(self, ev));
-            });
+            for (var n = 0; n < kProxyEvents.length; n++) {
+              stream.on(kProxyEvents[n], self.emit.bind(self, kProxyEvents[n]));
+            }
             // when we try to consume some more bytes, simply unpause the
             // underlying stream.
             self._read = function (n) {
@@ -48886,6 +48887,7 @@
       {
         './_stream_duplex': 290,
         './internal/streams/BufferList': 295,
+        './internal/streams/stream': 296,
         '_process': 281,
         'buffer': 6,
         'buffer-shims': 5,
@@ -48894,7 +48896,7 @@
         'inherits': 18,
         'isarray': 288,
         'process-nextick-args': 280,
-        'string_decoder/': 304,
+        'string_decoder/': 301,
         'util': 3
       }
     ],
@@ -49097,16 +49099,7 @@
           var internalUtil = { deprecate: require('util-deprecate') };
           /*</replacement>*/
           /*<replacement>*/
-          var Stream;
-          (function () {
-            try {
-              Stream = require('st' + 'ream');
-            } catch (_) {
-            } finally {
-              if (!Stream)
-                Stream = require('events').EventEmitter;
-            }
-          }());
+          var Stream = require('./internal/streams/stream');
           /*</replacement>*/
           var Buffer = require('buffer').Buffer;
           /*<replacement>*/
@@ -49570,14 +49563,14 @@
       },
       {
         './_stream_duplex': 290,
+        './internal/streams/stream': 296,
         '_process': 281,
         'buffer': 6,
         'buffer-shims': 5,
         'core-util-is': 10,
-        'events': 13,
         'inherits': 18,
         'process-nextick-args': 280,
-        'util-deprecate': 316
+        'util-deprecate': 318
       }
     ],
     295: [
@@ -49663,53 +49656,345 @@
     ],
     296: [
       function (require, module, exports) {
-        module.exports = require('./lib/_stream_passthrough.js');
+        module.exports = require('events').EventEmitter;
       },
-      { './lib/_stream_passthrough.js': 291 }
+      { 'events': 13 }
     ],
     297: [
       function (require, module, exports) {
-        (function (process) {
-          var Stream = function () {
-              try {
-                return require('st' + 'ream');  // hack to fix a circular dependency issue when used with browserify
-              } catch (_) {
-              }
-            }();
-          exports = module.exports = require('./lib/_stream_readable.js');
-          exports.Stream = Stream || exports;
-          exports.Readable = exports;
-          exports.Writable = require('./lib/_stream_writable.js');
-          exports.Duplex = require('./lib/_stream_duplex.js');
-          exports.Transform = require('./lib/_stream_transform.js');
-          exports.PassThrough = require('./lib/_stream_passthrough.js');
-          if (!process.browser && process.env.READABLE_STREAM === 'disable' && Stream) {
-            module.exports = Stream;
-          }
-        }.call(this, require('_process')));
+        module.exports = require('./readable').PassThrough;
+      },
+      { './readable': 298 }
+    ],
+    298: [
+      function (require, module, exports) {
+        exports = module.exports = require('./lib/_stream_readable.js');
+        exports.Stream = exports;
+        exports.Readable = exports;
+        exports.Writable = require('./lib/_stream_writable.js');
+        exports.Duplex = require('./lib/_stream_duplex.js');
+        exports.Transform = require('./lib/_stream_transform.js');
+        exports.PassThrough = require('./lib/_stream_passthrough.js');
       },
       {
         './lib/_stream_duplex.js': 290,
         './lib/_stream_passthrough.js': 291,
         './lib/_stream_readable.js': 292,
         './lib/_stream_transform.js': 293,
-        './lib/_stream_writable.js': 294,
-        '_process': 281
+        './lib/_stream_writable.js': 294
       }
     ],
-    298: [
-      function (require, module, exports) {
-        module.exports = require('./lib/_stream_transform.js');
-      },
-      { './lib/_stream_transform.js': 293 }
-    ],
     299: [
+      function (require, module, exports) {
+        module.exports = require('./readable').Transform;
+      },
+      { './readable': 298 }
+    ],
+    300: [
       function (require, module, exports) {
         module.exports = require('./lib/_stream_writable.js');
       },
       { './lib/_stream_writable.js': 294 }
     ],
-    300: [
+    301: [
+      function (require, module, exports) {
+        'use strict';
+        var Buffer = require('buffer').Buffer;
+        var bufferShim = require('buffer-shims');
+        var isEncoding = Buffer.isEncoding || function (encoding) {
+            encoding = '' + encoding;
+            switch (encoding && encoding.toLowerCase()) {
+            case 'hex':
+            case 'utf8':
+            case 'utf-8':
+            case 'ascii':
+            case 'binary':
+            case 'base64':
+            case 'ucs2':
+            case 'ucs-2':
+            case 'utf16le':
+            case 'utf-16le':
+            case 'raw':
+              return true;
+            default:
+              return false;
+            }
+          };
+        function _normalizeEncoding(enc) {
+          if (!enc)
+            return 'utf8';
+          var retried;
+          while (true) {
+            switch (enc) {
+            case 'utf8':
+            case 'utf-8':
+              return 'utf8';
+            case 'ucs2':
+            case 'ucs-2':
+            case 'utf16le':
+            case 'utf-16le':
+              return 'utf16le';
+            case 'latin1':
+            case 'binary':
+              return 'latin1';
+            case 'base64':
+            case 'ascii':
+            case 'hex':
+              return enc;
+            default:
+              if (retried)
+                return;
+              // undefined
+              enc = ('' + enc).toLowerCase();
+              retried = true;
+            }
+          }
+        }
+        ;
+        // Do not cache `Buffer.isEncoding` when checking encoding names as some
+        // modules monkey-patch it to support additional encodings
+        function normalizeEncoding(enc) {
+          var nenc = _normalizeEncoding(enc);
+          if (typeof nenc !== 'string' && (Buffer.isEncoding === isEncoding || !isEncoding(enc)))
+            throw new Error('Unknown encoding: ' + enc);
+          return nenc || enc;
+        }
+        // StringDecoder provides an interface for efficiently splitting a series of
+        // buffers into a series of JS strings without breaking apart multi-byte
+        // characters.
+        exports.StringDecoder = StringDecoder;
+        function StringDecoder(encoding) {
+          this.encoding = normalizeEncoding(encoding);
+          var nb;
+          switch (this.encoding) {
+          case 'utf16le':
+            this.text = utf16Text;
+            this.end = utf16End;
+            nb = 4;
+            break;
+          case 'utf8':
+            this.fillLast = utf8FillLast;
+            nb = 4;
+            break;
+          case 'base64':
+            this.text = base64Text;
+            this.end = base64End;
+            nb = 3;
+            break;
+          default:
+            this.write = simpleWrite;
+            this.end = simpleEnd;
+            return;
+          }
+          this.lastNeed = 0;
+          this.lastTotal = 0;
+          this.lastChar = bufferShim.allocUnsafe(nb);
+        }
+        StringDecoder.prototype.write = function (buf) {
+          if (buf.length === 0)
+            return '';
+          var r;
+          var i;
+          if (this.lastNeed) {
+            r = this.fillLast(buf);
+            if (r === undefined)
+              return '';
+            i = this.lastNeed;
+            this.lastNeed = 0;
+          } else {
+            i = 0;
+          }
+          if (i < buf.length)
+            return r ? r + this.text(buf, i) : this.text(buf, i);
+          return r || '';
+        };
+        StringDecoder.prototype.end = utf8End;
+        // Returns only complete characters in a Buffer
+        StringDecoder.prototype.text = utf8Text;
+        // Attempts to complete a partial non-UTF-8 character using bytes from a Buffer
+        StringDecoder.prototype.fillLast = function (buf) {
+          if (this.lastNeed <= buf.length) {
+            buf.copy(this.lastChar, this.lastTotal - this.lastNeed, 0, this.lastNeed);
+            return this.lastChar.toString(this.encoding, 0, this.lastTotal);
+          }
+          buf.copy(this.lastChar, this.lastTotal - this.lastNeed, 0, buf.length);
+          this.lastNeed -= buf.length;
+        };
+        // Checks the type of a UTF-8 byte, whether it's ASCII, a leading byte, or a
+        // continuation byte.
+        function utf8CheckByte(byte) {
+          if (byte <= 127)
+            return 0;
+          else if (byte >> 5 === 6)
+            return 2;
+          else if (byte >> 4 === 14)
+            return 3;
+          else if (byte >> 3 === 30)
+            return 4;
+          return -1;
+        }
+        // Checks at most 3 bytes at the end of a Buffer in order to detect an
+        // incomplete multi-byte UTF-8 character. The total number of bytes (2, 3, or 4)
+        // needed to complete the UTF-8 character (if applicable) are returned.
+        function utf8CheckIncomplete(self, buf, i) {
+          var j = buf.length - 1;
+          if (j < i)
+            return 0;
+          var nb = utf8CheckByte(buf[j]);
+          if (nb >= 0) {
+            if (nb > 0)
+              self.lastNeed = nb - 1;
+            return nb;
+          }
+          if (--j < i)
+            return 0;
+          nb = utf8CheckByte(buf[j]);
+          if (nb >= 0) {
+            if (nb > 0)
+              self.lastNeed = nb - 2;
+            return nb;
+          }
+          if (--j < i)
+            return 0;
+          nb = utf8CheckByte(buf[j]);
+          if (nb >= 0) {
+            if (nb > 0) {
+              if (nb === 2)
+                nb = 0;
+              else
+                self.lastNeed = nb - 3;
+            }
+            return nb;
+          }
+          return 0;
+        }
+        // Validates as many continuation bytes for a multi-byte UTF-8 character as
+        // needed or are available. If we see a non-continuation byte where we expect
+        // one, we "replace" the validated continuation bytes we've seen so far with
+        // UTF-8 replacement characters ('\ufffd'), to match v8's UTF-8 decoding
+        // behavior. The continuation byte check is included three times in the case
+        // where all of the continuation bytes for a character exist in the same buffer.
+        // It is also done this way as a slight performance increase instead of using a
+        // loop.
+        function utf8CheckExtraBytes(self, buf, p) {
+          if ((buf[0] & 192) !== 128) {
+            self.lastNeed = 0;
+            return '\ufffd'.repeat(p);
+          }
+          if (self.lastNeed > 1 && buf.length > 1) {
+            if ((buf[1] & 192) !== 128) {
+              self.lastNeed = 1;
+              return '\ufffd'.repeat(p + 1);
+            }
+            if (self.lastNeed > 2 && buf.length > 2) {
+              if ((buf[2] & 192) !== 128) {
+                self.lastNeed = 2;
+                return '\ufffd'.repeat(p + 2);
+              }
+            }
+          }
+        }
+        // Attempts to complete a multi-byte UTF-8 character using bytes from a Buffer.
+        function utf8FillLast(buf) {
+          var p = this.lastTotal - this.lastNeed;
+          var r = utf8CheckExtraBytes(this, buf, p);
+          if (r !== undefined)
+            return r;
+          if (this.lastNeed <= buf.length) {
+            buf.copy(this.lastChar, p, 0, this.lastNeed);
+            return this.lastChar.toString(this.encoding, 0, this.lastTotal);
+          }
+          buf.copy(this.lastChar, p, 0, buf.length);
+          this.lastNeed -= buf.length;
+        }
+        // Returns all complete UTF-8 characters in a Buffer. If the Buffer ended on a
+        // partial character, the character's bytes are buffered until the required
+        // number of bytes are available.
+        function utf8Text(buf, i) {
+          var total = utf8CheckIncomplete(this, buf, i);
+          if (!this.lastNeed)
+            return buf.toString('utf8', i);
+          this.lastTotal = total;
+          var end = buf.length - (total - this.lastNeed);
+          buf.copy(this.lastChar, 0, end);
+          return buf.toString('utf8', i, end);
+        }
+        // For UTF-8, a replacement character for each buffered byte of a (partial)
+        // character needs to be added to the output.
+        function utf8End(buf) {
+          var r = buf && buf.length ? this.write(buf) : '';
+          if (this.lastNeed)
+            return r + '\ufffd'.repeat(this.lastTotal - this.lastNeed);
+          return r;
+        }
+        // UTF-16LE typically needs two bytes per character, but even if we have an even
+        // number of bytes available, we need to check if we end on a leading/high
+        // surrogate. In that case, we need to wait for the next two bytes in order to
+        // decode the last character properly.
+        function utf16Text(buf, i) {
+          if ((buf.length - i) % 2 === 0) {
+            var r = buf.toString('utf16le', i);
+            if (r) {
+              var c = r.charCodeAt(r.length - 1);
+              if (c >= 55296 && c <= 56319) {
+                this.lastNeed = 2;
+                this.lastTotal = 4;
+                this.lastChar[0] = buf[buf.length - 2];
+                this.lastChar[1] = buf[buf.length - 1];
+                return r.slice(0, -1);
+              }
+            }
+            return r;
+          }
+          this.lastNeed = 1;
+          this.lastTotal = 2;
+          this.lastChar[0] = buf[buf.length - 1];
+          return buf.toString('utf16le', i, buf.length - 1);
+        }
+        // For UTF-16LE we do not explicitly append special replacement characters if we
+        // end on a partial character, we simply let v8 handle that.
+        function utf16End(buf) {
+          var r = buf && buf.length ? this.write(buf) : '';
+          if (this.lastNeed) {
+            var end = this.lastTotal - this.lastNeed;
+            return r + this.lastChar.toString('utf16le', 0, end);
+          }
+          return r;
+        }
+        function base64Text(buf, i) {
+          var n = (buf.length - i) % 3;
+          if (n === 0)
+            return buf.toString('base64', i);
+          this.lastNeed = 3 - n;
+          this.lastTotal = 3;
+          if (n === 1) {
+            this.lastChar[0] = buf[buf.length - 1];
+          } else {
+            this.lastChar[0] = buf[buf.length - 2];
+            this.lastChar[1] = buf[buf.length - 1];
+          }
+          return buf.toString('base64', i, buf.length - n);
+        }
+        function base64End(buf) {
+          var r = buf && buf.length ? this.write(buf) : '';
+          if (this.lastNeed)
+            return r + this.lastChar.toString('base64', 0, 3 - this.lastNeed);
+          return r;
+        }
+        // Pass bytes on through for single-byte encodings (e.g. ascii, latin1, hex)
+        function simpleWrite(buf) {
+          return buf.toString(this.encoding);
+        }
+        function simpleEnd(buf) {
+          return buf && buf.length ? this.write(buf) : '';
+        }
+      },
+      {
+        'buffer': 6,
+        'buffer-shims': 5
+      }
+    ],
+    302: [
       function (require, module, exports) {
         var ClientRequest = require('./lib/request');
         var extend = require('xtend');
@@ -49777,13 +50062,13 @@
         ];
       },
       {
-        './lib/request': 302,
+        './lib/request': 304,
         'builtin-status-codes': 8,
-        'url': 315,
-        'xtend': 405
+        'url': 317,
+        'xtend': 407
       }
     ],
-    301: [
+    303: [
       function (require, module, exports) {
         (function (global) {
           'use strict';
@@ -49825,7 +50110,7 @@
       },
       {}
     ],
-    302: [
+    304: [
       function (require, module, exports) {
         (function (process, global, Buffer) {
           'use strict';
@@ -50076,8 +50361,8 @@
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}, require('buffer').Buffer));
       },
       {
-        './capability': 301,
-        './response': 303,
+        './capability': 303,
+        './response': 305,
         '_process': 281,
         'buffer': 6,
         'foreach': 14,
@@ -50087,7 +50372,7 @@
         'stream': 287
       }
     ],
-    303: [
+    305: [
       function (require, module, exports) {
         (function (process, global, Buffer) {
           'use strict';
@@ -50256,7 +50541,7 @@
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}, require('buffer').Buffer));
       },
       {
-        './capability': 301,
+        './capability': 303,
         '_process': 281,
         'buffer': 6,
         'foreach': 14,
@@ -50264,7 +50549,7 @@
         'stream': 287
       }
     ],
-    304: [
+    306: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -50468,7 +50753,7 @@
       },
       { 'buffer': 6 }
     ],
-    305: [
+    307: [
       function (require, module, exports) {
         'use strict';
         module.exports = [
@@ -50483,7 +50768,7 @@
       },
       {}
     ],
-    306: [
+    308: [
       function (require, module, exports) {
         /** !
  * Swagger Parser v4.0.0-beta.2
@@ -50664,18 +50949,18 @@
         }
       },
       {
-        './options': 307,
-        './promise': 308,
-        './util': 309,
-        './validate-schema': 310,
-        './validate-spec': 311,
+        './options': 309,
+        './promise': 310,
+        './util': 311,
+        './validate-schema': 312,
+        './validate-spec': 313,
         'call-me-maybe': 9,
         'json-schema-ref-parser': 23,
         'json-schema-ref-parser/lib/dereference': 22,
         'ono': 279
       }
     ],
-    307: [
+    309: [
       function (require, module, exports) {
         'use strict';
         var $RefParserOptions = require('json-schema-ref-parser/lib/options'), util = require('util');
@@ -50701,19 +50986,19 @@
       },
       {
         'json-schema-ref-parser/lib/options': 24,
-        'util': 319
+        'util': 321
       }
     ],
-    308: [
+    310: [
       function (require, module, exports) {
         arguments[4][38][0].apply(exports, arguments);
       },
       {
         'dup': 38,
-        'es6-promise': 312
+        'es6-promise': 314
       }
     ],
-    309: [
+    311: [
       function (require, module, exports) {
         'use strict';
         var debug = require('debug'), util = require('util');
@@ -50732,10 +51017,10 @@
       },
       {
         'debug': 11,
-        'util': 319
+        'util': 321
       }
     ],
-    310: [
+    312: [
       function (require, module, exports) {
         'use strict';
         var util = require('./util'), ono = require('ono'), ZSchema = require('z-schema'), swaggerSchema = require('swagger-schema-official/schema');
@@ -50790,13 +51075,13 @@
         }
       },
       {
-        './util': 309,
+        './util': 311,
         'ono': 279,
-        'swagger-schema-official/schema': 313,
-        'z-schema': 415
+        'swagger-schema-official/schema': 315,
+        'z-schema': 417
       }
     ],
-    311: [
+    313: [
       function (require, module, exports) {
         'use strict';
         var util = require('./util'), ono = require('ono'), swaggerMethods = require('swagger-methods'), primitiveTypes = [
@@ -51041,12 +51326,12 @@
         }
       },
       {
-        './util': 309,
+        './util': 311,
         'ono': 279,
-        'swagger-methods': 305
+        'swagger-methods': 307
       }
     ],
-    312: [
+    314: [
       function (require, module, exports) {
         arguments[4][42][0].apply(exports, arguments);
       },
@@ -51055,7 +51340,7 @@
         'dup': 42
       }
     ],
-    313: [
+    315: [
       function (require, module, exports) {
         module.exports = {
           'title': 'A JSON Schema for Swagger 2.0 API.',
@@ -52033,7 +52318,7 @@
       },
       {}
     ],
-    314: [
+    316: [
       function (require, module, exports) {
         var nextTick = require('process/browser.js').nextTick;
         var apply = Function.prototype.apply;
@@ -52104,7 +52389,7 @@
       },
       { 'process/browser.js': 281 }
     ],
-    315: [
+    317: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -52743,7 +53028,7 @@
         'querystring': 285
       }
     ],
-    316: [
+    318: [
       function (require, module, exports) {
         (function (global) {
           'use strict';
@@ -52812,7 +53097,7 @@
       },
       {}
     ],
-    317: [
+    319: [
       function (require, module, exports) {
         if (typeof Object.create === 'function') {
           // implementation from standard node.js 'util' module
@@ -52841,7 +53126,7 @@
       },
       {}
     ],
-    318: [
+    320: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -52855,7 +53140,7 @@
       },
       {}
     ],
-    319: [
+    321: [
       function (require, module, exports) {
         (function (process, global) {
           // Copyright Joyent, Inc. and other Node contributors.
@@ -53414,12 +53699,12 @@
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
       },
       {
-        './support/isBuffer': 318,
+        './support/isBuffer': 320,
         '_process': 281,
-        'inherits': 317
+        'inherits': 319
       }
     ],
-    320: [
+    322: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53617,70 +53902,70 @@
         module.exports = exports['default'];
       },
       {
-        './lib/blacklist': 322,
-        './lib/contains': 323,
-        './lib/equals': 324,
-        './lib/escape': 325,
-        './lib/isAfter': 326,
-        './lib/isAlpha': 327,
-        './lib/isAlphanumeric': 328,
-        './lib/isAscii': 329,
-        './lib/isBase64': 330,
-        './lib/isBefore': 331,
-        './lib/isBoolean': 332,
-        './lib/isByteLength': 333,
-        './lib/isCreditCard': 334,
-        './lib/isCurrency': 335,
-        './lib/isDataURI': 336,
-        './lib/isDate': 337,
-        './lib/isDecimal': 338,
-        './lib/isDivisibleBy': 339,
-        './lib/isEmail': 340,
-        './lib/isEmpty': 341,
-        './lib/isFQDN': 342,
-        './lib/isFloat': 343,
-        './lib/isFullWidth': 344,
-        './lib/isHalfWidth': 345,
-        './lib/isHexColor': 346,
-        './lib/isHexadecimal': 347,
-        './lib/isIP': 348,
-        './lib/isISBN': 349,
-        './lib/isISIN': 350,
-        './lib/isISO8601': 351,
-        './lib/isISSN': 352,
-        './lib/isIn': 353,
-        './lib/isInt': 354,
-        './lib/isJSON': 355,
-        './lib/isLength': 356,
-        './lib/isLowercase': 357,
-        './lib/isMACAddress': 358,
-        './lib/isMD5': 359,
-        './lib/isMobilePhone': 360,
-        './lib/isMongoId': 361,
-        './lib/isMultibyte': 362,
-        './lib/isNumeric': 363,
-        './lib/isSurrogatePair': 364,
-        './lib/isURL': 365,
-        './lib/isUUID': 366,
-        './lib/isUppercase': 367,
-        './lib/isVariableWidth': 368,
-        './lib/isWhitelisted': 369,
-        './lib/ltrim': 370,
-        './lib/matches': 371,
-        './lib/normalizeEmail': 372,
-        './lib/rtrim': 373,
-        './lib/stripLow': 374,
-        './lib/toBoolean': 375,
-        './lib/toDate': 376,
-        './lib/toFloat': 377,
-        './lib/toInt': 378,
-        './lib/trim': 379,
-        './lib/unescape': 380,
-        './lib/util/toString': 383,
-        './lib/whitelist': 384
+        './lib/blacklist': 324,
+        './lib/contains': 325,
+        './lib/equals': 326,
+        './lib/escape': 327,
+        './lib/isAfter': 328,
+        './lib/isAlpha': 329,
+        './lib/isAlphanumeric': 330,
+        './lib/isAscii': 331,
+        './lib/isBase64': 332,
+        './lib/isBefore': 333,
+        './lib/isBoolean': 334,
+        './lib/isByteLength': 335,
+        './lib/isCreditCard': 336,
+        './lib/isCurrency': 337,
+        './lib/isDataURI': 338,
+        './lib/isDate': 339,
+        './lib/isDecimal': 340,
+        './lib/isDivisibleBy': 341,
+        './lib/isEmail': 342,
+        './lib/isEmpty': 343,
+        './lib/isFQDN': 344,
+        './lib/isFloat': 345,
+        './lib/isFullWidth': 346,
+        './lib/isHalfWidth': 347,
+        './lib/isHexColor': 348,
+        './lib/isHexadecimal': 349,
+        './lib/isIP': 350,
+        './lib/isISBN': 351,
+        './lib/isISIN': 352,
+        './lib/isISO8601': 353,
+        './lib/isISSN': 354,
+        './lib/isIn': 355,
+        './lib/isInt': 356,
+        './lib/isJSON': 357,
+        './lib/isLength': 358,
+        './lib/isLowercase': 359,
+        './lib/isMACAddress': 360,
+        './lib/isMD5': 361,
+        './lib/isMobilePhone': 362,
+        './lib/isMongoId': 363,
+        './lib/isMultibyte': 364,
+        './lib/isNumeric': 365,
+        './lib/isSurrogatePair': 366,
+        './lib/isURL': 367,
+        './lib/isUUID': 368,
+        './lib/isUppercase': 369,
+        './lib/isVariableWidth': 370,
+        './lib/isWhitelisted': 371,
+        './lib/ltrim': 372,
+        './lib/matches': 373,
+        './lib/normalizeEmail': 374,
+        './lib/rtrim': 375,
+        './lib/stripLow': 376,
+        './lib/toBoolean': 377,
+        './lib/toDate': 378,
+        './lib/toFloat': 379,
+        './lib/toInt': 380,
+        './lib/trim': 381,
+        './lib/unescape': 382,
+        './lib/util/toString': 385,
+        './lib/whitelist': 386
       }
     ],
-    321: [
+    323: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53764,7 +54049,7 @@
       },
       {}
     ],
-    322: [
+    324: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53780,9 +54065,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    323: [
+    325: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53801,11 +54086,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 381,
-        './util/toString': 383
+        './util/assertString': 383,
+        './util/toString': 385
       }
     ],
-    324: [
+    326: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53821,9 +54106,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    325: [
+    327: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53839,9 +54124,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    326: [
+    328: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53863,11 +54148,11 @@
         module.exports = exports['default'];
       },
       {
-        './toDate': 376,
-        './util/assertString': 381
+        './toDate': 378,
+        './util/assertString': 383
       }
     ],
-    327: [
+    329: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53889,11 +54174,11 @@
         module.exports = exports['default'];
       },
       {
-        './alpha': 321,
-        './util/assertString': 381
+        './alpha': 323,
+        './util/assertString': 383
       }
     ],
-    328: [
+    330: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53915,11 +54200,11 @@
         module.exports = exports['default'];
       },
       {
-        './alpha': 321,
-        './util/assertString': 381
+        './alpha': 323,
+        './util/assertString': 383
       }
     ],
-    329: [
+    331: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53938,9 +54223,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    330: [
+    332: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53962,9 +54247,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    331: [
+    333: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53986,11 +54271,11 @@
         module.exports = exports['default'];
       },
       {
-        './toDate': 376,
-        './util/assertString': 381
+        './toDate': 378,
+        './util/assertString': 383
       }
     ],
-    332: [
+    334: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54011,9 +54296,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    333: [
+    335: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -54051,9 +54336,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    334: [
+    336: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54095,9 +54380,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    335: [
+    337: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54169,11 +54454,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 381,
-        './util/merge': 382
+        './util/assertString': 383,
+        './util/merge': 384
       }
     ],
-    336: [
+    338: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54191,9 +54476,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    337: [
+    339: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54282,11 +54567,11 @@
         module.exports = exports['default'];
       },
       {
-        './isISO8601': 351,
-        './util/assertString': 381
+        './isISO8601': 353,
+        './util/assertString': 383
       }
     ],
-    338: [
+    340: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54303,9 +54588,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    339: [
+    341: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54324,11 +54609,11 @@
         module.exports = exports['default'];
       },
       {
-        './toFloat': 377,
-        './util/assertString': 381
+        './toFloat': 379,
+        './util/assertString': 383
       }
     ],
-    340: [
+    342: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54399,13 +54684,13 @@
         module.exports = exports['default'];
       },
       {
-        './isByteLength': 333,
-        './isFQDN': 342,
-        './util/assertString': 381,
-        './util/merge': 382
+        './isByteLength': 335,
+        './isFQDN': 344,
+        './util/assertString': 383,
+        './util/merge': 384
       }
     ],
-    341: [
+    343: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54421,9 +54706,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    342: [
+    344: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54475,11 +54760,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 381,
-        './util/merge': 382
+        './util/assertString': 383,
+        './util/merge': 384
       }
     ],
-    343: [
+    345: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54500,9 +54785,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    344: [
+    346: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54519,9 +54804,9 @@
           return fullWidth.test(str);
         }
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    345: [
+    347: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54538,9 +54823,9 @@
           return halfWidth.test(str);
         }
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    346: [
+    348: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54557,9 +54842,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    347: [
+    349: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54576,9 +54861,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    348: [
+    350: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54651,9 +54936,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    349: [
+    351: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54709,9 +54994,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    350: [
+    352: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54753,9 +55038,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    351: [
+    353: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54773,9 +55058,9 @@
         // from http://goo.gl/0ejHHW
         var iso8601 = exports.iso8601 = /^([\+-]?\d{4}(?!\d{2}\b))((-?)((0[1-9]|1[0-2])(\3([12]\d|0[1-9]|3[01]))?|W([0-4]\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\d|[12]\d{2}|3([0-5]\d|6[1-6])))([T\s]((([01]\d|2[0-3])((:?)[0-5]\d)?|24:?00)([\.,]\d+(?!:))?)?(\17[0-5]\d([\.,]\d+)?)?([zZ]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?)?)?$/;  /* eslint-enable max-len */
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    352: [
+    354: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54826,9 +55111,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    353: [
+    355: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -54871,11 +55156,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 381,
-        './util/toString': 383
+        './util/assertString': 383,
+        './util/toString': 385
       }
     ],
-    354: [
+    356: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54902,9 +55187,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    355: [
+    357: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -54935,9 +55220,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    356: [
+    358: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -54976,9 +55261,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    357: [
+    359: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54994,9 +55279,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    358: [
+    360: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55013,9 +55298,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    359: [
+    361: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55032,9 +55317,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    360: [
+    362: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55099,9 +55384,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    361: [
+    363: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55120,11 +55405,11 @@
         module.exports = exports['default'];
       },
       {
-        './isHexadecimal': 347,
-        './util/assertString': 381
+        './isHexadecimal': 349,
+        './util/assertString': 383
       }
     ],
-    362: [
+    364: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55143,9 +55428,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    363: [
+    365: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55162,9 +55447,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    364: [
+    366: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55181,9 +55466,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    365: [
+    367: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55299,13 +55584,13 @@
         module.exports = exports['default'];
       },
       {
-        './isFQDN': 342,
-        './isIP': 348,
-        './util/assertString': 381,
-        './util/merge': 382
+        './isFQDN': 344,
+        './isIP': 350,
+        './util/assertString': 383,
+        './util/merge': 384
       }
     ],
-    366: [
+    368: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55329,9 +55614,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    367: [
+    369: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55347,9 +55632,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    368: [
+    370: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55368,12 +55653,12 @@
         module.exports = exports['default'];
       },
       {
-        './isFullWidth': 344,
-        './isHalfWidth': 345,
-        './util/assertString': 381
+        './isFullWidth': 346,
+        './isHalfWidth': 347,
+        './util/assertString': 383
       }
     ],
-    369: [
+    371: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55394,9 +55679,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    370: [
+    372: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55413,9 +55698,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    371: [
+    373: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55434,9 +55719,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    372: [
+    374: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55639,11 +55924,11 @@
         module.exports = exports['default'];
       },
       {
-        './isEmail': 340,
-        './util/merge': 382
+        './isEmail': 342,
+        './util/merge': 384
       }
     ],
-    373: [
+    375: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55664,9 +55949,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    374: [
+    376: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55686,11 +55971,11 @@
         module.exports = exports['default'];
       },
       {
-        './blacklist': 322,
-        './util/assertString': 381
+        './blacklist': 324,
+        './util/assertString': 383
       }
     ],
-    375: [
+    377: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55709,9 +55994,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    376: [
+    378: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55728,9 +56013,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    377: [
+    379: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55746,9 +56031,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    378: [
+    380: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55764,9 +56049,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    379: [
+    381: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55784,11 +56069,11 @@
         module.exports = exports['default'];
       },
       {
-        './ltrim': 370,
-        './rtrim': 373
+        './ltrim': 372,
+        './rtrim': 375
       }
     ],
-    380: [
+    382: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55804,9 +56089,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    381: [
+    383: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55820,7 +56105,7 @@
       },
       {}
     ],
-    382: [
+    384: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55839,7 +56124,7 @@
       },
       {}
     ],
-    383: [
+    385: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -55870,7 +56155,7 @@
       },
       {}
     ],
-    384: [
+    386: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55886,9 +56171,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 381 }
+      { './util/assertString': 383 }
     ],
-    385: [
+    387: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.10.0
@@ -55905,7 +56190,7 @@
       },
       {}
     ],
-    386: [
+    388: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.10.0
@@ -55938,7 +56223,7 @@
       },
       {}
     ],
-    387: [
+    389: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -56479,15 +56764,15 @@
         }.call(undefined));
       },
       {
-        './bom': 385,
-        './processors': 386,
+        './bom': 387,
+        './processors': 388,
         'events': 13,
         'sax': 286,
-        'timers': 314,
-        'xmlbuilder': 404
+        'timers': 316,
+        'xmlbuilder': 406
       }
     ],
-    388: [
+    390: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -56518,7 +56803,7 @@
       },
       { 'lodash/create': 192 }
     ],
-    389: [
+    391: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -56581,13 +56866,13 @@
         }.call(undefined));
       },
       {
-        './XMLDeclaration': 396,
-        './XMLDocType': 397,
-        './XMLElement': 398,
-        './XMLStringifier': 402
+        './XMLDeclaration': 398,
+        './XMLDocType': 399,
+        './XMLElement': 400,
+        './XMLStringifier': 404
       }
     ],
-    390: [
+    392: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -56642,11 +56927,11 @@
         }.call(undefined));
       },
       {
-        './XMLNode': 399,
+        './XMLNode': 401,
         'lodash/create': 192
       }
     ],
-    391: [
+    393: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -56701,11 +56986,11 @@
         }.call(undefined));
       },
       {
-        './XMLNode': 399,
+        './XMLNode': 401,
         'lodash/create': 192
       }
     ],
-    392: [
+    394: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -56773,7 +57058,7 @@
       },
       { 'lodash/create': 192 }
     ],
-    393: [
+    395: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -56819,7 +57104,7 @@
       },
       { 'lodash/create': 192 }
     ],
-    394: [
+    396: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -56905,7 +57190,7 @@
         'lodash/isObject': 205
       }
     ],
-    395: [
+    397: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -56961,7 +57246,7 @@
       },
       { 'lodash/create': 192 }
     ],
-    396: [
+    398: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -57032,12 +57317,12 @@
         }.call(undefined));
       },
       {
-        './XMLNode': 399,
+        './XMLNode': 401,
         'lodash/create': 192,
         'lodash/isObject': 205
       }
     ],
-    397: [
+    399: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -57199,18 +57484,18 @@
         }.call(undefined));
       },
       {
-        './XMLCData': 390,
-        './XMLComment': 391,
-        './XMLDTDAttList': 392,
-        './XMLDTDElement': 393,
-        './XMLDTDEntity': 394,
-        './XMLDTDNotation': 395,
-        './XMLProcessingInstruction': 400,
+        './XMLCData': 392,
+        './XMLComment': 393,
+        './XMLDTDAttList': 394,
+        './XMLDTDElement': 395,
+        './XMLDTDEntity': 396,
+        './XMLDTDNotation': 397,
+        './XMLProcessingInstruction': 402,
         'lodash/create': 192,
         'lodash/isObject': 205
       }
     ],
-    398: [
+    400: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -57420,16 +57705,16 @@
         }.call(undefined));
       },
       {
-        './XMLAttribute': 388,
-        './XMLNode': 399,
-        './XMLProcessingInstruction': 400,
+        './XMLAttribute': 390,
+        './XMLNode': 401,
+        './XMLProcessingInstruction': 402,
         'lodash/create': 192,
         'lodash/every': 194,
         'lodash/isFunction': 203,
         'lodash/isObject': 205
       }
     ],
-    399: [
+    401: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -57727,19 +58012,19 @@
         }.call(undefined));
       },
       {
-        './XMLCData': 390,
-        './XMLComment': 391,
-        './XMLDeclaration': 396,
-        './XMLDocType': 397,
-        './XMLElement': 398,
-        './XMLRaw': 401,
-        './XMLText': 403,
+        './XMLCData': 392,
+        './XMLComment': 393,
+        './XMLDeclaration': 398,
+        './XMLDocType': 399,
+        './XMLElement': 400,
+        './XMLRaw': 403,
+        './XMLText': 405,
         'lodash/isEmpty': 202,
         'lodash/isFunction': 203,
         'lodash/isObject': 205
       }
     ],
-    400: [
+    402: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -57789,7 +58074,7 @@
       },
       { 'lodash/create': 192 }
     ],
-    401: [
+    403: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -57844,11 +58129,11 @@
         }.call(undefined));
       },
       {
-        './XMLNode': 399,
+        './XMLNode': 401,
         'lodash/create': 192
       }
     ],
-    402: [
+    404: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -57995,7 +58280,7 @@
       },
       {}
     ],
-    403: [
+    405: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -58050,11 +58335,11 @@
         }.call(undefined));
       },
       {
-        './XMLNode': 399,
+        './XMLNode': 401,
         'lodash/create': 192
       }
     ],
-    404: [
+    406: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -58069,11 +58354,11 @@
         }.call(undefined));
       },
       {
-        './XMLBuilder': 389,
+        './XMLBuilder': 391,
         'lodash/assign': 190
       }
     ],
-    405: [
+    407: [
       function (require, module, exports) {
         'use strict';
         module.exports = extend;
@@ -58093,7 +58378,7 @@
       },
       {}
     ],
-    406: [
+    408: [
       function (require, module, exports) {
         'use strict';
         module.exports = {
@@ -58142,7 +58427,7 @@
       },
       {}
     ],
-    407: [
+    409: [
       function (require, module, exports) {
         'use strict';
         /*jshint maxlen: false*/
@@ -58273,9 +58558,9 @@
           };
         module.exports = FormatValidators;
       },
-      { 'validator': 320 }
+      { 'validator': 322 }
     ],
-    408: [
+    410: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -58817,12 +59102,12 @@
         };
       },
       {
-        './FormatValidators': 407,
-        './Report': 410,
-        './Utils': 414
+        './FormatValidators': 409,
+        './Report': 412,
+        './Utils': 416
       }
     ],
-    409: [
+    411: [
       function (require, module, exports) {
         'use strict';
         // Number.isFinite polyfill
@@ -58844,7 +59129,7 @@
       },
       {}
     ],
-    410: [
+    412: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -59021,13 +59306,13 @@
         }.call(this, require('_process')));
       },
       {
-        './Errors': 406,
-        './Utils': 414,
+        './Errors': 408,
+        './Utils': 416,
         '_process': 281,
         'lodash.get': 73
       }
     ],
-    411: [
+    413: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -59175,14 +59460,14 @@
         exports.getRemotePath = getRemotePath;
       },
       {
-        './Report': 410,
-        './SchemaCompilation': 412,
-        './SchemaValidation': 413,
-        './Utils': 414,
+        './Report': 412,
+        './SchemaCompilation': 414,
+        './SchemaValidation': 415,
+        './Utils': 416,
         'lodash.isequal': 74
       }
     ],
-    412: [
+    414: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -59434,12 +59719,12 @@
         };
       },
       {
-        './Report': 410,
-        './SchemaCache': 411,
-        './Utils': 414
+        './Report': 412,
+        './SchemaCache': 413,
+        './Utils': 416
       }
     ],
-    413: [
+    415: [
       function (require, module, exports) {
         'use strict';
         var FormatValidators = require('./FormatValidators'), JsonValidation = require('./JsonValidation'), Report = require('./Report'), Utils = require('./Utils');
@@ -60205,13 +60490,13 @@
         };
       },
       {
-        './FormatValidators': 407,
-        './JsonValidation': 408,
-        './Report': 410,
-        './Utils': 414
+        './FormatValidators': 409,
+        './JsonValidation': 410,
+        './Report': 412,
+        './Utils': 416
       }
     ],
-    414: [
+    416: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -60422,7 +60707,7 @@
       },
       {}
     ],
-    415: [
+    417: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -60724,21 +61009,21 @@
         }.call(this, require('_process')));
       },
       {
-        './FormatValidators': 407,
-        './JsonValidation': 408,
-        './Polyfills': 409,
-        './Report': 410,
-        './SchemaCache': 411,
-        './SchemaCompilation': 412,
-        './SchemaValidation': 413,
-        './Utils': 414,
-        './schemas/hyper-schema.json': 416,
-        './schemas/schema.json': 417,
+        './FormatValidators': 409,
+        './JsonValidation': 410,
+        './Polyfills': 411,
+        './Report': 412,
+        './SchemaCache': 413,
+        './SchemaCompilation': 414,
+        './SchemaValidation': 415,
+        './Utils': 416,
+        './schemas/hyper-schema.json': 418,
+        './schemas/schema.json': 419,
         '_process': 281,
         'lodash.get': 73
       }
     ],
-    416: [
+    418: [
       function (require, module, exports) {
         module.exports = {
           '$schema': 'http://json-schema.org/draft-04/hyper-schema#',
@@ -60856,7 +61141,7 @@
       },
       {}
     ],
-    417: [
+    419: [
       function (require, module, exports) {
         module.exports = {
           'id': 'http://json-schema.org/draft-04/schema#',
@@ -74925,7 +75210,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         }).then(function () {
           return $modalInstance.close(true);
         }).catch(function (err) {
-          broadcastError(err.message);
+          broadcastError(err.message || err);
         }).finally(function () {
           $scope.importing = false;
         });
@@ -75008,7 +75293,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
           return $scope.mode.callback($scope.mode);
         } catch (err) {
           $scope.importing = false;
-          broadcastError(err);
+          broadcastError(err.message || err);
         }
       };
       /**
@@ -75483,11 +75768,12 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
        * Create a file in the filesystem.
        *
        * @param  {Object}  directory
-       * @param  {String}  name
+       * @param  {String}  fname
        * @param  {String}  contents
        * @return {Promise}
        */
-      self.createFile = function (directory, name, contents) {
+      self.createFile = function (directory, fname, contents) {
+        var name = sanitizeFilePath(fname);
         return self.checkExistence(directory, name).then(function (option) {
           if (option === importServiceConflictModal.SKIP_FILE) {
             return;
@@ -75568,6 +75854,12 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
        * @return {Promise}
        */
       self.readFile = function (file) {
+        if (!validateFileSize(file)) {
+          return $q.reject('Only files up to 10mb are allowed');
+        }
+        if (!validateFileType(file)) {
+          return $q.reject('Invalid file type "' + extractFileExtension(file) + '"');
+        }
         var deferred = $q.defer();
         var reader = new $window.FileReader();
         reader.onload = function () {
@@ -75645,6 +75937,9 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
        * @return {Promise}
        */
       function importZipFiles(directory, files, converter) {
+        if (files.length === 0) {
+          return $q.reject('No valid files to import in .zip');
+        }
         var imports = Object.keys(files).filter(canImport).map(function (name) {
             return function () {
               if (!converter) {
@@ -75673,7 +75968,10 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
           if (/^__MACOSX\//.test(name) || /\/$/.test(name)) {
             return;
           }
-          files[name] = originalFiles[name].asText();
+          var file = originalFiles[name];
+          if (validateFileType(file)) {
+            files[name] = file.asText();
+          }
         });
         return files;
       }
@@ -75681,11 +75979,15 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
        * Remove the common file prefix from a files object.
        *
        * @param  {Object} prefixedFiles
-       * @return {String}
+       * @return {Object} files
        */
       function removeCommonFilePrefixes(prefixedFiles) {
         // Sort the file names in order of length to get the common prefix.
-        var prefix = Object.keys(prefixedFiles).map(function (name) {
+        var keys = Object.keys(prefixedFiles);
+        if (keys.length === 0) {
+          return [];
+        }
+        var prefix = keys.map(function (name) {
             if (!/[\\\/]/.test(name)) {
               return [];
             }
@@ -75776,6 +76078,48 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         return promises.reduce(function (promise, chain) {
           return promise.then(chain);
         }, $q.when());
+      }
+      /**
+       * Returns a sanitized file path
+       *
+       * @param  {String}   path
+       * @return {String}
+       */
+      function sanitizeFilePath(path) {
+        return path.split('/').map(function (n) {
+          // Remove all non-word and non-number chars
+          return n.replace(/[^A-Za-z0-9. _-]/g, '');
+        }).join('/');
+      }
+      /**
+       * Returns if file has a valid file size, up to 10mg
+       *
+       * @param  {File}   file
+       * @return {boolean}
+       */
+      function validateFileSize(file) {
+        return file.size <= 10000000;
+      }
+      /**
+       * Returns if file has a valid file type.
+       *
+       * @param  {File}   file
+       * @return {boolean}
+       */
+      function validateFileType(file) {
+        if (file.type) {
+          return /\text|image|raml|json|yaml|xml|xsd|zip$/i.test(file.type);
+        }
+        return /\.raml|.json|.yaml|.yml|.xml|.xsd|.md|.txt|.jpg|.jpeg|.png|.html|.zip$/i.test(file.name);
+      }
+      /**
+       * Returns file extension
+       *
+       * @param  {File}   file
+       * @return {String}
+       */
+      function extractFileExtension(file) {
+        return file.name.slice(file.name.lastIndexOf('.') + 1);
       }
     }
   ]);

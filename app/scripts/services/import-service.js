@@ -177,11 +177,12 @@
        * Create a file in the filesystem.
        *
        * @param  {Object}  directory
-       * @param  {String}  name
+       * @param  {String}  fname
        * @param  {String}  contents
        * @return {Promise}
        */
-      self.createFile = function (directory, name, contents) {
+      self.createFile = function (directory, fname, contents) {
+        var name = sanitizeFilePath(fname);
         return self.checkExistence(directory, name)
           .then(function (option) {
             if (option === importServiceConflictModal.SKIP_FILE) {
@@ -277,6 +278,14 @@
        * @return {Promise}
        */
       self.readFile = function (file) {
+        if (!validateFileSize(file)) {
+          return $q.reject('Only files up to 10mb are allowed');
+        }
+
+        if (!validateFileType(file)) {
+          return $q.reject('Invalid file type "' + extractFileExtension(file) + '"');
+        }
+
         var deferred = $q.defer();
         var reader   = new $window.FileReader();
 
@@ -370,6 +379,10 @@
        * @return {Promise}
        */
       function importZipFiles (directory, files, converter) {
+        if (files.length === 0) {
+          return $q.reject('No valid files to import in .zip');
+        }
+
         var imports = Object.keys(files)
           .filter(canImport)
           .map(function (name) {
@@ -404,7 +417,10 @@
             return;
           }
 
-          files[name] = originalFiles[name].asText();
+          var file = originalFiles[name];
+          if (validateFileType(file)) {
+            files[name] = file.asText();
+          }
         });
 
         return files;
@@ -414,11 +430,16 @@
        * Remove the common file prefix from a files object.
        *
        * @param  {Object} prefixedFiles
-       * @return {String}
+       * @return {Object} files
        */
       function removeCommonFilePrefixes (prefixedFiles) {
         // Sort the file names in order of length to get the common prefix.
-        var prefix = Object.keys(prefixedFiles)
+        var keys = Object.keys(prefixedFiles);
+        if (keys.length === 0) {
+          return [];
+        }
+
+        var prefix = keys
           .map(function (name) {
             if (!/[\\\/]/.test(name)) {
               return [];
@@ -529,6 +550,53 @@
         return promises.reduce(function (promise, chain) {
           return promise.then(chain);
         }, $q.when());
+      }
+
+      /**
+       * Returns a sanitized file path
+       *
+       * @param  {String}   path
+       * @return {String}
+       */
+      function sanitizeFilePath (path) {
+        return path.split('/').map(function(n) {
+          // Remove all non-word and non-number chars
+          return n.replace(/[^A-Za-z0-9. _-]/g, '');
+        }).join('/');
+      }
+
+      /**
+       * Returns if file has a valid file size, up to 10mg
+       *
+       * @param  {File}   file
+       * @return {boolean}
+       */
+      function validateFileSize (file) {
+        return file.size <= 10000000;
+      }
+
+      /**
+       * Returns if file has a valid file type.
+       *
+       * @param  {File}   file
+       * @return {boolean}
+       */
+      function validateFileType (file) {
+        if (file.type) {
+          return (/\text|image|raml|json|yaml|xml|xsd|zip$/i).test(file.type);
+        }
+
+        return (/\.raml|.json|.yaml|.yml|.xml|.xsd|.md|.txt|.jpg|.jpeg|.png|.html|.zip$/i).test(file.name);
+      }
+
+      /**
+       * Returns file extension
+       *
+       * @param  {File}   file
+       * @return {String}
+       */
+      function extractFileExtension (file) {
+        return file.name.slice(file.name.lastIndexOf('.') + 1);
       }
     });
 })();
