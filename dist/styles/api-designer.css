@@ -1113,21 +1113,11 @@ div.CodeMirror {
   display: none;
 }
 [role=raml-editor] .raml-console-initializer-row.raml-console-initializer-subheader {
-  display: none;
-}
-[role=raml-editor] .raml-console-parser-error {
-  background-color: transparent;
-  color: inherit;
-  font-size: 15px;
-  padding-top: 6px;
-  padding-bottom: 4px;
+  border: none;
 }
 [role=raml-editor] .raml-console-parser-error a {
   cursor: pointer;
-  padding-left: 5px;
-  min-width: 90px;
-  display: inline-block;
-  text-align: left;
+  text-decoration: underline;
 }
 [role=raml-editor] .raml-console-error-pre {
   font-size: 12px;

@@ -35,86 +35,93 @@ The following example details how to embed the API Designer:
 ```html
 <!doctype html>
 <html>
-  <head>
-    <meta charset="utf-8">
-    <title>My App</title>
-    <link rel="stylesheet" href="dist/styles/api-designer-vendor.css">
-    <link rel="stylesheet" href="dist/styles/api-designer.css">
-  </head>
-  <body ng-app="ramlEditorApp">
-    <raml-editor></raml-editor>
-    <script src="dist/scripts/api-designer-vendor.js"></script>
-    <script src="dist/scripts/api-designer.js"></script>
-    <script>
-      // This part is needed only if you want to provide your own Persistance Implementation
-      // Angular Module must match "ramlEditorApp"
-      angular.module('ramlEditorApp')
-      .factory('MyFileSystem', function ($q, config, $rootScope) {
-        var service = {};
+<head>
+  <meta charset="utf-8">
+  <title>My App</title>
+  <link rel="stylesheet" href="styles/api-designer-vendor.css">
+  <link rel="stylesheet" href="styles/api-designer.css">
+</head>
+<body ng-app="ramlEditorApp">
+<raml-editor></raml-editor>
+<script src="scripts/api-designer-parser.js"></script>
+<script>
+  if (window.Worker) {
+    // enable optional web worker for raml parsing 
+    window.RAML.worker = new Worker('scripts/api-designer-worker.js#parser=./api-designer-parser.js&proxy=/proxy/');
+  }
+</script>
+<script src="scripts/api-designer-vendor.js"></script>
+<script src="scripts/api-designer.js"></script>
+<script>
+  // This part is needed only if you want to provide your own Persistance Implementation
+  // Angular Module must match "ramlEditorApp"
 
-        service.directory = function (path) {
-          var deferred = $q.defer();
-        
-          // Your magic goes here:
-           // Do deferred.resolve(data); to fulfull the promise or
-           // deferred.reject(error); to reject it.
-        
-           return deferred.promise;
-        };
+  function myFileSystem($q, config, $rootScope) {
+    var service = {};
 
-        service.load = function (path, name) {
-          var deferred = $q.defer();
-        
-          // Your magic goes here:
-           // Do deferred.resolve(data); to fulfull the promise or
-           // deferred.reject(error); to reject it.
-        
-           return deferred.promise;
-        };
+    service.directory = function (path) {
+      var deferred = $q.defer();
 
-        service.remove = function (path, name) {
-          var deferred = $q.defer();
-        
-          // Your magic goes here:
-           // Do deferred.resolve(data); to fulfull the promise or
-           // deferred.reject(error); to reject it.
-        
-           return deferred.promise;
-        };
+      // Your magic goes here:
+      // Do deferred.resolve(data); to fulfull the promise or
+      // deferred.reject(error); to reject it.
 
-        service.save = function (path, name, contents) {
-          var deferred = $q.defer();
-        
-          // Your magic goes here:
-           // Do deferred.resolve(data); to fulfull the promise or
-           // deferred.reject(error); to reject it.
-        
-           return deferred.promise;
-        };
+      // In case you want to send notifications to the user
+      // (for instance, that he must login to save).
+      // The expires flags means whether
+      // it should be hidden after a period of time or the
+      // user should dismiss it manually.
+      $rootScope.$broadcast('event:notification', {message: 'Loading directory' + path, expires: true});
 
-        return service;
-      })
-      .config(function (fileSystemProvider, MyFileSystem, $rootScope) {
-        // Set MyFileSystem as the filesystem to use
-        fileSystemProvider.setFileSystemFactory(MyFileSystem);
-        
-        // In case you want to send notifications to the user
-        // (for instance, that he must login to save).
-        // The expires flags means whether
-        // it should be hidden after a period of time or the
-        // user should dismiss it manually.
-        $rootScope.$broadcast('event:notification',
-          {message: 'File saved.', expires: true});
+      return deferred.promise;
+    };
 
-      });
-    </script>
-    <style>
-      html,
-      body {
-        height: 100%;
-      }
-    </style>
-  </body>
+    service.load = function (path, name) {
+      var deferred = $q.defer();
+
+      // Your magic goes here:
+      // Do deferred.resolve(data); to fulfull the promise or
+      // deferred.reject(error); to reject it.
+
+      return deferred.promise;
+    };
+
+    service.remove = function (path, name) {
+      var deferred = $q.defer();
+
+      // Your magic goes here:
+      // Do deferred.resolve(data); to fulfull the promise or
+      // deferred.reject(error); to reject it.
+
+      return deferred.promise;
+    };
+
+    service.save = function (path, name, contents) {
+      var deferred = $q.defer();
+
+      // Your magic goes here:
+      // Do deferred.resolve(data); to fulfull the promise or
+      // deferred.reject(error); to reject it.
+
+      return deferred.promise;
+    };
+
+    return service;
+  }
+
+  angular.module('ramlEditorApp')
+    .config(function (fileSystemProvider) {
+      // Set myFileSystem as the filesystem to use
+      fileSystemProvider.setFileSystemFactory(myFileSystem);
+    });
+</script>
+<style>
+  html,
+  body {
+    height: 100%;
+  }
+</style>
+</body>
 </html>
 ```
 
