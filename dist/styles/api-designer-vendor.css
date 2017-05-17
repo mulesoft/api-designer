@@ -4228,6 +4228,15 @@ a.raml-console-resource-path-active {
   outline: none;
 }
 
+.raml-console-schema-body {
+  font-size: 12px;
+  padding-top: 8px;
+}
+
+.raml-console-schema-body .raml-console-flag {
+  font-size: 12px !important;
+}
+
 .raml-console-resource-body-heading > span {
   margin-left: 5px;
   cursor: pointer;
