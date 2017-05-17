@@ -81392,7 +81392,25 @@ exports.javascript = require('./javascript');
           var defaultSchema    = $scope.securitySchemes[defaultSchemaKey];
 
           $scope.documentationSchemeSelected = defaultSchema;
+
+          if (defaultSchema.describedBy && defaultSchema.describedBy.responses) {
+            $scope.schemaResponses = defaultSchema.describedBy.responses;
+          }
         });
+
+        $scope.changeSchemaType = function ($event, type, code) {
+          var $this        = jQuery($event.currentTarget);
+          var $panel       = $this.closest('.raml-console-resource-body-heading');
+          var $eachContent = $panel.find('span');
+
+          $eachContent.removeClass('raml-console-is-active');
+          $this.addClass('raml-console-is-active');
+
+          if (!$scope.schemaResponses[code]) {
+            $scope.schemaResponses[code] = {};
+          }
+          $scope.schemaResponses[code].currentType = type;
+        };
 
         function mergeResponseCodes(methodCodes, schemas) {
           var extractSchema = function (key) { return schemas.hasOwnProperty(key) ? schemas[key] : undefined; };
@@ -81756,6 +81774,7 @@ exports.javascript = require('./javascript');
       scope: {
         context: '=',
         types: '=',
+        uploadRequest: '=',
         type: '@',
         title: '@'
       },
@@ -82573,7 +82592,8 @@ exports.javascript = require('./javascript');
         type: '=',
         types: '=',
         model: '=',
-        param: '='
+        param: '=',
+        uploadRequest: '='
       },
       controller: ['$scope', function($scope) {
         function getParamType(definition) {
@@ -82647,6 +82667,9 @@ exports.javascript = require('./javascript');
 
         $scope.onChange = function () {
           $scope.context.forceRequest = false;
+          if ($scope.uploadRequest) {
+            $scope.uploadRequest();
+          }
         };
 
         $scope.isDefault = function (definition) {
@@ -82658,7 +82681,11 @@ exports.javascript = require('./javascript');
         };
 
         $scope.hasExampleValue = function (value) {
-          return $scope.isEnum(value) ? false : value.type === 'boolean' ? false : typeof value['enum'] !== 'undefined' ? false : (typeof value.example !== 'undefined' || typeof value.examples !== 'undefined');
+          var hasExample = $scope.isEnum(value) ? false : value.type === 'boolean' ? false : typeof value['enum'] !== 'undefined' ? false : (typeof value.example !== 'undefined' || typeof value.examples !== 'undefined');
+          if (hasExample && $scope.uploadRequest) {
+            $scope.uploadRequest();
+          }
+          return hasExample;
         };
 
         $scope.reset = function (param) {
@@ -83133,6 +83160,19 @@ exports.javascript = require('./javascript');
           return (name.charAt(0).toUpperCase() + name.slice(1)).replace(/_/g, ' ');
         }
 
+      function expandBodyExamples($scope, methodInfo) {
+        if (methodInfo.body) {
+          Object.keys(methodInfo.body).forEach(function (key) {
+            var bodyType = methodInfo.body[key];
+            var type = RAML.Inspector.Types.findType(bodyType.type[0], $scope.types);
+            if (!bodyType.example && type && type.example) {
+              bodyType.example = type.example;
+            }
+          });
+        }
+        return methodInfo;
+      }
+
         return function showResource($scope, resource, $event, $index) {
           var methodInfo        = resource.methods[$index];
           var oldId             = $rootScope.currentId;
@@ -83167,7 +83207,7 @@ exports.javascript = require('./javascript');
           $scope.currentMethod           = methodInfo.method;
           $scope.resource                = resource;
 
-          $scope.methodInfo               = methodInfo;
+          $scope.methodInfo               = expandBodyExamples($scope, methodInfo);
           $scope.responseInfo             = getResponseInfo($scope);
           $scope.context                  = new RAML.Services.TryIt.Context($scope.raml.baseUriParameters, resource, $scope.methodInfo);
           $scope.requestUrl               = '';
@@ -83544,7 +83584,7 @@ exports.javascript = require('./javascript');
           }, 10);
         }
 
-        function resolveSegementContexts(pathSegments, uriParameters) {
+        function resolveSegmentContexts(pathSegments, uriParameters) {
           var segmentContexts = [];
 
           pathSegments.forEach(function (element) {
@@ -83807,74 +83847,100 @@ exports.javascript = require('./javascript');
           $scope.form = form;
         };
 
+        $scope.setRequestUrl = function() {
+          var request = getRequest();
+          $scope.responseDetails      = true;
+          $scope.requestOptions.url   = request.toOptions().url;
+        };
+
+        function getRequest($event) {
+          if (!validateForm($scope.form)) {
+            return;
+          }
+
+          var url;
+          var context         = $scope.context;
+          var segmentContexts = resolveSegmentContexts($scope.resource.pathSegments, $scope.context.uriParameters.data());
+          var tryIt           = $event !== undefined;
+
+          if (tryIt) {
+            $scope.showSpinner = true;
+            $scope.queryStringHasError = false;
+            $scope.toggleRequestMetadata($event, true);
+          }
+
+          try {
+            var pathBuilder = context.pathBuilder;
+            var client      = RAML.Client.create($scope.raml, function(client) {
+              if ($scope.raml.baseUriParameters) {
+                Object.keys($scope.raml.baseUriParameters).map(function (key) {
+                  var uriParameters = $scope.context.uriParameters.data();
+                  pathBuilder.baseUriContext[key] = uriParameters[key][0];
+                  delete uriParameters[key];
+                });
+              }
+              client.baseUriParameters(pathBuilder.baseUriContext);
+            });
+
+            client.baseUri = client.baseUri.replace(/(https)|(http)/, $scope.currentProtocol.toLocaleLowerCase());
+            url = client.baseUri + pathBuilder(segmentContexts);
+          } catch (e) {
+            console.error(e);
+            $scope.response = {};
+            return;
+          }
+
+          var request = RAML.Client.Request.create(url, $scope.methodInfo.method);
+
+          $scope.parameters = getParameters(context, 'queryParameters');
+
+          if (context.queryString) {
+            var parameters;
+            try {
+              parameters = JSON.parse(context.queryString);
+            } catch (e) {
+              $scope.queryStringHasError = true;
+              $scope.response = {};
+
+              $scope.showSpinner = false;
+              return;
+            }
+            Object.keys(parameters).forEach(function (key) {
+              if (!$scope.parameters[key]) {
+                $scope.parameters[key] = [];
+              }
+              var value = parameters[key];
+              if (typeof value === 'object') {
+                value = JSON.stringify(value);
+              }
+              $scope.parameters[key].push(value);
+            });
+          }
+
+          request.queryParams($scope.parameters);
+          request.header('Accept', $scope.raml.mediaType || defaultAccept);
+          request.headers(getParameters(context, 'headers'));
+
+          if (context.bodyContent) {
+            request.header('Content-Type', context.bodyContent.selected);
+            request.data(context.bodyContent.data());
+          }
+          return request;
+        }
+
         $scope.tryIt = function ($event) {
           $scope.requestOptions  = null;
           $scope.responseDetails = false;
           $scope.response        = {};
+          $scope.showResponseMetadata = false;
 
           if (!$scope.context.forceRequest) {
             jQuery($event.currentTarget).closest('form').find('.ng-invalid').first().focus();
           }
 
           if($scope.context.forceRequest || validateForm($scope.form)) {
-            var url;
-            var context         = $scope.context;
-            var segmentContexts = resolveSegementContexts($scope.resource.pathSegments, $scope.context.uriParameters.data());
-
-            $scope.showSpinner = true;
-            $scope.queryStringHasError = false;
-            $scope.toggleRequestMetadata($event, true);
-
-            try {
-              var pathBuilder = context.pathBuilder;
-              var client      = RAML.Client.create($scope.raml, function(client) {
-                if ($scope.raml.baseUriParameters) {
-                  Object.keys($scope.raml.baseUriParameters).map(function (key) {
-                    var uriParameters = $scope.context.uriParameters.data();
-                    pathBuilder.baseUriContext[key] = uriParameters[key][0];
-                    delete uriParameters[key];
-                  });
-                }
-                client.baseUriParameters(pathBuilder.baseUriContext);
-              });
-
-              client.baseUri = client.baseUri.replace(/(https)|(http)/, $scope.currentProtocol.toLocaleLowerCase());
-              url = client.baseUri + pathBuilder(segmentContexts);
-            } catch (e) {
-              console.error(e);
-              $scope.response = {};
-              return;
-            }
-            var request = RAML.Client.Request.create(url, $scope.methodInfo.method);
-
-            $scope.parameters = getParameters(context, 'queryParameters');
-
-            if (context.queryString) {
-              var parameters;
-              try {
-                parameters = JSON.parse(context.queryString);
-              } catch (e) {
-                $scope.queryStringHasError = true;
-                $scope.response = {};
-
-                $scope.showSpinner = false;
-                return;
-              }
-              Object.keys(parameters).forEach(function (key) {
-                if (!$scope.parameters[key]) {
-                  $scope.parameters[key] = [];
-                }
-                var value = parameters[key];
-                if (typeof value === 'object') {
-                  value = JSON.stringify(value);
-                }
-                $scope.parameters[key].push(value);
-              });
-            }
-
-            request.queryParams($scope.parameters);
-            request.header('Accept', $scope.raml.mediaType || defaultAccept);
-            request.headers(getParameters(context, 'headers'));
+            var context = $scope.context;
+            var request = getRequest($event);
 
             if (context.bodyContent) {
               request.header('Content-Type', context.bodyContent.selected);
@@ -88508,6 +88574,29 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "        <div class=\"raml-console-resource-param\" ng-repeat=\"(code, info) in documentationSchemeSelected.describedBy.responses\">\n" +
     "          <h4 class=\"raml-console-resource-param-heading\">{{info.code}}</h4>\n" +
     "          <p markdown=\"info.description\" class=\"raml-console-marked-content\"></p>\n" +
+    "\n" +
+    "          <div class=\"raml-console-schema-body raml-console-resource-response\" ng-if=\"info.body\">\n" +
+    "            <h4 class=\"raml-console-resource-body-heading\">\n" +
+    "              Body\n" +
+    "              <span\n" +
+    "                      ng-click=\"changeSchemaType($event, key, code)\"\n" +
+    "                      ng-class=\"{ 'raml-console-is-active': schemaResponses[info.code].currentType === key}\"\n" +
+    "                      class=\"raml-console-flag\"\n" +
+    "                      ng-repeat=\"(key, value) in info.body\">\n" +
+    "                {{key}}\n" +
+    "            </span>\n" +
+    "            </h4>\n" +
+    "\n" +
+    "            <div ng-repeat=\"(key, value) in info.body\">\n" +
+    "              <div ng-if=\"schemaResponses[code].currentType === key\">\n" +
+    "                <examples\n" +
+    "                  example-container=\"value\"\n" +
+    "                  get-beatified-example-ref=\"getBeatifiedExample\">\n" +
+    "                </examples>\n" +
+    "              </div>\n" +
+    "            </div>\n" +
+    "          </div>\n" +
+    "\n" +
     "        </div>\n" +
     "      </section>\n" +
     "\n" +
@@ -88682,7 +88771,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "        </span>\n" +
     "      </span>\n" +
     "\n" +
-    "      <raml-field context=\"context\" type=\"type\" types=\"types\" param=\"param.definitions[0]\" model=\"context[type].values[param.definitions[0].id]\"></raml-field>\n" +
+    "      <raml-field context=\"context\" type=\"type\" types=\"types\" param=\"param.definitions[0]\" model=\"context[type].values[param.definitions[0].id]\" upload-request=\"uploadRequest\"></raml-field>\n" +
     "    </p>\n" +
     "  </div>\n" +
     "</section>\n"
@@ -89304,7 +89393,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "\n" +
     "          <named-parameters context=\"context\" type=\"headers\" title=\"Headers\" enable-custom-parameters></named-parameters>\n" +
     "\n" +
-    "          <named-parameters context=\"context\" type=\"queryParameters\" types=\"types\" title=\"Query Parameters\" enable-custom-parameters></named-parameters>\n" +
+    "          <named-parameters context=\"context\" type=\"queryParameters\" types=\"types\" title=\"Query Parameters\" upload-request=\"setRequestUrl\" enable-custom-parameters></named-parameters>\n" +
     "\n" +
     "          <section ng-if=\"methodInfo.queryString\">\n" +
     "            <header class=\"raml-console-sidebar-row raml-console-sidebar-subheader\">\n" +
