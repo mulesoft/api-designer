@@ -81325,7 +81325,7 @@ exports.javascript = require('./javascript');
       templateUrl: 'directives/array-field.tpl.html',
       require: 'ngModel',
       replace: true,
-      link: function(scope, iElement, iAttrs, controller) {
+      link: function(scope, iElement) {
         var ngModelCtrl = iElement.controller('ngModel');
 
         function getAllMatches(value, regex) {
@@ -81344,7 +81344,7 @@ exports.javascript = require('./javascript');
 
         ngModelCtrl.$formatters.push(function(modelValue) {
           var value = Array.isArray(modelValue) ? modelValue : [];
-          return "[" + value.join(',') + "]";
+          return '[' + value.join(',') + ']';
         });
 
         ngModelCtrl.$render = function() {
@@ -82916,7 +82916,7 @@ exports.javascript = require('./javascript');
   'use strict';
 
   angular.module('RAML.Directives')
-    .factory('isCurrentResource', ['$rootScope', 'resourceId',function resourceId($rootScope, resourceId) {
+    .factory('isCurrentResource', ['$rootScope', 'resourceId',function resource($rootScope, resourceId) {
       return function($scope, resource) {
         return $scope.currentId && $rootScope.currentId === resourceId(resource);
       };
