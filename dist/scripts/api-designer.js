@@ -76477,6 +76477,9 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
                 var raml = api.specification;
                 $rootScope.$broadcast('event:raml-parsed', raml);
               }
+              $('.CodeMirror').each(function (i, el) {
+                el.CodeMirror.refresh();
+              });
             }
           })).catch(safeApplyWrapper($scope, function failureParse(error) {
             $scope.parsing--;
