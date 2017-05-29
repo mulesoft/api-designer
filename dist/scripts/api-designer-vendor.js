@@ -81319,6 +81319,60 @@ exports.javascript = require('./javascript');
 (function () {
   'use strict';
 
+  RAML.Directives.arrayField = function() {
+    return {
+      restrict: 'E',
+      templateUrl: 'directives/array-field.tpl.html',
+      require: 'ngModel',
+      replace: true,
+      link: function(scope, iElement) {
+        var ngModelCtrl = iElement.controller('ngModel');
+
+        function getAllMatches(value, regex) {
+          var result = [];
+
+          var match;
+          do {
+            match = regex.exec(value);
+            if (match) {
+              result.push(match[0]);
+            }
+          } while (match);
+
+          return result;
+        }
+
+        ngModelCtrl.$formatters.push(function(modelValue) {
+          var value = Array.isArray(modelValue) ? modelValue : [];
+          return '[' + value.join(',') + ']';
+        });
+
+        ngModelCtrl.$render = function() {
+          iElement.val(ngModelCtrl.$viewValue);
+        };
+
+        iElement[0].addEventListener('change', function () {
+          ngModelCtrl.$setViewValue(iElement.val());
+        });
+
+        ngModelCtrl.$parsers.push(function() {
+          if (!ngModelCtrl.$viewValue || ngModelCtrl.$viewValue === '') { return ''; }
+
+          return getAllMatches(ngModelCtrl.$viewValue, /([^\]\[,]+)/g)
+            .map(function (value) { return value.replace(/^\s+/g, ''); })
+            .map(function (value) { return value.replace(/\s+$/g, ''); });
+        });
+      }
+    };
+  };
+
+  angular.module('RAML.Directives')
+    .directive('arrayField', [RAML.Directives.arrayField]);
+})();
+
+(function () {
+  'use strict';
+
   RAML.Directives.clickOutside = function ($document) {
     return {
       restrict: 'A',
@@ -81771,7 +81825,7 @@ exports.javascript = require('./javascript');
           for (var i = 0; i < tokens.length; i++) {
             $scope.segments.push({
               name: tokens[i],
-              templated: typeof baseUri.parameters[tokens[i]] !== 'undefined' ? true : false
+              templated: typeof baseUri.parameters[tokens[i]] !== 'undefined'
             });
           }
         }
@@ -81812,6 +81866,40 @@ exports.javascript = require('./javascript');
         };
 
         $scope.cleanupValue = RAML.Inspector.Properties.cleanupPropertyValue;
+
+        function getType(param) {
+          if ($scope.types) {
+            var rootType = RAML.Inspector.Types.findType(param.type[0], $scope.types);
+            return rootType ? rootType : param;
+          } else {
+            return param;
+          }
+        }
+
+        function isArray (param) {
+          var type = getType(param);
+          return type && type.hasOwnProperty('type') && type.type[0] === 'array';
+        }
+
+        function usageExample (param) {
+          return isArray(param) ? '[hello, world]' : '';
+        }
+
+        $scope.hasUsageExample = function(param) {
+          return isArray(param);
+        };
+
+        $scope.getDescription = function(param) {
+          var description = param.description;
+          var usage       = usageExample(param);
+
+          if (!description && !usage) {
+            return undefined;
+          }
+
+          var separator   = (description ? (usage ? '\n' : '') : ('') )+ 'Format example: ';
+          return description + separator + usage;
+        };
       }]
     };
   };
@@ -82640,7 +82728,7 @@ exports.javascript = require('./javascript');
         };
 
         $scope.isDefault = function (definition) {
-          return !$scope.isEnum(definition) && definition.type !== 'boolean' && !$scope.isFile(definition);
+          return !$scope.isArray(definition) && !$scope.isEnum(definition) && definition.type !== 'boolean' && !$scope.isFile(definition);
         };
 
         $scope.isBoolean = function (definition) {
@@ -82828,6 +82916,17 @@ exports.javascript = require('./javascript');
   'use strict';
 
   angular.module('RAML.Directives')
+    .factory('isCurrentResource', ['$rootScope', 'resourceId',function resource($rootScope, resourceId) {
+      return function($scope, resource) {
+        return $scope.currentId && $rootScope.currentId === resourceId(resource);
+      };
+    }]);
+})();
+
+(function () {
+  'use strict';
+
+  angular.module('RAML.Directives')
     .directive('resourceHeading', [function resourceHeading() {
       return {
         restrict: 'E',
@@ -82862,11 +82961,11 @@ exports.javascript = require('./javascript');
 (function () {
   'use strict';
 
-  function listItemElement($rootScope, $scope, $compile, resource, showResource, resourceId) {
+  function listItemElement($scope, $compile, resource, showResource, resourceId) {
     var id = resourceId(resource);
     var element = angular.element('<li class="raml-console-resource-list-item"></li>');
     element.attr('id', id);
-    updateListItemElement(element, $scope, $compile, resource, $rootScope.currentId, showResource, resourceId);
+    updateListItemElement(element, $scope, $compile, resource, $scope.currentId, showResource, resourceId);
 
     // update on 'methodClick' if must
     $scope.$on('methodClick', function(event, currentId, oldId) {
@@ -82954,7 +83053,11 @@ exports.javascript = require('./javascript');
     if (resource.resourceType) {
       var element = angular.element('<span class="raml-console-flag raml-console-resource-heading-flag"></span>');
       element.append('<b>Type: </b>');
-      element.append(Object.keys(resource.resourceType)[0]);
+      if (typeof resource.resourceType === 'string' ) {
+        element.append(resource.resourceType);
+      } else {
+        element.append(Object.keys(resource.resourceType)[0]);
+      }
 
       return element;
     }
@@ -82994,7 +83097,7 @@ exports.javascript = require('./javascript');
     if (resourceId(resource) === currentId) {
       var closeButton = angular.element('<button class="raml-console-resource-close-btn"> Close </button>');
       closeButton.on('click', function (event) {
-        showResource($scope, resource, event, 0);
+        showResource($scope, resource, event, null);
         $scope.$apply();
       });
 
@@ -83004,7 +83107,7 @@ exports.javascript = require('./javascript');
     return '';
   }
 
-  RAML.Directives.resourceList = function resourceList($rootScope, $compile, showResource, resourceId) {
+  RAML.Directives.resourceList = function resourceList($compile, showResource, resourceId) {
     return {
       restrict: 'E',
       templateUrl: 'directives/resource-tree/resource-list.tpl.html',
@@ -83014,21 +83117,21 @@ exports.javascript = require('./javascript');
         resources
           .forEach(function (resource, index) {
             if (index === 0) { return; }
-            element.append(listItemElement($rootScope, $scope, $compile, resource, showResource, resourceId));
+            element.append(listItemElement($scope, $compile, resource, showResource, resourceId));
           });
       }
     };
   };
 
   angular.module('RAML.Directives')
-    .directive('resourceList', ['$rootScope', '$compile', 'showResource', 'resourceId', RAML.Directives.resourceList]);
+    .directive('resourceList', ['$compile', 'showResource', 'resourceId', RAML.Directives.resourceList]);
 })();
 
 (function () {
   'use strict';
 
   angular.module('RAML.Directives')
-    .directive('resourceTreeRoot', ['showResource', 'resourceId', function resourceTreeRoot(showResource, resourceId) {
+    .directive('resourceTreeRoot', ['showResource', 'resourceId', 'isCurrentResource', function resourceTreeRoot(showResource, resourceId, isCurrentResource) {
       return {
         restrict: 'E',
         templateUrl: 'directives/resource-tree/resource-tree-root.tpl.html',
@@ -83036,8 +83139,28 @@ exports.javascript = require('./javascript');
         link: function ($scope, element) {
           element.addClass($scope.disableTitle ? 'raml-console-resources-container-no-title' : 'raml-console-resources-container');
           $scope.resourceIdFn = resourceId;
+          $scope.isCurrentResourceFn = isCurrentResource;
 
           $scope.showResource = showResource;
+
+          $scope.readTraits = function (traits) {
+            var list = [];
+            var traitList = traits || [];
+
+            traitList.map(function (trait) {
+              if (trait) {
+                if (typeof trait === 'object') {
+                  trait = Object.keys(trait).join(', ');
+                }
+
+                if (list.indexOf(trait) === -1) {
+                  list.push(trait);
+                }
+              }
+            });
+
+            return list.join(', ');
+          };
         }
       };
     }]);
@@ -83141,30 +83264,8 @@ exports.javascript = require('./javascript');
       }
 
         return function showResource($scope, resource, $event, $index) {
-          var methodInfo        = resource.methods[$index];
+          var methodInfo        = $index === null ? $scope.methodInfo : resource.methods[$index];
           var oldId             = $rootScope.currentId;
-
-          $scope.readTraits = function (traits) {
-            var list = [];
-            var traitList = traits || [];
-
-            traitList = traitList.concat(resource.traits);
-
-            traitList.map(function (trait) {
-              if (trait) {
-                if (typeof trait === 'object') {
-                  trait = Object.keys(trait).join(', ');
-                }
-
-                if (list.indexOf(trait) === -1) {
-                  list.push(trait);
-                }
-              }
-            });
-
-            return list.join(', ');
-          };
-
 
           var id = resourceId(resource);
           var isDifferentMethod = $rootScope.currentId !== id || $scope.currentMethod !== methodInfo.method;
@@ -83592,7 +83693,7 @@ exports.javascript = require('./javascript');
               var input = angular.copy(params[key][0]);
 
               input.forEach(function (each, index) {
-                params[key][index] = each[0];
+                params[key][index] = each;
               });
             }
 
@@ -83816,6 +83917,11 @@ exports.javascript = require('./javascript');
 
         $scope.setRequestUrl = function() {
           var request = getRequest();
+
+          if (!request) {
+            return;
+          }
+
           $scope.responseDetails      = true;
           $scope.requestOptions.url   = request.toOptions().url;
         };
@@ -86081,7 +86187,7 @@ RAML.Inspector = (function() {
       });
     }
     if (properties) {
-      var propertiesKeys = Object.keys(properties).sort();
+      var propertiesKeys = Object.keys(properties);
 
       if (propertiesKeys.length > 0) {
         resultingType.properties = propertiesKeys.map(function (key) {
@@ -88477,6 +88583,11 @@ RAML.Inspector = (function() {
 angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache) {
   'use strict';
 
+  $templateCache.put('directives/array-field.tpl.html',
+    "<input class=\"raml-console-sidebar-input\"/>\n"
+  );
+
+
   $templateCache.put('directives/documentation.tpl.html',
     "<div class=\"raml-console-resource-panel-primary\" ng-if=\"documentationEnabled\">\n" +
     "  <!-- Request -->\n" +
@@ -88724,10 +88835,10 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "    </div>\n" +
     "\n" +
     "    <p class=\"raml-console-sidebar-input-container\" ng-repeat=\"key in keys(context[type].plain)\" ng-init=\"param = context[type].plain[key]\">\n" +
-    "      <span class=\"raml-console-sidebar-input-tooltip-container\" ng-if=\"param.definitions[0].description\" ng-class=\"{'raml-console-sidebar-input-tooltip-container-enum': param.definitions[0].enum}\">\n" +
+    "      <span class=\"raml-console-sidebar-input-tooltip-container\" ng-if=\"param.definitions[0].description || hasUsageExample(param.definitions[0])\" ng-class=\"{'raml-console-sidebar-input-tooltip-container-enum': param.definitions[0].enum}\">\n" +
     "        <button tabindex=\"-1\" class=\"raml-console-sidebar-input-tooltip\"><span class=\"raml-console-visuallyhidden\">Show documentation</span></button>\n" +
     "        <span class=\"raml-console-sidebar-tooltip-flyout\">\n" +
-    "          <span markdown=\"param.definitions[0].description\" class=\"raml-console-marked-content\"></span>\n" +
+    "          <span markdown=\"getDescription(param.definitions[0])\" class=\"raml-console-marked-content\"></span>\n" +
     "        </span>\n" +
     "      </span>\n" +
     "\n" +
@@ -88951,7 +89062,6 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "  </div>\n" +
     "\n" +
     "  <div ng-if=\"!param.properties && isArray(param)\">\n" +
-    "    <i class=\"raml-console-sidebar-info-btn\" tooltip=\"Format example: [hello, world]\"></i>\n" +
     "    <span class=\"raml-console-sidebar-input-tooltip-container raml-console-sidebar-input-left\" ng-if=\"hasExampleValue(param)\">\n" +
     "      <button tabindex=\"-1\" class=\"raml-console-sidebar-input-reset\" ng-click=\"reset(param)\"><span class=\"raml-console-visuallyhidden\">Reset field</span></button>\n" +
     "      <span class=\"raml-console-sidebar-tooltip-flyout-left\">\n" +
@@ -88963,13 +89073,15 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "     <option ng-repeat=\"enum in unique(param.enum)\" value=\"{{enum}}\" ng-selected=\"{{param.example === enum}}\">{{enum}}</option>\n" +
     "    </select>\n" +
     "\n" +
-    "    <input id=\"{{param.id}}\" ng-hide=\"!isDefault(param)\" class=\"raml-console-sidebar-input\" ng-model=\"model[0]\" validate=\"param\" dynamic-name=\"param.id\" ng-change=\"onChange()\"/>\n" +
+    "    <input id=\"{{param.id}}\" ng-if=\"isDefault(param)\" class=\"raml-console-sidebar-input\" ng-model=\"model[0]\" validate=\"param\" dynamic-name=\"param.id\" ng-change=\"onChange()\"/>\n" +
     "\n" +
-    "    <input ng-hide=\"!isFile(param)\" id=\"{{param.id}}\" type=\"file\" class=\"raml-console-sidebar-input-file\" ng-model=\"aModel[0]\" validate=\"param\"\n" +
+    "    <array-field id=\"{{param.id}}\" ng-if=\"isArray(param)\" ng-model=\"model[0]\" validate=\"param\" dynamic-name=\"param.id\" ng-change=\"onChange()\" ></array-field>\n" +
+    "\n" +
+    "    <input id=\"{{param.id}}\" ng-if=\"isFile(param)\" type=\"file\" class=\"raml-console-sidebar-input-file\" ng-model=\"model[0]\" validate=\"param\"\n" +
     "             dynamic-name=\"param.id\"\n" +
     "             onchange=\"angular.element(this).scope().uploadFile(this)\"/>\n" +
     "\n" +
-    "    <input id=\"checkbox_{{param.id}}\" ng-if=\"isBoolean(param)\" class=\"raml-console-sidebar-input\" type=\"checkbox\" ng-model=\"aModel[0]\" dynamic-name=\"param.id\" ng-change=\"onChange()\" />\n" +
+    "    <input id=\"checkbox_{{param.id}}\" ng-if=\"isBoolean(param)\" class=\"raml-console-sidebar-input\" type=\"checkbox\" ng-model=\"model[0]\" dynamic-name=\"param.id\" ng-change=\"onChange()\" />\n" +
     "\n" +
     "    <span class=\"raml-console-field-validation-error\"></span>\n" +
     "  </div>\n" +
@@ -89131,7 +89243,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "  >\n" +
     "    <header\n" +
     "      class=\"raml-console-resource raml-console-resource-root raml-console-clearfix\"\n" +
-    "      ng-class=\"{ 'raml-console-is-active': (currentId === resourceIdFn(rootResource)) }\"\n" +
+    "      ng-class=\"{ 'raml-console-is-active': (isCurrentResourceFn(this, rootResource)) }\"\n" +
     "      ng-init=\"rootResource = resourceGroup[0]; resource = resourceGroup[0]; scope = this;\"\n" +
     "    >\n" +
     "      <div\n" +
@@ -89193,7 +89305,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "      <div class=\"raml-console-tab-list\">\n" +
     "        <div\n" +
     "          class=\"raml-console-tab\"\n" +
-    "          ng-class=\"{ 'raml-console-is-active': (resourceId === resourceIdFn(rootResource) && method.method === currentMethod) }\"\n" +
+    "          ng-class=\"{ 'raml-console-is-active': (isCurrentResourceFn(this, rootResource) && method.method === currentMethod) }\"\n" +
     "          ng-repeat=\"method in rootResource.methods\"\n" +
     "          ng-click=\"showResource(scope, rootResource, $event, $index)\"\n" +
     "        >\n" +
@@ -89207,7 +89319,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "        Close\n" +
     "      </button>\n" +
     "    </header>\n" +
-    "    <resource-panel ng-if=\"currentId ===  resourceIdFn(rootResource)\"></resource-panel>\n" +
+    "    <resource-panel ng-if=\"isCurrentResourceFn(this, rootResource)\"></resource-panel>\n" +
     "\n" +
     "    <!-- Child Resources -->\n" +
     "    <resource-list ng-class=\"{'raml-console-is-collapsed': resourceList[$index]}\"></resource-list>\n" +

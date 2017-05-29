@@ -4296,6 +4296,7 @@ root
 }
 
 .raml-console-resource-panel-primary {
+  width: 60%;
   -ms-flex: 1 auto;
   flex: 1 auto;
   -webkit-flex: 1 auto;
@@ -4581,6 +4582,7 @@ root
   background: rgba(255, 255, 255, 0.75);
   font-family: Source Code Pro;
   font-size: 14px;
+  overflow: auto;
 }
 
 .raml-console-resource-pre code pre {
@@ -5088,48 +5090,6 @@ root
 .raml-console-sidebar-add-btn:hover {
   background-color: #9ea0ad;
   opacity: 1;
-}
-
-.raml-console-sidebar-info-btn {
-  position: absolute;
-  top: 36px;
-  left: 10px;
-  width: 17px;
-  height: 17px;
-  border: none;
-  border-radius: 50%;
-  background: #888a99;
-  color: #f3f4f5;
-  opacity: 0.4;
-  transition: 0.2s ease all;
-}
-
-.raml-console-sidebar-info-btn:before {
-  content: "\02139";
-  position: absolute;
-  top: -1px;
-  left: 2px;
-  font-size: 16px;
-  line-height: 1;
-}
-
-.raml-console-sidebar-info-btn:hover {
-  background-color: #9ea0ad;
-  opacity: 1;
-}
-
-.raml-console-sidebar-info-btn:hover:after {
-  content: attr(tooltip);
-  position: absolute;
-  background: #9ea0ad;
-  color: #333;
-  white-space: nowrap;
-  top: -15px;
-  left: 25px;
-  font-size: 14px;
-  padding: 2px 8px;
-  border-radius: 5px;
-  border: 1px solid #d5d7d9;
 }
 
 .raml-console-sidebar-toggle-group {
@@ -6655,11 +6615,14 @@ Orginal Style from ethanschoonover.com/solarized (c) Jeremy Hull <sourdrums@gmai
 
 .raml-console-hljs {
   display: block;
-  overflow-x: auto;
   padding: 0.5em;
   background: #fff;
   color: #657b83;
   -webkit-text-size-adjust: none;
+}
+
+.raml-console-hljs pre {
+  overflow: inherit;
 }
 
 .raml-console-hljs-string {
