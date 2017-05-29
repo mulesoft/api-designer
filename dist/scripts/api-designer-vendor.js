@@ -81343,8 +81343,8 @@ exports.javascript = require('./javascript');
         }
 
         ngModelCtrl.$formatters.push(function(modelValue) {
-          var value = Array.isArray(modelValue) ? modelValue : [];
-          return '[' + value.join(',') + ']';
+          var value = Array.isArray(modelValue) ? modelValue : null;
+          return value ? '[' + value.join(',') + ']' : '';
         });
 
         ngModelCtrl.$render = function() {
@@ -81898,7 +81898,7 @@ exports.javascript = require('./javascript');
           }
 
           var separator   = (description ? (usage ? '\n' : '') : ('') )+ 'Format example: ';
-          return description + separator + usage;
+          return (description ? description : '') + separator + usage;
         };
       }]
     };
@@ -84005,7 +84005,6 @@ exports.javascript = require('./javascript');
           $scope.requestOptions  = null;
           $scope.responseDetails = false;
           $scope.response        = {};
-          $scope.showResponseMetadata = false;
 
           if (!$scope.context.forceRequest) {
             jQuery($event.currentTarget).closest('form').find('.ng-invalid').first().focus();
@@ -89052,7 +89051,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "\n" +
     "    <input id=\"{{param.id}}\" ng-hide=\"!isDefault(param)\" class=\"raml-console-sidebar-input\" ng-model=\"model[0]\" ng-class=\"{'raml-console-sidebar-field-no-default': !hasExampleValue(param)}\" validate=\"param\" dynamic-name=\"param.id\" ng-change=\"onChange()\"/>\n" +
     "\n" +
-    "    <input ng-hide=\"!isFile(param)\" id=\"{{param.id}}\" type=\"file\" class=\"raml-console-sidebar-input-file\" ng-model=\"model[0]\" validate=\"param\"\n" +
+    "    <input ng-if=\"isFile(param)\" id=\"{{param.id}}\" type=\"file\" class=\"raml-console-sidebar-input-file\" ng-model=\"model[0]\" validate=\"param\"\n" +
     "             dynamic-name=\"param.id\"\n" +
     "             onchange=\"angular.element(this).scope().uploadFile(this)\"/>\n" +
     "\n" +
@@ -89075,7 +89074,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "\n" +
     "    <input id=\"{{param.id}}\" ng-if=\"isDefault(param)\" class=\"raml-console-sidebar-input\" ng-model=\"model[0]\" validate=\"param\" dynamic-name=\"param.id\" ng-change=\"onChange()\"/>\n" +
     "\n" +
-    "    <array-field id=\"{{param.id}}\" ng-if=\"isArray(param)\" ng-model=\"model[0]\" validate=\"param\" dynamic-name=\"param.id\" ng-change=\"onChange()\" ></array-field>\n" +
+    "    <array-field id=\"{{param.id}}\" ng-if=\"isArray(param)\" ng-model=\"model[0]\" validate=\"param\" dynamic-name=\"param.id\" ng-change=\"onChange()\"  ng-class=\"{'raml-console-sidebar-field-no-default': !hasExampleValue(param)}\" ></array-field>\n" +
     "\n" +
     "    <input id=\"{{param.id}}\" ng-if=\"isFile(param)\" type=\"file\" class=\"raml-console-sidebar-input-file\" ng-model=\"model[0]\" validate=\"param\"\n" +
     "             dynamic-name=\"param.id\"\n" +
@@ -89599,7 +89598,6 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "                </div>\n" +
     "              </div>\n" +
     "            </section>\n" +
-    "\n" +
     "            <section class=\"raml-console-side-bar-try-it-description\">\n" +
     "              <header class=\"raml-console-sidebar-row raml-console-sidebar-header\">\n" +
     "                <h3 class=\"raml-console-sidebar-head\">\n" +
@@ -89609,7 +89607,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "                </h3>\n" +
     "              </header>\n" +
     "\n" +
-    "              <div class=\"raml-console-sidebar-row raml-console-sidebar-response\" ng-class=\"{'raml-console-is-active':showResponseMetadata}\">\n" +
+    "              <div class=\"raml-console-sidebar-row raml-console-sidebar-response\" ng-class=\"{'raml-console-is-active': showResponseMetadata}\">\n" +
     "                <h3 class=\"raml-console-sidebar-response-head\">Status</h3>\n" +
     "                <p class=\"raml-console-sidebar-response-item\">{{response.status}}</p>\n" +
     "\n" +
