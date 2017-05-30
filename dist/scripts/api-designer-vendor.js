@@ -81405,7 +81405,7 @@ exports.javascript = require('./javascript');
     return {
       restrict: 'E',
       templateUrl: 'directives/documentation.tpl.html',
-      controller: ['$scope', function($scope) {
+      controller: ['$scope', 'idGenerator', function($scope, idGenerator) {
         $scope.markedOptions = RAML.Settings.marked;
 
         $scope.$watch('securitySchemes', function() {
@@ -81645,7 +81645,7 @@ exports.javascript = require('./javascript');
         };
 
         $scope.getBodyId = function (bodyType) {
-          return jQuery.trim(bodyType.toString().replace(/\W/g, ' ')).replace(/\s+/g, '_');
+          return idGenerator(bodyType.toString());
         };
 
         $scope.bodySelected = function (value) {
@@ -82916,6 +82916,18 @@ exports.javascript = require('./javascript');
   'use strict';
 
   angular.module('RAML.Directives')
+    .factory('idGenerator', [function idGenerator() {
+      return function(value) {
+        var id = jQuery.trim(value.replace(/\W/g, ' ')).replace(/\s+/g, '_');
+        return id === '' ? '-' : id;
+      };
+    }]);
+})();
+
+(function () {
+  'use strict';
+
+  angular.module('RAML.Directives')
     .factory('isCurrentResource', ['$rootScope', 'resourceId',function resource($rootScope, resourceId) {
       return function($scope, resource) {
         return $scope.currentId && $rootScope.currentId === resourceId(resource);
@@ -82951,9 +82963,9 @@ exports.javascript = require('./javascript');
   'use strict';
 
   angular.module('RAML.Directives')
-    .factory('resourceId', [function resourceId() {
+    .factory('resourceId', ['idGenerator', function resourceId(idGenerator) {
       return function(resource) {
-        return jQuery.trim(resource.pathSegments.toString().replace(/\W/g, ' ')).replace(/\s+/g, '_');
+        return idGenerator(resource.pathSegments.toString());
       };
     }]);
 })();
@@ -83384,7 +83396,7 @@ exports.javascript = require('./javascript');
       restrict: 'E',
       templateUrl: 'directives/root-documentation.tpl.html',
       replace: true,
-      controller: ['$scope', '$timeout', function($scope, $timeout) {
+      controller: ['$scope', '$timeout', 'idGenerator', function($scope, $timeout, idGenerator) {
         $scope.markedOptions = RAML.Settings.marked;
         $scope.selectedSection = 'all';
 
@@ -83397,7 +83409,7 @@ exports.javascript = require('./javascript');
         };
 
         $scope.generateDocId = function (path) {
-          return jQuery.trim(path.toString().replace(/\W/g, ' ')).replace(/\s+/g, '_').toLowerCase();
+          return idGenerator(path.toString());
         };
 
         $scope.toggleSection = function ($event, key, section) {
