@@ -586,7 +586,7 @@
           return (/\text|image|raml|json|yaml|xml|xsd|zip$/i).test(file.type);
         }
 
-        return (/\.raml|.json|.yaml|.yml|.xml|.xsd|.md|.txt|.jpg|.jpeg|.png|.html|.zip$/i).test(file.name);
+        return (/\.raml|.json|.yaml|.yml|.xml|.xsd|.md|.txt|.jpg|.jpeg|.png|.html|.csv|.properties|.zip$/i).test(file.name);
       }
 
       /**

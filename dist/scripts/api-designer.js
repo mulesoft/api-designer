@@ -8030,7 +8030,7 @@
           return http.request.call(this, params, cb);
         };
       },
-      { 'http': 302 }
+      { 'http': 303 }
     ],
     16: [
       function (require, module, exports) {
@@ -10127,7 +10127,7 @@
         '../util/url': 39,
         '_process': 281,
         'buffer': 6,
-        'http': 302,
+        'http': 303,
         'https': 15,
         'ono': 279
       }
@@ -10502,7 +10502,7 @@
       },
       {
         '_process': 281,
-        'url': 317
+        'url': 318
       }
     ],
     40: [
@@ -41106,7 +41106,7 @@
         '../utils/xml.js': 246,
         './exporter': 227,
         'lodash': 210,
-        'url': 317
+        'url': 318
       }
     ],
     232: [
@@ -42614,7 +42614,7 @@
         '../utils/xml': 246,
         './importer': 237,
         'lodash': 210,
-        'url': 317
+        'url': 318
       }
     ],
     237: [
@@ -44542,7 +44542,7 @@
         './importer': 237,
         'js-yaml': 247,
         'lodash': 210,
-        'swagger-parser': 308
+        'swagger-parser': 309
       }
     ],
     242: [
@@ -44773,7 +44773,7 @@
           }
         };
       },
-      { 'xml2js': 389 }
+      { 'xml2js': 390 }
     ],
     247: [
       function (require, module, exports) {
@@ -45447,7 +45447,7 @@
           }
         }
       },
-      { 'util': 321 }
+      { 'util': 322 }
     ],
     280: [
       function (require, module, exports) {
@@ -46266,6 +46266,13 @@
       }
     ],
     286: [
+      function (require, module, exports) {
+        'use strict';
+        module.exports = require('buffer');
+      },
+      { 'buffer': 6 }
+    ],
+    287: [
       function (require, module, exports) {
         (function (Buffer) {
           'use strict';
@@ -47756,11 +47763,11 @@
       },
       {
         'buffer': 6,
-        'stream': 287,
-        'string_decoder': 306
+        'stream': 288,
+        'string_decoder': 307
       }
     ],
-    287: [
+    288: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -47866,26 +47873,26 @@
       {
         'events': 13,
         'inherits': 18,
-        'readable-stream/duplex.js': 289,
-        'readable-stream/passthrough.js': 297,
-        'readable-stream/readable.js': 298,
-        'readable-stream/transform.js': 299,
-        'readable-stream/writable.js': 300
+        'readable-stream/duplex.js': 290,
+        'readable-stream/passthrough.js': 298,
+        'readable-stream/readable.js': 299,
+        'readable-stream/transform.js': 300,
+        'readable-stream/writable.js': 301
       }
     ],
-    288: [
+    289: [
       function (require, module, exports) {
         arguments[4][7][0].apply(exports, arguments);
       },
       { 'dup': 7 }
     ],
-    289: [
+    290: [
       function (require, module, exports) {
         module.exports = require('./lib/_stream_duplex.js');
       },
-      { './lib/_stream_duplex.js': 290 }
+      { './lib/_stream_duplex.js': 291 }
     ],
-    290: [
+    291: [
       function (require, module, exports) {
         // a duplex stream is just a stream that is both readable and writable.
         // Since JS doesn't have multiple prototypal inheritance, this class
@@ -47952,14 +47959,14 @@
         }
       },
       {
-        './_stream_readable': 292,
-        './_stream_writable': 294,
+        './_stream_readable': 293,
+        './_stream_writable': 295,
         'core-util-is': 10,
         'inherits': 18,
         'process-nextick-args': 280
       }
     ],
-    291: [
+    292: [
       function (require, module, exports) {
         // a passthrough stream.
         // basically just the most minimal sort of Transform stream.
@@ -47982,12 +47989,12 @@
         };
       },
       {
-        './_stream_transform': 293,
+        './_stream_transform': 294,
         'core-util-is': 10,
         'inherits': 18
       }
     ],
-    292: [
+    293: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -48885,22 +48892,22 @@
         }.call(this, require('_process')));
       },
       {
-        './_stream_duplex': 290,
-        './internal/streams/BufferList': 295,
-        './internal/streams/stream': 296,
+        './_stream_duplex': 291,
+        './internal/streams/BufferList': 296,
+        './internal/streams/stream': 297,
         '_process': 281,
         'buffer': 6,
         'buffer-shims': 5,
         'core-util-is': 10,
         'events': 13,
         'inherits': 18,
-        'isarray': 288,
+        'isarray': 289,
         'process-nextick-args': 280,
-        'string_decoder/': 301,
+        'string_decoder/': 302,
         'util': 3
       }
     ],
-    293: [
+    294: [
       function (require, module, exports) {
         // a transform stream is a readable/writable stream where you do
         // something with the data.  Sometimes it's called a "filter",
@@ -49065,12 +49072,12 @@
         }
       },
       {
-        './_stream_duplex': 290,
+        './_stream_duplex': 291,
         'core-util-is': 10,
         'inherits': 18
       }
     ],
-    294: [
+    295: [
       function (require, module, exports) {
         (function (process) {
           // A bit simpler than readable streams.
@@ -49562,18 +49569,18 @@
         }.call(this, require('_process')));
       },
       {
-        './_stream_duplex': 290,
-        './internal/streams/stream': 296,
+        './_stream_duplex': 291,
+        './internal/streams/stream': 297,
         '_process': 281,
         'buffer': 6,
         'buffer-shims': 5,
         'core-util-is': 10,
         'inherits': 18,
         'process-nextick-args': 280,
-        'util-deprecate': 318
+        'util-deprecate': 319
       }
     ],
-    295: [
+    296: [
       function (require, module, exports) {
         'use strict';
         var Buffer = require('buffer').Buffer;
@@ -49654,19 +49661,19 @@
         'buffer-shims': 5
       }
     ],
-    296: [
+    297: [
       function (require, module, exports) {
         module.exports = require('events').EventEmitter;
       },
       { 'events': 13 }
     ],
-    297: [
+    298: [
       function (require, module, exports) {
         module.exports = require('./readable').PassThrough;
       },
-      { './readable': 298 }
+      { './readable': 299 }
     ],
-    298: [
+    299: [
       function (require, module, exports) {
         exports = module.exports = require('./lib/_stream_readable.js');
         exports.Stream = exports;
@@ -49677,30 +49684,29 @@
         exports.PassThrough = require('./lib/_stream_passthrough.js');
       },
       {
-        './lib/_stream_duplex.js': 290,
-        './lib/_stream_passthrough.js': 291,
-        './lib/_stream_readable.js': 292,
-        './lib/_stream_transform.js': 293,
-        './lib/_stream_writable.js': 294
+        './lib/_stream_duplex.js': 291,
+        './lib/_stream_passthrough.js': 292,
+        './lib/_stream_readable.js': 293,
+        './lib/_stream_transform.js': 294,
+        './lib/_stream_writable.js': 295
       }
-    ],
-    299: [
-      function (require, module, exports) {
-        module.exports = require('./readable').Transform;
-      },
-      { './readable': 298 }
     ],
     300: [
       function (require, module, exports) {
-        module.exports = require('./lib/_stream_writable.js');
+        module.exports = require('./readable').Transform;
       },
-      { './lib/_stream_writable.js': 294 }
+      { './readable': 299 }
     ],
     301: [
       function (require, module, exports) {
+        module.exports = require('./lib/_stream_writable.js');
+      },
+      { './lib/_stream_writable.js': 295 }
+    ],
+    302: [
+      function (require, module, exports) {
         'use strict';
-        var Buffer = require('buffer').Buffer;
-        var bufferShim = require('buffer-shims');
+        var Buffer = require('safe-buffer').Buffer;
         var isEncoding = Buffer.isEncoding || function (encoding) {
             encoding = '' + encoding;
             switch (encoding && encoding.toLowerCase()) {
@@ -49788,7 +49794,7 @@
           }
           this.lastNeed = 0;
           this.lastTotal = 0;
-          this.lastChar = bufferShim.allocUnsafe(nb);
+          this.lastChar = Buffer.allocUnsafe(nb);
         }
         StringDecoder.prototype.write = function (buf) {
           if (buf.length === 0)
@@ -49989,12 +49995,9 @@
           return buf && buf.length ? this.write(buf) : '';
         }
       },
-      {
-        'buffer': 6,
-        'buffer-shims': 5
-      }
+      { 'safe-buffer': 286 }
     ],
-    302: [
+    303: [
       function (require, module, exports) {
         var ClientRequest = require('./lib/request');
         var extend = require('xtend');
@@ -50062,13 +50065,13 @@
         ];
       },
       {
-        './lib/request': 304,
+        './lib/request': 305,
         'builtin-status-codes': 8,
-        'url': 317,
-        'xtend': 407
+        'url': 318,
+        'xtend': 408
       }
     ],
-    303: [
+    304: [
       function (require, module, exports) {
         (function (global) {
           'use strict';
@@ -50110,7 +50113,7 @@
       },
       {}
     ],
-    304: [
+    305: [
       function (require, module, exports) {
         (function (process, global, Buffer) {
           'use strict';
@@ -50361,18 +50364,18 @@
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}, require('buffer').Buffer));
       },
       {
-        './capability': 303,
-        './response': 305,
+        './capability': 304,
+        './response': 306,
         '_process': 281,
         'buffer': 6,
         'foreach': 14,
         'indexof': 17,
         'inherits': 18,
         'object-keys': 277,
-        'stream': 287
+        'stream': 288
       }
     ],
-    305: [
+    306: [
       function (require, module, exports) {
         (function (process, global, Buffer) {
           'use strict';
@@ -50541,15 +50544,15 @@
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}, require('buffer').Buffer));
       },
       {
-        './capability': 303,
+        './capability': 304,
         '_process': 281,
         'buffer': 6,
         'foreach': 14,
         'inherits': 18,
-        'stream': 287
+        'stream': 288
       }
     ],
-    306: [
+    307: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -50753,7 +50756,7 @@
       },
       { 'buffer': 6 }
     ],
-    307: [
+    308: [
       function (require, module, exports) {
         'use strict';
         module.exports = [
@@ -50768,7 +50771,7 @@
       },
       {}
     ],
-    308: [
+    309: [
       function (require, module, exports) {
         /** !
  * Swagger Parser v4.0.0-beta.2
@@ -50949,18 +50952,18 @@
         }
       },
       {
-        './options': 309,
-        './promise': 310,
-        './util': 311,
-        './validate-schema': 312,
-        './validate-spec': 313,
+        './options': 310,
+        './promise': 311,
+        './util': 312,
+        './validate-schema': 313,
+        './validate-spec': 314,
         'call-me-maybe': 9,
         'json-schema-ref-parser': 23,
         'json-schema-ref-parser/lib/dereference': 22,
         'ono': 279
       }
     ],
-    309: [
+    310: [
       function (require, module, exports) {
         'use strict';
         var $RefParserOptions = require('json-schema-ref-parser/lib/options'), util = require('util');
@@ -50986,19 +50989,19 @@
       },
       {
         'json-schema-ref-parser/lib/options': 24,
-        'util': 321
+        'util': 322
       }
     ],
-    310: [
+    311: [
       function (require, module, exports) {
         arguments[4][38][0].apply(exports, arguments);
       },
       {
         'dup': 38,
-        'es6-promise': 314
+        'es6-promise': 315
       }
     ],
-    311: [
+    312: [
       function (require, module, exports) {
         'use strict';
         var debug = require('debug'), util = require('util');
@@ -51017,10 +51020,10 @@
       },
       {
         'debug': 11,
-        'util': 321
+        'util': 322
       }
     ],
-    312: [
+    313: [
       function (require, module, exports) {
         'use strict';
         var util = require('./util'), ono = require('ono'), ZSchema = require('z-schema'), swaggerSchema = require('swagger-schema-official/schema');
@@ -51075,13 +51078,13 @@
         }
       },
       {
-        './util': 311,
+        './util': 312,
         'ono': 279,
-        'swagger-schema-official/schema': 315,
-        'z-schema': 417
+        'swagger-schema-official/schema': 316,
+        'z-schema': 418
       }
     ],
-    313: [
+    314: [
       function (require, module, exports) {
         'use strict';
         var util = require('./util'), ono = require('ono'), swaggerMethods = require('swagger-methods'), primitiveTypes = [
@@ -51326,12 +51329,12 @@
         }
       },
       {
-        './util': 311,
+        './util': 312,
         'ono': 279,
-        'swagger-methods': 307
+        'swagger-methods': 308
       }
     ],
-    314: [
+    315: [
       function (require, module, exports) {
         arguments[4][42][0].apply(exports, arguments);
       },
@@ -51340,7 +51343,7 @@
         'dup': 42
       }
     ],
-    315: [
+    316: [
       function (require, module, exports) {
         module.exports = {
           'title': 'A JSON Schema for Swagger 2.0 API.',
@@ -52318,7 +52321,7 @@
       },
       {}
     ],
-    316: [
+    317: [
       function (require, module, exports) {
         var nextTick = require('process/browser.js').nextTick;
         var apply = Function.prototype.apply;
@@ -52389,7 +52392,7 @@
       },
       { 'process/browser.js': 281 }
     ],
-    317: [
+    318: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -53028,7 +53031,7 @@
         'querystring': 285
       }
     ],
-    318: [
+    319: [
       function (require, module, exports) {
         (function (global) {
           'use strict';
@@ -53097,7 +53100,7 @@
       },
       {}
     ],
-    319: [
+    320: [
       function (require, module, exports) {
         if (typeof Object.create === 'function') {
           // implementation from standard node.js 'util' module
@@ -53126,7 +53129,7 @@
       },
       {}
     ],
-    320: [
+    321: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -53140,7 +53143,7 @@
       },
       {}
     ],
-    321: [
+    322: [
       function (require, module, exports) {
         (function (process, global) {
           // Copyright Joyent, Inc. and other Node contributors.
@@ -53699,12 +53702,12 @@
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
       },
       {
-        './support/isBuffer': 320,
+        './support/isBuffer': 321,
         '_process': 281,
-        'inherits': 319
+        'inherits': 320
       }
     ],
-    322: [
+    323: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -53902,70 +53905,70 @@
         module.exports = exports['default'];
       },
       {
-        './lib/blacklist': 324,
-        './lib/contains': 325,
-        './lib/equals': 326,
-        './lib/escape': 327,
-        './lib/isAfter': 328,
-        './lib/isAlpha': 329,
-        './lib/isAlphanumeric': 330,
-        './lib/isAscii': 331,
-        './lib/isBase64': 332,
-        './lib/isBefore': 333,
-        './lib/isBoolean': 334,
-        './lib/isByteLength': 335,
-        './lib/isCreditCard': 336,
-        './lib/isCurrency': 337,
-        './lib/isDataURI': 338,
-        './lib/isDate': 339,
-        './lib/isDecimal': 340,
-        './lib/isDivisibleBy': 341,
-        './lib/isEmail': 342,
-        './lib/isEmpty': 343,
-        './lib/isFQDN': 344,
-        './lib/isFloat': 345,
-        './lib/isFullWidth': 346,
-        './lib/isHalfWidth': 347,
-        './lib/isHexColor': 348,
-        './lib/isHexadecimal': 349,
-        './lib/isIP': 350,
-        './lib/isISBN': 351,
-        './lib/isISIN': 352,
-        './lib/isISO8601': 353,
-        './lib/isISSN': 354,
-        './lib/isIn': 355,
-        './lib/isInt': 356,
-        './lib/isJSON': 357,
-        './lib/isLength': 358,
-        './lib/isLowercase': 359,
-        './lib/isMACAddress': 360,
-        './lib/isMD5': 361,
-        './lib/isMobilePhone': 362,
-        './lib/isMongoId': 363,
-        './lib/isMultibyte': 364,
-        './lib/isNumeric': 365,
-        './lib/isSurrogatePair': 366,
-        './lib/isURL': 367,
-        './lib/isUUID': 368,
-        './lib/isUppercase': 369,
-        './lib/isVariableWidth': 370,
-        './lib/isWhitelisted': 371,
-        './lib/ltrim': 372,
-        './lib/matches': 373,
-        './lib/normalizeEmail': 374,
-        './lib/rtrim': 375,
-        './lib/stripLow': 376,
-        './lib/toBoolean': 377,
-        './lib/toDate': 378,
-        './lib/toFloat': 379,
-        './lib/toInt': 380,
-        './lib/trim': 381,
-        './lib/unescape': 382,
-        './lib/util/toString': 385,
-        './lib/whitelist': 386
+        './lib/blacklist': 325,
+        './lib/contains': 326,
+        './lib/equals': 327,
+        './lib/escape': 328,
+        './lib/isAfter': 329,
+        './lib/isAlpha': 330,
+        './lib/isAlphanumeric': 331,
+        './lib/isAscii': 332,
+        './lib/isBase64': 333,
+        './lib/isBefore': 334,
+        './lib/isBoolean': 335,
+        './lib/isByteLength': 336,
+        './lib/isCreditCard': 337,
+        './lib/isCurrency': 338,
+        './lib/isDataURI': 339,
+        './lib/isDate': 340,
+        './lib/isDecimal': 341,
+        './lib/isDivisibleBy': 342,
+        './lib/isEmail': 343,
+        './lib/isEmpty': 344,
+        './lib/isFQDN': 345,
+        './lib/isFloat': 346,
+        './lib/isFullWidth': 347,
+        './lib/isHalfWidth': 348,
+        './lib/isHexColor': 349,
+        './lib/isHexadecimal': 350,
+        './lib/isIP': 351,
+        './lib/isISBN': 352,
+        './lib/isISIN': 353,
+        './lib/isISO8601': 354,
+        './lib/isISSN': 355,
+        './lib/isIn': 356,
+        './lib/isInt': 357,
+        './lib/isJSON': 358,
+        './lib/isLength': 359,
+        './lib/isLowercase': 360,
+        './lib/isMACAddress': 361,
+        './lib/isMD5': 362,
+        './lib/isMobilePhone': 363,
+        './lib/isMongoId': 364,
+        './lib/isMultibyte': 365,
+        './lib/isNumeric': 366,
+        './lib/isSurrogatePair': 367,
+        './lib/isURL': 368,
+        './lib/isUUID': 369,
+        './lib/isUppercase': 370,
+        './lib/isVariableWidth': 371,
+        './lib/isWhitelisted': 372,
+        './lib/ltrim': 373,
+        './lib/matches': 374,
+        './lib/normalizeEmail': 375,
+        './lib/rtrim': 376,
+        './lib/stripLow': 377,
+        './lib/toBoolean': 378,
+        './lib/toDate': 379,
+        './lib/toFloat': 380,
+        './lib/toInt': 381,
+        './lib/trim': 382,
+        './lib/unescape': 383,
+        './lib/util/toString': 386,
+        './lib/whitelist': 387
       }
     ],
-    323: [
+    324: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54049,7 +54052,7 @@
       },
       {}
     ],
-    324: [
+    325: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54065,9 +54068,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    325: [
+    326: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54086,11 +54089,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 383,
-        './util/toString': 385
+        './util/assertString': 384,
+        './util/toString': 386
       }
     ],
-    326: [
+    327: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54106,9 +54109,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    327: [
+    328: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54124,9 +54127,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    328: [
+    329: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54148,11 +54151,11 @@
         module.exports = exports['default'];
       },
       {
-        './toDate': 378,
-        './util/assertString': 383
+        './toDate': 379,
+        './util/assertString': 384
       }
     ],
-    329: [
+    330: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54174,11 +54177,11 @@
         module.exports = exports['default'];
       },
       {
-        './alpha': 323,
-        './util/assertString': 383
+        './alpha': 324,
+        './util/assertString': 384
       }
     ],
-    330: [
+    331: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54200,11 +54203,11 @@
         module.exports = exports['default'];
       },
       {
-        './alpha': 323,
-        './util/assertString': 383
+        './alpha': 324,
+        './util/assertString': 384
       }
     ],
-    331: [
+    332: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54223,9 +54226,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    332: [
+    333: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54247,9 +54250,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    333: [
+    334: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54271,11 +54274,11 @@
         module.exports = exports['default'];
       },
       {
-        './toDate': 378,
-        './util/assertString': 383
+        './toDate': 379,
+        './util/assertString': 384
       }
     ],
-    334: [
+    335: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54296,9 +54299,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    335: [
+    336: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -54336,9 +54339,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    336: [
+    337: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54380,9 +54383,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    337: [
+    338: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54454,11 +54457,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 383,
-        './util/merge': 384
+        './util/assertString': 384,
+        './util/merge': 385
       }
     ],
-    338: [
+    339: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54476,9 +54479,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    339: [
+    340: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54567,11 +54570,11 @@
         module.exports = exports['default'];
       },
       {
-        './isISO8601': 353,
-        './util/assertString': 383
+        './isISO8601': 354,
+        './util/assertString': 384
       }
     ],
-    340: [
+    341: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54588,9 +54591,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    341: [
+    342: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54609,11 +54612,11 @@
         module.exports = exports['default'];
       },
       {
-        './toFloat': 379,
-        './util/assertString': 383
+        './toFloat': 380,
+        './util/assertString': 384
       }
     ],
-    342: [
+    343: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54684,13 +54687,13 @@
         module.exports = exports['default'];
       },
       {
-        './isByteLength': 335,
-        './isFQDN': 344,
-        './util/assertString': 383,
-        './util/merge': 384
+        './isByteLength': 336,
+        './isFQDN': 345,
+        './util/assertString': 384,
+        './util/merge': 385
       }
     ],
-    343: [
+    344: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54706,9 +54709,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    344: [
+    345: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54760,11 +54763,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 383,
-        './util/merge': 384
+        './util/assertString': 384,
+        './util/merge': 385
       }
     ],
-    345: [
+    346: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54785,9 +54788,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    346: [
+    347: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54804,9 +54807,9 @@
           return fullWidth.test(str);
         }
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    347: [
+    348: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54823,9 +54826,9 @@
           return halfWidth.test(str);
         }
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    348: [
+    349: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54842,9 +54845,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    349: [
+    350: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54861,9 +54864,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    350: [
+    351: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54936,9 +54939,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    351: [
+    352: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -54994,9 +54997,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    352: [
+    353: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55038,9 +55041,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    353: [
+    354: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55058,9 +55061,9 @@
         // from http://goo.gl/0ejHHW
         var iso8601 = exports.iso8601 = /^([\+-]?\d{4}(?!\d{2}\b))((-?)((0[1-9]|1[0-2])(\3([12]\d|0[1-9]|3[01]))?|W([0-4]\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\d|[12]\d{2}|3([0-5]\d|6[1-6])))([T\s]((([01]\d|2[0-3])((:?)[0-5]\d)?|24:?00)([\.,]\d+(?!:))?)?(\17[0-5]\d([\.,]\d+)?)?([zZ]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?)?)?$/;  /* eslint-enable max-len */
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    354: [
+    355: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55111,9 +55114,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    355: [
+    356: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -55156,11 +55159,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 383,
-        './util/toString': 385
+        './util/assertString': 384,
+        './util/toString': 386
       }
     ],
-    356: [
+    357: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55187,9 +55190,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    357: [
+    358: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -55220,9 +55223,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    358: [
+    359: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -55261,9 +55264,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    359: [
+    360: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55279,9 +55282,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    360: [
+    361: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55298,9 +55301,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    361: [
+    362: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55317,9 +55320,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    362: [
+    363: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55384,9 +55387,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    363: [
+    364: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55405,11 +55408,11 @@
         module.exports = exports['default'];
       },
       {
-        './isHexadecimal': 349,
-        './util/assertString': 383
+        './isHexadecimal': 350,
+        './util/assertString': 384
       }
     ],
-    364: [
+    365: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55428,9 +55431,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    365: [
+    366: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55447,9 +55450,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    366: [
+    367: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55466,9 +55469,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    367: [
+    368: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55584,13 +55587,13 @@
         module.exports = exports['default'];
       },
       {
-        './isFQDN': 344,
-        './isIP': 350,
-        './util/assertString': 383,
-        './util/merge': 384
+        './isFQDN': 345,
+        './isIP': 351,
+        './util/assertString': 384,
+        './util/merge': 385
       }
     ],
-    368: [
+    369: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55614,9 +55617,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    369: [
+    370: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55632,9 +55635,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    370: [
+    371: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55653,12 +55656,12 @@
         module.exports = exports['default'];
       },
       {
-        './isFullWidth': 346,
-        './isHalfWidth': 347,
-        './util/assertString': 383
+        './isFullWidth': 347,
+        './isHalfWidth': 348,
+        './util/assertString': 384
       }
     ],
-    371: [
+    372: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55679,9 +55682,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    372: [
+    373: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55698,9 +55701,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    373: [
+    374: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55719,9 +55722,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    374: [
+    375: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55924,11 +55927,11 @@
         module.exports = exports['default'];
       },
       {
-        './isEmail': 342,
-        './util/merge': 384
+        './isEmail': 343,
+        './util/merge': 385
       }
     ],
-    375: [
+    376: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55949,9 +55952,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    376: [
+    377: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55971,11 +55974,11 @@
         module.exports = exports['default'];
       },
       {
-        './blacklist': 324,
-        './util/assertString': 383
+        './blacklist': 325,
+        './util/assertString': 384
       }
     ],
-    377: [
+    378: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -55994,9 +55997,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    378: [
+    379: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -56013,9 +56016,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    379: [
+    380: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -56031,9 +56034,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    380: [
+    381: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -56049,9 +56052,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    381: [
+    382: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -56069,11 +56072,11 @@
         module.exports = exports['default'];
       },
       {
-        './ltrim': 372,
-        './rtrim': 375
+        './ltrim': 373,
+        './rtrim': 376
       }
     ],
-    382: [
+    383: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -56089,9 +56092,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    383: [
+    384: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -56105,7 +56108,7 @@
       },
       {}
     ],
-    384: [
+    385: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -56124,7 +56127,7 @@
       },
       {}
     ],
-    385: [
+    386: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -56155,7 +56158,7 @@
       },
       {}
     ],
-    386: [
+    387: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -56171,9 +56174,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 383 }
+      { './util/assertString': 384 }
     ],
-    387: [
+    388: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.10.0
@@ -56190,7 +56193,7 @@
       },
       {}
     ],
-    388: [
+    389: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.10.0
@@ -56223,7 +56226,7 @@
       },
       {}
     ],
-    389: [
+    390: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -56764,15 +56767,15 @@
         }.call(undefined));
       },
       {
-        './bom': 387,
-        './processors': 388,
+        './bom': 388,
+        './processors': 389,
         'events': 13,
-        'sax': 286,
-        'timers': 316,
-        'xmlbuilder': 406
+        'sax': 287,
+        'timers': 317,
+        'xmlbuilder': 407
       }
     ],
-    390: [
+    391: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -56803,7 +56806,7 @@
       },
       { 'lodash/create': 192 }
     ],
-    391: [
+    392: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -56866,13 +56869,13 @@
         }.call(undefined));
       },
       {
-        './XMLDeclaration': 398,
-        './XMLDocType': 399,
-        './XMLElement': 400,
-        './XMLStringifier': 404
+        './XMLDeclaration': 399,
+        './XMLDocType': 400,
+        './XMLElement': 401,
+        './XMLStringifier': 405
       }
     ],
-    392: [
+    393: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -56927,11 +56930,11 @@
         }.call(undefined));
       },
       {
-        './XMLNode': 401,
+        './XMLNode': 402,
         'lodash/create': 192
       }
     ],
-    393: [
+    394: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -56986,11 +56989,11 @@
         }.call(undefined));
       },
       {
-        './XMLNode': 401,
+        './XMLNode': 402,
         'lodash/create': 192
       }
     ],
-    394: [
+    395: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -57058,7 +57061,7 @@
       },
       { 'lodash/create': 192 }
     ],
-    395: [
+    396: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -57104,7 +57107,7 @@
       },
       { 'lodash/create': 192 }
     ],
-    396: [
+    397: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -57190,7 +57193,7 @@
         'lodash/isObject': 205
       }
     ],
-    397: [
+    398: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -57246,7 +57249,7 @@
       },
       { 'lodash/create': 192 }
     ],
-    398: [
+    399: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -57317,12 +57320,12 @@
         }.call(undefined));
       },
       {
-        './XMLNode': 401,
+        './XMLNode': 402,
         'lodash/create': 192,
         'lodash/isObject': 205
       }
     ],
-    399: [
+    400: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -57484,18 +57487,18 @@
         }.call(undefined));
       },
       {
-        './XMLCData': 392,
-        './XMLComment': 393,
-        './XMLDTDAttList': 394,
-        './XMLDTDElement': 395,
-        './XMLDTDEntity': 396,
-        './XMLDTDNotation': 397,
-        './XMLProcessingInstruction': 402,
+        './XMLCData': 393,
+        './XMLComment': 394,
+        './XMLDTDAttList': 395,
+        './XMLDTDElement': 396,
+        './XMLDTDEntity': 397,
+        './XMLDTDNotation': 398,
+        './XMLProcessingInstruction': 403,
         'lodash/create': 192,
         'lodash/isObject': 205
       }
     ],
-    400: [
+    401: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -57705,16 +57708,16 @@
         }.call(undefined));
       },
       {
-        './XMLAttribute': 390,
-        './XMLNode': 401,
-        './XMLProcessingInstruction': 402,
+        './XMLAttribute': 391,
+        './XMLNode': 402,
+        './XMLProcessingInstruction': 403,
         'lodash/create': 192,
         'lodash/every': 194,
         'lodash/isFunction': 203,
         'lodash/isObject': 205
       }
     ],
-    401: [
+    402: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -58012,19 +58015,19 @@
         }.call(undefined));
       },
       {
-        './XMLCData': 392,
-        './XMLComment': 393,
-        './XMLDeclaration': 398,
-        './XMLDocType': 399,
-        './XMLElement': 400,
-        './XMLRaw': 403,
-        './XMLText': 405,
+        './XMLCData': 393,
+        './XMLComment': 394,
+        './XMLDeclaration': 399,
+        './XMLDocType': 400,
+        './XMLElement': 401,
+        './XMLRaw': 404,
+        './XMLText': 406,
         'lodash/isEmpty': 202,
         'lodash/isFunction': 203,
         'lodash/isObject': 205
       }
     ],
-    402: [
+    403: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -58074,7 +58077,7 @@
       },
       { 'lodash/create': 192 }
     ],
-    403: [
+    404: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -58129,11 +58132,11 @@
         }.call(undefined));
       },
       {
-        './XMLNode': 401,
+        './XMLNode': 402,
         'lodash/create': 192
       }
     ],
-    404: [
+    405: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -58280,7 +58283,7 @@
       },
       {}
     ],
-    405: [
+    406: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -58335,11 +58338,11 @@
         }.call(undefined));
       },
       {
-        './XMLNode': 401,
+        './XMLNode': 402,
         'lodash/create': 192
       }
     ],
-    406: [
+    407: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.9.1
@@ -58354,11 +58357,11 @@
         }.call(undefined));
       },
       {
-        './XMLBuilder': 391,
+        './XMLBuilder': 392,
         'lodash/assign': 190
       }
     ],
-    407: [
+    408: [
       function (require, module, exports) {
         'use strict';
         module.exports = extend;
@@ -58378,7 +58381,7 @@
       },
       {}
     ],
-    408: [
+    409: [
       function (require, module, exports) {
         'use strict';
         module.exports = {
@@ -58427,7 +58430,7 @@
       },
       {}
     ],
-    409: [
+    410: [
       function (require, module, exports) {
         'use strict';
         /*jshint maxlen: false*/
@@ -58558,9 +58561,9 @@
           };
         module.exports = FormatValidators;
       },
-      { 'validator': 322 }
+      { 'validator': 323 }
     ],
-    410: [
+    411: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -59102,12 +59105,12 @@
         };
       },
       {
-        './FormatValidators': 409,
-        './Report': 412,
-        './Utils': 416
+        './FormatValidators': 410,
+        './Report': 413,
+        './Utils': 417
       }
     ],
-    411: [
+    412: [
       function (require, module, exports) {
         'use strict';
         // Number.isFinite polyfill
@@ -59129,7 +59132,7 @@
       },
       {}
     ],
-    412: [
+    413: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -59306,13 +59309,13 @@
         }.call(this, require('_process')));
       },
       {
-        './Errors': 408,
-        './Utils': 416,
+        './Errors': 409,
+        './Utils': 417,
         '_process': 281,
         'lodash.get': 73
       }
     ],
-    413: [
+    414: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -59460,14 +59463,14 @@
         exports.getRemotePath = getRemotePath;
       },
       {
-        './Report': 412,
-        './SchemaCompilation': 414,
-        './SchemaValidation': 415,
-        './Utils': 416,
+        './Report': 413,
+        './SchemaCompilation': 415,
+        './SchemaValidation': 416,
+        './Utils': 417,
         'lodash.isequal': 74
       }
     ],
-    414: [
+    415: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -59719,12 +59722,12 @@
         };
       },
       {
-        './Report': 412,
-        './SchemaCache': 413,
-        './Utils': 416
+        './Report': 413,
+        './SchemaCache': 414,
+        './Utils': 417
       }
     ],
-    415: [
+    416: [
       function (require, module, exports) {
         'use strict';
         var FormatValidators = require('./FormatValidators'), JsonValidation = require('./JsonValidation'), Report = require('./Report'), Utils = require('./Utils');
@@ -60490,13 +60493,13 @@
         };
       },
       {
-        './FormatValidators': 409,
-        './JsonValidation': 410,
-        './Report': 412,
-        './Utils': 416
+        './FormatValidators': 410,
+        './JsonValidation': 411,
+        './Report': 413,
+        './Utils': 417
       }
     ],
-    416: [
+    417: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -60707,7 +60710,7 @@
       },
       {}
     ],
-    417: [
+    418: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -61009,21 +61012,21 @@
         }.call(this, require('_process')));
       },
       {
-        './FormatValidators': 409,
-        './JsonValidation': 410,
-        './Polyfills': 411,
-        './Report': 412,
-        './SchemaCache': 413,
-        './SchemaCompilation': 414,
-        './SchemaValidation': 415,
-        './Utils': 416,
-        './schemas/hyper-schema.json': 418,
-        './schemas/schema.json': 419,
+        './FormatValidators': 410,
+        './JsonValidation': 411,
+        './Polyfills': 412,
+        './Report': 413,
+        './SchemaCache': 414,
+        './SchemaCompilation': 415,
+        './SchemaValidation': 416,
+        './Utils': 417,
+        './schemas/hyper-schema.json': 419,
+        './schemas/schema.json': 420,
         '_process': 281,
         'lodash.get': 73
       }
     ],
-    418: [
+    419: [
       function (require, module, exports) {
         module.exports = {
           '$schema': 'http://json-schema.org/draft-04/hyper-schema#',
@@ -61141,7 +61144,7 @@
       },
       {}
     ],
-    419: [
+    420: [
       function (require, module, exports) {
         module.exports = {
           'id': 'http://json-schema.org/draft-04/schema#',
@@ -76110,7 +76113,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         if (file.type) {
           return /\text|image|raml|json|yaml|xml|xsd|zip$/i.test(file.type);
         }
-        return /\.raml|.json|.yaml|.yml|.xml|.xsd|.md|.txt|.jpg|.jpeg|.png|.html|.zip$/i.test(file.name);
+        return /\.raml|.json|.yaml|.yml|.xml|.xsd|.md|.txt|.jpg|.jpeg|.png|.html|.csv|.properties|.zip$/i.test(file.name);
       }
       /**
        * Returns file extension
@@ -76474,6 +76477,9 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
                 var raml = api.specification;
                 $rootScope.$broadcast('event:raml-parsed', raml);
               }
+              $('.CodeMirror').each(function (i, el) {
+                el.CodeMirror.refresh();
+              });
             }
           })).catch(safeApplyWrapper($scope, function failureParse(error) {
             $scope.parsing--;

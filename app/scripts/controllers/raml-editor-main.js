@@ -172,6 +172,10 @@
                   var raml = api.specification;
                   $rootScope.$broadcast('event:raml-parsed', raml);
                 }
+
+                $('.CodeMirror').each(function(i, el){
+                  el.CodeMirror.refresh();
+                });
               }
             })).catch(
               // unexpected failure
