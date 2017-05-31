@@ -19,6 +19,7 @@
     "express": "~4.12.4",
     "open": "0.0.5",
     "raml-suggestions": "0.0.30",
+    "request": "^2.33.0",
     "yargs": "~3.11.0"
   },
   "devDependencies": {
