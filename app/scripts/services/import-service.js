@@ -582,11 +582,13 @@
        * @return {boolean}
        */
       function validateFileType (file) {
-        if (file.type) {
-          return (/\text|image|raml|json|yaml|xml|xsd|zip$/i).test(file.type);
+        // attempt mime-type
+        if (file.type && (/text|image|raml|json|yaml|xml|xsd|zip/i).test(file.type)) {
+          return true;
         }
 
-        return (/\.raml|.json|.yaml|.yml|.xml|.xsd|.md|.txt|.jpg|.jpeg|.png|.html|.csv|.properties|.zip$/i).test(file.name);
+        // fallback to file extension...
+        return (/\.raml|\.json|\.yaml|\.yml|\.xml|\.xsd|\.md|\.txt|\.jpg|\.jpeg|\.png|\.html|\.csv|\.properties|\.zip$/i).test(file.name);
       }
 
       /**

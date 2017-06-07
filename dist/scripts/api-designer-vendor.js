@@ -82677,13 +82677,15 @@ exports.javascript = require('./javascript');
           context = context || bodyContent.definitions[bodyContent.selected];
         }
 
-        Object.keys(context.plain).map(function (key) {
-          var definition = context.plain[key].definitions[0];
+        if (context.plain) {
+          Object.keys(context.plain).map(function (key) {
+            var definition = context.plain[key].definitions[0];
 
-          if ($scope.isEnum(definition)) {
-            context.values[definition.id][0] =  getParamType(definition)['enum'][0];
-          }
-        });
+            if ($scope.isEnum(definition)) {
+              context.values[definition.id][0] =  getParamType(definition)['enum'][0];
+            }
+          });
+        }
 
         $scope.isFile = function (param) {
           return param.type === 'file';
@@ -82847,6 +82849,7 @@ exports.javascript = require('./javascript');
 
       /**
        * @param {Promise} promise
+       * @param {Object} options
        * @param {Boolean} options.isLoadingFromUrl
        */
       function loadFromPromise(promise, options) {
@@ -83855,7 +83858,7 @@ exports.javascript = require('./javascript');
         };
 
         $scope.hasExampleValue = function (value) {
-          return typeof value !== 'undefined' ? true : false;
+          return typeof value !== 'undefined';
         };
 
         $scope.context.forceRequest = false;
@@ -84040,7 +84043,6 @@ exports.javascript = require('./javascript');
               Object.keys(securitySchemes).map(function(key) {
                 if (securitySchemes[key].type === $scope.currentSchemeType) {
                   scheme = securitySchemes && securitySchemes[key];
-                  return;
                 }
               });
 
@@ -84216,6 +84218,19 @@ exports.javascript = require('./javascript');
 
         $scope.uploadFile = function (event) {
           $scope.context.bodyContent.definitions[$scope.context.bodyContent.selected].value  = event.files[0];
+        };
+
+        $scope.hasFormParameters = $scope.context.bodyContent && $scope.context.bodyContent.selected ? $scope.methodInfo.body[$scope.context.bodyContent.selected].hasOwnProperty('formParameters') : undefined;
+
+
+        $scope.getFormModel = function(param) {
+          var definitions = $scope.context.bodyContent.definitions[$scope.context.bodyContent.selected];
+          if ($scope.hasFormParameters) {
+            return definitions.values[param.definitions[0].id];
+          } else if (definitions.contentType && param.name) {
+            var example = definitions.contentType[param.name].example;
+            return example ? [example] : example;
+          }
         };
       }]
     };
@@ -86392,12 +86407,17 @@ RAML.Inspector = (function() {
       }
 
       switch (contentType) {
-      case FORM_URLENCODED:
-      case FORM_DATA:
-        definitions[contentType] = new RAML.Services.TryIt.NamedParameters(definition.formParameters);
-        break;
-      default:
-        definitions[contentType] = new RAML.Services.TryIt.BodyType(definition);
+        case FORM_URLENCODED:
+        case FORM_DATA:
+          //For RAML 0.8 formParameters should be defined, but for RAML 1.0 properties node
+          if (definition.formParameters) {
+            definitions[contentType] = new RAML.Services.TryIt.NamedParameters(definition.formParameters);
+          } else if (definition.properties) {
+            definitions[contentType] = new RAML.Services.TryIt.BodyType(definition.properties);
+          }
+          break;
+        default:
+          definitions[contentType] = new RAML.Services.TryIt.BodyType(definition);
       }
     });
   };
@@ -88693,7 +88713,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "    </section>\n" +
     "\n" +
     "\n" +
-    "    <section class=\"raml-console-resource-section\" ng-if=\"methodInfo.body\">\n" +
+    "    <section class=\"raml-console-resource-section raml-console-documentation-body\" ng-if=\"methodInfo.body\">\n" +
     "      <h3 class=\"raml-console-resource-heading-a\">\n" +
     "        Body\n" +
     "      </h3>\n" +
@@ -88707,12 +88727,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "          <section ng-if=\"value.formParameters\">\n" +
     "             <div class=\"raml-console-resource-param\" ng-repeat=\"formParam in value.formParameters\">\n" +
     "              <h4 class=\"raml-console-resource-param-heading\">{{formParam[0].displayName}}<span class=\"raml-console-resource-param-instructional\">{{parameterDocumentation(formParam[0])}}</span></h4>\n" +
-    "\n" +
     "              <p markdown=\"formParam[0].description\" class=\"raml-console-marked-content\"></p>\n" +
-    "\n" +
-    "              <p ng-if=\"formParam[0].example !== undefined\">\n" +
-    "                <span class=\"raml-console-resource-param-example\"><b>Example:</b> {{formParam[0].example}}</span>\n" +
-    "              </p>\n" +
     "            </div>\n" +
     "          </section>\n" +
     "\n" +
@@ -89510,7 +89525,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "              </select>\n" +
     "            </div>\n" +
     "\n" +
-    "            <div class=\"raml-console-sidebar-row\" ng-switch=\"context.bodyContent.isForm(context.bodyContent.selected)\">\n" +
+    "            <div class=\"raml-console-sidebar-row raml-console-body-data\" ng-switch=\"context.bodyContent.isForm(context.bodyContent.selected)\">\n" +
     "              <div ng-switch-when=\"false\">\n" +
     "\n" +
     "                <div ng-switch=\"isFileBody(context.bodyContent.definitions[context.bodyContent.selected])\">\n" +
@@ -89534,16 +89549,35 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "\n" +
     "\n" +
     "              <div ng-switch-when=\"true\">\n" +
-    "                <p class=\"raml-console-sidebar-input-container\" ng-repeat=\"param in context.bodyContent.definitions[context.bodyContent.selected].plain\">\n" +
-    "                  <span class=\"raml-console-sidebar-input-tooltip-container\" ng-if=\"param.definitions[0].description\">\n" +
-    "                    <button tabindex=\"-1\" class=\"raml-console-sidebar-input-tooltip\"><span class=\"raml-console-visuallyhidden\">Show documentation</span></button>\n" +
-    "                    <span class=\"raml-console-sidebar-tooltip-flyout\">\n" +
-    "                      <span markdown=\"param.definitions[0].description\" class=\"raml-console-marked-content\"></span>\n" +
-    "                    </span>\n" +
-    "                  </span>\n" +
     "\n" +
-    "                  <raml-field context=\"context\" type=\"type\" types=\"types\" param=\"param.definitions[0]\" model=\"context.bodyContent.definitions[context.bodyContent.selected].values[param.definitions[0].id]\"></raml-field>\n" +
-    "                </p>\n" +
+    "                <div ng-switch=\"hasFormParameters\">\n" +
+    "                  <div ng-switch-when=\"true\">\n" +
+    "                    <p class=\"raml-console-sidebar-input-container\" ng-repeat=\"param in context.bodyContent.definitions[context.bodyContent.selected].plain\">\n" +
+    "                      <span class=\"raml-console-sidebar-input-tooltip-container\" ng-init=\"paramDescription = param.definitions[0].description\" ng-if=\"paramDescription\">\n" +
+    "                        <button tabindex=\"-1\" class=\"raml-console-sidebar-input-tooltip\"><span class=\"raml-console-visuallyhidden\">Show documentation</span></button>\n" +
+    "                        <span class=\"raml-console-sidebar-tooltip-flyout\">\n" +
+    "                          <span markdown=\"paramDescription\" class=\"raml-console-marked-content\"></span>\n" +
+    "                        </span>\n" +
+    "                      </span>\n" +
+    "\n" +
+    "                      <raml-field context=\"context\" type=\"type\" types=\"types\" param=\"param.definitions[0]\" model=\"context.bodyContent.definitions[context.bodyContent.selected].values[param.definitions[0].id]\"></raml-field>\n" +
+    "                    </p>\n" +
+    "                  </div>\n" +
+    "\n" +
+    "                  <div ng-switch-when=\"false\">\n" +
+    "                    <p class=\"raml-console-sidebar-input-container\" ng-repeat=\"(key, param) in context.bodyContent.definitions[context.bodyContent.selected].contentType\">\n" +
+    "                      <span class=\"raml-console-sidebar-input-tooltip-container\" ng-init=\"paramDescription = param.description\" ng-if=\"paramDescription\">\n" +
+    "                        <button tabindex=\"-1\" class=\"raml-console-sidebar-input-tooltip\"><span class=\"raml-console-visuallyhidden\">Show documentation</span></button>\n" +
+    "                        <span class=\"raml-console-sidebar-tooltip-flyout\">\n" +
+    "                          <span markdown=\"paramDescription\" class=\"raml-console-marked-content\"></span>\n" +
+    "                        </span>\n" +
+    "                      </span>\n" +
+    "\n" +
+    "                      <raml-field context=\"context\" type=\"type\" types=\"types\" param=\"param\" model=\"getFormModel(param)\"></raml-field>\n" +
+    "                    </p>\n" +
+    "                  </div>\n" +
+    "                </div>\n" +
+    "\n" +
     "              </div>\n" +
     "            </div>\n" +
     "          </section>\n" +
