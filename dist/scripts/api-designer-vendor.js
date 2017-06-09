@@ -82652,8 +82652,11 @@ exports.javascript = require('./javascript');
       },
       controller: ['$scope', function($scope) {
         function getParamType(definition) {
-          if ($scope.types) {
-            var type = RAML.Inspector.Types.findType(definition.type[0], $scope.types);
+          var currentType = definition.type[0];
+          var isNative = RAML.Inspector.Types.isNativeType(currentType);
+
+          if (!isNative && $scope.types) {
+            var type = RAML.Inspector.Types.findType(currentType, $scope.types);
             return type ? type : definition;
           } else {
             return definition;
@@ -82688,7 +82691,12 @@ exports.javascript = require('./javascript');
         }
 
         $scope.isFile = function (param) {
-          return param.type === 'file';
+          if (!Array.isArray(param.type)) {
+            param.type = [param.type];
+          }
+
+          var rootType = getParamType(param);
+          return rootType.type[0] === 'file';
         };
 
         $scope.isArray = function (param) {
@@ -84222,15 +84230,10 @@ exports.javascript = require('./javascript');
 
         $scope.hasFormParameters = $scope.context.bodyContent && $scope.context.bodyContent.selected ? $scope.methodInfo.body[$scope.context.bodyContent.selected].hasOwnProperty('formParameters') : undefined;
 
-
-        $scope.getFormModel = function(param) {
+        $scope.getExample = function(param) {
           var definitions = $scope.context.bodyContent.definitions[$scope.context.bodyContent.selected];
-          if ($scope.hasFormParameters) {
-            return definitions.values[param.definitions[0].id];
-          } else if (definitions.contentType && param.name) {
-            var example = definitions.contentType[param.name].example;
-            return example ? [example] : example;
-          }
+          var example = definitions.contentType[param.name].example;
+          return example ? [example] : example;
         };
       }]
     };
@@ -89573,7 +89576,9 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "                        </span>\n" +
     "                      </span>\n" +
     "\n" +
-    "                      <raml-field context=\"context\" type=\"type\" types=\"types\" param=\"param\" model=\"getFormModel(param)\"></raml-field>\n" +
+    "                      <span ng-init=\"paramModel = getExample(param)\">\n" +
+    "                        <raml-field context=\"context\" type=\"type\" types=\"types\" param=\"param\" model=\"paramModel\"></raml-field>\n" +
+    "                      </span>\n" +
     "                    </p>\n" +
     "                  </div>\n" +
     "                </div>\n" +
