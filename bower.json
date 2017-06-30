@@ -16,6 +16,7 @@
     "font-awesome": "~4.0.3",
     "json-schema-ref-parser": "xaka/json-schema-ref-parser#v2.2.1",
     "jszip": "~2.0.0",
+    "promise-polyfill": "~6.0.2",
     "crypto-js": "https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/crypto-js/CryptoJS%20v3.1.2.zip"
   },
   "devDependencies": {
