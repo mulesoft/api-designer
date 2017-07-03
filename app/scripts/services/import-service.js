@@ -588,7 +588,7 @@
         }
 
         // fallback to file extension...
-        return (/\.raml|\.json|\.yaml|\.yml|\.xml|\.xsd|\.md|\.txt|\.jpg|\.jpeg|\.png|\.html|\.csv|\.properties|\.zip$/i).test(file.name);
+        return (/\.raml|\.json|\.yaml|\.yml|\.xml|\.xsd|\.jsd|\.md|\.txt|\.jpg|\.jpeg|\.png|\.html|\.csv|\.properties|\.zip$/i).test(file.name);
       }
 
       /**
