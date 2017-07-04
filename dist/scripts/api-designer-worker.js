@@ -205,6 +205,7 @@ if (self.importScripts && self.location.hash) {
   if (self.location.host.indexOf('localhost:9013') > -1) {
     // dev dependencies to parser
     self.importScripts(
+      '/bower_components/promise-polyfill/promise.min.js',
       '/bower_components/raml-1-parser/raml-json-validation.js',
       '/bower_components/raml-1-parser/raml-xml-validation.js',
       '/bower_components/raml-1-parser/raml-1-parser.js',
