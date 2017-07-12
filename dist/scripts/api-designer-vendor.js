@@ -83227,7 +83227,10 @@ exports.javascript = require('./javascript');
 
             Object.keys(definitions).map(function (key) {
               if (typeof definitions[key].reset !== 'undefined') {
-                definitions[key].reset($scope.methodInfo.body[key].formParameters);
+                //Reset formParameters or properties depending on RAML version
+                var body = $scope.methodInfo.body[key];
+                var parameters = body.formParameters ? body.formParameters : body.properties;
+                definitions[key].reset(parameters);
               } else {
                 definitions[key].fillWithExample();
                 if (definitions[key].value) {
@@ -83274,14 +83277,22 @@ exports.javascript = require('./javascript');
         }
 
       function expandBodyExamples($scope, methodInfo) {
-        if (methodInfo.body) {
-          Object.keys(methodInfo.body).forEach(function (key) {
-            var bodyType = methodInfo.body[key];
-            var type = bodyType.type ? RAML.Inspector.Types.findType(bodyType.type[0], $scope.types) : undefined;
-            if (!bodyType.example && type && type.example) {
-              bodyType.example = type.example;
+        function expandExamples(body) {
+          Object.keys(body).forEach(function (key) {
+            var info = body[key];
+            var type = info.type ? RAML.Inspector.Types.findType(info.type[0], $scope.types) : undefined;
+            if (!body.example && type && type.example) {
+              info.example = type.example;
+            }
+
+            if (info.properties) {
+              expandExamples(info.properties);
             }
           });
+        }
+
+        if (methodInfo.body) {
+          expandExamples(methodInfo.body);
         }
         return methodInfo;
       }
@@ -83300,7 +83311,7 @@ exports.javascript = require('./javascript');
 
           $scope.methodInfo               = expandBodyExamples($scope, methodInfo);
           $scope.responseInfo             = getResponseInfo($scope);
-          $scope.context                  = new RAML.Services.TryIt.Context($scope.raml.baseUriParameters, resource, $scope.methodInfo);
+          $scope.context                  = new RAML.Services.TryIt.Context($scope.raml.baseUriParameters, resource, $scope.methodInfo, $scope.types);
           $scope.requestUrl               = '';
           $scope.response                 = {};
           $scope.requestOptions           = {};
@@ -84228,13 +84239,6 @@ exports.javascript = require('./javascript');
           $scope.context.bodyContent.definitions[$scope.context.bodyContent.selected].value  = event.files[0];
         };
 
-        $scope.hasFormParameters = $scope.context.bodyContent && $scope.context.bodyContent.selected ? $scope.methodInfo.body[$scope.context.bodyContent.selected].hasOwnProperty('formParameters') : undefined;
-
-        $scope.getExample = function(param) {
-          var definitions = $scope.context.bodyContent.definitions[$scope.context.bodyContent.selected];
-          var example = definitions.contentType[param.name].example;
-          return example ? [example] : example;
-        };
       }]
     };
   };
@@ -86395,7 +86399,17 @@ RAML.Inspector = (function() {
   var FORM_URLENCODED = 'application/x-www-form-urlencoded';
   var FORM_DATA = 'multipart/form-data';
 
-  var BodyContent = function(contentTypes) {
+  var BodyContent = function(contentTypes, types) {
+    function toObjectArray(properties) {
+      Object.keys(properties).forEach(function (property) {
+        if (!Array.isArray(properties[property])) {
+          properties[property].id = properties[property].name;
+          properties[property] = [properties[property]];
+        }
+      });
+      return properties;
+    }
+
     this.contentTypes = Object.keys(contentTypes).sort();
     this.selected = this.contentTypes[0];
 
@@ -86415,8 +86429,23 @@ RAML.Inspector = (function() {
           //For RAML 0.8 formParameters should be defined, but for RAML 1.0 properties node
           if (definition.formParameters) {
             definitions[contentType] = new RAML.Services.TryIt.NamedParameters(definition.formParameters);
-          } else if (definition.properties) {
-            definitions[contentType] = new RAML.Services.TryIt.BodyType(definition.properties);
+          } else {
+            var type = definition.type[0];
+            var isNativeType = RAML.Inspector.Types.isNativeType(type);
+
+            var inlineProperties;
+            if (definition.properties) {
+              inlineProperties = toObjectArray(definition.properties);
+            }
+
+            var rootProperties;
+            if (!isNativeType && types) {
+              var rootType = RAML.Inspector.Types.findType(type, types);
+              rootProperties = rootType && rootType.properties ? toObjectArray(rootType.properties) : undefined;
+            }
+
+            var properties = Object.assign({}, inlineProperties, rootProperties);
+            definitions[contentType] = new RAML.Services.TryIt.NamedParameters(properties);
           }
           break;
         default:
@@ -86529,7 +86558,7 @@ RAML.Inspector = (function() {
 (function() {
   'use strict';
 
-  var Context = function(baseUriParameters, resource, method) {
+  var Context = function(baseUriParameters, resource, method, types) {
     this.headers = new RAML.Services.TryIt.NamedParameters(method.headers.plain, method.headers.parameterized);
     this.queryParameters = new RAML.Services.TryIt.NamedParameters(method.queryParameters);
 
@@ -86548,7 +86577,7 @@ RAML.Inspector = (function() {
     this.uriParameters = new RAML.Services.TryIt.NamedParameters(resource.uriParametersForDocumentation);
 
     if (method.body) {
-      this.bodyContent = new RAML.Services.TryIt.BodyContent(method.body);
+      this.bodyContent = new RAML.Services.TryIt.BodyContent(method.body, types);
     }
 
     this.pathBuilder = new RAML.Client.PathBuilder.create(resource.pathSegments);
@@ -86696,7 +86725,6 @@ RAML.Inspector = (function() {
   NamedParameters.prototype.remove = function(name) {
     delete this.plain[name];
     delete this.values[name];
-    return;
   };
 
   NamedParameters.prototype.data = function() {
@@ -88197,26 +88225,36 @@ RAML.Inspector = (function() {
   };
 
   /**
-   * Check a string is not smaller than a minimum length.
+   * Check a string (or file) is not smaller than a minimum length.
+   * This facet can be defined for string and file
    *
    * @param  {Number}  min
    * @return {Function}
    */
   var isMinimumLength = function (min) {
     return function (check) {
-      return check.length >= min;
+      if (check.constructor === File) {
+        return check.size <= min;
+      } else {
+        return check.length >= min;
+      }
     };
   };
 
   /**
-   * Check a string does not exceed a maximum length.
+   * Check a string (or file) does not exceed a maximum length.
+   * This facet can be defined for string and file
    *
    * @param  {Number}  max
    * @return {Function}
    */
   var isMaximumLength = function (max) {
     return function (check) {
-      return check.length <= max;
+      if (check.constructor === File) {
+        return check.size <= max;
+      } else {
+        return check.length <= max;
+      }
     };
   };
 
@@ -88254,7 +88292,7 @@ RAML.Inspector = (function() {
    */
   var isValidFileTypes = function (values) {
     return function (check) {
-      check = check.toLowerCase();
+      check = check.type;
       var checkInValue = values.find(function (value) {
         return value.toLowerCase() === check
       });
@@ -89079,7 +89117,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "     <option ng-repeat=\"enum in unique(getEnum(param))\" value=\"{{enum}}\" ng-selected=\"{{param.example === enum}}\">{{enum}}</option>\n" +
     "    </select>\n" +
     "\n" +
-    "    <input id=\"{{param.id}}\" ng-hide=\"!isDefault(param)\" class=\"raml-console-sidebar-input\" ng-model=\"model[0]\" ng-class=\"{'raml-console-sidebar-field-no-default': !hasExampleValue(param)}\" validate=\"param\" dynamic-name=\"param.id\" ng-change=\"onChange()\"/>\n" +
+    "    <input id=\"{{param.id}}\" ng-if=\"isDefault(param)\" class=\"raml-console-sidebar-input\" ng-model=\"model[0]\" ng-class=\"{'raml-console-sidebar-field-no-default': !hasExampleValue(param)}\" validate=\"param\" dynamic-name=\"param.id\" ng-change=\"onChange()\"/>\n" +
     "\n" +
     "    <input ng-if=\"isFile(param)\" id=\"{{param.id}}\" type=\"file\" class=\"raml-console-sidebar-input-file\" ng-model=\"model[0]\" validate=\"param\"\n" +
     "             dynamic-name=\"param.id\"\n" +
@@ -89553,35 +89591,20 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "\n" +
     "              <div ng-switch-when=\"true\">\n" +
     "\n" +
-    "                <div ng-switch=\"hasFormParameters\">\n" +
-    "                  <div ng-switch-when=\"true\">\n" +
-    "                    <p class=\"raml-console-sidebar-input-container\" ng-repeat=\"param in context.bodyContent.definitions[context.bodyContent.selected].plain\">\n" +
-    "                      <span class=\"raml-console-sidebar-input-tooltip-container\" ng-init=\"paramDescription = param.definitions[0].description\" ng-if=\"paramDescription\">\n" +
-    "                        <button tabindex=\"-1\" class=\"raml-console-sidebar-input-tooltip\"><span class=\"raml-console-visuallyhidden\">Show documentation</span></button>\n" +
-    "                        <span class=\"raml-console-sidebar-tooltip-flyout\">\n" +
-    "                          <span markdown=\"paramDescription\" class=\"raml-console-marked-content\"></span>\n" +
-    "                        </span>\n" +
-    "                      </span>\n" +
+    "                <p class=\"raml-console-sidebar-input-container\"\n" +
+    "                   ng-repeat=\"param in context.bodyContent.definitions[context.bodyContent.selected].plain\">\n" +
+    "                  <span class=\"raml-console-sidebar-input-tooltip-container\"\n" +
+    "                        ng-init=\"paramDescription = param.definitions[0].description\" ng-if=\"paramDescription\">\n" +
+    "                    <button tabindex=\"-1\" class=\"raml-console-sidebar-input-tooltip\"><span\n" +
+    "                      class=\"raml-console-visuallyhidden\">Show documentation</span></button>\n" +
+    "                    <span class=\"raml-console-sidebar-tooltip-flyout\">\n" +
+    "                      <span markdown=\"paramDescription\" class=\"raml-console-marked-content\"></span>\n" +
+    "                    </span>\n" +
+    "                  </span>\n" +
     "\n" +
-    "                      <raml-field context=\"context\" type=\"type\" types=\"types\" param=\"param.definitions[0]\" model=\"context.bodyContent.definitions[context.bodyContent.selected].values[param.definitions[0].id]\"></raml-field>\n" +
-    "                    </p>\n" +
-    "                  </div>\n" +
-    "\n" +
-    "                  <div ng-switch-when=\"false\">\n" +
-    "                    <p class=\"raml-console-sidebar-input-container\" ng-repeat=\"(key, param) in context.bodyContent.definitions[context.bodyContent.selected].contentType\">\n" +
-    "                      <span class=\"raml-console-sidebar-input-tooltip-container\" ng-init=\"paramDescription = param.description\" ng-if=\"paramDescription\">\n" +
-    "                        <button tabindex=\"-1\" class=\"raml-console-sidebar-input-tooltip\"><span class=\"raml-console-visuallyhidden\">Show documentation</span></button>\n" +
-    "                        <span class=\"raml-console-sidebar-tooltip-flyout\">\n" +
-    "                          <span markdown=\"paramDescription\" class=\"raml-console-marked-content\"></span>\n" +
-    "                        </span>\n" +
-    "                      </span>\n" +
-    "\n" +
-    "                      <span ng-init=\"paramModel = getExample(param)\">\n" +
-    "                        <raml-field context=\"context\" type=\"type\" types=\"types\" param=\"param\" model=\"paramModel\"></raml-field>\n" +
-    "                      </span>\n" +
-    "                    </p>\n" +
-    "                  </div>\n" +
-    "                </div>\n" +
+    "                  <raml-field context=\"context\" type=\"type\" types=\"types\" param=\"param.definitions[0]\"\n" +
+    "                              model=\"context.bodyContent.definitions[context.bodyContent.selected].values[param.definitions[0].id]\"></raml-field>\n" +
+    "                </p>\n" +
     "\n" +
     "              </div>\n" +
     "            </div>\n" +
