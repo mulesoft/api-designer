@@ -26,9 +26,12 @@ describe('importService', function () {
     var checkExistenceStub;
 
     beforeEach(function () {
-      var file = {
-        asText: function () { return ''; }
-      };
+      function File(name) {
+        this.name = name;
+        this.asText = function () {
+          return '';
+        };
+      }
 
       var directory = {};
 
@@ -38,10 +41,10 @@ describe('importService', function () {
         self.files = {
           '/examples/': directory,
           '/examples/account/': directory,
-          '/examples/account/item.json': file,
+          '/examples/account/item.json': new File('item.json'),
           '/examples/event/': directory,
-          '/examples/event/item.json': file,
-          '/api.raml': file
+          '/examples/event/item.json': new File('item.json'),
+          '/api.raml': new File('api.raml')
         };
 
         return self;
@@ -92,9 +95,12 @@ describe('importService', function () {
     var checkExistenceStub;
 
     beforeEach(function () {
-      var file = {
-        asText: function () { return 'new content'; }
-      };
+      function File(name) {
+        this.name = name;
+        this.asText = function () {
+          return 'new content';
+        };
+      }
 
       var directory = {};
 
@@ -104,10 +110,10 @@ describe('importService', function () {
         self.files = {
           '/examples/': directory,
           '/examples/account/': directory,
-          '/examples/account/item.json': file,
+          '/examples/account/item.json': new File('item.json'),
           '/examples/event/': directory,
-          '/examples/event/item.json': file,
-          '/api.raml': file
+          '/examples/event/item.json': new File('item.json'),
+          '/api.raml': new File('api.raml')
         };
 
         return self;
