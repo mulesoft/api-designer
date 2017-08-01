@@ -40,7 +40,7 @@ div[role=raml-editor] .hide-display {
   display: none !important;
 }
 div[role=raml-editor] > div[role=notifications] {
-  z-index: 1045;
+  z-index: 1051;
   background-color: #caccd4;
   position: absolute;
   top: 0px;
@@ -1300,7 +1300,7 @@ label {
 @media (min-width: 768px) {
   .modal-dialog {
     width: 600px;
-    margin: 30px auto;
+    margin: 75px auto 0;
   }
   .modal-content {
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
