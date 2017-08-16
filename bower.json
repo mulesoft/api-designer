@@ -1,6 +1,6 @@
 {
   "name": "api-designer",
-  "version": "0.4.1",
+  "version": "0.4.3-patch.1-onprem",
   "repository": {
     "type": "git",
     "url": "https://github.com/mulesoft/api-designer.git"
