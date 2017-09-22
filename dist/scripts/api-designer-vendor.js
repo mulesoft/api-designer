@@ -81763,25 +81763,47 @@ exports.javascript = require('./javascript');
       scope: {
         markdown: '='
       },
-      controller: ['$scope', '$sanitize', '$window', '$element', function($scope, $sanitize, $window, $element) {
-        $scope.$watch('markdown', function (markdown) {
-          var allowUnsafeMarkdown = $scope.$parent.allowUnsafeMarkdown;
-
-          var markdownString = typeof markdown === 'string' ? markdown || '' : '';
-          var html = $window.marked(markdownString, RAML.Settings.marked);
-
-          if (!allowUnsafeMarkdown) {
-            html = $sanitize(html);
-          }
-
-          $element.html(html);
-        });
-      }]
+      controller: 'MarkdownController'
     };
   };
 
+  RAML.Directives.markdownString = function () {
+    return {
+      restrict: 'A',
+      scope: {
+        markdownString: '@'
+      },
+      controller: 'MarkdownStringController'
+    };
+  };
+
+  var watchMarkdown = function(expression, $scope, $window, $sanitize, $element) {
+    $scope.$watch(expression, function (markdown) {
+      var allowUnsafeMarkdown = $scope.$parent.allowUnsafeMarkdown;
+      var markdownString = typeof markdown === 'string' ? markdown || '' : '';
+      var html = $window.marked(markdownString, RAML.Settings.marked);
+
+      if (!allowUnsafeMarkdown) {
+        html = $sanitize(html);
+      }
+
+      $element.html(html);
+    });
+  };
+
+  function controller($scope, $sanitize, $window, $element) {
+    watchMarkdown('markdown', $scope, $window, $sanitize, $element);
+  }
+
+  function stringController($scope, $sanitize, $window, $element) {
+    watchMarkdown('markdownString', $scope, $window, $sanitize, $element);
+  }
+
   angular.module('RAML.Directives')
-    .directive('markdown', RAML.Directives.markdown);
+    .controller('MarkdownController', controller)
+    .controller('MarkdownStringController', stringController)
+    .directive('markdown', RAML.Directives.markdown)
+    .directive('markdownString', RAML.Directives.markdownString);
 })();
 
 (function () {
@@ -83032,7 +83054,7 @@ exports.javascript = require('./javascript');
     element.append(resourceHeadingElement(resource, currentId));
     element.append(resourceTypeElement(resource));
     element.append(resourceHeadingFlagElement($scope, resource));
-    element.append(resourceLevelDescriptionElement(resource));
+    element.append(resourceLevelDescriptionElement($scope, $compile, resource));
     element.append(methodListElement($scope, resource, currentId, showResource, resourceId));
     element.append(closeMethodButton($scope, resource, currentId, showResource, resourceId));
 
@@ -83056,9 +83078,12 @@ exports.javascript = require('./javascript');
     return '';
   }
 
-  function resourceLevelDescriptionElement(resource) {
+  function resourceLevelDescriptionElement($scope, $compile, resource) {
     var element = angular.element('<span class="raml-console-resource-level-description raml-console-marked-content"></span>');
-    element.append(angular.element('<p>' + resource.description + '</p>'));
+    element.attr('markdown-string', resource.description);
+
+    $compile(element)($scope);
+
     return element;
   }
 
