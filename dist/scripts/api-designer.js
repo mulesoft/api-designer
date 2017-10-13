@@ -26,60 +26,37 @@
   1: [
     function (require, module, exports) {
       (function () {
-        var PathSeparator, legacy_scorer, pluckCandidates, scorer, sortCandidates;
+        var Query, pathScorer, pluckCandidates, scorer, sortCandidates;
         scorer = require('./scorer');
-        legacy_scorer = require('./legacy');
+        pathScorer = require('./pathScorer');
+        Query = require('./query');
         pluckCandidates = function (a) {
           return a.candidate;
         };
         sortCandidates = function (a, b) {
           return b.score - a.score;
         };
-        PathSeparator = require('path').sep;
-        module.exports = function (candidates, query, _arg) {
-          var allowErrors, bAllowErrors, bKey, candidate, coreQuery, key, legacy, maxInners, maxResults, prepQuery, queryHasSlashes, score, scoredCandidates, spotLeft, string, _i, _j, _len, _len1, _ref;
-          _ref = _arg != null ? _arg : {}, key = _ref.key, maxResults = _ref.maxResults, maxInners = _ref.maxInners, allowErrors = _ref.allowErrors, legacy = _ref.legacy;
+        module.exports = function (candidates, query, options) {
+          var bKey, candidate, key, maxInners, maxResults, score, scoreProvider, scoredCandidates, spotLeft, string, usePathScoring, _i, _len;
           scoredCandidates = [];
-          spotLeft = maxInners != null && maxInners > 0 ? maxInners : candidates.length;
-          bAllowErrors = !!allowErrors;
+          key = options.key, maxResults = options.maxResults, maxInners = options.maxInners, usePathScoring = options.usePathScoring;
+          spotLeft = maxInners != null && maxInners > 0 ? maxInners : candidates.length + 1;
           bKey = key != null;
-          prepQuery = scorer.prepQuery(query);
-          if (!legacy) {
-            for (_i = 0, _len = candidates.length; _i < _len; _i++) {
-              candidate = candidates[_i];
-              string = bKey ? candidate[key] : candidate;
-              if (!string) {
-                continue;
-              }
-              score = scorer.score(string, query, prepQuery, bAllowErrors);
-              if (score > 0) {
-                scoredCandidates.push({
-                  candidate: candidate,
-                  score: score
-                });
-                if (!--spotLeft) {
-                  break;
-                }
-              }
+          scoreProvider = usePathScoring ? pathScorer : scorer;
+          for (_i = 0, _len = candidates.length; _i < _len; _i++) {
+            candidate = candidates[_i];
+            string = bKey ? candidate[key] : candidate;
+            if (!string) {
+              continue;
             }
-          } else {
-            queryHasSlashes = prepQuery.depth > 0;
-            coreQuery = prepQuery.core;
-            for (_j = 0, _len1 = candidates.length; _j < _len1; _j++) {
-              candidate = candidates[_j];
-              string = key != null ? candidate[key] : candidate;
-              if (!string) {
-                continue;
-              }
-              score = legacy_scorer.score(string, coreQuery, queryHasSlashes);
-              if (!queryHasSlashes) {
-                score = legacy_scorer.basenameScore(string, coreQuery, score);
-              }
-              if (score > 0) {
-                scoredCandidates.push({
-                  candidate: candidate,
-                  score: score
-                });
+            score = scoreProvider.score(string, query, options);
+            if (score > 0) {
+              scoredCandidates.push({
+                candidate: candidate,
+                score: score
+              });
+              if (!--spotLeft) {
+                break;
               }
             }
           }
@@ -93,256 +70,223 @@
       }.call(this));
     },
     {
-      './legacy': 3,
-      './scorer': 5,
-      'path': 6
+      './pathScorer': 4,
+      './query': 5,
+      './scorer': 6
     }
   ],
   2: [
     function (require, module, exports) {
-      (function () {
-        var PathSeparator, filter, legacy_scorer, matcher, prepQueryCache, scorer;
-        scorer = require('./scorer');
-        legacy_scorer = require('./legacy');
-        filter = require('./filter');
-        matcher = require('./matcher');
-        PathSeparator = require('path').sep;
-        prepQueryCache = null;
-        module.exports = {
-          filter: function (candidates, query, options) {
-            if (!((query != null ? query.length : void 0) && (candidates != null ? candidates.length : void 0))) {
-              return [];
-            }
-            return filter(candidates, query, options);
-          },
-          prepQuery: function (query) {
-            return scorer.prepQuery(query);
-          },
-          score: function (string, query, prepQuery, _arg) {
-            var allowErrors, coreQuery, legacy, queryHasSlashes, score, _ref;
-            _ref = _arg != null ? _arg : {}, allowErrors = _ref.allowErrors, legacy = _ref.legacy;
-            if (!((string != null ? string.length : void 0) && (query != null ? query.length : void 0))) {
-              return 0;
-            }
-            if (prepQuery == null) {
-              prepQuery = prepQueryCache && prepQueryCache.query === query ? prepQueryCache : prepQueryCache = scorer.prepQuery(query);
-            }
-            if (!legacy) {
-              score = scorer.score(string, query, prepQuery, !!allowErrors);
-            } else {
-              queryHasSlashes = prepQuery.depth > 0;
-              coreQuery = prepQuery.core;
-              score = legacy_scorer.score(string, coreQuery, queryHasSlashes);
-              if (!queryHasSlashes) {
-                score = legacy_scorer.basenameScore(string, coreQuery, score);
+      (function (process) {
+        (function () {
+          var Query, defaultPathSeparator, filter, matcher, parseOptions, pathScorer, preparedQueryCache, scorer;
+          filter = require('./filter');
+          matcher = require('./matcher');
+          scorer = require('./scorer');
+          pathScorer = require('./pathScorer');
+          Query = require('./query');
+          preparedQueryCache = null;
+          defaultPathSeparator = (typeof process !== 'undefined' && process !== null ? process.platform : void 0) === 'win32' ? '\\' : '/';
+          module.exports = {
+            filter: function (candidates, query, options) {
+              if (options == null) {
+                options = {};
               }
+              if (!((query != null ? query.length : void 0) && (candidates != null ? candidates.length : void 0))) {
+                return [];
+              }
+              options = parseOptions(options, query);
+              return filter(candidates, query, options);
+            },
+            score: function (string, query, options) {
+              if (options == null) {
+                options = {};
+              }
+              if (!((string != null ? string.length : void 0) && (query != null ? query.length : void 0))) {
+                return 0;
+              }
+              options = parseOptions(options, query);
+              if (options.usePathScoring) {
+                return pathScorer.score(string, query, options);
+              } else {
+                return scorer.score(string, query, options);
+              }
+            },
+            match: function (string, query, options) {
+              var _i, _ref, _results;
+              if (options == null) {
+                options = {};
+              }
+              if (!string) {
+                return [];
+              }
+              if (!query) {
+                return [];
+              }
+              if (string === query) {
+                return function () {
+                  _results = [];
+                  for (var _i = 0, _ref = string.length; 0 <= _ref ? _i < _ref : _i > _ref; 0 <= _ref ? _i++ : _i--) {
+                    _results.push(_i);
+                  }
+                  return _results;
+                }.apply(this);
+              }
+              options = parseOptions(options, query);
+              return matcher.match(string, query, options);
+            },
+            wrap: function (string, query, options) {
+              if (options == null) {
+                options = {};
+              }
+              if (!string) {
+                return [];
+              }
+              if (!query) {
+                return [];
+              }
+              options = parseOptions(options, query);
+              return matcher.wrap(string, query, options);
+            },
+            prepareQuery: function (query, options) {
+              if (options == null) {
+                options = {};
+              }
+              options = parseOptions(options, query);
+              return options.preparedQuery;
             }
-            return score;
-          },
-          match: function (string, query, prepQuery, _arg) {
-            var allowErrors, baseMatches, matches, query_lw, string_lw, _i, _ref, _results;
-            allowErrors = (_arg != null ? _arg : {}).allowErrors;
-            if (!string) {
-              return [];
+          };
+          parseOptions = function (options, query) {
+            if (options.allowErrors == null) {
+              options.allowErrors = false;
             }
-            if (!query) {
-              return [];
+            if (options.usePathScoring == null) {
+              options.usePathScoring = true;
             }
-            if (string === query) {
-              return function () {
-                _results = [];
-                for (var _i = 0, _ref = string.length; 0 <= _ref ? _i < _ref : _i > _ref; 0 <= _ref ? _i++ : _i--) {
-                  _results.push(_i);
-                }
-                return _results;
-              }.apply(this);
+            if (options.useExtensionBonus == null) {
+              options.useExtensionBonus = false;
             }
-            if (prepQuery == null) {
-              prepQuery = prepQueryCache && prepQueryCache.query === query ? prepQueryCache : prepQueryCache = scorer.prepQuery(query);
+            if (options.pathSeparator == null) {
+              options.pathSeparator = defaultPathSeparator;
             }
-            if (!(allowErrors || scorer.isMatch(string, prepQuery.core_lw, prepQuery.core_up))) {
-              return [];
+            if (options.optCharRegEx == null) {
+              options.optCharRegEx = null;
             }
-            string_lw = string.toLowerCase();
-            query_lw = prepQuery.query_lw;
-            matches = matcher.match(string, string_lw, prepQuery);
-            if (matches.length === 0) {
-              return matches;
+            if (options.wrap == null) {
+              options.wrap = null;
             }
-            if (string.indexOf(PathSeparator) > -1) {
-              baseMatches = matcher.basenameMatch(string, string_lw, prepQuery);
-              matches = matcher.mergeMatches(matches, baseMatches);
+            if (options.preparedQuery == null) {
+              options.preparedQuery = preparedQueryCache && preparedQueryCache.query === query ? preparedQueryCache : preparedQueryCache = new Query(query, options);
             }
-            return matches;
-          }
-        };
-      }.call(this));
+            return options;
+          };
+        }.call(this));
+      }.call(this, require('_process')));
     },
     {
       './filter': 1,
-      './legacy': 3,
-      './matcher': 4,
-      './scorer': 5,
-      'path': 6
+      './matcher': 3,
+      './pathScorer': 4,
+      './query': 5,
+      './scorer': 6,
+      '_process': 7
     }
   ],
   3: [
     function (require, module, exports) {
       (function () {
-        var PathSeparator, queryIsLastPathSegment;
-        PathSeparator = require('path').sep;
-        exports.basenameScore = function (string, query, score) {
-          var base, depth, index, lastCharacter, segmentCount, slashCount;
-          index = string.length - 1;
-          while (string[index] === PathSeparator) {
-            index--;
+        var basenameMatch, computeMatch, isMatch, isWordStart, match, mergeMatches, scoreAcronyms, scoreCharacter, scoreConsecutives, _ref;
+        _ref = require('./scorer'), isMatch = _ref.isMatch, isWordStart = _ref.isWordStart, scoreConsecutives = _ref.scoreConsecutives, scoreCharacter = _ref.scoreCharacter, scoreAcronyms = _ref.scoreAcronyms;
+        exports.match = match = function (string, query, options) {
+          var allowErrors, baseMatches, matches, pathSeparator, preparedQuery, string_lw;
+          allowErrors = options.allowErrors, preparedQuery = options.preparedQuery, pathSeparator = options.pathSeparator;
+          if (!(allowErrors || isMatch(string, preparedQuery.core_lw, preparedQuery.core_up))) {
+            return [];
           }
-          slashCount = 0;
-          lastCharacter = index;
-          base = null;
-          while (index >= 0) {
-            if (string[index] === PathSeparator) {
-              slashCount++;
-              if (base == null) {
-                base = string.substring(index + 1, lastCharacter + 1);
-              }
-            } else if (index === 0) {
-              if (lastCharacter < string.length - 1) {
-                if (base == null) {
-                  base = string.substring(0, lastCharacter + 1);
-                }
-              } else {
-                if (base == null) {
-                  base = string;
-                }
-              }
-            }
-            index--;
+          string_lw = string.toLowerCase();
+          matches = computeMatch(string, string_lw, preparedQuery);
+          if (matches.length === 0) {
+            return matches;
           }
-          if (base === string) {
-            score *= 2;
-          } else if (base) {
-            score += exports.score(base, query);
-          }
-          segmentCount = slashCount + 1;
-          depth = Math.max(1, 10 - segmentCount);
-          score *= depth * 0.01;
-          return score;
-        };
-        exports.score = function (string, query) {
-          var character, characterScore, indexInQuery, indexInString, lowerCaseIndex, minIndex, queryLength, queryScore, stringLength, totalCharacterScore, upperCaseIndex, _ref;
-          if (string === query) {
-            return 1;
-          }
-          if (queryIsLastPathSegment(string, query)) {
-            return 1;
-          }
-          totalCharacterScore = 0;
-          queryLength = query.length;
-          stringLength = string.length;
-          indexInQuery = 0;
-          indexInString = 0;
-          while (indexInQuery < queryLength) {
-            character = query[indexInQuery++];
-            lowerCaseIndex = string.indexOf(character.toLowerCase());
-            upperCaseIndex = string.indexOf(character.toUpperCase());
-            minIndex = Math.min(lowerCaseIndex, upperCaseIndex);
-            if (minIndex === -1) {
-              minIndex = Math.max(lowerCaseIndex, upperCaseIndex);
-            }
-            indexInString = minIndex;
-            if (indexInString === -1) {
-              return 0;
-            }
-            characterScore = 0.1;
-            if (string[indexInString] === character) {
-              characterScore += 0.1;
-            }
-            if (indexInString === 0 || string[indexInString - 1] === PathSeparator) {
-              characterScore += 0.8;
-            } else if ((_ref = string[indexInString - 1]) === '-' || _ref === '_' || _ref === ' ') {
-              characterScore += 0.7;
-            }
-            string = string.substring(indexInString + 1, stringLength);
-            totalCharacterScore += characterScore;
-          }
-          queryScore = totalCharacterScore / queryLength;
-          return (queryScore * (queryLength / stringLength) + queryScore) / 2;
-        };
-        queryIsLastPathSegment = function (string, query) {
-          if (string[string.length - query.length - 1] === PathSeparator) {
-            return string.lastIndexOf(query) === string.length - query.length;
-          }
-        };
-        exports.match = function (string, query, stringOffset) {
-          var character, indexInQuery, indexInString, lowerCaseIndex, matches, minIndex, queryLength, stringLength, upperCaseIndex, _i, _ref, _results;
-          if (stringOffset == null) {
-            stringOffset = 0;
-          }
-          if (string === query) {
-            return function () {
-              _results = [];
-              for (var _i = stringOffset, _ref = stringOffset + string.length; stringOffset <= _ref ? _i < _ref : _i > _ref; stringOffset <= _ref ? _i++ : _i--) {
-                _results.push(_i);
-              }
-              return _results;
-            }.apply(this);
-          }
-          queryLength = query.length;
-          stringLength = string.length;
-          indexInQuery = 0;
-          indexInString = 0;
-          matches = [];
-          while (indexInQuery < queryLength) {
-            character = query[indexInQuery++];
-            lowerCaseIndex = string.indexOf(character.toLowerCase());
-            upperCaseIndex = string.indexOf(character.toUpperCase());
-            minIndex = Math.min(lowerCaseIndex, upperCaseIndex);
-            if (minIndex === -1) {
-              minIndex = Math.max(lowerCaseIndex, upperCaseIndex);
-            }
-            indexInString = minIndex;
-            if (indexInString === -1) {
-              return [];
-            }
-            matches.push(stringOffset + indexInString);
-            stringOffset += indexInString + 1;
-            string = string.substring(indexInString + 1, stringLength);
+          if (string.indexOf(pathSeparator) > -1) {
+            baseMatches = basenameMatch(string, string_lw, preparedQuery, pathSeparator);
+            matches = mergeMatches(matches, baseMatches);
           }
           return matches;
         };
-      }.call(this));
-    },
-    { 'path': 6 }
-  ],
-  4: [
-    function (require, module, exports) {
-      (function () {
-        var PathSeparator, scorer;
-        PathSeparator = require('path').sep;
-        scorer = require('./scorer');
-        exports.basenameMatch = function (subject, subject_lw, prepQuery) {
+        exports.wrap = function (string, query, options) {
+          var matchIndex, matchPos, matchPositions, output, strPos, tagClass, tagClose, tagOpen, _ref1;
+          if (options.wrap != null) {
+            _ref1 = options.wrap, tagClass = _ref1.tagClass, tagOpen = _ref1.tagOpen, tagClose = _ref1.tagClose;
+          }
+          if (tagClass == null) {
+            tagClass = 'highlight';
+          }
+          if (tagOpen == null) {
+            tagOpen = '<strong class="' + tagClass + '">';
+          }
+          if (tagClose == null) {
+            tagClose = '</strong>';
+          }
+          if (string === query) {
+            return tagOpen + string + tagClose;
+          }
+          matchPositions = match(string, query, options);
+          if (matchPositions.length === 0) {
+            return string;
+          }
+          output = '';
+          matchIndex = -1;
+          strPos = 0;
+          while (++matchIndex < matchPositions.length) {
+            matchPos = matchPositions[matchIndex];
+            if (matchPos > strPos) {
+              output += string.substring(strPos, matchPos);
+              strPos = matchPos;
+            }
+            while (++matchIndex < matchPositions.length) {
+              if (matchPositions[matchIndex] === matchPos + 1) {
+                matchPos++;
+              } else {
+                matchIndex--;
+                break;
+              }
+            }
+            matchPos++;
+            if (matchPos > strPos) {
+              output += tagOpen;
+              output += string.substring(strPos, matchPos);
+              output += tagClose;
+              strPos = matchPos;
+            }
+          }
+          if (strPos <= string.length - 1) {
+            output += string.substring(strPos);
+          }
+          return output;
+        };
+        basenameMatch = function (subject, subject_lw, preparedQuery, pathSeparator) {
           var basePos, depth, end;
           end = subject.length - 1;
-          while (subject[end] === PathSeparator) {
+          while (subject[end] === pathSeparator) {
             end--;
           }
-          basePos = subject.lastIndexOf(PathSeparator, end);
+          basePos = subject.lastIndexOf(pathSeparator, end);
           if (basePos === -1) {
             return [];
           }
-          depth = prepQuery.depth;
+          depth = preparedQuery.depth;
           while (depth-- > 0) {
-            basePos = subject.lastIndexOf(PathSeparator, basePos - 1);
+            basePos = subject.lastIndexOf(pathSeparator, basePos - 1);
             if (basePos === -1) {
               return [];
             }
           }
           basePos++;
           end++;
-          return exports.match(subject.slice(basePos, end), subject_lw.slice(basePos, end), prepQuery, basePos);
+          return computeMatch(subject.slice(basePos, end), subject_lw.slice(basePos, end), preparedQuery, basePos);
         };
-        exports.mergeMatches = function (a, b) {
+        mergeMatches = function (a, b) {
           var ai, bj, i, j, m, n, out;
           m = a.length;
           n = b.length;
@@ -371,16 +315,16 @@
           }
           return out;
         };
-        exports.match = function (subject, subject_lw, prepQuery, offset) {
+        computeMatch = function (subject, subject_lw, preparedQuery, offset) {
           var DIAGONAL, LEFT, STOP, UP, acro_score, align, backtrack, csc_diag, csc_row, csc_score, i, j, m, matches, move, n, pos, query, query_lw, score, score_diag, score_row, score_up, si_lw, start, trace;
           if (offset == null) {
             offset = 0;
           }
-          query = prepQuery.query;
-          query_lw = prepQuery.query_lw;
+          query = preparedQuery.query;
+          query_lw = preparedQuery.query_lw;
           m = subject.length;
           n = query.length;
-          acro_score = scorer.scoreAcronyms(subject, subject_lw, query, query_lw).score;
+          acro_score = scoreAcronyms(subject, subject_lw, query, query_lw).score;
           score_row = new Array(n);
           csc_row = new Array(n);
           STOP = 0;
@@ -406,9 +350,9 @@
               align = 0;
               score_diag = score_up;
               if (query_lw[j] === si_lw) {
-                start = scorer.isWordStart(i, subject, subject_lw);
-                csc_score = csc_diag > 0 ? csc_diag : scorer.scoreConsecutives(subject, subject_lw, query, query_lw, i, j, start);
-                align = score_diag + scorer.scoreCharacter(i, j, start, acro_score, csc_score);
+                start = isWordStart(i, subject, subject_lw);
+                csc_score = csc_diag > 0 ? csc_diag : scoreConsecutives(subject, subject_lw, query, query_lw, i, j, start);
+                align = score_diag + scoreCharacter(i, j, start, acro_score, csc_score);
               }
               score_up = score_row[j];
               csc_diag = csc_row[j];
@@ -459,57 +403,184 @@
         };
       }.call(this));
     },
-    {
-      './scorer': 5,
-      'path': 6
-    }
+    { './scorer': 6 }
+  ],
+  4: [
+    function (require, module, exports) {
+      (function () {
+        var computeScore, countDir, file_coeff, getExtension, getExtensionScore, isMatch, scorePath, scoreSize, tau_depth, _ref;
+        _ref = require('./scorer'), isMatch = _ref.isMatch, computeScore = _ref.computeScore, scoreSize = _ref.scoreSize;
+        tau_depth = 13;
+        file_coeff = 1.2;
+        exports.score = function (string, query, options) {
+          var allowErrors, preparedQuery, score, string_lw;
+          preparedQuery = options.preparedQuery, allowErrors = options.allowErrors;
+          if (!(allowErrors || isMatch(string, preparedQuery.core_lw, preparedQuery.core_up))) {
+            return 0;
+          }
+          string_lw = string.toLowerCase();
+          score = computeScore(string, string_lw, preparedQuery);
+          score = scorePath(string, string_lw, score, options);
+          return Math.ceil(score);
+        };
+        scorePath = function (subject, subject_lw, fullPathScore, options) {
+          var alpha, basePathScore, basePos, depth, end, extAdjust, fileLength, pathSeparator, preparedQuery, useExtensionBonus;
+          if (fullPathScore === 0) {
+            return 0;
+          }
+          preparedQuery = options.preparedQuery, useExtensionBonus = options.useExtensionBonus, pathSeparator = options.pathSeparator;
+          end = subject.length - 1;
+          while (subject[end] === pathSeparator) {
+            end--;
+          }
+          basePos = subject.lastIndexOf(pathSeparator, end);
+          fileLength = end - basePos;
+          extAdjust = 1;
+          if (useExtensionBonus) {
+            extAdjust += getExtensionScore(subject_lw, preparedQuery.ext, basePos, end, 2);
+            fullPathScore *= extAdjust;
+          }
+          if (basePos === -1) {
+            return fullPathScore;
+          }
+          depth = preparedQuery.depth;
+          while (basePos > -1 && depth-- > 0) {
+            basePos = subject.lastIndexOf(pathSeparator, basePos - 1);
+          }
+          basePathScore = basePos === -1 ? fullPathScore : extAdjust * computeScore(subject.slice(basePos + 1, end + 1), subject_lw.slice(basePos + 1, end + 1), preparedQuery);
+          alpha = 0.5 * tau_depth / (tau_depth + countDir(subject, end + 1, pathSeparator));
+          return alpha * basePathScore + (1 - alpha) * fullPathScore * scoreSize(0, file_coeff * fileLength);
+        };
+        exports.countDir = countDir = function (path, end, pathSeparator) {
+          var count, i;
+          if (end < 1) {
+            return 0;
+          }
+          count = 0;
+          i = -1;
+          while (++i < end && path[i] === pathSeparator) {
+            continue;
+          }
+          while (++i < end) {
+            if (path[i] === pathSeparator) {
+              count++;
+              while (++i < end && path[i] === pathSeparator) {
+                continue;
+              }
+            }
+          }
+          return count;
+        };
+        exports.getExtension = getExtension = function (str) {
+          var pos;
+          pos = str.lastIndexOf('.');
+          if (pos < 0) {
+            return '';
+          } else {
+            return str.substr(pos + 1);
+          }
+        };
+        getExtensionScore = function (candidate, ext, startPos, endPos, maxDepth) {
+          var m, matched, n, pos;
+          if (!ext.length) {
+            return 0;
+          }
+          pos = candidate.lastIndexOf('.', endPos);
+          if (!(pos > startPos)) {
+            return 0;
+          }
+          n = ext.length;
+          m = endPos - pos;
+          if (m < n) {
+            n = m;
+            m = ext.length;
+          }
+          pos++;
+          matched = -1;
+          while (++matched < n) {
+            if (candidate[pos + matched] !== ext[matched]) {
+              break;
+            }
+          }
+          if (matched === 0 && maxDepth > 0) {
+            return 0.9 * getExtensionScore(candidate, ext, startPos, pos - 2, maxDepth - 1);
+          }
+          return matched / m;
+        };
+      }.call(this));
+    },
+    { './scorer': 6 }
   ],
   5: [
     function (require, module, exports) {
       (function () {
-        var AcronymResult, PathSeparator, Query, basenameScore, coreChars, countDir, doScore, emptyAcronymResult, file_coeff, isMatch, isSeparator, isWordEnd, isWordStart, miss_coeff, opt_char_re, pos_bonus, scoreAcronyms, scoreCharacter, scoreConsecutives, scoreExact, scoreExactMatch, scorePattern, scorePosition, scoreSize, tau_depth, tau_size, truncatedUpperCase, wm;
-        PathSeparator = require('path').sep;
-        wm = 150;
-        pos_bonus = 20;
-        tau_depth = 13;
-        tau_size = 85;
-        file_coeff = 1.2;
-        miss_coeff = 0.75;
-        opt_char_re = /[ _\-:\/\\]/g;
-        exports.coreChars = coreChars = function (query) {
-          return query.replace(opt_char_re, '');
-        };
-        exports.score = function (string, query, prepQuery, allowErrors) {
-          var score, string_lw;
-          if (prepQuery == null) {
-            prepQuery = new Query(query);
-          }
-          if (allowErrors == null) {
-            allowErrors = false;
-          }
-          if (!(allowErrors || isMatch(string, prepQuery.core_lw, prepQuery.core_up))) {
-            return 0;
-          }
-          string_lw = string.toLowerCase();
-          score = doScore(string, string_lw, prepQuery);
-          return Math.ceil(basenameScore(string, string_lw, prepQuery, score));
-        };
-        Query = function () {
-          function Query(query) {
-            if (!(query != null ? query.length : void 0)) {
+        var Query, coreChars, countDir, getCharCodes, getExtension, opt_char_re, truncatedUpperCase, _ref;
+        _ref = require('./pathScorer'), countDir = _ref.countDir, getExtension = _ref.getExtension;
+        module.exports = Query = function () {
+          function Query(query, _arg) {
+            var optCharRegEx, pathSeparator, _ref1;
+            _ref1 = _arg != null ? _arg : {}, optCharRegEx = _ref1.optCharRegEx, pathSeparator = _ref1.pathSeparator;
+            if (!(query && query.length)) {
               return null;
             }
             this.query = query;
             this.query_lw = query.toLowerCase();
-            this.core = coreChars(query);
+            this.core = coreChars(query, optCharRegEx);
             this.core_lw = this.core.toLowerCase();
             this.core_up = truncatedUpperCase(this.core);
-            this.depth = countDir(query, query.length);
+            this.depth = countDir(query, query.length, pathSeparator);
+            this.ext = getExtension(this.query_lw);
+            this.charCodes = getCharCodes(this.query_lw);
           }
           return Query;
         }();
-        exports.prepQuery = function (query) {
-          return new Query(query);
+        opt_char_re = /[ _\-:\/\\]/g;
+        coreChars = function (query, optCharRegEx) {
+          if (optCharRegEx == null) {
+            optCharRegEx = opt_char_re;
+          }
+          return query.replace(optCharRegEx, '');
+        };
+        truncatedUpperCase = function (str) {
+          var char, upper, _i, _len;
+          upper = '';
+          for (_i = 0, _len = str.length; _i < _len; _i++) {
+            char = str[_i];
+            upper += char.toUpperCase()[0];
+          }
+          return upper;
+        };
+        getCharCodes = function (str) {
+          var charCodes, i, len;
+          len = str.length;
+          i = -1;
+          charCodes = [];
+          while (++i < len) {
+            charCodes[str.charCodeAt(i)] = true;
+          }
+          return charCodes;
+        };
+      }.call(this));
+    },
+    { './pathScorer': 4 }
+  ],
+  6: [
+    function (require, module, exports) {
+      (function () {
+        var AcronymResult, computeScore, emptyAcronymResult, isAcronymFullWord, isMatch, isSeparator, isWordEnd, isWordStart, miss_coeff, pos_bonus, scoreAcronyms, scoreCharacter, scoreConsecutives, scoreExact, scoreExactMatch, scorePattern, scorePosition, scoreSize, tau_size, wm;
+        wm = 150;
+        pos_bonus = 20;
+        tau_size = 85;
+        miss_coeff = 0.75;
+        exports.score = function (string, query, options) {
+          var allowErrors, preparedQuery, score, string_lw;
+          preparedQuery = options.preparedQuery, allowErrors = options.allowErrors;
+          if (!(allowErrors || isMatch(string, preparedQuery.core_lw, preparedQuery.core_up))) {
+            return 0;
+          }
+          string_lw = string.toLowerCase();
+          score = computeScore(string, string_lw, preparedQuery);
+          return Math.ceil(score);
         };
         exports.isMatch = isMatch = function (subject, query_lw, query_up) {
           var i, j, m, n, qj_lw, qj_up, si;
@@ -521,10 +592,10 @@
           i = -1;
           j = -1;
           while (++j < n) {
-            qj_lw = query_lw[j];
-            qj_up = query_up[j];
+            qj_lw = query_lw.charCodeAt(j);
+            qj_up = query_up.charCodeAt(j);
             while (++i < m) {
-              si = subject[i];
+              si = subject.charCodeAt(i);
               if (si === qj_lw || si === qj_up) {
                 break;
               }
@@ -535,10 +606,10 @@
           }
           return true;
         };
-        doScore = function (subject, subject_lw, prepQuery) {
-          var acro, acro_score, align, csc_diag, csc_row, csc_score, i, j, m, miss_budget, miss_left, mm, n, pos, query, query_lw, record_miss, score, score_diag, score_row, score_up, si_lw, start, sz;
-          query = prepQuery.query;
-          query_lw = prepQuery.query_lw;
+        exports.computeScore = computeScore = function (subject, subject_lw, preparedQuery) {
+          var acro, acro_score, align, csc_diag, csc_row, csc_score, csc_should_rebuild, i, j, m, miss_budget, miss_left, n, pos, query, query_lw, record_miss, score, score_diag, score_row, score_up, si_lw, start, sz;
+          query = preparedQuery.query;
+          query_lw = preparedQuery.query_lw;
           m = subject.length;
           n = query.length;
           acro = scoreAcronyms(subject, subject_lw, query, query_lw);
@@ -555,25 +626,30 @@
           sz = scoreSize(n, m);
           miss_budget = Math.ceil(miss_coeff * n) + 5;
           miss_left = miss_budget;
+          csc_should_rebuild = true;
           j = -1;
           while (++j < n) {
             score_row[j] = 0;
             csc_row[j] = 0;
           }
-          i = subject_lw.indexOf(query_lw[0]);
-          if (i > -1) {
-            i--;
-          }
-          mm = subject_lw.lastIndexOf(query_lw[n - 1], m);
-          if (mm > i) {
-            m = mm + 1;
-          }
+          i = -1;
           while (++i < m) {
+            si_lw = subject_lw[i];
+            if (!si_lw.charCodeAt(0) in preparedQuery.charCodes) {
+              if (csc_should_rebuild) {
+                j = -1;
+                while (++j < n) {
+                  csc_row[j] = 0;
+                }
+                csc_should_rebuild = false;
+              }
+              continue;
+            }
             score = 0;
             score_diag = 0;
             csc_diag = 0;
-            si_lw = subject_lw[i];
             record_miss = true;
+            csc_should_rebuild = true;
             j = -1;
             while (++j < n) {
               score_up = score_row[j];
@@ -590,7 +666,7 @@
                   miss_left = miss_budget;
                 } else {
                   if (record_miss && --miss_left <= 0) {
-                    return score_row[n - 1] * sz;
+                    return Math.max(score, score_row[n - 1]) * sz;
                   }
                   record_miss = false;
                 }
@@ -601,6 +677,7 @@
               score_row[j] = score;
             }
           }
+          score = score_row[n - 1];
           return score * sz;
         };
         exports.isWordStart = isWordStart = function (pos, subject, subject_lw) {
@@ -610,7 +687,7 @@
           }
           curr_s = subject[pos];
           prev_s = subject[pos - 1];
-          return isSeparator(curr_s) || isSeparator(prev_s) || curr_s !== subject_lw[pos] && prev_s === subject_lw[pos - 1];
+          return isSeparator(prev_s) || curr_s !== subject_lw[pos] && prev_s === subject_lw[pos - 1];
         };
         exports.isWordEnd = isWordEnd = function (pos, subject, subject_lw, len) {
           var curr_s, next_s;
@@ -619,7 +696,7 @@
           }
           curr_s = subject[pos];
           next_s = subject[pos + 1];
-          return isSeparator(curr_s) || isSeparator(next_s) || curr_s === subject_lw[pos] && next_s !== subject_lw[pos + 1];
+          return isSeparator(next_s) || curr_s === subject_lw[pos] && next_s !== subject_lw[pos + 1];
         };
         isSeparator = function (c) {
           return c === ' ' || c === '.' || c === '-' || c === '_' || c === '/' || c === '\\';
@@ -633,7 +710,7 @@
             return Math.max(100 + pos_bonus - pos, 0);
           }
         };
-        scoreSize = function (n, m) {
+        exports.scoreSize = scoreSize = function (n, m) {
           return tau_size / (tau_size + Math.abs(m - n));
         };
         scoreExact = function (n, m, quality, pos) {
@@ -674,14 +751,13 @@
           }
           return posBonus + wm * csc_score;
         };
-        exports.scoreConsecutives = scoreConsecutives = function (subject, subject_lw, query, query_lw, i, j, start) {
-          var k, m, mi, n, nj, sameCase, startPos, sz;
+        exports.scoreConsecutives = scoreConsecutives = function (subject, subject_lw, query, query_lw, i, j, startOfWord) {
+          var k, m, mi, n, nj, sameCase, sz;
           m = subject.length;
           n = query.length;
           mi = m - i;
           nj = n - j;
           k = mi < nj ? mi : nj;
-          startPos = i;
           sameCase = 0;
           sz = 0;
           if (query[j] === subject[i]) {
@@ -695,7 +771,7 @@
           if (sz === 1) {
             return 1 + 2 * sameCase;
           }
-          return scorePattern(sz, n, sameCase, start, isWordEnd(i, subject, subject_lw, m));
+          return scorePattern(sz, n, sameCase, startOfWord, isWordEnd(i, subject, subject_lw, m));
         };
         exports.scoreExactMatch = scoreExactMatch = function (subject, subject_lw, query, query_lw, pos, n, m) {
           var end, i, pos2, sameCase, start;
@@ -729,25 +805,35 @@
         }();
         emptyAcronymResult = new AcronymResult(0, 0.1, 0);
         exports.scoreAcronyms = scoreAcronyms = function (subject, subject_lw, query, query_lw) {
-          var count, i, j, m, n, pos, qj_lw, sameCase, score;
+          var count, fullWord, i, j, m, n, qj_lw, sameCase, score, sepCount, sumPos;
           m = subject.length;
           n = query.length;
           if (!(m > 1 && n > 1)) {
             return emptyAcronymResult;
           }
           count = 0;
-          pos = 0;
+          sepCount = 0;
+          sumPos = 0;
           sameCase = 0;
           i = -1;
           j = -1;
           while (++j < n) {
             qj_lw = query_lw[j];
+            if (isSeparator(qj_lw)) {
+              i = subject_lw.indexOf(qj_lw, i + 1);
+              if (i > -1) {
+                sepCount++;
+                continue;
+              } else {
+                break;
+              }
+            }
             while (++i < m) {
               if (qj_lw === subject_lw[i] && isWordStart(i, subject, subject_lw)) {
                 if (query[j] === subject[i]) {
                   sameCase++;
                 }
-                pos += i;
+                sumPos += i;
                 count++;
                 break;
               }
@@ -759,261 +845,29 @@
           if (count < 2) {
             return emptyAcronymResult;
           }
-          score = scorePattern(count, n, sameCase, true, false);
-          return new AcronymResult(score, pos / count, count);
+          fullWord = count === n ? isAcronymFullWord(subject, subject_lw, query, count) : false;
+          score = scorePattern(count, n, sameCase, true, fullWord);
+          return new AcronymResult(score, sumPos / count, count + sepCount);
         };
-        basenameScore = function (subject, subject_lw, prepQuery, fullPathScore) {
-          var alpha, basePathScore, basePos, depth, end;
-          if (fullPathScore === 0) {
-            return 0;
-          }
-          end = subject.length - 1;
-          while (subject[end] === PathSeparator) {
-            end--;
-          }
-          basePos = subject.lastIndexOf(PathSeparator, end);
-          if (basePos === -1) {
-            return fullPathScore;
-          }
-          depth = prepQuery.depth;
-          while (depth-- > 0) {
-            basePos = subject.lastIndexOf(PathSeparator, basePos - 1);
-            if (basePos === -1) {
-              return fullPathScore;
-            }
-          }
-          basePos++;
-          end++;
-          basePathScore = doScore(subject.slice(basePos, end), subject_lw.slice(basePos, end), prepQuery);
-          alpha = 0.5 * tau_depth / (tau_depth + countDir(subject, end + 1));
-          return alpha * basePathScore + (1 - alpha) * fullPathScore * scoreSize(0, file_coeff * (end - basePos));
-        };
-        exports.countDir = countDir = function (path, end) {
-          var count, i;
-          if (end < 1) {
-            return 0;
-          }
+        isAcronymFullWord = function (subject, subject_lw, query, nbAcronymInQuery) {
+          var count, i, m, n;
+          m = subject.length;
+          n = query.length;
           count = 0;
-          i = -1;
-          while (++i < end && path[i] === PathSeparator) {
-            continue;
+          if (m > 12 * n) {
+            return false;
           }
-          while (++i < end) {
-            if (path[i] === PathSeparator) {
-              count++;
-              while (++i < end && path[i] === PathSeparator) {
-                continue;
-              }
+          i = -1;
+          while (++i < m) {
+            if (isWordStart(i, subject, subject_lw) && ++count > nbAcronymInQuery) {
+              return false;
             }
           }
-          return count;
-        };
-        truncatedUpperCase = function (str) {
-          var char, upper, _i, _len;
-          upper = '';
-          for (_i = 0, _len = str.length; _i < _len; _i++) {
-            char = str[_i];
-            upper += char.toUpperCase()[0];
-          }
-          return upper;
+          return true;
         };
       }.call(this));
     },
-    { 'path': 6 }
-  ],
-  6: [
-    function (require, module, exports) {
-      (function (process) {
-        // Copyright Joyent, Inc. and other Node contributors.
-        //
-        // Permission is hereby granted, free of charge, to any person obtaining a
-        // copy of this software and associated documentation files (the
-        // "Software"), to deal in the Software without restriction, including
-        // without limitation the rights to use, copy, modify, merge, publish,
-        // distribute, sublicense, and/or sell copies of the Software, and to permit
-        // persons to whom the Software is furnished to do so, subject to the
-        // following conditions:
-        //
-        // The above copyright notice and this permission notice shall be included
-        // in all copies or substantial portions of the Software.
-        //
-        // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-        // OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-        // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-        // NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-        // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-        // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-        // USE OR OTHER DEALINGS IN THE SOFTWARE.
-        // resolves . and .. elements in a path array with directory names there
-        // must be no slashes, empty elements, or device names (c:\) in the array
-        // (so also no leading and trailing slashes - it does not distinguish
-        // relative and absolute paths)
-        function normalizeArray(parts, allowAboveRoot) {
-          // if the path tries to go above the root, `up` ends up > 0
-          var up = 0;
-          for (var i = parts.length - 1; i >= 0; i--) {
-            var last = parts[i];
-            if (last === '.') {
-              parts.splice(i, 1);
-            } else if (last === '..') {
-              parts.splice(i, 1);
-              up++;
-            } else if (up) {
-              parts.splice(i, 1);
-              up--;
-            }
-          }
-          // if the path is allowed to go above the root, restore leading ..s
-          if (allowAboveRoot) {
-            for (; up--; up) {
-              parts.unshift('..');
-            }
-          }
-          return parts;
-        }
-        // Split a filename into [root, dir, basename, ext], unix version
-        // 'root' is just a slash, or nothing.
-        var splitPathRe = /^(\/?|)([\s\S]*?)((?:\.{1,2}|[^\/]+?|)(\.[^.\/]*|))(?:[\/]*)$/;
-        var splitPath = function (filename) {
-          return splitPathRe.exec(filename).slice(1);
-        };
-        // path.resolve([from ...], to)
-        // posix version
-        exports.resolve = function () {
-          var resolvedPath = '', resolvedAbsolute = false;
-          for (var i = arguments.length - 1; i >= -1 && !resolvedAbsolute; i--) {
-            var path = i >= 0 ? arguments[i] : process.cwd();
-            // Skip empty and invalid entries
-            if (typeof path !== 'string') {
-              throw new TypeError('Arguments to path.resolve must be strings');
-            } else if (!path) {
-              continue;
-            }
-            resolvedPath = path + '/' + resolvedPath;
-            resolvedAbsolute = path.charAt(0) === '/';
-          }
-          // At this point the path should be resolved to a full absolute path, but
-          // handle relative paths to be safe (might happen when process.cwd() fails)
-          // Normalize the path
-          resolvedPath = normalizeArray(filter(resolvedPath.split('/'), function (p) {
-            return !!p;
-          }), !resolvedAbsolute).join('/');
-          return (resolvedAbsolute ? '/' : '') + resolvedPath || '.';
-        };
-        // path.normalize(path)
-        // posix version
-        exports.normalize = function (path) {
-          var isAbsolute = exports.isAbsolute(path), trailingSlash = substr(path, -1) === '/';
-          // Normalize the path
-          path = normalizeArray(filter(path.split('/'), function (p) {
-            return !!p;
-          }), !isAbsolute).join('/');
-          if (!path && !isAbsolute) {
-            path = '.';
-          }
-          if (path && trailingSlash) {
-            path += '/';
-          }
-          return (isAbsolute ? '/' : '') + path;
-        };
-        // posix version
-        exports.isAbsolute = function (path) {
-          return path.charAt(0) === '/';
-        };
-        // posix version
-        exports.join = function () {
-          var paths = Array.prototype.slice.call(arguments, 0);
-          return exports.normalize(filter(paths, function (p, index) {
-            if (typeof p !== 'string') {
-              throw new TypeError('Arguments to path.join must be strings');
-            }
-            return p;
-          }).join('/'));
-        };
-        // path.relative(from, to)
-        // posix version
-        exports.relative = function (from, to) {
-          from = exports.resolve(from).substr(1);
-          to = exports.resolve(to).substr(1);
-          function trim(arr) {
-            var start = 0;
-            for (; start < arr.length; start++) {
-              if (arr[start] !== '')
-                break;
-            }
-            var end = arr.length - 1;
-            for (; end >= 0; end--) {
-              if (arr[end] !== '')
-                break;
-            }
-            if (start > end)
-              return [];
-            return arr.slice(start, end - start + 1);
-          }
-          var fromParts = trim(from.split('/'));
-          var toParts = trim(to.split('/'));
-          var length = Math.min(fromParts.length, toParts.length);
-          var samePartsLength = length;
-          for (var i = 0; i < length; i++) {
-            if (fromParts[i] !== toParts[i]) {
-              samePartsLength = i;
-              break;
-            }
-          }
-          var outputParts = [];
-          for (var i = samePartsLength; i < fromParts.length; i++) {
-            outputParts.push('..');
-          }
-          outputParts = outputParts.concat(toParts.slice(samePartsLength));
-          return outputParts.join('/');
-        };
-        exports.sep = '/';
-        exports.delimiter = ':';
-        exports.dirname = function (path) {
-          var result = splitPath(path), root = result[0], dir = result[1];
-          if (!root && !dir) {
-            // No dirname whatsoever
-            return '.';
-          }
-          if (dir) {
-            // It has a dirname, strip trailing slash
-            dir = dir.substr(0, dir.length - 1);
-          }
-          return root + dir;
-        };
-        exports.basename = function (path, ext) {
-          var f = splitPath(path)[2];
-          // TODO: make this comparison case-insensitive on windows?
-          if (ext && f.substr(-1 * ext.length) === ext) {
-            f = f.substr(0, f.length - ext.length);
-          }
-          return f;
-        };
-        exports.extname = function (path) {
-          return splitPath(path)[3];
-        };
-        function filter(xs, f) {
-          if (xs.filter)
-            return xs.filter(f);
-          var res = [];
-          for (var i = 0; i < xs.length; i++) {
-            if (f(xs[i], i, xs))
-              res.push(xs[i]);
-          }
-          return res;
-        }
-        // String.prototype.substr - negative index don't work in IE8
-        var substr = 'ab'.substr(-1) === 'b' ? function (str, start, len) {
-            return str.substr(start, len);
-          } : function (str, start, len) {
-            if (start < 0)
-              start = str.length + start;
-            return str.substr(start, len);
-          };
-        ;
-      }.call(this, require('_process')));
-    },
-    { '_process': 7 }
+    {}
   ],
   7: [
     function (require, module, exports) {
@@ -1204,7 +1058,7 @@
   9: [
     function (require, module, exports) {
       'use strict';
-      /// <reference path="../typings/main.d.ts" />
+      Object.defineProperty(exports, '__esModule', { value: true });
       var parserApi = window.RAML.Parser;
       var def = parserApi.ds;
       var search = parserApi.search;
@@ -1212,7 +1066,22 @@
       var universeHelpers = parserApi.universeHelpers;
       var services = def;
       var _ = require('underscore');
+      var loggerModule = require('./logger');
       var categories = require('../resources/categories.json');
+      var _logger = null;
+      function setLogger(logger) {
+        _logger = logger;
+      }
+      exports.setLogger = setLogger;
+      /**
+ * Returns logger set for the module, or empty logger if nothing is set.
+ * @return {any}
+ */
+      function getLogger() {
+        if (_logger)
+          return _logger;
+        return new loggerModule.EmptyLogger();
+      }
       var CompletionRequest = function () {
           function CompletionRequest(content) {
             this.async = false;
@@ -1332,10 +1201,15 @@
         return [];
       }
       function doSuggestAsync(request, provider) {
+        getLogger().debug('Suggestions request for prefix: ' + request.prefix() + ' and value prefix: ' + request.valuePrefix(), 'completionProvider', 'doSuggestAsync');
         request.async = true;
         request.promises = [];
+        var fsResolver = provider.contentProvider.fsResolver;
+        if (!fsResolver) {
+          fsResolver = new ProviderBasedResolver(provider.contentProvider);
+        }
         var apiPromise = parserApi.parseRAML(modifiedContent(request), {
-            fsResolver: provider.contentProvider.fsResolver,
+            fsResolver: fsResolver,
             filePath: request.content.getPath()
           });
         var suggestionsPromise = apiPromise.then(function (api) {
@@ -1357,6 +1231,7 @@
         if (preParsedAst === void 0) {
           preParsedAst = undefined;
         }
+        getLogger().debugDetail('Suggestions request for prefix: ' + request.prefix() + ' and value prefix: ' + request.valuePrefix(), 'completionProvider', 'getSuggestions');
         provider.currentRequest = request;
         try {
           if (provider.level > 100) {
@@ -1366,6 +1241,7 @@
           var offset = request.content.getOffset();
           var text = request.content.getText();
           var kind = completionKind(request);
+          getLogger().debugDetail('Determined completion kind: ' + kind, 'completionProvider', 'getSuggestions');
           var node = preParsedAst ? preParsedAst : getAstNode(request, provider.contentProvider, true, true, project);
           var hlnode = node;
           if (kind === parserApi.search.LocationKind.DIRECTIVE_COMPLETION) {
@@ -1442,7 +1318,7 @@
                       }
                     }
                   }
-                }
+                }  //console.log(cm.key())
               }
             }
           }
@@ -1713,7 +1589,7 @@
                 }
               }
             }
-            return propertyCompletion(hlnode, request, mv, defNode);
+            return propertyCompletion(hlnode, request, mv, defNode);  //now we need node context to get list of available properties:
           }
           return [];
         } finally {
@@ -1794,7 +1670,11 @@
           allowNull = true;
         }
         var newProjectId = contentProvider.contentDirName(request.content);
-        var project = oldProject || parserApi.project.createProject(newProjectId, contentProvider.fsResolver);
+        var fsResolver = contentProvider.fsResolver;
+        if (!fsResolver) {
+          fsResolver = new ProviderBasedResolver(contentProvider);
+        }
+        var project = oldProject || parserApi.project.createProject(newProjectId, fsResolver);
         var offset = request.content.getOffset();
         var text = request.content.getText();
         var kind = completionKind(request);
@@ -1813,6 +1693,12 @@
           break;
         }
         var astNode = ast.findElementAtOffset(actualOffset);
+        if (astNode && astNode.root() && astNode.root() === astNode) {
+          var lastChild = findLastChild(astNode);
+          if (lastChild && lastChild.lowLevel() && lastChild.lowLevel().end() <= offset) {
+            astNode = lastChild;
+          }
+        }
         if (!allowNull && !astNode) {
           return ast;
         }
@@ -1823,6 +1709,25 @@
           }
         }
         return astNode;
+      }
+      function findLastChild(node) {
+        if (!node) {
+          return null;
+        }
+        if (node.lowLevel()) {
+          var result = node;
+          node.elements().forEach(function (child) {
+            if (child.lowLevel().unit() != node.lowLevel().unit()) {
+              return;
+            }
+            var lastChild = findLastChild(child);
+            if (lastChild) {
+              result = lastChild;
+            }
+          });
+          return result;
+        }
+        return null;
       }
       function modifiedContent(request) {
         var offset = request.content.getOffset();
@@ -1844,7 +1749,14 @@
           }
           break;
         }
-        return node.findElementAtOffset(actualOffset);
+        var astNode = node.findElementAtOffset(actualOffset);
+        if (astNode && astNode.root() && astNode.root() === astNode) {
+          var lastChild = findLastChild(astNode);
+          if (lastChild && lastChild.lowLevel() && lastChild.lowLevel().end() <= offset) {
+            astNode = lastChild;
+          }
+        }
+        return astNode;
       }
       function getIndent(offset, text) {
         var spaces = '';
@@ -1906,8 +1818,10 @@
         }
       }
       function pathPartCompletion(request, contentProvider, attr, hlNode, custom) {
+        getLogger().debug('Path part completion for prefix: ' + request.valuePrefix(), 'completionProvider', 'pathPartCompletion');
         var prefix = request.valuePrefix();
         var dn = contentProvider.contentDirName(request.content);
+        getLogger().debugDetail('Directory name is: ' + dn, 'completionProvider', 'pathPartCompletion');
         var ll = contentProvider.resolve(dn, prefix.indexOf('/') === 0 ? '.' + prefix : prefix);
         var indexOfDot = ll.lastIndexOf('.');
         var indexOfSlash = ll.lastIndexOf('/');
@@ -1969,12 +1883,15 @@
         }
         if (!known || !custom) {
           if (request.async) {
-            filtredDirContentAsync(dn, typedPath, indexOfDot, contentProvider, request.promises);
+            filtredDirContentAsync(dn, typedPath, indexOfDot, contentProvider, request.promises, request.content.getPath());
           } else if (contentProvider.exists(dn) && contentProvider.isDirectory(dn)) {
             var dirContent = contentProvider.readDir(dn);
             res = res.concat(dirContent.filter(function (x) {
               try {
                 var fullPath = contentProvider.resolve(dn, x);
+                if (fullPath === request.content.getPath()) {
+                  return false;
+                }
                 if (fullPath.indexOf(typedPath) === 0) {
                   return true;
                 }
@@ -1990,7 +1907,7 @@
         }
         return res;
       }
-      function filtredDirContentAsync(dirName, typedPath, indexOfDot, contentProvider, promises) {
+      function filtredDirContentAsync(dirName, typedPath, indexOfDot, contentProvider, promises, excludePath) {
         if (promises) {
           var asString;
           var exists = dirName.then(function (dirNameStr) {
@@ -2009,6 +1926,9 @@
                   var res = dirContent.filter(function (x) {
                       try {
                         var fullPath = contentProvider.resolve(asString, x);
+                        if (fullPath === excludePath) {
+                          return false;
+                        }
                         if (fullPath.indexOf(typedPath) === 0) {
                           return true;
                         }
@@ -2074,6 +1994,9 @@
         var includePath = parserApi.schema.getIncludePath(prefix);
         var includeReference = parserApi.schema.getIncludeReference(prefix);
         if (!includePath || !includeReference) {
+          return [];
+        }
+        if (!attr) {
           return [];
         }
         var includeUnit = attr.lowLevel().unit().resolve(includePath);
@@ -2179,17 +2102,19 @@
               notAKey = false;
               onlyKey = true;
             }
-          }
-          if (i2 > i1) {
+          } else if (i2 > i1) {
             notAKey = true;
             if (i2 >= i1 + 4) {
               onlyKey = true;
               notAKey = false;
             }
-          }
-          while (i2 < i1 && hlnode.parent()) {
-            hlnode = hlnode.parent();
-            i1 = i1 - 2;
+          } else if (i1 !== i2) {
+            while (i2 <= i1 && hlnode.parent()) {
+              hlnode = hlnode.parent();
+              var indent = getIndentWithSequenc(hlnode.lowLevel().keyStart(), text);
+              i1 = indent && indent.length || 0;
+            }
+            notAKey = true;
           }
         }
         var needColon = isColonNeeded(offset, text);
@@ -2202,10 +2127,10 @@
         props = props.filter(function (x) {
           return filterPropertyCompletion(hlnode, x, existing);
         });
-        if (node.definition().isAssignableFrom(parserApi.universes.Universe10.TypeDeclaration.name)) {
-          if (!node.definition().isAssignableFrom('ObjectTypeDeclaration')) {
-            if (!node.attr('type')) {
-              var q = node.definition().universe().type('ObjectTypeDeclaration');
+        if (hlnode.definition().isAssignableFrom(parserApi.universes.Universe10.TypeDeclaration.name)) {
+          if (!hlnode.definition().isAssignableFrom('ObjectTypeDeclaration')) {
+            if (!hlnode.attr('type')) {
+              var q = hlnode.definition().universe().type('ObjectTypeDeclaration');
               if (q) {
                 props.push(q.property('properties'));
               }
@@ -3018,6 +2943,20 @@
             this.resolver = resolver;
             this.fsResolver = resolver;
           }
+          /**
+     * File contents by full path, synchronously.
+     * @param fullPath
+     */
+          ResolvedProvider.prototype.content = function (fullPath) {
+            return this.resolver.content(fullPath);
+          };
+          /**
+     * File contents by full path, asynchronously.
+     * @param fullPath
+     */
+          ResolvedProvider.prototype.contentAsync = function (fullPath) {
+            return this.resolver.contentAsync(fullPath);
+          };
           ResolvedProvider.prototype.contentDirName = function (content) {
             return this.resolver.dirname(content.getPath());
           };
@@ -3047,20 +2986,110 @@
           };
           return ResolvedProvider;
         }();
+      var ProviderBasedResolver = function () {
+          function ProviderBasedResolver(provider) {
+            this.provider = provider;
+          }
+          /**
+     * File contents by full path, synchronously.
+     * @param fullPath
+     */
+          ProviderBasedResolver.prototype.content = function (fullPath) {
+            return this.provider.content(fullPath);
+          };
+          /**
+     * File contents by full path, asynchronously.
+     * @param fullPath
+     */
+          ProviderBasedResolver.prototype.contentAsync = function (fullPath) {
+            return this.provider.contentAsync(fullPath);
+          };
+          /**
+     * Lists directory contents.
+     * @param fullPath
+     */
+          ProviderBasedResolver.prototype.list = function (fullPath) {
+            return this.provider.readDir(fullPath);
+          };
+          /**
+     * Checks item existance.
+     * @param fullPath
+     */
+          ProviderBasedResolver.prototype.exists = function (fullPath) {
+            return this.provider.exists(fullPath);
+          };
+          /**
+     * Gets directory name by full path.
+     * @param fullPath
+     */
+          ProviderBasedResolver.prototype.dirname = function (fullPath) {
+            return this.provider.dirName(fullPath);
+          };
+          /**
+     * Resolves one path against another.
+     * @param contextPath - path to resolve against.
+     * @param relativePath - relative path to resolve.
+     */
+          ProviderBasedResolver.prototype.resolve = function (contextPath, relativePath) {
+            return this.provider.resolve(contextPath, relativePath);
+          };
+          /**
+     * Returns file extension name.
+     * @param fullPath
+     */
+          ProviderBasedResolver.prototype.extname = function (fullPath) {
+            var lastDotIndex = fullPath.lastIndexOf('.');
+            if (lastDotIndex === -1 || lastDotIndex === fullPath.length - 1) {
+              return null;
+            }
+            return fullPath.substring(lastDotIndex + 1);
+          };
+          /**
+     * Check whether the path points to a directory.
+     * @param fullPath
+     */
+          ProviderBasedResolver.prototype.isDirectory = function (fullPath) {
+            return this.provider.isDirectory(fullPath);
+          };
+          /**
+     * Check whether the path points to a directory.
+     * @param fullPath
+     */
+          ProviderBasedResolver.prototype.isDirectoryAsync = function (path) {
+            return this.provider.isDirectoryAsync(path);
+          };
+          /**
+     * Checks item existance.
+     * @param fullPath
+     */
+          ProviderBasedResolver.prototype.existsAsync = function (path) {
+            return this.provider.existsAsync(path);
+          };
+          /**
+     * Lists directory contents.
+     * @param fullPath
+     */
+          ProviderBasedResolver.prototype.listAsync = function (path) {
+            return this.provider.readDirAsync(path);
+          };
+          return ProviderBasedResolver;
+        }();
       function getContentProvider(resolver) {
         return new ResolvedProvider(resolver);
       }
       exports.getContentProvider = getContentProvider;
     },
     {
-      '../resources/categories.json': 11,
+      '../resources/categories.json': 12,
+      './logger': 11,
       'fuzzaldrin-plus': 2,
-      'underscore': 12
+      'underscore': 13
     }
   ],
   10: [
     function (require, module, exports) {
       'use strict';
+      Object.defineProperty(exports, '__esModule', { value: true });
       var completionProvider = require('./completionProvider');
       var _editorStateProvider = null;
       var _astProvider = null;
@@ -3126,10 +3155,97 @@
         return completionProvider.getContentProvider(resolver);
       }
       exports.getContentProvider = getContentProvider;
+      /**
+ * Sets logger for the suggestions.
+ * @param logger
+ */
+      function setLogger(logger) {
+        completionProvider.setLogger(logger);
+      }
+      exports.setLogger = setLogger;
     },
     { './completionProvider': 9 }
   ],
   11: [
+    function (require, module, exports) {
+      'use strict';
+      Object.defineProperty(exports, '__esModule', { value: true });
+      var MessageSeverity;
+      (function (MessageSeverity) {
+        MessageSeverity[MessageSeverity['DEBUG_DETAIL'] = 0] = 'DEBUG_DETAIL';
+        MessageSeverity[MessageSeverity['DEBUG'] = 1] = 'DEBUG';
+        MessageSeverity[MessageSeverity['DEBUG_OVERVIEW'] = 2] = 'DEBUG_OVERVIEW';
+        MessageSeverity[MessageSeverity['WARNING'] = 3] = 'WARNING';
+        MessageSeverity[MessageSeverity['ERROR'] = 4] = 'ERROR';
+      }(MessageSeverity = exports.MessageSeverity || (exports.MessageSeverity = {})));
+      /**
+ * Logger that does nothing.
+ */
+      var EmptyLogger = function () {
+          function EmptyLogger() {
+          }
+          /**
+     * Logs a message
+     * @param message - message text
+     * @param severity - message severity
+     * @param component - component name
+     * @param subcomponent - sub-component name
+     */
+          EmptyLogger.prototype.log = function (message, severity, component, subcomponent) {
+          };
+          /**
+     * Logs a DEBUG severity message.
+     * @param message - message text
+     * @param component - component name
+     * @param subcomponent - sub-component name
+     */
+          EmptyLogger.prototype.debug = function (message, component, subcomponent) {
+          };
+          /**
+     * Logs a DEBUG_DETAIL severity message.
+     * @param message - message text
+     * @param component - component name
+     * @param subcomponent - sub-component name
+     */
+          EmptyLogger.prototype.debugDetail = function (message, component, subcomponent) {
+          };
+          /**
+     * Logs a DEBUG_OVERVIEW severity message.
+     * @param message - message text
+     * @param component - component name
+     * @param subcomponent - sub-component name
+     */
+          EmptyLogger.prototype.debugOverview = function (message, component, subcomponent) {
+          };
+          /**
+     * Logs a WARNING severity message.
+     * @param message - message text
+     * @param component - component name
+     * @param subcomponent - sub-component name
+     */
+          EmptyLogger.prototype.warning = function (message, component, subcomponent) {
+          };
+          /**
+     * Logs an ERROR severity message.
+     * @param message - message text
+     * @param component - component name
+     * @param subcomponent - sub-component name
+     */
+          EmptyLogger.prototype.error = function (message, component, subcomponent) {
+          };
+          /**
+     * Sets logger configuration, both for the server and for the client.
+     * @param loggerSettings
+     */
+          EmptyLogger.prototype.setLoggerConfiguration = function (loggerSettings) {
+          };
+          return EmptyLogger;
+        }();
+      exports.EmptyLogger = EmptyLogger;
+    },
+    {}
+  ],
+  12: [
     function (require, module, exports) {
       module.exports = {
         'docs': {
@@ -3614,7 +3730,7 @@
     },
     {}
   ],
-  12: [
+  13: [
     function (require, module, exports) {
       //     Underscore.js 1.8.3
       //     http://underscorejs.org
