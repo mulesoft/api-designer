@@ -51857,7 +51857,7 @@ Renderer.prototype.link = function(href, title, text) {
     } catch (e) {
       return '';
     }
-    if (prot.indexOf('javascript:') === 0 || prot.indexOf('vbscript:') === 0) {
+    if (prot.indexOf('javascript:') === 0 || prot.indexOf('vbscript:') === 0 || prot.indexOf('data:') === 0) {
       return '';
     }
   }
@@ -84015,6 +84015,10 @@ exports.javascript = require('./javascript');
         };
 
         function getRequest($event) {
+          if (!validateForm($scope.form)) {
+            return;
+          }
+
           var url;
           var context         = $scope.context;
           var segmentContexts = resolveSegmentContexts($scope.resource.pathSegments, $scope.context.uriParameters.data());
