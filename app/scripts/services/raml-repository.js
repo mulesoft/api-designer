@@ -38,7 +38,7 @@
       }
 
       function metaFile(file) {
-        return file.path.slice(-5) === '.meta';
+        return !notMetaFile(file);
       }
 
       function handleErrorFor(file) {
@@ -176,36 +176,28 @@
         return this.metaChildren.filter(function(t) { return !t.isDirectory; });
       };
 
-      RamlDirectory.prototype.forEachChildDo = function forEachChildDo(action) {
+      RamlDirectory.prototype.forEachItemDo = function forEachItemDo(action, isMetaChildren) {
         // BFS
-        var queue = this.children.slice();
+        var queue = isMetaChildren ? this.metaChildren.slice() : this.children.slice();
         var current;
 
         while (queue.length > 0) {
           current = queue.shift();
 
           if (current.isDirectory) {
-            queue = queue.concat(current.children);
+            queue = queue.concat((isMetaChildren) ? current.metaChildren : current.children);
           }
 
           action.call(current, current);
         }
       };
 
-      RamlDirectory.prototype.forEachMetaChildDo = function forEachMetaChildDo(action) {
-        // BFS
-        var queue = this.metaChildren.slice();
-        var current;
+      RamlDirectory.prototype.forEachChildDo = function forEachChildDo(action) {
+        this.forEachItemDo(action, false);
+      };
 
-        while (queue.length > 0) {
-          current = queue.shift();
-
-          if (current.isDirectory) {
-            queue = queue.concat(current.metaChildren);
-          }
-
-          action.call(current, current);
-        }
+      RamlDirectory.prototype.forEachMetaChildDo = function forEachChildDo(action) {
+        this.forEachItemDo(action, true);
       };
 
       RamlDirectory.prototype.sortChildren = function sortChildren() {
@@ -277,8 +269,8 @@
         // and collect all promises into an array
         var promises = [];
         directory.getDirectories().forEach(function(dir) { promises.push(service.removeDirectory(dir)); });
-        directory.getFiles().forEach(function(file) { promises.push(service.removeFile(file)); });
-        directory.getMetaFiles().forEach(function(file) { promises.push(service.removeFile(file)); });
+        directory.getFiles().concat(directory.getMetaFiles())
+          .forEach(function(file) { promises.push(service.removeFile(file)); });
 
         // remove this directory object from parent's children list
         var parent = service.getParent(directory);
