@@ -4528,6 +4528,7 @@ root
 
 .raml-console-resource-param-example {
   font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  word-break: break-all;
 }
 
 .raml-console-resource-param-example b {

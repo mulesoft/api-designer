@@ -51021,6 +51021,10 @@ block.list = replace(block.list)
   ('def', '\\n+(?=' + block.def.source + ')')
   ();
 
+block.blockquote = replace(block.blockquote)
+  ('def', block.def)
+  ();
+
 block._tag = '(?!(?:'
   + 'a|em|strong|small|s|cite|q|dfn|abbr|data|time|code'
   + '|var|samp|kbd|sub|sup|i|b|u|mark|ruby|rt|rp|bdi|bdo'
@@ -51435,7 +51439,7 @@ var inline = {
   nolink: /^!?\[((?:\[[^\]]*\]|[^\[\]])*)\]/,
   strong: /^__([\s\S]+?)__(?!_)|^\*\*([\s\S]+?)\*\*(?!\*)/,
   em: /^\b_((?:[^_]|__)+?)_\b|^\*((?:\*\*|[\s\S])+?)\*(?!\*)/,
-  code: /^(`+)([\s\S]*?[^`])\1(?!`)/,
+  code: /^(`+)\s*([\s\S]*?[^`])\s*\1(?!`)/,
   br: /^ {2,}\n(?!\s*$)/,
   del: noop,
   text: /^[\s\S]+?(?=[\\<!\[_*`]| {2,}\n|$)/
@@ -51556,11 +51560,9 @@ InlineLexer.prototype.output = function(src) {
     if (cap = this.rules.autolink.exec(src)) {
       src = src.substring(cap[0].length);
       if (cap[2] === '@') {
-        text = escape(
-          cap[1].charAt(6) === ':'
+        text = cap[1].charAt(6) === ':'
           ? this.mangle(cap[1].substring(7))
-          : this.mangle(cap[1])
-        );
+          : this.mangle(cap[1]);
         href = this.mangle('mailto:') + text;
       } else {
         text = escape(cap[1]);
@@ -51641,7 +51643,7 @@ InlineLexer.prototype.output = function(src) {
     // code
     if (cap = this.rules.code.exec(src)) {
       src = src.substring(cap[0].length);
-      out += this.renderer.codespan(escape(cap[2].trim(), true));
+      out += this.renderer.codespan(escape(cap[2], true));
       continue;
     }
 
@@ -51855,12 +51857,9 @@ Renderer.prototype.link = function(href, title, text) {
     } catch (e) {
       return '';
     }
-    if (prot.indexOf('javascript:') === 0 || prot.indexOf('vbscript:') === 0 || prot.indexOf('data:') === 0) {
+    if (prot.indexOf('javascript:') === 0 || prot.indexOf('vbscript:') === 0) {
       return '';
     }
-  }
-  if (this.options.baseUrl && !originIndependentUrl.test(href)) {
-    href = resolveUrl(this.options.baseUrl, href);
   }
   var out = '<a href="' + href + '"';
   if (title) {
@@ -51871,9 +51870,6 @@ Renderer.prototype.link = function(href, title, text) {
 };
 
 Renderer.prototype.image = function(href, title, text) {
-  if (this.options.baseUrl && !originIndependentUrl.test(href)) {
-    href = resolveUrl(this.options.baseUrl, href);
-  }
   var out = '<img src="' + href + '" alt="' + text + '"';
   if (title) {
     out += ' title="' + title + '"';
@@ -52080,8 +52076,8 @@ function escape(html, encode) {
 }
 
 function unescape(html) {
-	// explicitly match decimal, hex, and named HTML entities
-  return html.replace(/&(#(?:\d+)|(?:#x[0-9A-Fa-f]+)|(?:\w+));?/ig, function(_, n) {
+	// explicitly match decimal, hex, and named HTML entities 
+  return html.replace(/&(#(?:\d+)|(?:#x[0-9A-Fa-f]+)|(?:\w+));?/g, function(_, n) {
     n = n.toLowerCase();
     if (n === 'colon') return ':';
     if (n.charAt(0) === '#') {
@@ -52104,30 +52100,6 @@ function replace(regex, opt) {
     return self;
   };
 }
-
-function resolveUrl(base, href) {
-  if (!baseUrls[' ' + base]) {
-    // we can ignore everything in base after the last slash of its path component,
-    // but we might need to add _that_
-    // https://tools.ietf.org/html/rfc3986#section-3
-    if (/^[^:]+:\/*[^/]*$/.test(base)) {
-      baseUrls[' ' + base] = base + '/';
-    } else {
-      baseUrls[' ' + base] = base.replace(/[^/]*$/, '');
-    }
-  }
-  base = baseUrls[' ' + base];
-
-  if (href.slice(0, 2) === '//') {
-    return base.replace(/:[^]*/, ':') + href;
-  } else if (href.charAt(0) === '/') {
-    return base.replace(/(:\/*[^/]*)[^]*/, '$1') + href;
-  } else {
-    return base + href;
-  }
-}
-baseUrls = {};
-originIndependentUrl = /^$|^[a-z][a-z0-9+.-]*:|^[?#]/i;
 
 function noop() {}
 noop.exec = noop;
@@ -52263,8 +52235,7 @@ marked.defaults = {
   smartypants: false,
   headerPrefix: '',
   renderer: new Renderer,
-  xhtml: false,
-  baseUrl: null
+  xhtml: false
 };
 
 /**
@@ -81488,7 +81459,7 @@ exports.javascript = require('./javascript');
           if (Array.isArray(schemaCodes)) {
             schemaCodes.forEach(function (response) {
               if (!codes.hasOwnProperty(response.code)) {
-                codes[response.code] = response.code;
+                codes[response.code] = response;
               }
             });
           } else {
@@ -81920,7 +81891,8 @@ exports.javascript = require('./javascript');
 
         function getType(param) {
           if ($scope.types) {
-            var rootType = RAML.Inspector.Types.findType(param.type[0], $scope.types);
+            var paramType = RAML.Inspector.Types.getType(param);
+            var rootType = RAML.Inspector.Types.findType(paramType, $scope.types);
             return rootType ? rootType : param;
           } else {
             return param;
@@ -82011,6 +81983,7 @@ exports.javascript = require('./javascript');
             var originalType = newProperty.type[0];
             newProperty.type = originalType.type;
             newProperty.properties = originalType.properties;
+            newProperty.enum = originalType.enum;
           }
 
           if (newProperty.type[0] === 'array') {
@@ -82208,6 +82181,36 @@ exports.javascript = require('./javascript');
           $scope.isType = false;
           $scope.isSchema = false;
 
+          function cleanType(type) {
+            var cleanedAttributes = ['properties', 'required', 'items', 'type'];
+            Object.keys(type).forEach(function (attribute) {
+              if (cleanedAttributes.indexOf(attribute) === -1) {
+                delete type[attribute];
+              }
+
+              switch (attribute) {
+                case cleanedAttributes[0]:
+                  Object.keys(type[attribute]).forEach(function (a) {
+                    type[attribute][a] = cleanType(type[attribute][a]);
+                  });
+                  return;
+                case cleanedAttributes[2]:
+                  type[attribute] = cleanType(type[attribute]);
+                  return;
+                case cleanedAttributes[3]:
+                  if (Array.isArray(type[attribute])) {
+                    type[attribute] = type[attribute][0];
+                  } else {
+                    type[attribute] = cleanType(type[attribute]);
+                  }
+                  return;
+                default:
+                  return;
+              }
+            });
+            return type;
+          }
+
           if (node.type) {
             node.type = Array.isArray(node.type) ? node.type : [node.type];
             node.type.forEach(function (aType) {
@@ -82256,7 +82259,9 @@ exports.javascript = require('./javascript');
                 }
               } else {
                 $scope.isSchema = true;
-                $scope.definition = JSON.stringify(aType, null, 2);
+
+                var cleanedType = cleanType(aType);
+                $scope.definition = JSON.stringify(cleanedType, null, 2);
               }
             });
           }
@@ -82702,15 +82707,24 @@ exports.javascript = require('./javascript');
         uploadRequest: '='
       },
       controller: ['$scope', function($scope) {
+        function getNestedParamType(definition) {
+          if (typeof definition.type === 'string'){
+            return definition;
+          }
+
+          return !Array.isArray(definition.type) ? getNestedParamType(definition.type)
+            : typeof definition.type[0] === 'object' ? getNestedParamType(definition.type[0]) : definition;
+        }
+
         function getParamType(definition) {
-          var currentType = definition.type[0];
+          var currentType = RAML.Inspector.Types.getType(definition);
           var isNative = RAML.Inspector.Types.isNativeType(currentType);
 
           if (!isNative && $scope.types) {
             var type = RAML.Inspector.Types.findType(currentType, $scope.types);
             return type ? type : definition;
           } else {
-            return definition;
+            return getNestedParamType(definition);
           }
         }
 
@@ -83360,7 +83374,8 @@ exports.javascript = require('./javascript');
         function expandDescriptions(queryParameters) {
           Object.keys(queryParameters).forEach(function (key) {
             var param = queryParameters[key][0];
-            var type = param.type ? RAML.Inspector.Types.findType(param.type[0], $scope.types) : undefined;
+            var paramType = RAML.Inspector.Types.getType(param);
+            var type = param.type && $scope.types ? RAML.Inspector.Types.findType(paramType, $scope.types) : undefined;
             if (!param.description && type && type.description) {
               param.description = type.description;
             }
@@ -84524,7 +84539,8 @@ exports.javascript = require('./javascript');
         var control         = $ctrl;
 
         if (validation && validation.type) {
-          var declaredType = RAML.Inspector.Types.findType(validation.type[0], $scope.types);
+          var validationType = RAML.Inspector.Types.getType(validation);
+          var declaredType = RAML.Inspector.Types.findType(validationType, $scope.types);
           if (declaredType) { validation = declaredType; }
         }
 
@@ -86285,7 +86301,10 @@ RAML.Inspector = (function() {
   }
 
   function getType(type) {
-    return type.type ? (Array.isArray(type.type) ? type.type[0] : getType(type.type)) : type.type;
+    if (typeof type === 'string') { return type; }
+
+    return !Array.isArray(type.type) ? getType(type.type)
+      : typeof type.type[0] === 'object' ? getType(type.type[0]) : type.type[0];
   }
 
   function mergeType(type, types) {
@@ -86417,6 +86436,7 @@ RAML.Inspector = (function() {
     isSchema:            isSchema,
     findType:            findType,
     findSchema:          findSchema,
+    getType:             getType,
     getTypeInfo:         getTypeInfo,
     getTypeFromTypeInfo: getTypeFromTypeInfo,
     ensureArray:         ensureArray,
@@ -86775,15 +86795,18 @@ RAML.Inspector = (function() {
     if (info) {
       Object.keys(info).map(function (key) {
         if (typeof field === 'undefined' || field === key) {
-          if (typeof info[key][0]['enum'] === 'undefined') {
-            if (info[key][0].type === 'date' && typeof info[key][0].example === 'object') {
-              info[key][0].example = info[key][0].example.toUTCString();
+          var parameter = info[key][0];
+          if (typeof parameter['enum'] === 'undefined') {
+            if (parameter.type === 'date' && typeof parameter.example === 'object') {
+              parameter.example = parameter.example.toUTCString();
             }
 
-            if (info[key][0].example) {
-              that.values[key][0] = info[key][0].example;
-            } else if (info[key][0].examples && info[key][0].examples[0] && info[key][0].examples[0].value) {
-              that.values[key][0] = info[key][0].examples[0].value;
+            if (parameter.example) {
+              that.values[key][0] = parameter.example;
+            } else if (parameter.type === 'boolean' && parameter.hasOwnProperty('example')) {
+              that.values[key][0] = parameter.example;
+            } else if (parameter.examples && parameter.examples[0] && parameter.examples[0].value) {
+              that.values[key][0] = parameter.examples[0].value;
             }
           }
         }
@@ -87926,8 +87949,9 @@ RAML.Inspector = (function() {
 
     if (Array.isArray(newConfig.type)) {
       newConfig.type = newConfig.type.map(function (aType) {
-        var newType = aType.replace('[]', '');
-        var parts = aType.split('|');
+        var type = typeof aType === 'object' ? RAML.Inspector.Types.getType(aType) : aType;
+        var newType = type.replace('[]', '');
+        var parts = type.split('|');
         if (parts.length > 1) {
           newType = 'union';
           newConfig.unionTypes = parts.map(function (part) {
@@ -88603,8 +88627,9 @@ RAML.Inspector = (function() {
 
     if (Array.isArray(newConfig.type)) {
       newConfig.type = newConfig.type.map(function (aType) {
-        var newType = aType.replace('[]', '');
-        var parts = aType.split('|');
+        var type = typeof aType === 'object' ? RAML.Inspector.Types.getType(aType) : aType;
+        var newType = type.replace('[]', '');
+        var parts = type.split('|');
         if (parts.length > 1) {
           newType = 'union';
           newConfig.unionTypes = parts.map(function (part) {
@@ -89028,7 +89053,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "        <p ng-if=\"type.description\" markdown=\"type.description\" class=\"raml-console-marked-content\"></p>\n" +
     "\n" +
     "        <p ng-if=\"type.example !== undefined && showExamples\">\n" +
-    "          <span class=\"raml-console-resource-param-example\"><b>Example:</b> {{type.example}}</span>\n" +
+    "          <p class=\"raml-console-resource-param-example\"><b>Example:</b> {{type.example}}</p>\n" +
     "        </p>\n" +
     "\n" +
     "        <pre ng-if=\"isSchema(type.type[0])\" class=\"raml-console-resource-pre\">\n" +
