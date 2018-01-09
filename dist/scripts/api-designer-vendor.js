@@ -81459,7 +81459,7 @@ exports.javascript = require('./javascript');
           if (Array.isArray(schemaCodes)) {
             schemaCodes.forEach(function (response) {
               if (!codes.hasOwnProperty(response.code)) {
-                codes[response.code] = response.code;
+                codes[response.code] = response;
               }
             });
           } else {
@@ -81891,7 +81891,8 @@ exports.javascript = require('./javascript');
 
         function getType(param) {
           if ($scope.types) {
-            var rootType = RAML.Inspector.Types.findType(param.type[0], $scope.types);
+            var paramType = RAML.Inspector.Types.getType(param);
+            var rootType = RAML.Inspector.Types.findType(paramType, $scope.types);
             return rootType ? rootType : param;
           } else {
             return param;
@@ -81982,6 +81983,7 @@ exports.javascript = require('./javascript');
             var originalType = newProperty.type[0];
             newProperty.type = originalType.type;
             newProperty.properties = originalType.properties;
+            newProperty.enum = originalType.enum;
           }
 
           if (newProperty.type[0] === 'array') {
@@ -82179,6 +82181,36 @@ exports.javascript = require('./javascript');
           $scope.isType = false;
           $scope.isSchema = false;
 
+          function cleanType(type) {
+            var cleanedAttributes = ['properties', 'required', 'items', 'type'];
+            Object.keys(type).forEach(function (attribute) {
+              if (cleanedAttributes.indexOf(attribute) === -1) {
+                delete type[attribute];
+              }
+
+              switch (attribute) {
+                case cleanedAttributes[0]:
+                  Object.keys(type[attribute]).forEach(function (a) {
+                    type[attribute][a] = cleanType(type[attribute][a]);
+                  });
+                  return;
+                case cleanedAttributes[2]:
+                  type[attribute] = cleanType(type[attribute]);
+                  return;
+                case cleanedAttributes[3]:
+                  if (Array.isArray(type[attribute])) {
+                    type[attribute] = type[attribute][0];
+                  } else {
+                    type[attribute] = cleanType(type[attribute]);
+                  }
+                  return;
+                default:
+                  return;
+              }
+            });
+            return type;
+          }
+
           if (node.type) {
             node.type = Array.isArray(node.type) ? node.type : [node.type];
             node.type.forEach(function (aType) {
@@ -82227,7 +82259,9 @@ exports.javascript = require('./javascript');
                 }
               } else {
                 $scope.isSchema = true;
-                $scope.definition = JSON.stringify(aType, null, 2);
+
+                var cleanedType = cleanType(aType);
+                $scope.definition = JSON.stringify(cleanedType, null, 2);
               }
             });
           }
@@ -82673,15 +82707,24 @@ exports.javascript = require('./javascript');
         uploadRequest: '='
       },
       controller: ['$scope', function($scope) {
+        function getNestedParamType(definition) {
+          if (typeof definition.type === 'string'){
+            return definition;
+          }
+
+          return !Array.isArray(definition.type) ? getNestedParamType(definition.type)
+            : typeof definition.type[0] === 'object' ? getNestedParamType(definition.type[0]) : definition;
+        }
+
         function getParamType(definition) {
-          var currentType = definition.type[0];
+          var currentType = RAML.Inspector.Types.getType(definition);
           var isNative = RAML.Inspector.Types.isNativeType(currentType);
 
           if (!isNative && $scope.types) {
             var type = RAML.Inspector.Types.findType(currentType, $scope.types);
             return type ? type : definition;
           } else {
-            return definition;
+            return getNestedParamType(definition);
           }
         }
 
@@ -83331,7 +83374,8 @@ exports.javascript = require('./javascript');
         function expandDescriptions(queryParameters) {
           Object.keys(queryParameters).forEach(function (key) {
             var param = queryParameters[key][0];
-            var type = param.type ? RAML.Inspector.Types.findType(param.type[0], $scope.types) : undefined;
+            var paramType = RAML.Inspector.Types.getType(param);
+            var type = param.type && $scope.types ? RAML.Inspector.Types.findType(paramType, $scope.types) : undefined;
             if (!param.description && type && type.description) {
               param.description = type.description;
             }
@@ -84015,10 +84059,6 @@ exports.javascript = require('./javascript');
         };
 
         function getRequest($event) {
-          if (!validateForm($scope.form)) {
-            return;
-          }
-
           var url;
           var context         = $scope.context;
           var segmentContexts = resolveSegmentContexts($scope.resource.pathSegments, $scope.context.uriParameters.data());
@@ -84132,7 +84172,7 @@ exports.javascript = require('./javascript');
               authStrategy.authenticate().then(function(token) {
                 token.sign(request);
                 $scope.requestOptions = request.toOptions();
-                jQuery.ajax(request.toOptions()).then(
+                jQuery.ajax(Object.assign(request.toOptions(),{timeout:10000})).then(
                   function(data, textStatus, jqXhr) { handleResponse(jqXhr); },
                   function(jqXhr) { handleResponse(jqXhr); }
                 );
@@ -84499,7 +84539,8 @@ exports.javascript = require('./javascript');
         var control         = $ctrl;
 
         if (validation && validation.type) {
-          var declaredType = RAML.Inspector.Types.findType(validation.type[0], $scope.types);
+          var validationType = RAML.Inspector.Types.getType(validation);
+          var declaredType = RAML.Inspector.Types.findType(validationType, $scope.types);
           if (declaredType) { validation = declaredType; }
         }
 
@@ -86260,7 +86301,10 @@ RAML.Inspector = (function() {
   }
 
   function getType(type) {
-    return type.type ? (Array.isArray(type.type) ? type.type[0] : getType(type.type)) : type.type;
+    if (typeof type === 'string') { return type; }
+
+    return !Array.isArray(type.type) ? getType(type.type)
+      : typeof type.type[0] === 'object' ? getType(type.type[0]) : type.type[0];
   }
 
   function mergeType(type, types) {
@@ -86392,6 +86436,7 @@ RAML.Inspector = (function() {
     isSchema:            isSchema,
     findType:            findType,
     findSchema:          findSchema,
+    getType:             getType,
     getTypeInfo:         getTypeInfo,
     getTypeFromTypeInfo: getTypeFromTypeInfo,
     ensureArray:         ensureArray,
@@ -86750,15 +86795,18 @@ RAML.Inspector = (function() {
     if (info) {
       Object.keys(info).map(function (key) {
         if (typeof field === 'undefined' || field === key) {
-          if (typeof info[key][0]['enum'] === 'undefined') {
-            if (info[key][0].type === 'date' && typeof info[key][0].example === 'object') {
-              info[key][0].example = info[key][0].example.toUTCString();
+          var parameter = info[key][0];
+          if (typeof parameter['enum'] === 'undefined') {
+            if (parameter.type === 'date' && typeof parameter.example === 'object') {
+              parameter.example = parameter.example.toUTCString();
             }
 
-            if (info[key][0].example) {
-              that.values[key][0] = info[key][0].example;
-            } else if (info[key][0].examples && info[key][0].examples[0] && info[key][0].examples[0].value) {
-              that.values[key][0] = info[key][0].examples[0].value;
+            if (parameter.example) {
+              that.values[key][0] = parameter.example;
+            } else if (parameter.type === 'boolean' && parameter.hasOwnProperty('example')) {
+              that.values[key][0] = parameter.example;
+            } else if (parameter.examples && parameter.examples[0] && parameter.examples[0].value) {
+              that.values[key][0] = parameter.examples[0].value;
             }
           }
         }
@@ -87901,8 +87949,9 @@ RAML.Inspector = (function() {
 
     if (Array.isArray(newConfig.type)) {
       newConfig.type = newConfig.type.map(function (aType) {
-        var newType = aType.replace('[]', '');
-        var parts = aType.split('|');
+        var type = typeof aType === 'object' ? RAML.Inspector.Types.getType(aType) : aType;
+        var newType = type.replace('[]', '');
+        var parts = type.split('|');
         if (parts.length > 1) {
           newType = 'union';
           newConfig.unionTypes = parts.map(function (part) {
@@ -88578,8 +88627,9 @@ RAML.Inspector = (function() {
 
     if (Array.isArray(newConfig.type)) {
       newConfig.type = newConfig.type.map(function (aType) {
-        var newType = aType.replace('[]', '');
-        var parts = aType.split('|');
+        var type = typeof aType === 'object' ? RAML.Inspector.Types.getType(aType) : aType;
+        var newType = type.replace('[]', '');
+        var parts = type.split('|');
         if (parts.length > 1) {
           newType = 'union';
           newConfig.unionTypes = parts.map(function (part) {
@@ -89003,7 +89053,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "        <p ng-if=\"type.description\" markdown=\"type.description\" class=\"raml-console-marked-content\"></p>\n" +
     "\n" +
     "        <p ng-if=\"type.example !== undefined && showExamples\">\n" +
-    "          <span class=\"raml-console-resource-param-example\"><b>Example:</b> {{type.example}}</span>\n" +
+    "          <p class=\"raml-console-resource-param-example\"><b>Example:</b> {{type.example}}</p>\n" +
     "        </p>\n" +
     "\n" +
     "        <pre ng-if=\"isSchema(type.type[0])\" class=\"raml-console-resource-pre\">\n" +

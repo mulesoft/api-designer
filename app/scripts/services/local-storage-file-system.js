@@ -304,8 +304,8 @@
           // }
           //move all child items
           localStorageHelper.forEach(function (entry) {
-            if (entry.path.toLowerCase() !== source.toLowerCase() &&
-              entry.path.indexOf(source) === 0) {
+            if (entry.path.toLowerCase() !== destination.toLowerCase() &&
+              entry.path.indexOf(source + '/') === 0) {
               var newPath = destination + entry.path.substring(source.length);
               localStorageHelper.remove(entry.path);
               entry.path = newPath;

@@ -737,12 +737,21 @@ describe('RAML Repository', function () {
       var path    = '/api.raml';
       var meta    = {key: 'value'};
 
+      var rootDir = {
+        path: '/',
+        name: '/',
+        children: [],
+        metaChildren: []
+      };
+
       sinon.stub(ramlRepository, 'saveFile').returns($q.when({contents: JSON.stringify(meta)}));
+      sinon.stub(ramlRepository, 'getParent').returns(rootDir);
       ramlRepository.saveMeta({path: path}, meta).then(success);
 
       $rootScope.$apply();
 
       ramlRepository.saveFile.should.have.been.called;
+      ramlRepository.getParent.should.have.been.called;
       ramlRepository.saveFile.firstCall.args[0].should
         .have.property('path')
         .and

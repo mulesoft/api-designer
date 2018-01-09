@@ -37,6 +37,10 @@
         return file.path.slice(-5) !== '.meta';
       }
 
+      function metaFile(file) {
+        return !notMetaFile(file);
+      }
+
       function handleErrorFor(file) {
         return function markFileWithError(error) {
           file.error = error;
@@ -144,15 +148,20 @@
           separated[entry.type || 'file'].push(entry);
         });
 
-        var files = separated.file.filter(notMetaFile).map(function (file) {
+        var createRamlFile = function (file) {
           return new RamlFile(file.path, file.contents, { dirty: false, persisted: true, root: file.root} );
-        });
+        };
+
+        var files = separated.file.filter(notMetaFile).map(createRamlFile);
+
+        var metaFiles = separated.file.filter(metaFile).map(createRamlFile);
 
         var directories = separated.folder.map(function (directory) {
           return new RamlDirectory(directory.path, directory.meta, directory.children);
         });
 
         this.children = directories.concat(files).sort(sortingFunction);
+        this.metaChildren = directories.concat(metaFiles).sort(sortingFunction);
       }
 
       RamlDirectory.prototype.getDirectories = function getDirectories() {
@@ -163,20 +172,32 @@
         return this.children.filter(function(t) { return !t.isDirectory; });
       };
 
-      RamlDirectory.prototype.forEachChildDo = function forEachChildDo(action) {
+      RamlDirectory.prototype.getMetaFiles = function getMetaFiles() {
+        return this.metaChildren.filter(function(t) { return !t.isDirectory; });
+      };
+
+      RamlDirectory.prototype.forEachItemDo = function forEachItemDo(action, isMetaChildren) {
         // BFS
-        var queue = this.children.slice();
+        var queue = isMetaChildren ? this.metaChildren.slice() : this.children.slice();
         var current;
 
         while (queue.length > 0) {
           current = queue.shift();
 
           if (current.isDirectory) {
-            queue = queue.concat(current.children);
+            queue = queue.concat((isMetaChildren) ? current.metaChildren : current.children);
           }
 
           action.call(current, current);
         }
+      };
+
+      RamlDirectory.prototype.forEachChildDo = function forEachChildDo(action) {
+        this.forEachItemDo(action, false);
+      };
+
+      RamlDirectory.prototype.forEachMetaChildDo = function forEachChildDo(action) {
+        this.forEachItemDo(action, true);
       };
 
       RamlDirectory.prototype.sortChildren = function sortChildren() {
@@ -248,7 +269,8 @@
         // and collect all promises into an array
         var promises = [];
         directory.getDirectories().forEach(function(dir) { promises.push(service.removeDirectory(dir)); });
-        directory.getFiles().forEach(function(file) { promises.push(service.removeFile(file)); });
+        directory.getFiles().concat(directory.getMetaFiles())
+          .forEach(function(file) { promises.push(service.removeFile(file)); });
 
         // remove this directory object from parent's children list
         var parent = service.getParent(directory);
@@ -353,10 +375,18 @@
           .then(modifyFile, handleErrorFor(file))
           .then(function () {
             // remove the file object from the parent's children list
-            var index = parent.children.indexOf(file);
+            if (notMetaFile(file)) {
+              var index = parent.children.indexOf(file);
 
-            if (index !== -1) {
-              parent.children.splice(index, 1);
+              if (index !== -1) {
+                parent.children.splice(index, 1);
+              }
+            } else {
+              var metaIndex = parent.metaChildren.indexOf(file);
+
+              if (metaIndex !== -1) {
+                parent.metaChildren.splice(metaIndex, 1);
+              }
             }
 
             $rootScope.$broadcast('event:raml-editor-file-removed', file);
@@ -458,7 +488,13 @@
           target.forEachChildDo(function(c) {
             c.path = c.path.replace(target.path, newPath);
           });
+
+          // renames the path of each meta child under the current directory
+          target.forEachMetaChildDo(function(c) {
+            c.path = c.path.replace(target.path, newPath);
+          });
         } else {
+          service.moveMeta(target, destination);
           promise = target.persisted ? fileSystem.rename(target.path, newPath) : $q.when(target);
         }
 
@@ -475,6 +511,8 @@
         var metaFile = new RamlFile(file.path + '.meta', JSON.stringify(meta));
         return service.saveFile(metaFile)
           .then(function () {
+            var parent = service.getParent(metaFile);
+            parent.metaChildren.push(metaFile);
             return meta;
           })
         ;
@@ -491,6 +529,35 @@
             return {};
           }
         );
+      };
+
+      service.moveMeta = function moveMeta(file, destination) {
+        var metaName = file.name + '.meta';
+        var newMetaPath = service.join(destination.path, metaName);
+        var metaPathName = file.path + '.meta';
+        var oldParent = service.getParent(file);
+
+        var metaFile = oldParent.metaChildren.find(function(meta) {
+          return meta.path === metaPathName;
+        });
+
+        if (metaFile) {
+          return fileSystem.rename(metaFile.path, newMetaPath).then(
+            function success() {
+              //Remove old parent meta data
+              var index = oldParent.metaChildren.indexOf(metaFile);
+              if (index !== -1) {
+                oldParent.metaChildren.splice(index, 1);
+              }
+              metaFile.path = newMetaPath;
+              destination.metaChildren.push(metaFile);
+              return metaFile;
+            },
+            function failure() {
+              return metaFile;
+            }
+          );
+        }
       };
 
       service.join = function () {
