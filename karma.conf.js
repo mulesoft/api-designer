@@ -106,7 +106,7 @@ module.exports = function(config) {
     // - Safari (only Mac)
     // - PhantomJS
     // - IE (only Windows)
-    browsers: ['ChromeHeadless'],
+    browsers: ['ChromeHeadlessNoSandbox'],
 
     customLaunchers: {
       ChromeHeadlessNoSandbox: {
