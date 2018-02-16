@@ -108,6 +108,13 @@ module.exports = function(config) {
     // - IE (only Windows)
     browsers: ['ChromeHeadless'],
 
+    customLaunchers: {
+      ChromeHeadlessNoSandbox: {
+        base: 'ChromeHeadless',
+        flags: ['--no-sandbox']
+      }
+    },
+
     // If browser does not capture in given timeout [ms], kill it
     captureTimeout: 120000,
 
