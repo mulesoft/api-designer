@@ -19,7 +19,7 @@ function RamlExpander() {
     if (expandedType) {
       for (var key in expandedType) {
         if (expandedType.hasOwnProperty(key)) {
-          if (['example', 'examples'].includes(key) && valueHasExamples) {
+          if ((key === 'example' || key === 'examples') && valueHasExamples) {
             continue;
           }
           value[key] = expandedType[key];
