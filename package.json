@@ -18,14 +18,14 @@
   "dependencies": {
     "express": "~4.12.4",
     "open": "0.0.5",
-    "raml-suggestions": "0.0.37",
+    "raml-suggestions": "0.0.47",
     "request": "~2.33.0",
     "yargs": "~3.11.0"
   },
   "devDependencies": {
-    "oas-raml-converter": "^0.2.7",
     "browser-request": "^0.3.3",
     "browserify-global-shim": "^1.0.3",
+    "babel-preset-flow": "^6.23.0",
     "babel-preset-latest": "^6.16.0",
     "babelify": "^7.3.0",
     "chai": "~1.10.0",
@@ -57,6 +57,7 @@
     "karma-phantomjs-launcher": "~1.0.4",
     "load-grunt-tasks": "~0.5.0",
     "mocha": "~2.0.0",
+    "oas-raml-converter": "^1.1.28",
     "puppeteer": "^0.13.0",
     "selenium-webdriver": "2.53.2",
     "traverse": "~0.6.6",
