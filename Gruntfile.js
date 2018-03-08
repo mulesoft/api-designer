@@ -349,7 +349,7 @@ module.exports = function (grunt) {
           }
         },
         files: {
-          '.tmp/oas-raml-converter/oas-raml-converter.js': 'node_modules/oas-raml-converter/index.js'
+          '.tmp/oas-raml-converter/oas-raml-converter.js': 'node_modules/oas-raml-converter/lib/index.js'
         }
       },
       jsTraverse: {
