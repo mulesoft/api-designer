@@ -19,10 +19,12 @@ function RamlExpander() {
     if (expandedType) {
       for (var key in expandedType) {
         if (expandedType.hasOwnProperty(key)) {
-          if ((key === 'example' || key === 'examples') && valueHasExamples) {
-            continue;
+          if ((key === 'example' || key === 'examples') && valueHasExamples) { continue; }
+          if (key === 'properties') { // can have extra properties
+            value[key] = Object.assign(value.properties || {}, expandedType[key]);
+          } else {
+            value[key] = expandedType[key];
           }
-          value[key] = expandedType[key];
         }
       }
     }
@@ -39,10 +41,7 @@ function RamlExpander() {
   }
 
   function extractArrayType(arrayNode) {
-    if (arrayNode.items.type) {
-      return arrayNode.items.type[0];
-    }
-    return arrayNode.items;
+    return arrayNode.items && arrayNode.items.type ? arrayNode.items.type[0] : arrayNode.items;
   }
 
   function isNotObject(value) {
@@ -53,14 +52,10 @@ function RamlExpander() {
     jsTraverse.traverse(raml).forEach(function (value) {
       if (this.path.slice(-2).join('.') === 'body.application/json' && value.type && value.type[0] === 'array') {
         var type = extractArrayType(value);
-        if (isNotObject(value.items)) {
-          value.items = {};
-        }
+        if (isNotObject(value.items)) { value.items = {}; }
         replaceTypeIfExists(raml, type, value.items);
 
-        if (!value.examples && !value.example) {
-          generateArrayExampleIfPossible(value);
-        }
+        if (!value.examples && !value.example) { generateArrayExampleIfPossible(value); }
       }
     });
 
