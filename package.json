@@ -18,7 +18,7 @@
   "dependencies": {
     "express": "~4.12.4",
     "open": "0.0.5",
-    "raml-suggestions": "0.0.47",
+    "raml-suggestions": "0.0.48",
     "request": "~2.33.0",
     "yargs": "~3.11.0"
   },
@@ -57,7 +57,7 @@
     "karma-phantomjs-launcher": "~1.0.4",
     "load-grunt-tasks": "~0.5.0",
     "mocha": "~2.0.0",
-    "oas-raml-converter": "^1.1.28",
+    "oas-raml-converter": "^1.1.32",
     "puppeteer": "^0.13.0",
     "selenium-webdriver": "2.53.2",
     "traverse": "~0.6.6",
