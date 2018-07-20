@@ -1699,7 +1699,11 @@
         if (astNode && astNode.root() && astNode.root() === astNode) {
           var lastChild = findLastChild(astNode);
           if (lastChild && lastChild.lowLevel() && lastChild.lowLevel().end() <= offset) {
-            astNode = lastChild;
+            var nodeOff = positionOffset(text, lastChild.lowLevel().start());
+            var posOff = positionOffset(text, offset);
+            if (nodeOff <= posOff) {
+              astNode = lastChild;
+            }
           }
         }
         if (!allowNull && !astNode) {
@@ -3095,6 +3099,14 @@
         return new ResolvedProvider(resolver);
       }
       exports.getContentProvider = getContentProvider;
+      function positionOffset(text, pos) {
+        var lineStart = text.lastIndexOf('\n', pos);
+        lineStart = Math.max(0, lineStart);
+        var str = text.substring(lineStart, pos);
+        var strTrim = str.trim();
+        var result = str.indexOf(strTrim);
+        return result;
+      }
     },
     {
       '../resources/categories.json': 12,
@@ -36385,17 +36397,22 @@
                   }
                   if (oasDef.hasOwnProperty('properties')) {
                     var modelProps = [];
+                    var required = [];
                     _.entries(oasDef.properties).map(function (_ref) {
                       var _ref2 = _slicedToArray(_ref, 2), key = _ref2[0], value = _ref2[1];
                       if (value) {
                         var prop = _this3._import(value);
                         prop.name = key;
+                        if (!value.hasOwnProperty('required') || value.required)
+                          required.push(prop.name);
                         modelProps.push(prop);
                       }
                     });
                     model.properties = modelProps;
                     if (oasDef.hasOwnProperty('required') && _.isArray(oasDef.required)) {
                       model.propsRequired = oasDef.required;
+                    } else {
+                      model.propsRequired = required;
                     }
                   }
                   if (oasDef.hasOwnProperty('allOf')) {
