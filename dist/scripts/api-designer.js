@@ -7424,7 +7424,7 @@
       },
       {
         'base64-js': 1,
-        'ieee754': 17,
+        'ieee754': 14,
         'isarray': 6
       }
     ],
@@ -7527,7 +7527,7 @@
           };
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
       },
-      { '_process': 166 }
+      { '_process': 161 }
     ],
     9: [
       function (require, module, exports) {
@@ -7625,1154 +7625,9 @@
           }
         }.call(this, { 'isBuffer': require('../../is-buffer/index.js') }));
       },
-      { '../../is-buffer/index.js': 20 }
+      { '../../is-buffer/index.js': 17 }
     ],
     10: [
-      function (require, module, exports) {
-        'use strict';
-        var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
-            return typeof obj;
-          } : function (obj) {
-            return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
-          };
-        /**
- * This is the web browser implementation of `debug()`.
- *
- * Expose `debug()` as the module.
- */
-        exports = module.exports = require('./debug');
-        exports.log = log;
-        exports.formatArgs = formatArgs;
-        exports.save = save;
-        exports.load = load;
-        exports.useColors = useColors;
-        exports.storage = 'undefined' != typeof chrome && 'undefined' != typeof chrome.storage ? chrome.storage.local : localstorage();
-        /**
- * Colors.
- */
-        exports.colors = [
-          'lightseagreen',
-          'forestgreen',
-          'goldenrod',
-          'dodgerblue',
-          'darkorchid',
-          'crimson'
-        ];
-        /**
- * Currently only WebKit-based Web Inspectors, Firefox >= v31,
- * and the Firebug extension (any Firefox version) are known
- * to support "%c" CSS customizations.
- *
- * TODO: add a `localStorage` variable to explicitly enable/disable colors
- */
-        function useColors() {
-          // is webkit? http://stackoverflow.com/a/16459606/376773
-          return 'WebkitAppearance' in document.documentElement.style || window.console && (console.firebug || console.exception && console.table) || navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/) && parseInt(RegExp.$1, 10) >= 31;
-        }
-        /**
- * Map %j to `JSON.stringify()`, since no Web Inspectors do that by default.
- */
-        exports.formatters.j = function (v) {
-          return JSON.stringify(v);
-        };
-        /**
- * Colorize log arguments if enabled.
- *
- * @api public
- */
-        function formatArgs() {
-          var args = arguments;
-          var useColors = this.useColors;
-          args[0] = (useColors ? '%c' : '') + this.namespace + (useColors ? ' %c' : ' ') + args[0] + (useColors ? '%c ' : ' ') + '+' + exports.humanize(this.diff);
-          if (!useColors)
-            return args;
-          var c = 'color: ' + this.color;
-          args = [
-            args[0],
-            c,
-            'color: inherit'
-          ].concat(Array.prototype.slice.call(args, 1));
-          // the final "%c" is somewhat tricky, because there could be other
-          // arguments passed either before or after the %c, so we need to
-          // figure out the correct index to insert the CSS into
-          var index = 0;
-          var lastC = 0;
-          args[0].replace(/%[a-z%]/g, function (match) {
-            if ('%%' === match)
-              return;
-            index++;
-            if ('%c' === match) {
-              // we only are interested in the *last* %c
-              // (the user may have provided their own)
-              lastC = index;
-            }
-          });
-          args.splice(lastC, 0, c);
-          return args;
-        }
-        /**
- * Invokes `console.log()` when available.
- * No-op when `console.log` is not a "function".
- *
- * @api public
- */
-        function log() {
-          // this hackery is required for IE8/9, where
-          // the `console.log` function doesn't have 'apply'
-          return 'object' === (typeof console === 'undefined' ? 'undefined' : _typeof(console)) && console.log && Function.prototype.apply.call(console.log, console, arguments);
-        }
-        /**
- * Save `namespaces`.
- *
- * @param {String} namespaces
- * @api private
- */
-        function save(namespaces) {
-          try {
-            if (null == namespaces) {
-              exports.storage.removeItem('debug');
-            } else {
-              exports.storage.debug = namespaces;
-            }
-          } catch (e) {
-          }
-        }
-        /**
- * Load `namespaces`.
- *
- * @return {String} returns the previously persisted debug modes
- * @api private
- */
-        function load() {
-          var r;
-          try {
-            r = exports.storage.debug;
-          } catch (e) {
-          }
-          return r;
-        }
-        /**
- * Enable namespaces listed in `localStorage.debug` initially.
- */
-        exports.enable(load());
-        /**
- * Localstorage attempts to return the localstorage.
- *
- * This is necessary because safari throws
- * when a user disables cookies/localstorage
- * and you attempt to access it.
- *
- * @return {LocalStorage}
- * @api private
- */
-        function localstorage() {
-          try {
-            return window.localStorage;
-          } catch (e) {
-          }
-        }
-      },
-      { './debug': 11 }
-    ],
-    11: [
-      function (require, module, exports) {
-        'use strict';
-        /**
- * This is the common logic for both the Node.js and web browser
- * implementations of `debug()`.
- *
- * Expose `debug()` as the module.
- */
-        exports = module.exports = debug;
-        exports.coerce = coerce;
-        exports.disable = disable;
-        exports.enable = enable;
-        exports.enabled = enabled;
-        exports.humanize = require('ms');
-        /**
- * The currently active debug mode names, and names to skip.
- */
-        exports.names = [];
-        exports.skips = [];
-        /**
- * Map of special "%n" handling functions, for the debug "format" argument.
- *
- * Valid key names are a single, lowercased letter, i.e. "n".
- */
-        exports.formatters = {};
-        /**
- * Previously assigned color.
- */
-        var prevColor = 0;
-        /**
- * Previous log timestamp.
- */
-        var prevTime;
-        /**
- * Select a color.
- *
- * @return {Number}
- * @api private
- */
-        function selectColor() {
-          return exports.colors[prevColor++ % exports.colors.length];
-        }
-        /**
- * Create a debugger with the given `namespace`.
- *
- * @param {String} namespace
- * @return {Function}
- * @api public
- */
-        function debug(namespace) {
-          // define the `disabled` version
-          function disabled() {
-          }
-          disabled.enabled = false;
-          // define the `enabled` version
-          function enabled() {
-            var self = enabled;
-            // set `diff` timestamp
-            var curr = +new Date();
-            var ms = curr - (prevTime || curr);
-            self.diff = ms;
-            self.prev = prevTime;
-            self.curr = curr;
-            prevTime = curr;
-            // add the `color` if not set
-            if (null == self.useColors)
-              self.useColors = exports.useColors();
-            if (null == self.color && self.useColors)
-              self.color = selectColor();
-            var args = Array.prototype.slice.call(arguments);
-            args[0] = exports.coerce(args[0]);
-            if ('string' !== typeof args[0]) {
-              // anything else let's inspect with %o
-              args = ['%o'].concat(args);
-            }
-            // apply any `formatters` transformations
-            var index = 0;
-            args[0] = args[0].replace(/%([a-z%])/g, function (match, format) {
-              // if we encounter an escaped % then don't increase the array index
-              if (match === '%%')
-                return match;
-              index++;
-              var formatter = exports.formatters[format];
-              if ('function' === typeof formatter) {
-                var val = args[index];
-                match = formatter.call(self, val);
-                // now we need to remove `args[index]` since it's inlined in the `format`
-                args.splice(index, 1);
-                index--;
-              }
-              return match;
-            });
-            if ('function' === typeof exports.formatArgs) {
-              args = exports.formatArgs.apply(self, args);
-            }
-            var logFn = enabled.log || exports.log || console.log.bind(console);
-            logFn.apply(self, args);
-          }
-          enabled.enabled = true;
-          var fn = exports.enabled(namespace) ? enabled : disabled;
-          fn.namespace = namespace;
-          return fn;
-        }
-        /**
- * Enables a debug mode by namespaces. This can include modes
- * separated by a colon and wildcards.
- *
- * @param {String} namespaces
- * @api public
- */
-        function enable(namespaces) {
-          exports.save(namespaces);
-          var split = (namespaces || '').split(/[\s,]+/);
-          var len = split.length;
-          for (var i = 0; i < len; i++) {
-            if (!split[i])
-              continue;
-            // ignore empty strings
-            namespaces = split[i].replace(/\*/g, '.*?');
-            if (namespaces[0] === '-') {
-              exports.skips.push(new RegExp('^' + namespaces.substr(1) + '$'));
-            } else {
-              exports.names.push(new RegExp('^' + namespaces + '$'));
-            }
-          }
-        }
-        /**
- * Disable debug output.
- *
- * @api public
- */
-        function disable() {
-          exports.enable('');
-        }
-        /**
- * Returns true if the given mode name is enabled, false otherwise.
- *
- * @param {String} name
- * @return {Boolean}
- * @api public
- */
-        function enabled(name) {
-          var i, len;
-          for (i = 0, len = exports.skips.length; i < len; i++) {
-            if (exports.skips[i].test(name)) {
-              return false;
-            }
-          }
-          for (i = 0, len = exports.names.length; i < len; i++) {
-            if (exports.names[i].test(name)) {
-              return true;
-            }
-          }
-          return false;
-        }
-        /**
- * Coerce `val`.
- *
- * @param {Mixed} val
- * @return {Mixed}
- * @api private
- */
-        function coerce(val) {
-          if (val instanceof Error)
-            return val.stack || val.message;
-          return val;
-        }
-      },
-      { 'ms': 80 }
-    ],
-    12: [
-      function (require, module, exports) {
-        (function (process, global) {
-          'use strict';
-          var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
-              return typeof obj;
-            } : function (obj) {
-              return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
-            };
-          /*!
- * @overview es6-promise - a tiny implementation of Promises/A+.
- * @copyright Copyright (c) 2014 Yehuda Katz, Tom Dale, Stefan Penner and contributors (Conversion to ES6 API by Jake Archibald)
- * @license   Licensed under MIT license
- *            See https://raw.githubusercontent.com/stefanpenner/es6-promise/master/LICENSE
- * @version   4.1.1
- */
-          (function (global, factory) {
-            (typeof exports === 'undefined' ? 'undefined' : _typeof(exports)) === 'object' && typeof module !== 'undefined' ? module.exports = factory() : typeof define === 'function' && define.amd ? define(factory) : global.ES6Promise = factory();
-          }(undefined, function () {
-            'use strict';
-            function objectOrFunction(x) {
-              var type = typeof x === 'undefined' ? 'undefined' : _typeof(x);
-              return x !== null && (type === 'object' || type === 'function');
-            }
-            function isFunction(x) {
-              return typeof x === 'function';
-            }
-            var _isArray = undefined;
-            if (Array.isArray) {
-              _isArray = Array.isArray;
-            } else {
-              _isArray = function _isArray(x) {
-                return Object.prototype.toString.call(x) === '[object Array]';
-              };
-            }
-            var isArray = _isArray;
-            var len = 0;
-            var vertxNext = undefined;
-            var customSchedulerFn = undefined;
-            var asap = function asap(callback, arg) {
-              queue[len] = callback;
-              queue[len + 1] = arg;
-              len += 2;
-              if (len === 2) {
-                // If len is 2, that means that we need to schedule an async flush.
-                // If additional callbacks are queued before the queue is flushed, they
-                // will be processed by this flush that we are scheduling.
-                if (customSchedulerFn) {
-                  customSchedulerFn(flush);
-                } else {
-                  scheduleFlush();
-                }
-              }
-            };
-            function setScheduler(scheduleFn) {
-              customSchedulerFn = scheduleFn;
-            }
-            function setAsap(asapFn) {
-              asap = asapFn;
-            }
-            var browserWindow = typeof window !== 'undefined' ? window : undefined;
-            var browserGlobal = browserWindow || {};
-            var BrowserMutationObserver = browserGlobal.MutationObserver || browserGlobal.WebKitMutationObserver;
-            var isNode = typeof self === 'undefined' && typeof process !== 'undefined' && {}.toString.call(process) === '[object process]';
-            // test for web worker but not in IE10
-            var isWorker = typeof Uint8ClampedArray !== 'undefined' && typeof importScripts !== 'undefined' && typeof MessageChannel !== 'undefined';
-            // node
-            function useNextTick() {
-              // node version 0.10.x displays a deprecation warning when nextTick is used recursively
-              // see https://github.com/cujojs/when/issues/410 for details
-              return function () {
-                return process.nextTick(flush);
-              };
-            }
-            // vertx
-            function useVertxTimer() {
-              if (typeof vertxNext !== 'undefined') {
-                return function () {
-                  vertxNext(flush);
-                };
-              }
-              return useSetTimeout();
-            }
-            function useMutationObserver() {
-              var iterations = 0;
-              var observer = new BrowserMutationObserver(flush);
-              var node = document.createTextNode('');
-              observer.observe(node, { characterData: true });
-              return function () {
-                node.data = iterations = ++iterations % 2;
-              };
-            }
-            // web worker
-            function useMessageChannel() {
-              var channel = new MessageChannel();
-              channel.port1.onmessage = flush;
-              return function () {
-                return channel.port2.postMessage(0);
-              };
-            }
-            function useSetTimeout() {
-              // Store setTimeout reference so es6-promise will be unaffected by
-              // other code modifying setTimeout (like sinon.useFakeTimers())
-              var globalSetTimeout = setTimeout;
-              return function () {
-                return globalSetTimeout(flush, 1);
-              };
-            }
-            var queue = new Array(1000);
-            function flush() {
-              for (var i = 0; i < len; i += 2) {
-                var callback = queue[i];
-                var arg = queue[i + 1];
-                callback(arg);
-                queue[i] = undefined;
-                queue[i + 1] = undefined;
-              }
-              len = 0;
-            }
-            function attemptVertx() {
-              try {
-                var r = require;
-                var vertx = r('vertx');
-                vertxNext = vertx.runOnLoop || vertx.runOnContext;
-                return useVertxTimer();
-              } catch (e) {
-                return useSetTimeout();
-              }
-            }
-            var scheduleFlush = undefined;
-            // Decide what async method to use to triggering processing of queued callbacks:
-            if (isNode) {
-              scheduleFlush = useNextTick();
-            } else if (BrowserMutationObserver) {
-              scheduleFlush = useMutationObserver();
-            } else if (isWorker) {
-              scheduleFlush = useMessageChannel();
-            } else if (browserWindow === undefined && typeof require === 'function') {
-              scheduleFlush = attemptVertx();
-            } else {
-              scheduleFlush = useSetTimeout();
-            }
-            function then(onFulfillment, onRejection) {
-              var _arguments = arguments;
-              var parent = this;
-              var child = new this.constructor(noop);
-              if (child[PROMISE_ID] === undefined) {
-                makePromise(child);
-              }
-              var _state = parent._state;
-              if (_state) {
-                (function () {
-                  var callback = _arguments[_state - 1];
-                  asap(function () {
-                    return invokeCallback(_state, child, callback, parent._result);
-                  });
-                }());
-              } else {
-                subscribe(parent, child, onFulfillment, onRejection);
-              }
-              return child;
-            }
-            /**
-    `Promise.resolve` returns a promise that will become resolved with the
-    passed `value`. It is shorthand for the following:
-  
-    ```javascript
-    let promise = new Promise(function(resolve, reject){
-      resolve(1);
-    });
-  
-    promise.then(function(value){
-      // value === 1
-    });
-    ```
-  
-    Instead of writing the above, your code now simply becomes the following:
-  
-    ```javascript
-    let promise = Promise.resolve(1);
-  
-    promise.then(function(value){
-      // value === 1
-    });
-    ```
-  
-    @method resolve
-    @static
-    @param {Any} value value that the returned promise will be resolved with
-    Useful for tooling.
-    @return {Promise} a promise that will become fulfilled with the given
-    `value`
-  */
-            function resolve$1(object) {
-              /*jshint validthis:true */
-              var Constructor = this;
-              if (object && (typeof object === 'undefined' ? 'undefined' : _typeof(object)) === 'object' && object.constructor === Constructor) {
-                return object;
-              }
-              var promise = new Constructor(noop);
-              resolve(promise, object);
-              return promise;
-            }
-            var PROMISE_ID = Math.random().toString(36).substring(16);
-            function noop() {
-            }
-            var PENDING = void 0;
-            var FULFILLED = 1;
-            var REJECTED = 2;
-            var GET_THEN_ERROR = new ErrorObject();
-            function selfFulfillment() {
-              return new TypeError('You cannot resolve a promise with itself');
-            }
-            function cannotReturnOwn() {
-              return new TypeError('A promises callback cannot return that same promise.');
-            }
-            function getThen(promise) {
-              try {
-                return promise.then;
-              } catch (error) {
-                GET_THEN_ERROR.error = error;
-                return GET_THEN_ERROR;
-              }
-            }
-            function tryThen(then$$1, value, fulfillmentHandler, rejectionHandler) {
-              try {
-                then$$1.call(value, fulfillmentHandler, rejectionHandler);
-              } catch (e) {
-                return e;
-              }
-            }
-            function handleForeignThenable(promise, thenable, then$$1) {
-              asap(function (promise) {
-                var sealed = false;
-                var error = tryThen(then$$1, thenable, function (value) {
-                    if (sealed) {
-                      return;
-                    }
-                    sealed = true;
-                    if (thenable !== value) {
-                      resolve(promise, value);
-                    } else {
-                      fulfill(promise, value);
-                    }
-                  }, function (reason) {
-                    if (sealed) {
-                      return;
-                    }
-                    sealed = true;
-                    reject(promise, reason);
-                  }, 'Settle: ' + (promise._label || ' unknown promise'));
-                if (!sealed && error) {
-                  sealed = true;
-                  reject(promise, error);
-                }
-              }, promise);
-            }
-            function handleOwnThenable(promise, thenable) {
-              if (thenable._state === FULFILLED) {
-                fulfill(promise, thenable._result);
-              } else if (thenable._state === REJECTED) {
-                reject(promise, thenable._result);
-              } else {
-                subscribe(thenable, undefined, function (value) {
-                  return resolve(promise, value);
-                }, function (reason) {
-                  return reject(promise, reason);
-                });
-              }
-            }
-            function handleMaybeThenable(promise, maybeThenable, then$$1) {
-              if (maybeThenable.constructor === promise.constructor && then$$1 === then && maybeThenable.constructor.resolve === resolve$1) {
-                handleOwnThenable(promise, maybeThenable);
-              } else {
-                if (then$$1 === GET_THEN_ERROR) {
-                  reject(promise, GET_THEN_ERROR.error);
-                  GET_THEN_ERROR.error = null;
-                } else if (then$$1 === undefined) {
-                  fulfill(promise, maybeThenable);
-                } else if (isFunction(then$$1)) {
-                  handleForeignThenable(promise, maybeThenable, then$$1);
-                } else {
-                  fulfill(promise, maybeThenable);
-                }
-              }
-            }
-            function resolve(promise, value) {
-              if (promise === value) {
-                reject(promise, selfFulfillment());
-              } else if (objectOrFunction(value)) {
-                handleMaybeThenable(promise, value, getThen(value));
-              } else {
-                fulfill(promise, value);
-              }
-            }
-            function publishRejection(promise) {
-              if (promise._onerror) {
-                promise._onerror(promise._result);
-              }
-              publish(promise);
-            }
-            function fulfill(promise, value) {
-              if (promise._state !== PENDING) {
-                return;
-              }
-              promise._result = value;
-              promise._state = FULFILLED;
-              if (promise._subscribers.length !== 0) {
-                asap(publish, promise);
-              }
-            }
-            function reject(promise, reason) {
-              if (promise._state !== PENDING) {
-                return;
-              }
-              promise._state = REJECTED;
-              promise._result = reason;
-              asap(publishRejection, promise);
-            }
-            function subscribe(parent, child, onFulfillment, onRejection) {
-              var _subscribers = parent._subscribers;
-              var length = _subscribers.length;
-              parent._onerror = null;
-              _subscribers[length] = child;
-              _subscribers[length + FULFILLED] = onFulfillment;
-              _subscribers[length + REJECTED] = onRejection;
-              if (length === 0 && parent._state) {
-                asap(publish, parent);
-              }
-            }
-            function publish(promise) {
-              var subscribers = promise._subscribers;
-              var settled = promise._state;
-              if (subscribers.length === 0) {
-                return;
-              }
-              var child = undefined, callback = undefined, detail = promise._result;
-              for (var i = 0; i < subscribers.length; i += 3) {
-                child = subscribers[i];
-                callback = subscribers[i + settled];
-                if (child) {
-                  invokeCallback(settled, child, callback, detail);
-                } else {
-                  callback(detail);
-                }
-              }
-              promise._subscribers.length = 0;
-            }
-            function ErrorObject() {
-              this.error = null;
-            }
-            var TRY_CATCH_ERROR = new ErrorObject();
-            function tryCatch(callback, detail) {
-              try {
-                return callback(detail);
-              } catch (e) {
-                TRY_CATCH_ERROR.error = e;
-                return TRY_CATCH_ERROR;
-              }
-            }
-            function invokeCallback(settled, promise, callback, detail) {
-              var hasCallback = isFunction(callback), value = undefined, error = undefined, succeeded = undefined, failed = undefined;
-              if (hasCallback) {
-                value = tryCatch(callback, detail);
-                if (value === TRY_CATCH_ERROR) {
-                  failed = true;
-                  error = value.error;
-                  value.error = null;
-                } else {
-                  succeeded = true;
-                }
-                if (promise === value) {
-                  reject(promise, cannotReturnOwn());
-                  return;
-                }
-              } else {
-                value = detail;
-                succeeded = true;
-              }
-              if (promise._state !== PENDING) {
-              } else if (hasCallback && succeeded) {
-                resolve(promise, value);
-              } else if (failed) {
-                reject(promise, error);
-              } else if (settled === FULFILLED) {
-                fulfill(promise, value);
-              } else if (settled === REJECTED) {
-                reject(promise, value);
-              }
-            }
-            function initializePromise(promise, resolver) {
-              try {
-                resolver(function resolvePromise(value) {
-                  resolve(promise, value);
-                }, function rejectPromise(reason) {
-                  reject(promise, reason);
-                });
-              } catch (e) {
-                reject(promise, e);
-              }
-            }
-            var id = 0;
-            function nextId() {
-              return id++;
-            }
-            function makePromise(promise) {
-              promise[PROMISE_ID] = id++;
-              promise._state = undefined;
-              promise._result = undefined;
-              promise._subscribers = [];
-            }
-            function Enumerator$1(Constructor, input) {
-              this._instanceConstructor = Constructor;
-              this.promise = new Constructor(noop);
-              if (!this.promise[PROMISE_ID]) {
-                makePromise(this.promise);
-              }
-              if (isArray(input)) {
-                this.length = input.length;
-                this._remaining = input.length;
-                this._result = new Array(this.length);
-                if (this.length === 0) {
-                  fulfill(this.promise, this._result);
-                } else {
-                  this.length = this.length || 0;
-                  this._enumerate(input);
-                  if (this._remaining === 0) {
-                    fulfill(this.promise, this._result);
-                  }
-                }
-              } else {
-                reject(this.promise, validationError());
-              }
-            }
-            function validationError() {
-              return new Error('Array Methods must be provided an Array');
-            }
-            Enumerator$1.prototype._enumerate = function (input) {
-              for (var i = 0; this._state === PENDING && i < input.length; i++) {
-                this._eachEntry(input[i], i);
-              }
-            };
-            Enumerator$1.prototype._eachEntry = function (entry, i) {
-              var c = this._instanceConstructor;
-              var resolve$$1 = c.resolve;
-              if (resolve$$1 === resolve$1) {
-                var _then = getThen(entry);
-                if (_then === then && entry._state !== PENDING) {
-                  this._settledAt(entry._state, i, entry._result);
-                } else if (typeof _then !== 'function') {
-                  this._remaining--;
-                  this._result[i] = entry;
-                } else if (c === Promise$2) {
-                  var promise = new c(noop);
-                  handleMaybeThenable(promise, entry, _then);
-                  this._willSettleAt(promise, i);
-                } else {
-                  this._willSettleAt(new c(function (resolve$$1) {
-                    return resolve$$1(entry);
-                  }), i);
-                }
-              } else {
-                this._willSettleAt(resolve$$1(entry), i);
-              }
-            };
-            Enumerator$1.prototype._settledAt = function (state, i, value) {
-              var promise = this.promise;
-              if (promise._state === PENDING) {
-                this._remaining--;
-                if (state === REJECTED) {
-                  reject(promise, value);
-                } else {
-                  this._result[i] = value;
-                }
-              }
-              if (this._remaining === 0) {
-                fulfill(promise, this._result);
-              }
-            };
-            Enumerator$1.prototype._willSettleAt = function (promise, i) {
-              var enumerator = this;
-              subscribe(promise, undefined, function (value) {
-                return enumerator._settledAt(FULFILLED, i, value);
-              }, function (reason) {
-                return enumerator._settledAt(REJECTED, i, reason);
-              });
-            };
-            /**
-    `Promise.all` accepts an array of promises, and returns a new promise which
-    is fulfilled with an array of fulfillment values for the passed promises, or
-    rejected with the reason of the first passed promise to be rejected. It casts all
-    elements of the passed iterable to promises as it runs this algorithm.
-  
-    Example:
-  
-    ```javascript
-    let promise1 = resolve(1);
-    let promise2 = resolve(2);
-    let promise3 = resolve(3);
-    let promises = [ promise1, promise2, promise3 ];
-  
-    Promise.all(promises).then(function(array){
-      // The array here would be [ 1, 2, 3 ];
-    });
-    ```
-  
-    If any of the `promises` given to `all` are rejected, the first promise
-    that is rejected will be given as an argument to the returned promises's
-    rejection handler. For example:
-  
-    Example:
-  
-    ```javascript
-    let promise1 = resolve(1);
-    let promise2 = reject(new Error("2"));
-    let promise3 = reject(new Error("3"));
-    let promises = [ promise1, promise2, promise3 ];
-  
-    Promise.all(promises).then(function(array){
-      // Code here never runs because there are rejected promises!
-    }, function(error) {
-      // error.message === "2"
-    });
-    ```
-  
-    @method all
-    @static
-    @param {Array} entries array of promises
-    @param {String} label optional string for labeling the promise.
-    Useful for tooling.
-    @return {Promise} promise that is fulfilled when all `promises` have been
-    fulfilled, or rejected if any of them become rejected.
-    @static
-  */
-            function all$1(entries) {
-              return new Enumerator$1(this, entries).promise;
-            }
-            /**
-    `Promise.race` returns a new promise which is settled in the same way as the
-    first passed promise to settle.
-  
-    Example:
-  
-    ```javascript
-    let promise1 = new Promise(function(resolve, reject){
-      setTimeout(function(){
-        resolve('promise 1');
-      }, 200);
-    });
-  
-    let promise2 = new Promise(function(resolve, reject){
-      setTimeout(function(){
-        resolve('promise 2');
-      }, 100);
-    });
-  
-    Promise.race([promise1, promise2]).then(function(result){
-      // result === 'promise 2' because it was resolved before promise1
-      // was resolved.
-    });
-    ```
-  
-    `Promise.race` is deterministic in that only the state of the first
-    settled promise matters. For example, even if other promises given to the
-    `promises` array argument are resolved, but the first settled promise has
-    become rejected before the other promises became fulfilled, the returned
-    promise will become rejected:
-  
-    ```javascript
-    let promise1 = new Promise(function(resolve, reject){
-      setTimeout(function(){
-        resolve('promise 1');
-      }, 200);
-    });
-  
-    let promise2 = new Promise(function(resolve, reject){
-      setTimeout(function(){
-        reject(new Error('promise 2'));
-      }, 100);
-    });
-  
-    Promise.race([promise1, promise2]).then(function(result){
-      // Code here never runs
-    }, function(reason){
-      // reason.message === 'promise 2' because promise 2 became rejected before
-      // promise 1 became fulfilled
-    });
-    ```
-  
-    An example real-world use case is implementing timeouts:
-  
-    ```javascript
-    Promise.race([ajax('foo.json'), timeout(5000)])
-    ```
-  
-    @method race
-    @static
-    @param {Array} promises array of promises to observe
-    Useful for tooling.
-    @return {Promise} a promise which settles in the same way as the first passed
-    promise to settle.
-  */
-            function race$1(entries) {
-              /*jshint validthis:true */
-              var Constructor = this;
-              if (!isArray(entries)) {
-                return new Constructor(function (_, reject) {
-                  return reject(new TypeError('You must pass an array to race.'));
-                });
-              } else {
-                return new Constructor(function (resolve, reject) {
-                  var length = entries.length;
-                  for (var i = 0; i < length; i++) {
-                    Constructor.resolve(entries[i]).then(resolve, reject);
-                  }
-                });
-              }
-            }
-            /**
-    `Promise.reject` returns a promise rejected with the passed `reason`.
-    It is shorthand for the following:
-  
-    ```javascript
-    let promise = new Promise(function(resolve, reject){
-      reject(new Error('WHOOPS'));
-    });
-  
-    promise.then(function(value){
-      // Code here doesn't run because the promise is rejected!
-    }, function(reason){
-      // reason.message === 'WHOOPS'
-    });
-    ```
-  
-    Instead of writing the above, your code now simply becomes the following:
-  
-    ```javascript
-    let promise = Promise.reject(new Error('WHOOPS'));
-  
-    promise.then(function(value){
-      // Code here doesn't run because the promise is rejected!
-    }, function(reason){
-      // reason.message === 'WHOOPS'
-    });
-    ```
-  
-    @method reject
-    @static
-    @param {Any} reason value that the returned promise will be rejected with.
-    Useful for tooling.
-    @return {Promise} a promise rejected with the given `reason`.
-  */
-            function reject$1(reason) {
-              /*jshint validthis:true */
-              var Constructor = this;
-              var promise = new Constructor(noop);
-              reject(promise, reason);
-              return promise;
-            }
-            function needsResolver() {
-              throw new TypeError('You must pass a resolver function as the first argument to the promise constructor');
-            }
-            function needsNew() {
-              throw new TypeError('Failed to construct \'Promise\': Please use the \'new\' operator, this object constructor cannot be called as a function.');
-            }
-            /**
-    Promise objects represent the eventual result of an asynchronous operation. The
-    primary way of interacting with a promise is through its `then` method, which
-    registers callbacks to receive either a promise's eventual value or the reason
-    why the promise cannot be fulfilled.
-  
-    Terminology
-    -----------
-  
-    - `promise` is an object or function with a `then` method whose behavior conforms to this specification.
-    - `thenable` is an object or function that defines a `then` method.
-    - `value` is any legal JavaScript value (including undefined, a thenable, or a promise).
-    - `exception` is a value that is thrown using the throw statement.
-    - `reason` is a value that indicates why a promise was rejected.
-    - `settled` the final resting state of a promise, fulfilled or rejected.
-  
-    A promise can be in one of three states: pending, fulfilled, or rejected.
-  
-    Promises that are fulfilled have a fulfillment value and are in the fulfilled
-    state.  Promises that are rejected have a rejection reason and are in the
-    rejected state.  A fulfillment value is never a thenable.
-  
-    Promises can also be said to *resolve* a value.  If this value is also a
-    promise, then the original promise's settled state will match the value's
-    settled state.  So a promise that *resolves* a promise that rejects will
-    itself reject, and a promise that *resolves* a promise that fulfills will
-    itself fulfill.
-  
-  
-    Basic Usage:
-    ------------
-  
-    ```js
-    let promise = new Promise(function(resolve, reject) {
-      // on success
-      resolve(value);
-  
-      // on failure
-      reject(reason);
-    });
-  
-    promise.then(function(value) {
-      // on fulfillment
-    }, function(reason) {
-      // on rejection
-    });
-    ```
-  
-    Advanced Usage:
-    ---------------
-  
-    Promises shine when abstracting away asynchronous interactions such as
-    `XMLHttpRequest`s.
-  
-    ```js
-    function getJSON(url) {
-      return new Promise(function(resolve, reject){
-        let xhr = new XMLHttpRequest();
-  
-        xhr.open('GET', url);
-        xhr.onreadystatechange = handler;
-        xhr.responseType = 'json';
-        xhr.setRequestHeader('Accept', 'application/json');
-        xhr.send();
-  
-        function handler() {
-          if (this.readyState === this.DONE) {
-            if (this.status === 200) {
-              resolve(this.response);
-            } else {
-              reject(new Error('getJSON: `' + url + '` failed with status: [' + this.status + ']'));
-            }
-          }
-        };
-      });
-    }
-  
-    getJSON('/posts.json').then(function(json) {
-      // on fulfillment
-    }, function(reason) {
-      // on rejection
-    });
-    ```
-  
-    Unlike callbacks, promises are great composable primitives.
-  
-    ```js
-    Promise.all([
-      getJSON('/posts'),
-      getJSON('/comments')
-    ]).then(function(values){
-      values[0] // => postsJSON
-      values[1] // => commentsJSON
-  
-      return values;
-    });
-    ```
-  
-    @class Promise
-    @param {function} resolver
-    Useful for tooling.
-    @constructor
-  */
-            function Promise$2(resolver) {
-              this[PROMISE_ID] = nextId();
-              this._result = this._state = undefined;
-              this._subscribers = [];
-              if (noop !== resolver) {
-                typeof resolver !== 'function' && needsResolver();
-                this instanceof Promise$2 ? initializePromise(this, resolver) : needsNew();
-              }
-            }
-            Promise$2.all = all$1;
-            Promise$2.race = race$1;
-            Promise$2.resolve = resolve$1;
-            Promise$2.reject = reject$1;
-            Promise$2._setScheduler = setScheduler;
-            Promise$2._setAsap = setAsap;
-            Promise$2._asap = asap;
-            Promise$2.prototype = {
-              constructor: Promise$2,
-              then: then,
-              'catch': function _catch(onRejection) {
-                return this.then(null, onRejection);
-              }
-            };
-            /*global self*/
-            function polyfill$1() {
-              var local = undefined;
-              if (typeof global !== 'undefined') {
-                local = global;
-              } else if (typeof self !== 'undefined') {
-                local = self;
-              } else {
-                try {
-                  local = Function('return this')();
-                } catch (e) {
-                  throw new Error('polyfill failed because global object is unavailable in this environment');
-                }
-              }
-              var P = local.Promise;
-              if (P) {
-                var promiseToString = null;
-                try {
-                  promiseToString = Object.prototype.toString.call(P.resolve());
-                } catch (e) {
-                }
-                if (promiseToString === '[object Promise]' && !P.cast) {
-                  return;
-                }
-              }
-              local.Promise = Promise$2;
-            }
-            // Strange compat..
-            Promise$2.polyfill = polyfill$1;
-            Promise$2.Promise = Promise$2;
-            return Promise$2;
-          }));
-        }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
-      },
-      { '_process': 166 }
-    ],
-    13: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -9023,7 +7878,7 @@
       },
       {}
     ],
-    14: [
+    11: [
       function (require, module, exports) {
         'use strict';
         var hasOwn = Object.prototype.hasOwnProperty;
@@ -9048,7 +7903,7 @@
       },
       {}
     ],
-    15: [
+    12: [
       function (require, module, exports) {
         'use strict';
         function format(fmt) {
@@ -9086,7 +7941,7 @@
       },
       {}
     ],
-    16: [
+    13: [
       function (require, module, exports) {
         var http = require('http');
         var https = module.exports;
@@ -9103,9 +7958,9 @@
           return http.request.call(this, params, cb);
         };
       },
-      { 'http': 195 }
+      { 'http': 190 }
     ],
-    17: [
+    14: [
       function (require, module, exports) {
         'use strict';
         exports.read = function (buffer, offset, isLE, mLen, nBytes) {
@@ -9188,7 +8043,7 @@
       },
       {}
     ],
-    18: [
+    15: [
       function (require, module, exports) {
         'use strict';
         var indexOf = [].indexOf;
@@ -9204,7 +8059,7 @@
       },
       {}
     ],
-    19: [
+    16: [
       function (require, module, exports) {
         'use strict';
         if (typeof Object.create === 'function') {
@@ -9234,7 +8089,7 @@
       },
       {}
     ],
-    20: [
+    17: [
       function (require, module, exports) {
         'use strict';
         /*!
@@ -9258,7 +8113,7 @@
       },
       {}
     ],
-    21: [
+    18: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -9373,14 +8228,8 @@
       },
       {}
     ],
-    22: [
+    19: [
       function (require, module, exports) {
-        /** !
- * JSON Schema $Ref Parser v3.3.1
- *
- * @link https://github.com/BigstickCarpet/json-schema-ref-parser
- * @license MIT
- */
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
             return typeof obj;
@@ -9401,7 +8250,7 @@
           debug('Bundling $ref pointers in %s', parser.$refs._root$Ref.path);
           // Build an inventory of all $ref pointers in the JSON Schema
           var inventory = [];
-          crawl(parser, 'schema', parser.$refs._root$Ref.path + '#', '#', inventory, parser.$refs, options);
+          crawl(parser, 'schema', parser.$refs._root$Ref.path + '#', '#', 0, inventory, parser.$refs, options);
           // Remap all $ref pointers
           remap(inventory);
         }
@@ -9416,27 +8265,36 @@
  * @param {$Refs} $refs
  * @param {$RefParserOptions} options
  */
-        function crawl(parent, key, path, pathFromRoot, inventory, $refs, options) {
+        function crawl(parent, key, path, pathFromRoot, indirections, inventory, $refs, options) {
           var obj = key === null ? parent : parent[key];
           if (obj && (typeof obj === 'undefined' ? 'undefined' : _typeof(obj)) === 'object') {
             if ($Ref.isAllowed$Ref(obj)) {
-              inventory$Ref(parent, key, path, pathFromRoot, inventory, $refs, options);
+              inventory$Ref(parent, key, path, pathFromRoot, indirections, inventory, $refs, options);
             } else {
-              var keys = Object.keys(obj);
-              // Most people will expect references to be bundled into the the "definitions" property,
-              // so we always crawl that property first, if it exists.
-              var defs = keys.indexOf('definitions');
-              if (defs > 0) {
-                keys.splice(0, 0, keys.splice(defs, 1)[0]);
-              }
+              // Crawl the object in a specific order that's optimized for bundling.
+              // This is important because it determines how `pathFromRoot` gets built,
+              // which later determines which keys get dereferenced and which ones get remapped
+              var keys = Object.keys(obj).sort(function (a, b) {
+                  // Most people will expect references to be bundled into the the "definitions" property,
+                  // so we always crawl that property first, if it exists.
+                  if (a === 'definitions') {
+                    return -1;
+                  } else if (b === 'definitions') {
+                    return 1;
+                  } else {
+                    // Otherwise, crawl the keys based on their length.
+                    // This produces the shortest possible bundled references
+                    return a.length - b.length;
+                  }
+                });
               keys.forEach(function (key) {
                 var keyPath = Pointer.join(path, key);
                 var keyPathFromRoot = Pointer.join(pathFromRoot, key);
                 var value = obj[key];
                 if ($Ref.isAllowed$Ref(value)) {
-                  inventory$Ref(obj, key, path, keyPathFromRoot, inventory, $refs, options);
+                  inventory$Ref(obj, key, path, keyPathFromRoot, indirections, inventory, $refs, options);
                 } else {
-                  crawl(obj, key, keyPath, keyPathFromRoot, inventory, $refs, options);
+                  crawl(obj, key, keyPath, keyPathFromRoot, indirections, inventory, $refs, options);
                 }
               });
             }
@@ -9454,13 +8312,7 @@
  * @param {$Refs} $refs
  * @param {$RefParserOptions} options
  */
-        function inventory$Ref($refParent, $refKey, path, pathFromRoot, inventory, $refs, options) {
-          if (inventory.some(function (i) {
-              return i.parent === $refParent && i.key === $refKey;
-            })) {
-            // This $Ref has already been inventoried, so we don't need to process it again
-            return;
-          }
+        function inventory$Ref($refParent, $refKey, path, pathFromRoot, indirections, inventory, $refs, options) {
           var $ref = $refKey === null ? $refParent : $refParent[$refKey];
           var $refPath = url.resolve(path, $ref.$ref);
           var pointer = $refs._resolve($refPath, options);
@@ -9469,6 +8321,16 @@
           var hash = url.getHash(pointer.path);
           var external = file !== $refs._root$Ref.path;
           var extended = $Ref.isExtended$Ref($ref);
+          indirections += pointer.indirections;
+          var existingEntry = findInInventory(inventory, $refParent, $refKey);
+          if (existingEntry) {
+            // This $Ref has already been inventoried, so we don't need to process it again
+            if (depth < existingEntry.depth || indirections < existingEntry.indirections) {
+              removeFromInventory(inventory, existingEntry);
+            } else {
+              return;
+            }
+          }
           inventory.push({
             $ref: $ref,
             parent: $refParent,
@@ -9480,10 +8342,11 @@
             value: pointer.value,
             circular: pointer.circular,
             extended: extended,
-            external: external
+            external: external,
+            indirections: indirections
           });
           // Recursively crawl the resolved value
-          crawl(pointer.value, null, pointer.path, pathFromRoot, inventory, $refs, options);
+          crawl(pointer.value, null, pointer.path, pathFromRoot, indirections + 1, inventory, $refs, options);
         }
         /**
  * Re-maps every $ref pointer, so that they're all relative to the root of the JSON Schema.
@@ -9512,57 +8375,89 @@
           // Group & sort all the $ref pointers, so they're in the order that we need to dereference/remap them
           inventory.sort(function (a, b) {
             if (a.file !== b.file) {
-              return a.file < b.file ? -1 : +1;  // Group all the $refs that point to the same file
+              // Group all the $refs that point to the same file
+              return a.file < b.file ? -1 : +1;
             } else if (a.hash !== b.hash) {
-              return a.hash < b.hash ? -1 : +1;  // Group all the $refs that point to the same part of the file
+              // Group all the $refs that point to the same part of the file
+              return a.hash < b.hash ? -1 : +1;
             } else if (a.circular !== b.circular) {
-              return a.circular ? -1 : +1;  // If the $ref points to itself, then sort it higher than other $refs that point to this $ref
+              // If the $ref points to itself, then sort it higher than other $refs that point to this $ref
+              return a.circular ? -1 : +1;
             } else if (a.extended !== b.extended) {
-              return a.extended ? +1 : -1;  // If the $ref extends the resolved value, then sort it lower than other $refs that don't extend the value
+              // If the $ref extends the resolved value, then sort it lower than other $refs that don't extend the value
+              return a.extended ? +1 : -1;
+            } else if (a.indirections !== b.indirections) {
+              // Sort direct references higher than indirect references
+              return a.indirections - b.indirections;
             } else if (a.depth !== b.depth) {
-              return a.depth - b.depth;  // Sort $refs by how close they are to the JSON Schema root
+              // Sort $refs by how close they are to the JSON Schema root
+              return a.depth - b.depth;
             } else {
-              // If all else is equal, use the $ref that's in the "definitions" property
-              return b.pathFromRoot.lastIndexOf('/definitions') - a.pathFromRoot.lastIndexOf('/definitions');
+              // Determine how far each $ref is from the "definitions" property.
+              // Most people will expect references to be bundled into the the "definitions" property if possible.
+              var aDefinitionsIndex = a.pathFromRoot.lastIndexOf('/definitions');
+              var bDefinitionsIndex = b.pathFromRoot.lastIndexOf('/definitions');
+              if (aDefinitionsIndex !== bDefinitionsIndex) {
+                // Give higher priority to the $ref that's closer to the "definitions" property
+                return bDefinitionsIndex - aDefinitionsIndex;
+              } else {
+                // All else is equal, so use the shorter path, which will produce the shortest possible reference
+                return a.pathFromRoot.length - b.pathFromRoot.length;
+              }
             }
           });
           var file, hash, pathFromRoot;
-          inventory.forEach(function (i) {
-            debug('Re-mapping $ref pointer "%s" at %s', i.$ref.$ref, i.pathFromRoot);
-            if (!i.external) {
+          inventory.forEach(function (entry) {
+            debug('Re-mapping $ref pointer "%s" at %s', entry.$ref.$ref, entry.pathFromRoot);
+            if (!entry.external) {
               // This $ref already resolves to the main JSON Schema file
-              i.$ref.$ref = i.hash;
-            } else if (i.file === file && i.hash === hash) {
+              entry.$ref.$ref = entry.hash;
+            } else if (entry.file === file && entry.hash === hash) {
               // This $ref points to the same value as the prevous $ref, so remap it to the same path
-              i.$ref.$ref = pathFromRoot;
-            } else if (i.file === file && i.hash.indexOf(hash + '/') === 0) {
+              entry.$ref.$ref = pathFromRoot;
+            } else if (entry.file === file && entry.hash.indexOf(hash + '/') === 0) {
               // This $ref points to the a sub-value as the prevous $ref, so remap it beneath that path
-              i.$ref.$ref = Pointer.join(pathFromRoot, Pointer.parse(i.hash));
+              entry.$ref.$ref = Pointer.join(pathFromRoot, Pointer.parse(entry.hash));
             } else {
               // We've moved to a new file or new hash
-              file = i.file;
-              hash = i.hash;
-              pathFromRoot = i.pathFromRoot;
+              file = entry.file;
+              hash = entry.hash;
+              pathFromRoot = entry.pathFromRoot;
               // This is the first $ref to point to this value, so dereference the value.
               // Any other $refs that point to the same value will point to this $ref instead
-              i.$ref = i.parent[i.key] = $Ref.dereference(i.$ref, i.value);
-              if (i.circular) {
+              entry.$ref = entry.parent[entry.key] = $Ref.dereference(entry.$ref, entry.value);
+              if (entry.circular) {
                 // This $ref points to itself
-                i.$ref.$ref = i.pathFromRoot;
+                entry.$ref.$ref = entry.pathFromRoot;
               }
             }
-            debug('    new value: %s', i.$ref && i.$ref.$ref ? i.$ref.$ref : '[object Object]');
+            debug('    new value: %s', entry.$ref && entry.$ref.$ref ? entry.$ref.$ref : '[object Object]');
           });
+        }
+        /**
+ * TODO
+ */
+        function findInInventory(inventory, $refParent, $refKey) {
+          for (var i = 0; i < inventory.length; i++) {
+            var existingEntry = inventory[i];
+            if (existingEntry.parent === $refParent && existingEntry.key === $refKey) {
+              return existingEntry;
+            }
+          }
+        }
+        function removeFromInventory(inventory, entry) {
+          var index = inventory.indexOf(entry);
+          inventory.splice(index, 1);
         }
       },
       {
-        './pointer': 31,
-        './ref': 32,
-        './util/debug': 37,
-        './util/url': 40
+        './pointer': 29,
+        './ref': 30,
+        './util/debug': 35,
+        './util/url': 37
       }
     ],
-    23: [
+    20: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -9695,14 +8590,14 @@
         }
       },
       {
-        './pointer': 31,
-        './ref': 32,
-        './util/debug': 37,
-        './util/url': 40,
-        'ono': 76
+        './pointer': 29,
+        './ref': 30,
+        './util/debug': 35,
+        './util/url': 37,
+        'ono': 156
       }
     ],
-    24: [
+    21: [
       function (require, module, exports) {
         (function (Buffer) {
           'use strict';
@@ -9711,7 +8606,7 @@
             } : function (obj) {
               return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
             };
-          var Promise = require('./util/promise'), Options = require('./options'), $Refs = require('./refs'), parse = require('./parse'), resolveExternal = require('./resolve-external'), bundle = require('./bundle'), dereference = require('./dereference'), url = require('./util/url'), maybe = require('call-me-maybe'), ono = require('ono');
+          var Options = require('./options'), $Refs = require('./refs'), parse = require('./parse'), normalizeArgs = require('./normalize-args'), resolveExternal = require('./resolve-external'), bundle = require('./bundle'), dereference = require('./dereference'), url = require('./util/url'), maybe = require('call-me-maybe'), ono = require('ono');
           module.exports = $RefParser;
           module.exports.YAML = require('./util/yaml');
           /**
@@ -9741,12 +8636,13 @@
  * This method does not resolve any JSON references.
  * It just reads a single file in JSON or YAML format, and parse it as a JavaScript object.
  *
- * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
+ * @param {string} [path] - The file path or URL of the JSON schema
+ * @param {object} [schema] - A JSON schema object. This object will be used instead of reading from `path`.
  * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed
  * @param {function} [callback] - An error-first callback. The second parameter is the parsed JSON schema object.
  * @returns {Promise} - The returned promise resolves with the parsed JSON schema object.
  */
-          $RefParser.parse = function (schema, options, callback) {
+          $RefParser.parse = function (path, schema, options, callback) {
             var Class = this;
             // eslint-disable-line consistent-this
             var instance = new Class();
@@ -9757,12 +8653,13 @@
  * This method does not resolve any JSON references.
  * It just reads a single file in JSON or YAML format, and parse it as a JavaScript object.
  *
- * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
+ * @param {string} [path] - The file path or URL of the JSON schema
+ * @param {object} [schema] - A JSON schema object. This object will be used instead of reading from `path`.
  * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed
  * @param {function} [callback] - An error-first callback. The second parameter is the parsed JSON schema object.
  * @returns {Promise} - The returned promise resolves with the parsed JSON schema object.
  */
-          $RefParser.prototype.parse = function (schema, options, callback) {
+          $RefParser.prototype.parse = function (path, schema, options, callback) {
             var args = normalizeArgs(arguments);
             var promise;
             if (!args.path && !args.schema) {
@@ -9778,15 +8675,19 @@
             // So we're being generous here and doing the conversion automatically.
             // This is not intended to be a 100% bulletproof solution.
             // If it doesn't work for your use-case, then use a URL instead.
+            var pathType = 'http';
             if (url.isFileSystemPath(args.path)) {
               args.path = url.fromFileSystemPath(args.path);
+              pathType = 'file';
             }
             // Resolve the absolute path of the schema
             args.path = url.resolve(url.cwd(), args.path);
             if (args.schema && _typeof(args.schema) === 'object') {
               // A schema object was passed-in.
               // So immediately add a new $Ref with the schema object as its value
-              this.$refs._add(args.path, args.schema);
+              var $ref = this.$refs._add(args.path);
+              $ref.value = args.schema;
+              $ref.pathType = pathType;
               promise = Promise.resolve(args.schema);
             } else {
               // Parse the schema file/url
@@ -9808,7 +8709,8 @@
  * Parses the given JSON schema and resolves any JSON references, including references in
  * externally-referenced files.
  *
- * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
+ * @param {string} [path] - The file path or URL of the JSON schema
+ * @param {object} [schema] - A JSON schema object. This object will be used instead of reading from `path`.
  * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed and resolved
  * @param {function} [callback]
  * - An error-first callback. The second parameter is a {@link $Refs} object containing the resolved JSON references
@@ -9816,7 +8718,7 @@
  * @returns {Promise}
  * The returned promise resolves with a {@link $Refs} object containing the resolved JSON references
  */
-          $RefParser.resolve = function (schema, options, callback) {
+          $RefParser.resolve = function (path, schema, options, callback) {
             var Class = this;
             // eslint-disable-line consistent-this
             var instance = new Class();
@@ -9826,7 +8728,8 @@
  * Parses the given JSON schema and resolves any JSON references, including references in
  * externally-referenced files.
  *
- * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
+ * @param {string} [path] - The file path or URL of the JSON schema
+ * @param {object} [schema] - A JSON schema object. This object will be used instead of reading from `path`.
  * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed and resolved
  * @param {function} [callback]
  * - An error-first callback. The second parameter is a {@link $Refs} object containing the resolved JSON references
@@ -9834,7 +8737,7 @@
  * @returns {Promise}
  * The returned promise resolves with a {@link $Refs} object containing the resolved JSON references
  */
-          $RefParser.prototype.resolve = function (schema, options, callback) {
+          $RefParser.prototype.resolve = function (path, schema, options, callback) {
             var me = this;
             var args = normalizeArgs(arguments);
             return this.parse(args.path, args.schema, args.options).then(function () {
@@ -9850,12 +8753,13 @@
  * into the main JSON schema. This produces a JSON schema that only has *internal* references,
  * not any *external* references.
  *
- * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
+ * @param {string} [path] - The file path or URL of the JSON schema
+ * @param {object} [schema] - A JSON schema object. This object will be used instead of reading from `path`.
  * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed, resolved, and dereferenced
  * @param {function} [callback] - An error-first callback. The second parameter is the bundled JSON schema object
  * @returns {Promise} - The returned promise resolves with the bundled JSON schema object.
  */
-          $RefParser.bundle = function (schema, options, callback) {
+          $RefParser.bundle = function (path, schema, options, callback) {
             var Class = this;
             // eslint-disable-line consistent-this
             var instance = new Class();
@@ -9866,12 +8770,13 @@
  * into the main JSON schema. This produces a JSON schema that only has *internal* references,
  * not any *external* references.
  *
- * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
+ * @param {string} [path] - The file path or URL of the JSON schema
+ * @param {object} [schema] - A JSON schema object. This object will be used instead of reading from `path`.
  * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed, resolved, and dereferenced
  * @param {function} [callback] - An error-first callback. The second parameter is the bundled JSON schema object
  * @returns {Promise} - The returned promise resolves with the bundled JSON schema object.
  */
-          $RefParser.prototype.bundle = function (schema, options, callback) {
+          $RefParser.prototype.bundle = function (path, schema, options, callback) {
             var me = this;
             var args = normalizeArgs(arguments);
             return this.resolve(args.path, args.schema, args.options).then(function () {
@@ -9885,12 +8790,13 @@
  * Parses the given JSON schema, resolves any JSON references, and dereferences the JSON schema.
  * That is, all JSON references are replaced with their resolved values.
  *
- * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
+ * @param {string} [path] - The file path or URL of the JSON schema
+ * @param {object} [schema] - A JSON schema object. This object will be used instead of reading from `path`.
  * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed, resolved, and dereferenced
  * @param {function} [callback] - An error-first callback. The second parameter is the dereferenced JSON schema object
  * @returns {Promise} - The returned promise resolves with the dereferenced JSON schema object.
  */
-          $RefParser.dereference = function (schema, options, callback) {
+          $RefParser.dereference = function (path, schema, options, callback) {
             var Class = this;
             // eslint-disable-line consistent-this
             var instance = new Class();
@@ -9900,12 +8806,13 @@
  * Parses the given JSON schema, resolves any JSON references, and dereferences the JSON schema.
  * That is, all JSON references are replaced with their resolved values.
  *
- * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
+ * @param {string} [path] - The file path or URL of the JSON schema
+ * @param {object} [schema] - A JSON schema object. This object will be used instead of reading from `path`.
  * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed, resolved, and dereferenced
  * @param {function} [callback] - An error-first callback. The second parameter is the dereferenced JSON schema object
  * @returns {Promise} - The returned promise resolves with the dereferenced JSON schema object.
  */
-          $RefParser.prototype.dereference = function (schema, options, callback) {
+          $RefParser.prototype.dereference = function (path, schema, options, callback) {
             var me = this;
             var args = normalizeArgs(arguments);
             return this.resolve(args.path, args.schema, args.options).then(function () {
@@ -9915,65 +8822,78 @@
               return maybe(args.callback, Promise.reject(err));
             });
           };
-          /**
+        }.call(this, { 'isBuffer': require('../../is-buffer/index.js') }));
+      },
+      {
+        '../../is-buffer/index.js': 17,
+        './bundle': 19,
+        './dereference': 20,
+        './normalize-args': 22,
+        './options': 23,
+        './parse': 24,
+        './refs': 31,
+        './resolve-external': 32,
+        './util/url': 37,
+        './util/yaml': 38,
+        'call-me-maybe': 8,
+        'ono': 156
+      }
+    ],
+    22: [
+      function (require, module, exports) {
+        'use strict';
+        var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
+            return typeof obj;
+          } : function (obj) {
+            return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
+          };
+        var Options = require('./options');
+        module.exports = normalizeArgs;
+        /**
  * Normalizes the given arguments, accounting for optional args.
  *
  * @param {Arguments} args
  * @returns {object}
  */
-          function normalizeArgs(args) {
-            var path, schema, options, callback;
-            args = Array.prototype.slice.call(args);
-            if (typeof args[args.length - 1] === 'function') {
-              // The last parameter is a callback function
-              callback = args.pop();
-            }
-            if (typeof args[0] === 'string') {
-              // The first parameter is the path
-              path = args[0];
-              if (_typeof(args[2]) === 'object') {
-                // The second parameter is the schema, and the third parameter is the options
-                schema = args[1];
-                options = args[2];
-              } else {
-                // The second parameter is the options
-                schema = undefined;
-                options = args[1];
-              }
+        function normalizeArgs(args) {
+          var path, schema, options, callback;
+          args = Array.prototype.slice.call(args);
+          if (typeof args[args.length - 1] === 'function') {
+            // The last parameter is a callback function
+            callback = args.pop();
+          }
+          if (typeof args[0] === 'string') {
+            // The first parameter is the path
+            path = args[0];
+            if (_typeof(args[2]) === 'object') {
+              // The second parameter is the schema, and the third parameter is the options
+              schema = args[1];
+              options = args[2];
             } else {
-              // The first parameter is the schema
-              path = '';
-              schema = args[0];
+              // The second parameter is the options
+              schema = undefined;
               options = args[1];
             }
-            if (!(options instanceof Options)) {
-              options = new Options(options);
-            }
-            return {
-              path: path,
-              schema: schema,
-              options: options,
-              callback: callback
-            };
+          } else {
+            // The first parameter is the schema
+            path = '';
+            schema = args[0];
+            options = args[1];
           }
-        }.call(this, { 'isBuffer': require('../../is-buffer/index.js') }));
+          if (!(options instanceof Options)) {
+            options = new Options(options);
+          }
+          return {
+            path: path,
+            schema: schema,
+            options: options,
+            callback: callback
+          };
+        }
       },
-      {
-        '../../is-buffer/index.js': 20,
-        './bundle': 22,
-        './dereference': 23,
-        './options': 25,
-        './parse': 26,
-        './refs': 33,
-        './resolve-external': 34,
-        './util/promise': 39,
-        './util/url': 40,
-        './util/yaml': 41,
-        'call-me-maybe': 8,
-        'ono': 76
-      }
+      { './options': 23 }
     ],
-    25: [
+    23: [
       function (require, module, exports) {
         /* eslint lines-around-comment: [2, {beforeBlockComment: false}] */
         'use strict';
@@ -9982,10 +8902,10 @@
           } : function (obj) {
             return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
           };
-        var jsonParser = require('./parsers/json'), yamlParser = require('./parsers/yaml'), textParser = require('./parsers/text'), binaryParser = require('./parsers/binary'), fileResolver = require('./resolvers/file'), httpResolver = require('./resolvers/http'), zschemaValidator = require('./validators/z-schema');
+        var jsonParser = require('./parsers/json'), yamlParser = require('./parsers/yaml'), textParser = require('./parsers/text'), binaryParser = require('./parsers/binary'), fileResolver = require('./resolvers/file'), httpResolver = require('./resolvers/http');
         module.exports = $RefParserOptions;
         /**
- * Options that determine how JSON schemas are parsed, resolved, dereferenced, and validated.
+ * Options that determine how JSON schemas are parsed, resolved, and dereferenced.
  *
  * @param {object|$RefParserOptions} [options] - Overridden options
  * @constructor
@@ -10006,8 +8926,7 @@
             http: httpResolver,
             external: true
           },
-          dereference: { circular: true },
-          validate: { zschema: zschemaValidator }
+          dereference: { circular: true }
         };
         /**
  * Merges the properties of the source object into the target object.
@@ -10046,16 +8965,15 @@
         }
       },
       {
-        './parsers/binary': 27,
-        './parsers/json': 28,
-        './parsers/text': 29,
-        './parsers/yaml': 30,
-        './resolvers/file': 35,
-        './resolvers/http': 36,
-        './validators/z-schema': 42
+        './parsers/binary': 25,
+        './parsers/json': 26,
+        './parsers/text': 27,
+        './parsers/yaml': 28,
+        './resolvers/file': 33,
+        './resolvers/http': 34
       }
     ],
-    26: [
+    24: [
       function (require, module, exports) {
         (function (Buffer) {
           'use strict';
@@ -10064,7 +8982,7 @@
             } : function (obj) {
               return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
             };
-          var ono = require('ono'), debug = require('./util/debug'), url = require('./util/url'), plugins = require('./util/plugins'), Promise = require('./util/promise');
+          var ono = require('ono'), debug = require('./util/debug'), url = require('./util/url'), plugins = require('./util/plugins');
           module.exports = parse;
           /**
  * Reads and parses the specified file path or URL.
@@ -10185,15 +9103,14 @@
         }.call(this, { 'isBuffer': require('../../is-buffer/index.js') }));
       },
       {
-        '../../is-buffer/index.js': 20,
-        './util/debug': 37,
-        './util/plugins': 38,
-        './util/promise': 39,
-        './util/url': 40,
-        'ono': 76
+        '../../is-buffer/index.js': 17,
+        './util/debug': 35,
+        './util/plugins': 36,
+        './util/url': 37,
+        'ono': 156
       }
     ],
-    27: [
+    25: [
       function (require, module, exports) {
         (function (Buffer) {
           'use strict';
@@ -10218,11 +9135,10 @@
       },
       { 'buffer': 5 }
     ],
-    28: [
+    26: [
       function (require, module, exports) {
         (function (Buffer) {
           'use strict';
-          var Promise = require('../util/promise');
           module.exports = {
             order: 100,
             allowEmpty: true,
@@ -10248,12 +9164,9 @@
           };
         }.call(this, { 'isBuffer': require('../../../is-buffer/index.js') }));
       },
-      {
-        '../../../is-buffer/index.js': 20,
-        '../util/promise': 39
-      }
+      { '../../../is-buffer/index.js': 17 }
     ],
-    29: [
+    27: [
       function (require, module, exports) {
         (function (Buffer) {
           'use strict';
@@ -10278,13 +9191,13 @@
           };
         }.call(this, { 'isBuffer': require('../../../is-buffer/index.js') }));
       },
-      { '../../../is-buffer/index.js': 20 }
+      { '../../../is-buffer/index.js': 17 }
     ],
-    30: [
+    28: [
       function (require, module, exports) {
         (function (Buffer) {
           'use strict';
-          var Promise = require('../util/promise'), YAML = require('../util/yaml');
+          var YAML = require('../util/yaml');
           module.exports = {
             order: 200,
             allowEmpty: true,
@@ -10311,12 +9224,11 @@
         }.call(this, { 'isBuffer': require('../../../is-buffer/index.js') }));
       },
       {
-        '../../../is-buffer/index.js': 20,
-        '../util/promise': 39,
-        '../util/yaml': 41
+        '../../../is-buffer/index.js': 17,
+        '../util/yaml': 38
       }
     ],
-    31: [
+    29: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -10331,9 +9243,10 @@
  *
  * @param {$Ref} $ref
  * @param {string} path
+ * @param {string} [friendlyPath] - The original user-specified path (used for error messages)
  * @constructor
  */
-        function Pointer($ref, path) {
+        function Pointer($ref, path, friendlyPath) {
           /**
    * The {@link $Ref} object that contains this {@link Pointer} object.
    * @type {$Ref}
@@ -10346,6 +9259,11 @@
    */
           this.path = path;
           /**
+   * The original path or URL, used for error messages.
+   * @type {string}
+   */
+          this.originalPath = friendlyPath || path;
+          /**
    * The value of the JSON pointer.
    * Can be any JSON type, not just objects. Unknown file types are represented as Buffers (byte arrays).
    * @type {?*}
@@ -10356,6 +9274,12 @@
    * @type {boolean}
    */
           this.circular = false;
+          /**
+   * The number of indirect references that were traversed to resolve the value.
+   * Resolving a single pointer may require resolving multiple $Refs.
+   * @type {number}
+   */
+          this.indirections = 0;
         }
         /**
  * Resolves the value of a nested property within the given object.
@@ -10380,7 +9304,7 @@
             }
             var token = tokens[i];
             if (this.value[token] === undefined) {
-              throw ono.syntax('Error resolving $ref pointer "%s". \nToken "%s" does not exist.', this.path, token);
+              throw ono.syntax('Error resolving $ref pointer "%s". \nToken "%s" does not exist.', this.originalPath, token);
             } else {
               this.value = this.value[token];
             }
@@ -10450,7 +9374,7 @@
           pointer = pointer.split('/');
           // Decode each part, according to RFC 6901
           for (var i = 0; i < pointer.length; i++) {
-            pointer[i] = decodeURI(pointer[i].replace(escapedSlash, '/').replace(escapedTilde, '~'));
+            pointer[i] = decodeURIComponent(pointer[i].replace(escapedSlash, '/').replace(escapedTilde, '~'));
           }
           if (pointer[0] !== '') {
             throw ono.syntax('Invalid $ref pointer "%s". Pointers must begin with "#/"', pointer);
@@ -10474,7 +9398,7 @@
           for (var i = 0; i < tokens.length; i++) {
             var token = tokens[i];
             // Encode the token, according to RFC 6901
-            base += '/' + encodeURI(token.replace(tildes, '~0').replace(slashes, '~1'));
+            base += '/' + encodeURIComponent(token.replace(tildes, '~0').replace(slashes, '~1'));
           }
           return base;
         };
@@ -10497,10 +9421,12 @@
               pointer.circular = true;
             } else {
               var resolved = pointer.$ref.$refs._resolve($refPath, options);
+              pointer.indirections += resolved.indirections + 1;
               if ($Ref.isExtended$Ref(pointer.value)) {
                 // This JSON reference "extends" the resolved value, rather than simply pointing to it.
                 // So the resolved path does NOT change.  Just the value does.
                 pointer.value = $Ref.dereference(pointer.value, resolved.value);
+                return false;
               } else {
                 // Resolve the reference
                 pointer.$ref = resolved.$ref;
@@ -10536,12 +9462,12 @@
         }
       },
       {
-        './ref': 32,
-        './util/url': 40,
-        'ono': 76
+        './ref': 30,
+        './util/url': 37,
+        'ono': 156
       }
     ],
-    32: [
+    30: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -10615,10 +9541,11 @@
  *
  * @param {string} path - The full path being resolved, optionally with a JSON pointer in the hash
  * @param {$RefParserOptions} options
+ * @param {string} [friendlyPath] - The original user-specified path (used for error messages)
  * @returns {Pointer}
  */
-        $Ref.prototype.resolve = function (path, options) {
-          var pointer = new Pointer(this, path);
+        $Ref.prototype.resolve = function (path, options, friendlyPath) {
+          var pointer = new Pointer(this, path, friendlyPath);
           return pointer.resolve(this.value, options);
         };
         /**
@@ -10762,9 +9689,9 @@
           }
         };
       },
-      { './pointer': 31 }
+      { './pointer': 29 }
     ],
-    33: [
+    31: [
       function (require, module, exports) {
         'use strict';
         var ono = require('ono'), $Ref = require('./ref'), url = require('./util/url');
@@ -10860,25 +9787,23 @@
  * @param {*} value - The value to assign
  */
         $Refs.prototype.set = function (path, value) {
-          path = url.resolve(this._root$Ref.path, path);
-          var withoutHash = url.stripHash(path);
+          var absPath = url.resolve(this._root$Ref.path, path);
+          var withoutHash = url.stripHash(absPath);
           var $ref = this._$refs[withoutHash];
           if (!$ref) {
             throw ono('Error resolving $ref pointer "%s". \n"%s" not found.', path, withoutHash);
           }
-          $ref.set(path, value);
+          $ref.set(absPath, value);
         };
         /**
  * Creates a new {@link $Ref} object and adds it to this {@link $Refs} object.
  *
  * @param {string} path  - The file path or URL of the referenced file
- * @param {*} [value] - Optional. The value of the $ref.
  */
-        $Refs.prototype._add = function (path, value) {
+        $Refs.prototype._add = function (path) {
           var withoutHash = url.stripHash(path);
           var $ref = new $Ref();
           $ref.path = withoutHash;
-          $ref.value = value;
           $ref.$refs = this;
           this._$refs[withoutHash] = $ref;
           this._root$Ref = this._root$Ref || $ref;
@@ -10893,13 +9818,13 @@
  * @protected
  */
         $Refs.prototype._resolve = function (path, options) {
-          path = url.resolve(this._root$Ref.path, path);
-          var withoutHash = url.stripHash(path);
+          var absPath = url.resolve(this._root$Ref.path, path);
+          var withoutHash = url.stripHash(absPath);
           var $ref = this._$refs[withoutHash];
           if (!$ref) {
             throw ono('Error resolving $ref pointer "%s". \n"%s" not found.', path, withoutHash);
           }
-          return $ref.resolve(path, options);
+          return $ref.resolve(absPath, options, path);
         };
         /**
  * Returns the specified {@link $Ref} object, or undefined.
@@ -10939,12 +9864,12 @@
         }
       },
       {
-        './ref': 32,
-        './util/url': 40,
-        'ono': 76
+        './ref': 30,
+        './util/url': 37,
+        'ono': 156
       }
     ],
-    34: [
+    32: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -10952,7 +9877,7 @@
           } : function (obj) {
             return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
           };
-        var Promise = require('./util/promise'), $Ref = require('./ref'), Pointer = require('./pointer'), parse = require('./parse'), debug = require('./util/debug'), url = require('./util/url');
+        var $Ref = require('./ref'), Pointer = require('./pointer'), parse = require('./parse'), debug = require('./util/debug'), url = require('./util/url');
         module.exports = resolveExternal;
         /**
  * Crawls the JSON schema, finds all external JSON references, and resolves their values.
@@ -11045,18 +9970,17 @@
         }
       },
       {
-        './parse': 26,
-        './pointer': 31,
-        './ref': 32,
-        './util/debug': 37,
-        './util/promise': 39,
-        './util/url': 40
+        './parse': 24,
+        './pointer': 29,
+        './ref': 30,
+        './util/debug': 35,
+        './util/url': 37
       }
     ],
-    35: [
+    33: [
       function (require, module, exports) {
         'use strict';
-        var fs = require('fs'), ono = require('ono'), Promise = require('../util/promise'), url = require('../util/url'), debug = require('../util/debug');
+        var fs = require('fs'), ono = require('ono'), url = require('../util/url'), debug = require('../util/debug');
         module.exports = {
           order: 100,
           canRead: function isFile(file) {
@@ -11087,18 +10011,17 @@
         };
       },
       {
-        '../util/debug': 37,
-        '../util/promise': 39,
-        '../util/url': 40,
+        '../util/debug': 35,
+        '../util/url': 37,
         'fs': 3,
-        'ono': 76
+        'ono': 156
       }
     ],
-    36: [
+    34: [
       function (require, module, exports) {
         (function (process, Buffer) {
           'use strict';
-          var http = require('http'), https = require('https'), ono = require('ono'), url = require('../util/url'), debug = require('../util/debug'), Promise = require('../util/promise');
+          var http = require('http'), https = require('https'), ono = require('ono'), url = require('../util/url'), debug = require('../util/debug');
           module.exports = {
             order: 200,
             headers: null,
@@ -11171,6 +10094,7 @@
                   port: u.port,
                   path: u.path,
                   auth: u.auth,
+                  protocol: u.protocol,
                   headers: httpOptions.headers || {},
                   withCredentials: httpOptions.withCredentials
                 });
@@ -11199,17 +10123,16 @@
         }.call(this, require('_process'), require('buffer').Buffer));
       },
       {
-        '../util/debug': 37,
-        '../util/promise': 39,
-        '../util/url': 40,
-        '_process': 166,
+        '../util/debug': 35,
+        '../util/url': 37,
+        '_process': 161,
         'buffer': 5,
-        'http': 195,
-        'https': 16,
-        'ono': 76
+        'http': 190,
+        'https': 13,
+        'ono': 156
       }
     ],
-    37: [
+    35: [
       function (require, module, exports) {
         'use strict';
         var debug = require('debug');
@@ -11220,9 +10143,9 @@
  */
         module.exports = debug('json-schema-ref-parser');
       },
-      { 'debug': 43 }
+      { 'debug': 39 }
     ],
-    38: [
+    36: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -11230,7 +10153,7 @@
           } : function (obj) {
             return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
           };
-        var Promise = require('./promise'), debug = require('./debug');
+        var debug = require('./debug');
         /**
  * Returns the given plugins as an array, rather than an object map.
  * All other methods in this module expect an array of plugins rather than an object map.
@@ -11366,32 +10289,19 @@
           return value;
         }
       },
-      {
-        './debug': 37,
-        './promise': 39
-      }
+      { './debug': 35 }
     ],
-    39: [
-      function (require, module, exports) {
-        'use strict';
-        /** @type {Promise} **/
-        module.exports = typeof Promise === 'function' ? Promise : require('es6-promise').Promise;
-      },
-      { 'es6-promise': 12 }
-    ],
-    40: [
+    37: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
-          var isWindows = /^win/.test(process.platform), forwardSlashPattern = /\//g, protocolPattern = /^([a-z0-9.+-]+):\/\//i, url = module.exports;
+          var isWindows = /^win/.test(process.platform), forwardSlashPattern = /\//g, protocolPattern = /^(\w{2,}):\/\//i, url = module.exports;
           // RegExp patterns to URL-encode special characters in local filesystem paths
           var urlEncodePatterns = [
               /\?/g,
               '%3F',
               /\#/g,
-              '%23',
-              isWindows ? /\\/g : /\//,
-              '/'
+              '%23'
             ];
           // RegExp patterns to URL-decode special characters for local filesystem paths
           var urlDecodePatterns = [
@@ -11520,16 +10430,20 @@
  * @returns {string}
  */
           exports.fromFileSystemPath = function fromFileSystemPath(path) {
-            // Step 1: Manually encode characters that are not encoded by `encodeURI`.
+            // Step 1: On Windows, replace backslashes with forward slashes,
+            // rather than encoding them as "%5C"
+            if (isWindows) {
+              path = path.replace(/\\/g, '/');
+            }
+            // Step 2: `encodeURI` will take care of MOST characters
+            path = encodeURI(path);
+            // Step 3: Manually encode characters that are not encoded by `encodeURI`.
             // This includes characters such as "#" and "?", which have special meaning in URLs,
             // but are just normal characters in a filesystem path.
-            // On Windows, this will also replace backslashes with forward slashes,
-            // rather than encoding them as special characters.
             for (var i = 0; i < urlEncodePatterns.length; i += 2) {
               path = path.replace(urlEncodePatterns[i], urlEncodePatterns[i + 1]);
             }
-            // Step 2: `encodeURI` will take care of all other characters
-            return encodeURI(path);
+            return path;
           };
           /**
  * Converts a URL to a local filesystem path.
@@ -11568,21 +10482,25 @@
                 path = isWindows ? path : '/' + path;
               }
             }
-            // Step 4: On Windows, convert backslashes to forward slashes,
-            // unless it's a "file://" URL
+            // Step 4: Normalize Windows paths (unless it's a "file://" URL)
             if (isWindows && !isFileUrl) {
+              // Replace forward slashes with backslashes
               path = path.replace(forwardSlashPattern, '\\');
+              // Capitalize the drive letter
+              if (path.substr(1, 2) === ':\\') {
+                path = path[0].toUpperCase() + path.substr(1);
+              }
             }
             return path;
           };
         }.call(this, require('_process')));
       },
       {
-        '_process': 166,
-        'url': 210
+        '_process': 161,
+        'url': 218
       }
     ],
-    41: [
+    38: [
       function (require, module, exports) {
         /* eslint lines-around-comment: [2, {beforeBlockComment: false}] */
         'use strict';
@@ -11619,40 +10537,36 @@
         };
       },
       {
-        'js-yaml': 45,
-        'ono': 76
+        'js-yaml': 41,
+        'ono': 156
       }
     ],
-    42: [
-      function (require, module, exports) {
-        'use strict';
-        module.exports = {
-          order: 100,
-          canValidate: function canValidate(file) {
-            // Z-Schema requires JSON References to already be resolved (but not dereferenced)
-            return !!file.resolved;
-          },
-          validate: function validate(file) {
-          }
-        };
-      },
-      {}
-    ],
-    43: [
+    39: [
       function (require, module, exports) {
         (function (process) {
+          'use strict';
+          function _typeof(obj) {
+            if (typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol') {
+              _typeof = function _typeof(obj) {
+                return typeof obj;
+              };
+            } else {
+              _typeof = function _typeof(obj) {
+                return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
+              };
+            }
+            return _typeof(obj);
+          }
+          /* eslint-env browser */
           /**
  * This is the web browser implementation of `debug()`.
- *
- * Expose `debug()` as the module.
  */
-          exports = module.exports = require('./debug');
           exports.log = log;
           exports.formatArgs = formatArgs;
           exports.save = save;
           exports.load = load;
           exports.useColors = useColors;
-          exports.storage = 'undefined' != typeof chrome && 'undefined' != typeof chrome.storage ? chrome.storage.local : localstorage();
+          exports.storage = localstorage();
           /**
  * Colors.
  */
@@ -11741,54 +10655,46 @@
  *
  * TODO: add a `localStorage` variable to explicitly enable/disable colors
  */
+          // eslint-disable-next-line complexity
           function useColors() {
             // NB: In an Electron preload script, document will be defined but not fully
             // initialized. Since we know we're in Chrome, we'll just detect this case
             // explicitly
-            if (typeof window !== 'undefined' && window.process && window.process.type === 'renderer') {
+            if (typeof window !== 'undefined' && window.process && (window.process.type === 'renderer' || window.process.__nwjs)) {
               return true;
             }
             // Internet Explorer and Edge do not support colors.
             if (typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/(edge|trident)\/(\d+)/)) {
               return false;
             }
-            // is webkit? http://stackoverflow.com/a/16459606/376773
+            // Is webkit? http://stackoverflow.com/a/16459606/376773
             // document is undefined in react-native: https://github.com/facebook/react-native/pull/1632
             return typeof document !== 'undefined' && document.documentElement && document.documentElement.style && document.documentElement.style.WebkitAppearance || typeof window !== 'undefined' && window.console && (window.console.firebug || window.console.exception && window.console.table) || typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/) && parseInt(RegExp.$1, 10) >= 31 || typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/applewebkit\/(\d+)/);
           }
-          /**
- * Map %j to `JSON.stringify()`, since no Web Inspectors do that by default.
- */
-          exports.formatters.j = function (v) {
-            try {
-              return JSON.stringify(v);
-            } catch (err) {
-              return '[UnexpectedJSONParseError]: ' + err.message;
-            }
-          };
           /**
  * Colorize log arguments if enabled.
  *
  * @api public
  */
           function formatArgs(args) {
-            var useColors = this.useColors;
-            args[0] = (useColors ? '%c' : '') + this.namespace + (useColors ? ' %c' : ' ') + args[0] + (useColors ? '%c ' : ' ') + '+' + exports.humanize(this.diff);
-            if (!useColors)
+            args[0] = (this.useColors ? '%c' : '') + this.namespace + (this.useColors ? ' %c' : ' ') + args[0] + (this.useColors ? '%c ' : ' ') + '+' + module.exports.humanize(this.diff);
+            if (!this.useColors) {
               return;
+            }
             var c = 'color: ' + this.color;
             args.splice(1, 0, c, 'color: inherit');
-            // the final "%c" is somewhat tricky, because there could be other
+            // The final "%c" is somewhat tricky, because there could be other
             // arguments passed either before or after the %c, so we need to
             // figure out the correct index to insert the CSS into
             var index = 0;
             var lastC = 0;
             args[0].replace(/%[a-zA-Z%]/g, function (match) {
-              if ('%%' === match)
+              if (match === '%%') {
                 return;
+              }
               index++;
-              if ('%c' === match) {
-                // we only are interested in the *last* %c
+              if (match === '%c') {
+                // We only are interested in the *last* %c
                 // (the user may have provided their own)
                 lastC = index;
               }
@@ -11802,9 +10708,10 @@
  * @api public
  */
           function log() {
-            // this hackery is required for IE8/9, where
+            var _console;
+            // This hackery is required for IE8/9, where
             // the `console.log` function doesn't have 'apply'
-            return 'object' === typeof console && console.log && Function.prototype.apply.call(console.log, console, arguments);
+            return (typeof console === 'undefined' ? 'undefined' : _typeof(console)) === 'object' && console.log && (_console = console).log.apply(_console, arguments);
           }
           /**
  * Save `namespaces`.
@@ -11814,12 +10721,12 @@
  */
           function save(namespaces) {
             try {
-              if (null == namespaces) {
-                exports.storage.removeItem('debug');
+              if (namespaces) {
+                exports.storage.setItem('debug', namespaces);
               } else {
-                exports.storage.debug = namespaces;
+                exports.storage.removeItem('debug');
               }
-            } catch (e) {
+            } catch (error) {
             }
           }
           /**
@@ -11831,19 +10738,17 @@
           function load() {
             var r;
             try {
-              r = exports.storage.debug;
-            } catch (e) {
+              r = exports.storage.getItem('debug');
+            } catch (error) {
             }
+            // Swallow
+            // XXX (@Qix-) should we be logging these?
             // If debug isn't set in LS, and we're in Electron, try to load $DEBUG
             if (!r && typeof process !== 'undefined' && 'env' in process) {
               r = process.env.DEBUG;
             }
             return r;
           }
-          /**
- * Enable namespaces listed in `localStorage.debug` initially.
- */
-          exports.enable(load());
           /**
  * Localstorage attempts to return the localstorage.
  *
@@ -11856,220 +10761,251 @@
  */
           function localstorage() {
             try {
-              return window.localStorage;
-            } catch (e) {
+              // TVMLKit (Apple TV JS Runtime) does not have a window object, just localStorage in the global context
+              // The Browser also has localStorage in the global context.
+              return localStorage;
+            } catch (error) {
             }
           }
+          module.exports = require('./common')(exports);
+          var formatters = module.exports.formatters;
+          /**
+ * Map %j to `JSON.stringify()`, since no Web Inspectors do that by default.
+ */
+          formatters.j = function (v) {
+            try {
+              return JSON.stringify(v);
+            } catch (error) {
+              return '[UnexpectedJSONParseError]: ' + error.message;
+            }
+          };
         }.call(this, require('_process')));
       },
       {
-        './debug': 44,
-        '_process': 166
+        './common': 40,
+        '_process': 161
       }
     ],
-    44: [
+    40: [
       function (require, module, exports) {
+        'use strict';
         /**
  * This is the common logic for both the Node.js and web browser
  * implementations of `debug()`.
- *
- * Expose `debug()` as the module.
  */
-        exports = module.exports = createDebug.debug = createDebug['default'] = createDebug;
-        exports.coerce = coerce;
-        exports.disable = disable;
-        exports.enable = enable;
-        exports.enabled = enabled;
-        exports.humanize = require('ms');
-        /**
- * Active `debug` instances.
- */
-        exports.instances = [];
-        /**
- * The currently active debug mode names, and names to skip.
- */
-        exports.names = [];
-        exports.skips = [];
-        /**
- * Map of special "%n" handling functions, for the debug "format" argument.
- *
- * Valid key names are a single, lower or upper-case letter, i.e. "n" and "N".
- */
-        exports.formatters = {};
-        /**
- * Select a color.
- * @param {String} namespace
- * @return {Number}
- * @api private
- */
-        function selectColor(namespace) {
-          var hash = 0, i;
-          for (i in namespace) {
-            hash = (hash << 5) - hash + namespace.charCodeAt(i);
-            hash |= 0;  // Convert to 32bit integer
+        function setup(env) {
+          createDebug.debug = createDebug;
+          createDebug.default = createDebug;
+          createDebug.coerce = coerce;
+          createDebug.disable = disable;
+          createDebug.enable = enable;
+          createDebug.enabled = enabled;
+          createDebug.humanize = require('ms');
+          Object.keys(env).forEach(function (key) {
+            createDebug[key] = env[key];
+          });
+          /**
+  * Active `debug` instances.
+  */
+          createDebug.instances = [];
+          /**
+  * The currently active debug mode names, and names to skip.
+  */
+          createDebug.names = [];
+          createDebug.skips = [];
+          /**
+  * Map of special "%n" handling functions, for the debug "format" argument.
+  *
+  * Valid key names are a single, lower or upper-case letter, i.e. "n" and "N".
+  */
+          createDebug.formatters = {};
+          /**
+  * Selects a color for a debug namespace
+  * @param {String} namespace The namespace string for the for the debug instance to be colored
+  * @return {Number|String} An ANSI color code for the given namespace
+  * @api private
+  */
+          function selectColor(namespace) {
+            var hash = 0;
+            for (var i = 0; i < namespace.length; i++) {
+              hash = (hash << 5) - hash + namespace.charCodeAt(i);
+              hash |= 0;  // Convert to 32bit integer
+            }
+            return createDebug.colors[Math.abs(hash) % createDebug.colors.length];
           }
-          return exports.colors[Math.abs(hash) % exports.colors.length];
-        }
-        /**
- * Create a debugger with the given `namespace`.
- *
- * @param {String} namespace
- * @return {Function}
- * @api public
- */
-        function createDebug(namespace) {
-          var prevTime;
-          function debug() {
-            // disabled?
-            if (!debug.enabled)
-              return;
-            var self = debug;
-            // set `diff` timestamp
-            var curr = +new Date();
-            var ms = curr - (prevTime || curr);
-            self.diff = ms;
-            self.prev = prevTime;
-            self.curr = curr;
-            prevTime = curr;
-            // turn the `arguments` into a proper Array
-            var args = new Array(arguments.length);
-            for (var i = 0; i < args.length; i++) {
-              args[i] = arguments[i];
-            }
-            args[0] = exports.coerce(args[0]);
-            if ('string' !== typeof args[0]) {
-              // anything else let's inspect with %O
-              args.unshift('%O');
-            }
-            // apply any `formatters` transformations
-            var index = 0;
-            args[0] = args[0].replace(/%([a-zA-Z%])/g, function (match, format) {
-              // if we encounter an escaped % then don't increase the array index
-              if (match === '%%')
-                return match;
-              index++;
-              var formatter = exports.formatters[format];
-              if ('function' === typeof formatter) {
-                var val = args[index];
-                match = formatter.call(self, val);
-                // now we need to remove `args[index]` since it's inlined in the `format`
-                args.splice(index, 1);
-                index--;
+          createDebug.selectColor = selectColor;
+          /**
+  * Create a debugger with the given `namespace`.
+  *
+  * @param {String} namespace
+  * @return {Function}
+  * @api public
+  */
+          function createDebug(namespace) {
+            var prevTime;
+            function debug() {
+              for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+                args[_key] = arguments[_key];
               }
-              return match;
-            });
-            // apply env-specific formatting (colors, etc.)
-            exports.formatArgs.call(self, args);
-            var logFn = debug.log || exports.log || console.log.bind(console);
-            logFn.apply(self, args);
-          }
-          debug.namespace = namespace;
-          debug.enabled = exports.enabled(namespace);
-          debug.useColors = exports.useColors();
-          debug.color = selectColor(namespace);
-          debug.destroy = destroy;
-          // env-specific initialization logic for debug instances
-          if ('function' === typeof exports.init) {
-            exports.init(debug);
-          }
-          exports.instances.push(debug);
-          return debug;
-        }
-        function destroy() {
-          var index = exports.instances.indexOf(this);
-          if (index !== -1) {
-            exports.instances.splice(index, 1);
-            return true;
-          } else {
-            return false;
-          }
-        }
-        /**
- * Enables a debug mode by namespaces. This can include modes
- * separated by a colon and wildcards.
- *
- * @param {String} namespaces
- * @api public
- */
-        function enable(namespaces) {
-          exports.save(namespaces);
-          exports.names = [];
-          exports.skips = [];
-          var i;
-          var split = (typeof namespaces === 'string' ? namespaces : '').split(/[\s,]+/);
-          var len = split.length;
-          for (i = 0; i < len; i++) {
-            if (!split[i])
-              continue;
-            // ignore empty strings
-            namespaces = split[i].replace(/\*/g, '.*?');
-            if (namespaces[0] === '-') {
-              exports.skips.push(new RegExp('^' + namespaces.substr(1) + '$'));
-            } else {
-              exports.names.push(new RegExp('^' + namespaces + '$'));
+              // Disabled?
+              if (!debug.enabled) {
+                return;
+              }
+              var self = debug;
+              // Set `diff` timestamp
+              var curr = Number(new Date());
+              var ms = curr - (prevTime || curr);
+              self.diff = ms;
+              self.prev = prevTime;
+              self.curr = curr;
+              prevTime = curr;
+              args[0] = createDebug.coerce(args[0]);
+              if (typeof args[0] !== 'string') {
+                // Anything else let's inspect with %O
+                args.unshift('%O');
+              }
+              // Apply any `formatters` transformations
+              var index = 0;
+              args[0] = args[0].replace(/%([a-zA-Z%])/g, function (match, format) {
+                // If we encounter an escaped % then don't increase the array index
+                if (match === '%%') {
+                  return match;
+                }
+                index++;
+                var formatter = createDebug.formatters[format];
+                if (typeof formatter === 'function') {
+                  var val = args[index];
+                  match = formatter.call(self, val);
+                  // Now we need to remove `args[index]` since it's inlined in the `format`
+                  args.splice(index, 1);
+                  index--;
+                }
+                return match;
+              });
+              // Apply env-specific formatting (colors, etc.)
+              createDebug.formatArgs.call(self, args);
+              var logFn = self.log || createDebug.log;
+              logFn.apply(self, args);
             }
-          }
-          for (i = 0; i < exports.instances.length; i++) {
-            var instance = exports.instances[i];
-            instance.enabled = exports.enabled(instance.namespace);
-          }
-        }
-        /**
- * Disable debug output.
- *
- * @api public
- */
-        function disable() {
-          exports.enable('');
-        }
-        /**
- * Returns true if the given mode name is enabled, false otherwise.
- *
- * @param {String} name
- * @return {Boolean}
- * @api public
- */
-        function enabled(name) {
-          if (name[name.length - 1] === '*') {
-            return true;
-          }
-          var i, len;
-          for (i = 0, len = exports.skips.length; i < len; i++) {
-            if (exports.skips[i].test(name)) {
-              return false;
+            debug.namespace = namespace;
+            debug.enabled = createDebug.enabled(namespace);
+            debug.useColors = createDebug.useColors();
+            debug.color = selectColor(namespace);
+            debug.destroy = destroy;
+            debug.extend = extend;
+            // Debug.formatArgs = formatArgs;
+            // debug.rawLog = rawLog;
+            // env-specific initialization logic for debug instances
+            if (typeof createDebug.init === 'function') {
+              createDebug.init(debug);
             }
+            createDebug.instances.push(debug);
+            return debug;
           }
-          for (i = 0, len = exports.names.length; i < len; i++) {
-            if (exports.names[i].test(name)) {
+          function destroy() {
+            var index = createDebug.instances.indexOf(this);
+            if (index !== -1) {
+              createDebug.instances.splice(index, 1);
               return true;
             }
+            return false;
           }
-          return false;
+          function extend(namespace, delimiter) {
+            return createDebug(this.namespace + (typeof delimiter === 'undefined' ? ':' : delimiter) + namespace);
+          }
+          /**
+  * Enables a debug mode by namespaces. This can include modes
+  * separated by a colon and wildcards.
+  *
+  * @param {String} namespaces
+  * @api public
+  */
+          function enable(namespaces) {
+            createDebug.save(namespaces);
+            createDebug.names = [];
+            createDebug.skips = [];
+            var i;
+            var split = (typeof namespaces === 'string' ? namespaces : '').split(/[\s,]+/);
+            var len = split.length;
+            for (i = 0; i < len; i++) {
+              if (!split[i]) {
+                // ignore empty strings
+                continue;
+              }
+              namespaces = split[i].replace(/\*/g, '.*?');
+              if (namespaces[0] === '-') {
+                createDebug.skips.push(new RegExp('^' + namespaces.substr(1) + '$'));
+              } else {
+                createDebug.names.push(new RegExp('^' + namespaces + '$'));
+              }
+            }
+            for (i = 0; i < createDebug.instances.length; i++) {
+              var instance = createDebug.instances[i];
+              instance.enabled = createDebug.enabled(instance.namespace);
+            }
+          }
+          /**
+  * Disable debug output.
+  *
+  * @api public
+  */
+          function disable() {
+            createDebug.enable('');
+          }
+          /**
+  * Returns true if the given mode name is enabled, false otherwise.
+  *
+  * @param {String} name
+  * @return {Boolean}
+  * @api public
+  */
+          function enabled(name) {
+            if (name[name.length - 1] === '*') {
+              return true;
+            }
+            var i;
+            var len;
+            for (i = 0, len = createDebug.skips.length; i < len; i++) {
+              if (createDebug.skips[i].test(name)) {
+                return false;
+              }
+            }
+            for (i = 0, len = createDebug.names.length; i < len; i++) {
+              if (createDebug.names[i].test(name)) {
+                return true;
+              }
+            }
+            return false;
+          }
+          /**
+  * Coerce `val`.
+  *
+  * @param {Mixed} val
+  * @return {Mixed}
+  * @api private
+  */
+          function coerce(val) {
+            if (val instanceof Error) {
+              return val.stack || val.message;
+            }
+            return val;
+          }
+          createDebug.enable(createDebug.load());
+          return createDebug;
         }
-        /**
- * Coerce `val`.
- *
- * @param {Mixed} val
- * @return {Mixed}
- * @api private
- */
-        function coerce(val) {
-          if (val instanceof Error)
-            return val.stack || val.message;
-          return val;
-        }
+        module.exports = setup;
       },
-      { 'ms': 75 }
+      { 'ms': 71 }
     ],
-    45: [
+    41: [
       function (require, module, exports) {
         'use strict';
         var yaml = require('./lib/js-yaml.js');
         module.exports = yaml;
       },
-      { './lib/js-yaml.js': 46 }
+      { './lib/js-yaml.js': 42 }
     ],
-    46: [
+    42: [
       function (require, module, exports) {
         'use strict';
         var loader = require('./js-yaml/loader');
@@ -12104,19 +11040,19 @@
         module.exports.addConstructor = deprecated('addConstructor');
       },
       {
-        './js-yaml/dumper': 48,
-        './js-yaml/exception': 49,
-        './js-yaml/loader': 50,
-        './js-yaml/schema': 52,
-        './js-yaml/schema/core': 53,
-        './js-yaml/schema/default_full': 54,
-        './js-yaml/schema/default_safe': 55,
-        './js-yaml/schema/failsafe': 56,
-        './js-yaml/schema/json': 57,
-        './js-yaml/type': 58
+        './js-yaml/dumper': 44,
+        './js-yaml/exception': 45,
+        './js-yaml/loader': 46,
+        './js-yaml/schema': 48,
+        './js-yaml/schema/core': 49,
+        './js-yaml/schema/default_full': 50,
+        './js-yaml/schema/default_safe': 51,
+        './js-yaml/schema/failsafe': 52,
+        './js-yaml/schema/json': 53,
+        './js-yaml/type': 54
       }
     ],
-    47: [
+    43: [
       function (require, module, exports) {
         'use strict';
         function isNothing(subject) {
@@ -12162,7 +11098,7 @@
       },
       {}
     ],
-    48: [
+    44: [
       function (require, module, exports) {
         'use strict';
         /*eslint-disable no-use-before-define*/
@@ -12819,13 +11755,13 @@
         module.exports.safeDump = safeDump;
       },
       {
-        './common': 47,
-        './exception': 49,
-        './schema/default_full': 54,
-        './schema/default_safe': 55
+        './common': 43,
+        './exception': 45,
+        './schema/default_full': 50,
+        './schema/default_safe': 51
       }
     ],
-    49: [
+    45: [
       function (require, module, exports) {
         // YAML error class. http://stackoverflow.com/questions/8458984
         //
@@ -12861,7 +11797,7 @@
       },
       {}
     ],
-    50: [
+    46: [
       function (require, module, exports) {
         'use strict';
         /*eslint-disable max-len,no-use-before-define*/
@@ -13991,14 +12927,14 @@
         module.exports.safeLoad = safeLoad;
       },
       {
-        './common': 47,
-        './exception': 49,
-        './mark': 51,
-        './schema/default_full': 54,
-        './schema/default_safe': 55
+        './common': 43,
+        './exception': 45,
+        './mark': 47,
+        './schema/default_full': 50,
+        './schema/default_safe': 51
       }
     ],
-    51: [
+    47: [
       function (require, module, exports) {
         'use strict';
         var common = require('./common');
@@ -14054,9 +12990,9 @@
         };
         module.exports = Mark;
       },
-      { './common': 47 }
+      { './common': 43 }
     ],
-    52: [
+    48: [
       function (require, module, exports) {
         'use strict';
         /*eslint-disable max-len*/
@@ -14143,12 +13079,12 @@
         module.exports = Schema;
       },
       {
-        './common': 47,
-        './exception': 49,
-        './type': 58
+        './common': 43,
+        './exception': 45,
+        './type': 54
       }
     ],
-    53: [
+    49: [
       function (require, module, exports) {
         // Standard YAML's Core schema.
         // http://www.yaml.org/spec/1.2/spec.html#id2804923
@@ -14160,11 +13096,11 @@
         module.exports = new Schema({ include: [require('./json')] });
       },
       {
-        '../schema': 52,
-        './json': 57
+        '../schema': 48,
+        './json': 53
       }
     ],
-    54: [
+    50: [
       function (require, module, exports) {
         // JS-YAML's default schema for `load` function.
         // It is not described in the YAML specification.
@@ -14185,14 +13121,14 @@
         });
       },
       {
-        '../schema': 52,
-        '../type/js/function': 63,
-        '../type/js/regexp': 64,
-        '../type/js/undefined': 65,
-        './default_safe': 55
+        '../schema': 48,
+        '../type/js/function': 59,
+        '../type/js/regexp': 60,
+        '../type/js/undefined': 61,
+        './default_safe': 51
       }
     ],
-    55: [
+    51: [
       function (require, module, exports) {
         // JS-YAML's default schema for `safeLoad` function.
         // It is not described in the YAML specification.
@@ -14216,17 +13152,17 @@
         });
       },
       {
-        '../schema': 52,
-        '../type/binary': 59,
-        '../type/merge': 67,
-        '../type/omap': 69,
-        '../type/pairs': 70,
-        '../type/set': 72,
-        '../type/timestamp': 74,
-        './core': 53
+        '../schema': 48,
+        '../type/binary': 55,
+        '../type/merge': 63,
+        '../type/omap': 65,
+        '../type/pairs': 66,
+        '../type/set': 68,
+        '../type/timestamp': 70,
+        './core': 49
       }
     ],
-    56: [
+    52: [
       function (require, module, exports) {
         // Standard YAML's Failsafe schema.
         // http://www.yaml.org/spec/1.2/spec.html#id2802346
@@ -14241,13 +13177,13 @@
         });
       },
       {
-        '../schema': 52,
-        '../type/map': 66,
-        '../type/seq': 71,
-        '../type/str': 73
+        '../schema': 48,
+        '../type/map': 62,
+        '../type/seq': 67,
+        '../type/str': 69
       }
     ],
-    57: [
+    53: [
       function (require, module, exports) {
         // Standard YAML's JSON schema.
         // http://www.yaml.org/spec/1.2/spec.html#id2803231
@@ -14268,15 +13204,15 @@
         });
       },
       {
-        '../schema': 52,
-        '../type/bool': 60,
-        '../type/float': 61,
-        '../type/int': 62,
-        '../type/null': 68,
-        './failsafe': 56
+        '../schema': 48,
+        '../type/bool': 56,
+        '../type/float': 57,
+        '../type/int': 58,
+        '../type/null': 64,
+        './failsafe': 52
       }
     ],
-    58: [
+    54: [
       function (require, module, exports) {
         'use strict';
         var YAMLException = require('./exception');
@@ -14333,9 +13269,9 @@
         }
         module.exports = Type;
       },
-      { './exception': 49 }
+      { './exception': 45 }
     ],
-    59: [
+    55: [
       function (require, module, exports) {
         'use strict';
         /*eslint-disable no-bitwise*/
@@ -14442,9 +13378,9 @@
           represent: representYamlBinary
         });
       },
-      { '../type': 58 }
+      { '../type': 54 }
     ],
-    60: [
+    56: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -14479,9 +13415,9 @@
           defaultStyle: 'lowercase'
         });
       },
-      { '../type': 58 }
+      { '../type': 54 }
     ],
-    61: [
+    57: [
       function (require, module, exports) {
         'use strict';
         var common = require('../common');
@@ -14572,11 +13508,11 @@
         });
       },
       {
-        '../common': 47,
-        '../type': 58
+        '../common': 43,
+        '../type': 54
       }
     ],
-    62: [
+    58: [
       function (require, module, exports) {
         'use strict';
         var common = require('../common');
@@ -14747,11 +13683,11 @@
         });
       },
       {
-        '../common': 47,
-        '../type': 58
+        '../common': 43,
+        '../type': 54
       }
     ],
-    63: [
+    59: [
       function (require, module, exports) {
         'use strict';
         var esprima;
@@ -14820,9 +13756,9 @@
           represent: representJavascriptFunction
         });
       },
-      { '../../type': 58 }
+      { '../../type': 54 }
     ],
-    64: [
+    60: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../../type');
@@ -14876,9 +13812,9 @@
           represent: representJavascriptRegExp
         });
       },
-      { '../../type': 58 }
+      { '../../type': 54 }
     ],
-    65: [
+    61: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../../type');
@@ -14903,9 +13839,9 @@
           represent: representJavascriptUndefined
         });
       },
-      { '../../type': 58 }
+      { '../../type': 54 }
     ],
-    66: [
+    62: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -14916,9 +13852,9 @@
           }
         });
       },
-      { '../type': 58 }
+      { '../type': 54 }
     ],
-    67: [
+    63: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -14930,9 +13866,9 @@
           resolve: resolveYamlMerge
         });
       },
-      { '../type': 58 }
+      { '../type': 54 }
     ],
-    68: [
+    64: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -14970,9 +13906,9 @@
           defaultStyle: 'lowercase'
         });
       },
-      { '../type': 58 }
+      { '../type': 54 }
     ],
-    69: [
+    65: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -15013,9 +13949,9 @@
           construct: constructYamlOmap
         });
       },
-      { '../type': 58 }
+      { '../type': 54 }
     ],
-    70: [
+    66: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -15060,9 +13996,9 @@
           construct: constructYamlPairs
         });
       },
-      { '../type': 58 }
+      { '../type': 54 }
     ],
-    71: [
+    67: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -15073,9 +14009,9 @@
           }
         });
       },
-      { '../type': 58 }
+      { '../type': 54 }
     ],
-    72: [
+    68: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -15101,9 +14037,9 @@
           construct: constructYamlSet
         });
       },
-      { '../type': 58 }
+      { '../type': 54 }
     ],
-    73: [
+    69: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -15114,9 +14050,9 @@
           }
         });
       },
-      { '../type': 58 }
+      { '../type': 54 }
     ],
-    74: [
+    70: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -15186,9 +14122,9 @@
           represent: representYamlTimestamp
         });
       },
-      { '../type': 58 }
+      { '../type': 54 }
     ],
-    75: [
+    71: [
       function (require, module, exports) {
         /**
  * Helpers.
@@ -15197,6 +14133,7 @@
         var m = s * 60;
         var h = m * 60;
         var d = h * 24;
+        var w = d * 7;
         var y = d * 365.25;
         /**
  * Parse or format the given `val`.
@@ -15233,7 +14170,7 @@
           if (str.length > 100) {
             return;
           }
-          var match = /^((?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|years?|yrs?|y)?$/i.exec(str);
+          var match = /^((?:\d+)?\-?\d?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|weeks?|w|years?|yrs?|y)?$/i.exec(str);
           if (!match) {
             return;
           }
@@ -15246,6 +14183,10 @@
           case 'yr':
           case 'y':
             return n * y;
+          case 'weeks':
+          case 'week':
+          case 'w':
+            return n * w;
           case 'days':
           case 'day':
           case 'd':
@@ -15286,16 +14227,17 @@
  * @api private
  */
         function fmtShort(ms) {
-          if (ms >= d) {
+          var msAbs = Math.abs(ms);
+          if (msAbs >= d) {
             return Math.round(ms / d) + 'd';
           }
-          if (ms >= h) {
+          if (msAbs >= h) {
             return Math.round(ms / h) + 'h';
           }
-          if (ms >= m) {
+          if (msAbs >= m) {
             return Math.round(ms / m) + 'm';
           }
-          if (ms >= s) {
+          if (msAbs >= s) {
             return Math.round(ms / s) + 's';
           }
           return ms + 'ms';
@@ -15308,299 +14250,32 @@
  * @api private
  */
         function fmtLong(ms) {
-          return plural(ms, d, 'day') || plural(ms, h, 'hour') || plural(ms, m, 'minute') || plural(ms, s, 'second') || ms + ' ms';
+          var msAbs = Math.abs(ms);
+          if (msAbs >= d) {
+            return plural(ms, msAbs, d, 'day');
+          }
+          if (msAbs >= h) {
+            return plural(ms, msAbs, h, 'hour');
+          }
+          if (msAbs >= m) {
+            return plural(ms, msAbs, m, 'minute');
+          }
+          if (msAbs >= s) {
+            return plural(ms, msAbs, s, 'second');
+          }
+          return ms + ' ms';
         }
         /**
  * Pluralization helper.
  */
-        function plural(ms, n, name) {
-          if (ms < n) {
-            return;
-          }
-          if (ms < n * 1.5) {
-            return Math.floor(ms / n) + ' ' + name;
-          }
-          return Math.ceil(ms / n) + ' ' + name + 's';
+        function plural(ms, msAbs, n, name) {
+          var isPlural = msAbs >= n * 1.5;
+          return Math.round(ms / n) + ' ' + name + (isPlural ? 's' : '');
         }
       },
       {}
     ],
-    76: [
-      function (require, module, exports) {
-        'use strict';
-        var format = require('format-util');
-        var slice = Array.prototype.slice;
-        var protectedProperties = [
-            'name',
-            'message',
-            'stack'
-          ];
-        var errorPrototypeProperties = [
-            'name',
-            'message',
-            'description',
-            'number',
-            'code',
-            'fileName',
-            'lineNumber',
-            'columnNumber',
-            'sourceURL',
-            'line',
-            'column',
-            'stack'
-          ];
-        module.exports = create(Error);
-        module.exports.error = create(Error);
-        module.exports.eval = create(EvalError);
-        module.exports.range = create(RangeError);
-        module.exports.reference = create(ReferenceError);
-        module.exports.syntax = create(SyntaxError);
-        module.exports.type = create(TypeError);
-        module.exports.uri = create(URIError);
-        module.exports.formatter = format;
-        /**
- * Creates a new {@link ono} function that creates the given Error class.
- *
- * @param {Class} Klass - The Error subclass to create
- * @returns {ono}
- */
-        function create(Klass) {
-          /**
-   * @param {Error}   [err]     - The original error, if any
-   * @param {object}  [props]   - An object whose properties will be added to the error object
-   * @param {string}  [message] - The error message. May contain {@link util#format} placeholders
-   * @param {...*}    [params]  - Parameters that map to the `message` placeholders
-   * @returns {Error}
-   */
-          return function onoFactory(err, props, message, params) {
-            // eslint-disable-line no-unused-vars
-            var formatArgs = [];
-            var formattedMessage = '';
-            // Determine which arguments were actually specified
-            if (typeof err === 'string') {
-              formatArgs = slice.call(arguments);
-              err = props = undefined;
-            } else if (typeof props === 'string') {
-              formatArgs = slice.call(arguments, 1);
-              props = undefined;
-            } else if (typeof message === 'string') {
-              formatArgs = slice.call(arguments, 2);
-            }
-            // If there are any format arguments, then format the error message
-            if (formatArgs.length > 0) {
-              formattedMessage = module.exports.formatter.apply(null, formatArgs);
-            }
-            if (err && err.message) {
-              // The inner-error's message will be added to the new message
-              formattedMessage += (formattedMessage ? ' \n' : '') + err.message;
-            }
-            // Create the new error
-            // NOTE: DON'T move this to a separate function! We don't want to pollute the stack trace
-            var newError = new Klass(formattedMessage);
-            // Extend the new error with the additional properties
-            extendError(newError, err);
-            // Copy properties of the original error
-            extendToJSON(newError);
-            // Replace the original toJSON method
-            extend(newError, props);
-            // Copy custom properties, possibly including a custom toJSON method
-            return newError;
-          };
-        }
-        /**
- * Extends the targetError with the properties of the source error.
- *
- * @param {Error}   targetError - The error object to extend
- * @param {?Error}  sourceError - The source error object, if any
- */
-        function extendError(targetError, sourceError) {
-          extendStack(targetError, sourceError);
-          extend(targetError, sourceError);
-        }
-        /**
- * JavaScript engines differ in how errors are serialized to JSON - especially when it comes
- * to custom error properties and stack traces.  So we add our own toJSON method that ALWAYS
- * outputs every property of the error.
- */
-        function extendToJSON(error) {
-          error.toJSON = errorToJSON;
-          // Also add an inspect() method, for compatibility with Node.js' `util.inspect()` method
-          error.inspect = errorToString;
-        }
-        /**
- * Extends the target object with the properties of the source object.
- *
- * @param {object}  target - The object to extend
- * @param {?source} source - The object whose properties are copied
- */
-        function extend(target, source) {
-          if (source && typeof source === 'object') {
-            var keys = Object.keys(source);
-            for (var i = 0; i < keys.length; i++) {
-              var key = keys[i];
-              // Don't copy "protected" properties, since they have special meaning/behavior
-              // and are set by the onoFactory function
-              if (protectedProperties.indexOf(key) >= 0) {
-                continue;
-              }
-              try {
-                target[key] = source[key];
-              } catch (e) {
-              }
-            }
-          }
-        }
-        /**
- * Custom JSON serializer for Error objects.
- * Returns all built-in error properties, as well as extended properties.
- *
- * @returns {object}
- */
-        function errorToJSON() {
-          var json = {};
-          // Get all the properties of this error
-          var keys = Object.keys(this);
-          // Also include properties from the Error prototype
-          keys = keys.concat(errorPrototypeProperties);
-          for (var i = 0; i < keys.length; i++) {
-            var key = keys[i];
-            var value = this[key];
-            var type = typeof value;
-            if (type !== 'undefined' && type !== 'function') {
-              json[key] = value;
-            }
-          }
-          return json;
-        }
-        /**
- * Serializes Error objects as human-readable JSON strings for debugging/logging purposes.
- *
- * @returns {string}
- */
-        function errorToString() {
-          return JSON.stringify(this, null, 2).replace(/\\n/g, '\n');
-        }
-        /**
- * Extend the error stack to include its cause
- *
- * @param {Error} targetError
- * @param {Error} sourceError
- */
-        function extendStack(targetError, sourceError) {
-          if (hasLazyStack(targetError)) {
-            if (sourceError) {
-              lazyJoinStacks(targetError, sourceError);
-            } else {
-              lazyPopStack(targetError);
-            }
-          } else {
-            if (sourceError) {
-              targetError.stack = joinStacks(targetError.stack, sourceError.stack);
-            } else {
-              targetError.stack = popStack(targetError.stack);
-            }
-          }
-        }
-        /**
- * Appends the original {@link Error#stack} property to the new Error's stack.
- *
- * @param {string} newStack
- * @param {string} originalStack
- * @returns {string}
- */
-        function joinStacks(newStack, originalStack) {
-          newStack = popStack(newStack);
-          if (newStack && originalStack) {
-            return newStack + '\n\n' + originalStack;
-          } else {
-            return newStack || originalStack;
-          }
-        }
-        /**
- * Removes Ono from the stack, so that the stack starts at the original error location
- *
- * @param {string} stack
- * @returns {string}
- */
-        function popStack(stack) {
-          if (stack) {
-            var lines = stack.split('\n');
-            if (lines.length < 2) {
-              // The stack only has one line, so there's nothing we can remove
-              return stack;
-            }
-            // Find the `onoFactory` call in the stack, and remove it
-            for (var i = 0; i < lines.length; i++) {
-              var line = lines[i];
-              if (line.indexOf('onoFactory') >= 0) {
-                lines.splice(i, 1);
-                return lines.join('\n');
-              }
-            }
-            // If we get here, then the stack doesn't contain a call to `onoFactory`.
-            // This may be due to minification or some optimization of the JS engine.
-            // So just return the stack as-is.
-            return stack;
-          }
-        }
-        /**
- * Does a one-time determination of whether this JavaScript engine
- * supports lazy `Error.stack` properties.
- */
-        var supportsLazyStack = function () {
-            return !!(Object.getOwnPropertyDescriptor && Object.defineProperty && (typeof navigator === 'undefined' || !/Android/.test(navigator.userAgent)));
-          }();
-        /**
- * Does this error have a lazy stack property?
- *
- * @param {Error} err
- * @returns {boolean}
- */
-        function hasLazyStack(err) {
-          if (!supportsLazyStack) {
-            return false;
-          }
-          var descriptor = Object.getOwnPropertyDescriptor(err, 'stack');
-          if (!descriptor) {
-            return false;
-          }
-          return typeof descriptor.get === 'function';
-        }
-        /**
- * Calls {@link joinStacks} lazily, when the {@link Error#stack} property is accessed.
- *
- * @param {Error} targetError
- * @param {Error} sourceError
- */
-        function lazyJoinStacks(targetError, sourceError) {
-          var targetStack = Object.getOwnPropertyDescriptor(targetError, 'stack');
-          Object.defineProperty(targetError, 'stack', {
-            get: function () {
-              return joinStacks(targetStack.get.apply(targetError), sourceError.stack);
-            },
-            enumerable: false,
-            configurable: true
-          });
-        }
-        /**
- * Calls {@link popStack} lazily, when the {@link Error#stack} property is accessed.
- *
- * @param {Error} error
- */
-        function lazyPopStack(error) {
-          var targetStack = Object.getOwnPropertyDescriptor(error, 'stack');
-          Object.defineProperty(error, 'stack', {
-            get: function () {
-              return popStack(targetStack.get.apply(error));
-            },
-            enumerable: false,
-            configurable: true
-          });
-        }
-      },
-      { 'format-util': 15 }
-    ],
-    77: [
+    72: [
       function (require, module, exports) {
         (function (global) {
           'use strict';
@@ -16443,7 +15118,7 @@
       },
       {}
     ],
-    78: [
+    73: [
       function (require, module, exports) {
         (function (global) {
           'use strict';
@@ -18016,7 +16691,7 @@
       },
       {}
     ],
-    79: [
+    74: [
       function (require, module, exports) {
         (function (global) {
           'use strict';
@@ -33597,130 +32272,7 @@
       },
       {}
     ],
-    80: [
-      function (require, module, exports) {
-        'use strict';
-        /**
- * Helpers.
- */
-        var s = 1000;
-        var m = s * 60;
-        var h = m * 60;
-        var d = h * 24;
-        var y = d * 365.25;
-        /**
- * Parse or format the given `val`.
- *
- * Options:
- *
- *  - `long` verbose formatting [false]
- *
- * @param {String|Number} val
- * @param {Object} options
- * @return {String|Number}
- * @api public
- */
-        module.exports = function (val, options) {
-          options = options || {};
-          if ('string' == typeof val)
-            return parse(val);
-          return options.long ? long(val) : short(val);
-        };
-        /**
- * Parse the given `str` and return milliseconds.
- *
- * @param {String} str
- * @return {Number}
- * @api private
- */
-        function parse(str) {
-          str = '' + str;
-          if (str.length > 10000)
-            return;
-          var match = /^((?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|years?|yrs?|y)?$/i.exec(str);
-          if (!match)
-            return;
-          var n = parseFloat(match[1]);
-          var type = (match[2] || 'ms').toLowerCase();
-          switch (type) {
-          case 'years':
-          case 'year':
-          case 'yrs':
-          case 'yr':
-          case 'y':
-            return n * y;
-          case 'days':
-          case 'day':
-          case 'd':
-            return n * d;
-          case 'hours':
-          case 'hour':
-          case 'hrs':
-          case 'hr':
-          case 'h':
-            return n * h;
-          case 'minutes':
-          case 'minute':
-          case 'mins':
-          case 'min':
-          case 'm':
-            return n * m;
-          case 'seconds':
-          case 'second':
-          case 'secs':
-          case 'sec':
-          case 's':
-            return n * s;
-          case 'milliseconds':
-          case 'millisecond':
-          case 'msecs':
-          case 'msec':
-          case 'ms':
-            return n;
-          }
-        }
-        /**
- * Short format for `ms`.
- *
- * @param {Number} ms
- * @return {String}
- * @api private
- */
-        function short(ms) {
-          if (ms >= d)
-            return Math.round(ms / d) + 'd';
-          if (ms >= h)
-            return Math.round(ms / h) + 'h';
-          if (ms >= m)
-            return Math.round(ms / m) + 'm';
-          if (ms >= s)
-            return Math.round(ms / s) + 's';
-          return ms + 'ms';
-        }
-        /**
- * Long format for `ms`.
- *
- * @param {Number} ms
- * @return {String}
- * @api private
- */
-        function long(ms) {
-          return plural(ms, d, 'day') || plural(ms, h, 'hour') || plural(ms, m, 'minute') || plural(ms, s, 'second') || ms + ' ms';
-        }
-        /**
- * Pluralization helper.
- */
-        function plural(ms, n, name) {
-          if (ms < n)
-            return;
-          if (ms < n * 1.5)
-            return Math.floor(ms / n) + ' ' + name;
-          return Math.ceil(ms / n) + ' ' + name + 's';
-        }
-      },
-      {}
-    ],
-    81: [
+    75: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -34286,9 +32838,9 @@
           Trait: Trait
         };
       },
-      { 'serializer.ts/Decorators': 174 }
+      { 'serializer.ts/Decorators': 169 }
     ],
-    82: [
+    76: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -34440,15 +32992,15 @@
         module.exports = ParameterConverter;
       },
       {
-        '../converters/converter': 84,
-        '../helpers/raml': 89,
-        '../raml/ramlAnnotationConverter': 111,
-        '../raml/ramlDefinitionConverter': 115,
-        'lodash': 79,
-        'oas-raml-converter-model': 81
+        '../converters/converter': 78,
+        '../helpers/raml': 83,
+        '../raml/ramlAnnotationConverter': 105,
+        '../raml/ramlDefinitionConverter': 109,
+        'lodash': 74,
+        'oas-raml-converter-model': 75
       }
     ],
-    83: [
+    77: [
       function (require, module, exports) {
         'use strict';
         var _createClass = function () {
@@ -34576,9 +33128,9 @@
           }();
         exports.Converter = Converter;
       },
-      { './converters/index': 85 }
+      { './converters/index': 79 }
     ],
-    84: [
+    78: [
       function (require, module, exports) {
         'use strict';
         var _slicedToArray = function () {
@@ -34721,11 +33273,11 @@
         module.exports = Converter;
       },
       {
-        'lodash': 79,
-        'oas-raml-converter-model': 81
+        'lodash': 74,
+        'oas-raml-converter-model': 75
       }
     ],
-    85: [
+    79: [
       function (require, module, exports) {
         'use strict';
         var importers = {
@@ -34747,12 +33299,12 @@
         };
       },
       {
-        '../oas20/oas20Converter': 93,
-        '../oas30/oas30Converter': 102,
-        '../raml/ramlConverter': 113
+        '../oas20/oas20Converter': 87,
+        '../oas30/oas30Converter': 96,
+        '../raml/ramlConverter': 107
       }
     ],
-    86: [
+    80: [
       function (require, module, exports) {
         'use strict';
         var supportedFormats = {
@@ -34785,7 +33337,7 @@
       },
       {}
     ],
-    87: [
+    81: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -34844,9 +33396,9 @@
           }
         };
       },
-      { 'lodash': 79 }
+      { 'lodash': 74 }
     ],
-    88: [
+    82: [
       function (require, module, exports) {
         'use strict';
         module.exports = {
@@ -34868,7 +33420,7 @@
       },
       {}
     ],
-    89: [
+    83: [
       function (require, module, exports) {
         'use strict';
         var _ = require('lodash');
@@ -35072,9 +33624,9 @@
           }
         };
       },
-      { 'lodash': 79 }
+      { 'lodash': 74 }
     ],
-    90: [
+    84: [
       function (require, module, exports) {
         'use strict';
         var _createClass = function () {
@@ -35394,14 +33946,14 @@
         module.exports = RamlErrorModel;
       },
       {
-        '../utils/stack': 126,
-        '../utils/strings': 127,
+        '../utils/stack': 120,
+        '../utils/strings': 121,
         'fs': 4,
-        'lodash': 79,
-        'os': 163
+        'lodash': 74,
+        'os': 158
       }
     ],
-    91: [
+    85: [
       function (require, module, exports) {
         'use strict';
         var converter = require('./converter');
@@ -35412,11 +33964,11 @@
         };
       },
       {
-        './converter': 83,
-        './formats': 86
+        './converter': 77,
+        './formats': 80
       }
     ],
-    92: [
+    86: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -35592,13 +34144,13 @@
         module.exports = Oas20AnnotationConverter;
       },
       {
-        '../converters/converter': 84,
-        '../helpers/oas20': 88,
-        'lodash': 79,
-        'oas-raml-converter-model': 81
+        '../converters/converter': 78,
+        '../helpers/oas20': 82,
+        'lodash': 74,
+        'oas-raml-converter-model': 75
       }
     ],
-    93: [
+    87: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -36049,20 +34601,20 @@
         module.exports = Oas20Converter;
       },
       {
-        '../converters/converter': 84,
-        '../oas20/oas20DefinitionConverter': 94,
-        '../oas20/oas20ResourceConverter': 97,
-        '../oas20/oas20RootConverter': 98,
-        '../oas20/oas20SecurityDefinitionConverter': 99,
-        '../oas20/oas20TraitConverter': 100,
-        '../utils/json': 125,
-        'js-yaml': 130,
-        'lodash': 79,
-        'oas-raml-converter-model': 81,
-        'swagger-parser': 201
+        '../converters/converter': 78,
+        '../oas20/oas20DefinitionConverter': 88,
+        '../oas20/oas20ResourceConverter': 91,
+        '../oas20/oas20RootConverter': 92,
+        '../oas20/oas20SecurityDefinitionConverter': 93,
+        '../oas20/oas20TraitConverter': 94,
+        '../utils/json': 119,
+        'js-yaml': 124,
+        'lodash': 74,
+        'oas-raml-converter-model': 75,
+        'swagger-parser': 196
       }
     ],
-    94: [
+    88: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -36663,15 +35215,15 @@
         module.exports = Oas20DefinitionConverter;
       },
       {
-        '../converters/converter': 84,
-        '../oas20/oas20AnnotationConverter': 92,
-        '../utils/file': 124,
-        '../utils/json': 125,
-        'lodash': 79,
-        'oas-raml-converter-model': 81
+        '../converters/converter': 78,
+        '../oas20/oas20AnnotationConverter': 86,
+        '../utils/file': 118,
+        '../utils/json': 119,
+        'lodash': 74,
+        'oas-raml-converter-model': 75
       }
     ],
-    95: [
+    89: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -36910,14 +35462,14 @@
         module.exports = Oas20InfoConverter;
       },
       {
-        '../converters/converter': 84,
-        '../helpers/oas20': 88,
-        '../oas20/oas20AnnotationConverter': 92,
-        'lodash': 79,
-        'oas-raml-converter-model': 81
+        '../converters/converter': 78,
+        '../helpers/oas20': 82,
+        '../oas20/oas20AnnotationConverter': 86,
+        'lodash': 74,
+        'oas-raml-converter-model': 75
       }
     ],
-    96: [
+    90: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -37822,19 +36374,19 @@
         module.exports = Oas20MethodConverter;
       },
       {
-        '../common/parameterConverter': 82,
-        '../converters/converter': 84,
-        '../helpers/converter': 87,
-        '../helpers/oas20': 88,
-        '../oas20/oas20AnnotationConverter': 92,
-        '../oas20/oas20DefinitionConverter': 94,
-        '../oas20/oas20RootConverter': 98,
-        '../utils/strings': 127,
-        'lodash': 79,
-        'oas-raml-converter-model': 81
+        '../common/parameterConverter': 76,
+        '../converters/converter': 78,
+        '../helpers/converter': 81,
+        '../helpers/oas20': 82,
+        '../oas20/oas20AnnotationConverter': 86,
+        '../oas20/oas20DefinitionConverter': 88,
+        '../oas20/oas20RootConverter': 92,
+        '../utils/strings': 121,
+        'lodash': 74,
+        'oas-raml-converter-model': 75
       }
     ],
-    97: [
+    91: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -38211,18 +36763,18 @@
         module.exports = Oas20ResourceConverter;
       },
       {
-        '../converters/converter': 84,
-        '../helpers/converter': 87,
-        '../helpers/oas20': 88,
-        '../oas20/oas20DefinitionConverter': 94,
-        '../oas20/oas20MethodConverter': 96,
-        '../oas20/oas20RootConverter': 98,
-        '../utils/strings': 127,
-        'lodash': 79,
-        'oas-raml-converter-model': 81
+        '../converters/converter': 78,
+        '../helpers/converter': 81,
+        '../helpers/oas20': 82,
+        '../oas20/oas20DefinitionConverter': 88,
+        '../oas20/oas20MethodConverter': 90,
+        '../oas20/oas20RootConverter': 92,
+        '../utils/strings': 121,
+        'lodash': 74,
+        'oas-raml-converter-model': 75
       }
     ],
-    98: [
+    92: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -38603,18 +37155,18 @@
         module.exports = Oas20RootConverter;
       },
       {
-        '../converters/converter': 84,
-        '../helpers/oas20': 88,
-        '../oas20/oas20AnnotationConverter': 92,
-        '../oas20/oas20DefinitionConverter': 94,
-        '../oas20/oas20InfoConverter': 95,
-        '../utils/url': 128,
-        'lodash': 79,
-        'oas-raml-converter-model': 81,
-        'url': 210
+        '../converters/converter': 78,
+        '../helpers/oas20': 82,
+        '../oas20/oas20AnnotationConverter': 86,
+        '../oas20/oas20DefinitionConverter': 88,
+        '../oas20/oas20InfoConverter': 89,
+        '../utils/url': 122,
+        'lodash': 74,
+        'oas-raml-converter-model': 75,
+        'url': 218
       }
     ],
-    99: [
+    93: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -38893,15 +37445,15 @@
         module.exports = Oas20SecurityDefinitionConverter;
       },
       {
-        '../converters/converter': 84,
-        '../helpers/oas20': 88,
-        '../oas20/oas20RootConverter': 98,
-        '../raml/ramlMethodConverter': 117,
-        'lodash': 79,
-        'oas-raml-converter-model': 81
+        '../converters/converter': 78,
+        '../helpers/oas20': 82,
+        '../oas20/oas20RootConverter': 92,
+        '../raml/ramlMethodConverter': 111,
+        'lodash': 74,
+        'oas-raml-converter-model': 75
       }
     ],
-    100: [
+    94: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -39097,13 +37649,13 @@
         module.exports = Oas20TraitConverter;
       },
       {
-        '../converters/converter': 84,
-        '../oas20/oas20MethodConverter': 96,
-        'lodash': 79,
-        'oas-raml-converter-model': 81
+        '../converters/converter': 78,
+        '../oas20/oas20MethodConverter': 90,
+        'lodash': 74,
+        'oas-raml-converter-model': 75
       }
     ],
-    101: [
+    95: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -39232,13 +37784,13 @@
         module.exports = Oas30AnnotationConverter;
       },
       {
-        '../converters/converter': 84,
-        '../helpers/oas20': 88,
-        'lodash': 79,
-        'oas-raml-converter-model': 81
+        '../converters/converter': 78,
+        '../helpers/oas20': 82,
+        'lodash': 74,
+        'oas-raml-converter-model': 75
       }
     ],
-    102: [
+    96: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -39591,17 +38143,17 @@
         module.exports = Oas30Converter;
       },
       {
-        '../converters/converter': 84,
-        './oas30DefinitionConverter': 103,
-        './oas30ResourceConverter': 106,
-        './oas30RootConverter': 107,
-        './oas30SecurityDefinitionConverter': 108,
-        './oas30TraitConverter': 109,
-        'lodash': 79,
-        'oas-raml-converter-model': 81
+        '../converters/converter': 78,
+        './oas30DefinitionConverter': 97,
+        './oas30ResourceConverter': 100,
+        './oas30RootConverter': 101,
+        './oas30SecurityDefinitionConverter': 102,
+        './oas30TraitConverter': 103,
+        'lodash': 74,
+        'oas-raml-converter-model': 75
       }
     ],
-    103: [
+    97: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -40088,16 +38640,16 @@
         module.exports = Oas30DefinitionConverter;
       },
       {
-        '../converters/converter': 84,
-        '../utils/json': 125,
-        '../utils/strings': 127,
-        './oas30AnnotationConverter': 101,
-        './oas30Types': 110,
-        'lodash': 79,
-        'oas-raml-converter-model': 81
+        '../converters/converter': 78,
+        '../utils/json': 119,
+        '../utils/strings': 121,
+        './oas30AnnotationConverter': 95,
+        './oas30Types': 104,
+        'lodash': 74,
+        'oas-raml-converter-model': 75
       }
     ],
-    104: [
+    98: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -40195,14 +38747,14 @@
         module.exports = Oas30InfoConverter;
       },
       {
-        '../converters/converter': 84,
-        '../oas20/oas20AnnotationConverter': 92,
-        './oas30Types': 110,
-        'lodash': 79,
-        'oas-raml-converter-model': 81
+        '../converters/converter': 78,
+        '../oas20/oas20AnnotationConverter': 86,
+        './oas30Types': 104,
+        'lodash': 74,
+        'oas-raml-converter-model': 75
       }
     ],
-    105: [
+    99: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -40659,18 +39211,18 @@
         module.exports = Oas30MethodConverter;
       },
       {
-        '../common/parameterConverter': 82,
-        '../converters/converter': 84,
-        '../helpers/converter': 87,
-        '../utils/strings': 127,
-        './oas30DefinitionConverter': 103,
-        './oas30RootConverter': 107,
-        './oas30Types': 110,
-        'lodash': 79,
-        'oas-raml-converter-model': 81
+        '../common/parameterConverter': 76,
+        '../converters/converter': 78,
+        '../helpers/converter': 81,
+        '../utils/strings': 121,
+        './oas30DefinitionConverter': 97,
+        './oas30RootConverter': 101,
+        './oas30Types': 104,
+        'lodash': 74,
+        'oas-raml-converter-model': 75
       }
     ],
-    106: [
+    100: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -40975,17 +39527,17 @@
         module.exports = Oas30ResourceConverter;
       },
       {
-        '../converters/converter': 84,
-        '../helpers/converter': 87,
-        './oas30DefinitionConverter': 103,
-        './oas30MethodConverter': 105,
-        './oas30RootConverter': 107,
-        './oas30Types': 110,
-        'lodash': 79,
-        'oas-raml-converter-model': 81
+        '../converters/converter': 78,
+        '../helpers/converter': 81,
+        './oas30DefinitionConverter': 97,
+        './oas30MethodConverter': 99,
+        './oas30RootConverter': 101,
+        './oas30Types': 104,
+        'lodash': 74,
+        'oas-raml-converter-model': 75
       }
     ],
-    107: [
+    101: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -41154,15 +39706,15 @@
         module.exports = Oas30RootConverter;
       },
       {
-        '../converters/converter': 84,
-        './oas30AnnotationConverter': 101,
-        './oas30InfoConverter': 104,
-        './oas30Types': 110,
-        'lodash': 79,
-        'oas-raml-converter-model': 81
+        '../converters/converter': 78,
+        './oas30AnnotationConverter': 95,
+        './oas30InfoConverter': 98,
+        './oas30Types': 104,
+        'lodash': 74,
+        'oas-raml-converter-model': 75
       }
     ],
-    108: [
+    102: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -41361,13 +39913,13 @@
         module.exports = Oas30SecurityDefinitionConverter;
       },
       {
-        '../converters/converter': 84,
-        './oas30Types': 110,
-        'lodash': 79,
-        'oas-raml-converter-model': 81
+        '../converters/converter': 78,
+        './oas30Types': 104,
+        'lodash': 74,
+        'oas-raml-converter-model': 75
       }
     ],
-    109: [
+    103: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -41513,14 +40065,14 @@
         module.exports = Oas30TraitConverter;
       },
       {
-        '../converters/converter': 84,
-        './oas30MethodConverter': 105,
-        './oas30Types': 110,
-        'lodash': 79,
-        'oas-raml-converter-model': 81
+        '../converters/converter': 78,
+        './oas30MethodConverter': 99,
+        './oas30Types': 104,
+        'lodash': 74,
+        'oas-raml-converter-model': 75
       }
     ],
-    110: [
+    104: [
       function (require, module, exports) {
         'use strict';
         function _classCallCheck(instance, Constructor) {
@@ -41690,7 +40242,7 @@
       },
       {}
     ],
-    111: [
+    105: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -41906,14 +40458,14 @@
         module.exports = RamlAnnotationConverter;
       },
       {
-        '../converters/converter': 84,
-        '../helpers/raml': 89,
-        '../raml/ramlCustomAnnotationConverter': 114,
-        'lodash': 79,
-        'oas-raml-converter-model': 81
+        '../converters/converter': 78,
+        '../helpers/raml': 83,
+        '../raml/ramlCustomAnnotationConverter': 108,
+        'lodash': 74,
+        'oas-raml-converter-model': 75
       }
     ],
-    112: [
+    106: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -42064,14 +40616,14 @@
         module.exports = RamlAnnotationTypeConverter;
       },
       {
-        '../converters/converter': 84,
-        '../helpers/converter': 87,
-        '../raml/ramlDefinitionConverter': 115,
-        'lodash': 79,
-        'oas-raml-converter-model': 81
+        '../converters/converter': 78,
+        '../helpers/converter': 81,
+        '../raml/ramlDefinitionConverter': 109,
+        'lodash': 74,
+        'oas-raml-converter-model': 75
       }
     ],
-    113: [
+    107: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -42573,25 +41125,25 @@
         module.exports = RamlConverter;
       },
       {
-        '../converters/converter': 84,
-        '../helpers/raml': 89,
-        '../helpers/ramlErrorModel': 90,
-        '../raml/ramlAnnotationTypeConverter': 112,
-        '../raml/ramlDefinitionConverter': 115,
-        '../raml/ramlResourceConverter': 118,
-        '../raml/ramlResourceTypeConverter': 119,
-        '../raml/ramlRootConverter': 120,
-        '../raml/ramlSecurityDefinitionConverter': 121,
-        '../raml/ramlTraitConverter': 122,
-        '../utils/json': 125,
+        '../converters/converter': 78,
+        '../helpers/raml': 83,
+        '../helpers/ramlErrorModel': 84,
+        '../raml/ramlAnnotationTypeConverter': 106,
+        '../raml/ramlDefinitionConverter': 109,
+        '../raml/ramlResourceConverter': 112,
+        '../raml/ramlResourceTypeConverter': 113,
+        '../raml/ramlRootConverter': 114,
+        '../raml/ramlSecurityDefinitionConverter': 115,
+        '../raml/ramlTraitConverter': 116,
+        '../utils/json': 119,
         'fs': 4,
-        'js-yaml': 130,
-        'lodash': 79,
-        'oas-raml-converter-model': 81,
-        'path': 164
+        'js-yaml': 124,
+        'lodash': 74,
+        'oas-raml-converter-model': 75,
+        'path': 159
       }
     ],
-    114: [
+    108: [
       function (require, module, exports) {
         'use strict';
         var _createClass = function () {
@@ -42780,7 +41332,7 @@
       },
       {}
     ],
-    115: [
+    109: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -43818,20 +42370,20 @@
         module.exports = RamlDefinitionConverter;
       },
       {
-        '../converters/converter': 84,
-        '../helpers/converter': 87,
-        '../helpers/raml': 89,
-        '../raml/ramlAnnotationConverter': 111,
-        '../raml/ramlCustomAnnotationConverter': 114,
-        '../utils/array': 123,
-        '../utils/json': 125,
-        '../utils/strings': 127,
-        '../utils/xml': 129,
-        'lodash': 79,
-        'oas-raml-converter-model': 81
+        '../converters/converter': 78,
+        '../helpers/converter': 81,
+        '../helpers/raml': 83,
+        '../raml/ramlAnnotationConverter': 105,
+        '../raml/ramlCustomAnnotationConverter': 108,
+        '../utils/array': 117,
+        '../utils/json': 119,
+        '../utils/strings': 121,
+        '../utils/xml': 123,
+        'lodash': 74,
+        'oas-raml-converter-model': 75
       }
     ],
-    116: [
+    110: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -44040,15 +42592,15 @@
         module.exports = RamlInfoConverter;
       },
       {
-        '../converters/converter': 84,
-        '../helpers/raml': 89,
-        '../raml/ramlAnnotationConverter': 111,
-        '../raml/ramlCustomAnnotationConverter': 114,
-        'lodash': 79,
-        'oas-raml-converter-model': 81
+        '../converters/converter': 78,
+        '../helpers/raml': 83,
+        '../raml/ramlAnnotationConverter': 105,
+        '../raml/ramlCustomAnnotationConverter': 108,
+        'lodash': 74,
+        'oas-raml-converter-model': 75
       }
     ],
-    117: [
+    111: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -44923,19 +43475,19 @@
         module.exports = RamlMethodConverter;
       },
       {
-        '../common/parameterConverter': 82,
-        '../converters/converter': 84,
-        '../helpers/converter': 87,
-        '../helpers/raml': 89,
-        '../raml/ramlAnnotationConverter': 111,
-        '../raml/ramlCustomAnnotationConverter': 114,
-        '../raml/ramlDefinitionConverter': 115,
-        '../utils/json': 125,
-        'lodash': 79,
-        'oas-raml-converter-model': 81
+        '../common/parameterConverter': 76,
+        '../converters/converter': 78,
+        '../helpers/converter': 81,
+        '../helpers/raml': 83,
+        '../raml/ramlAnnotationConverter': 105,
+        '../raml/ramlCustomAnnotationConverter': 108,
+        '../raml/ramlDefinitionConverter': 109,
+        '../utils/json': 119,
+        'lodash': 74,
+        'oas-raml-converter-model': 75
       }
     ],
-    118: [
+    112: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -45543,17 +44095,17 @@
         module.exports = RamlResourceConverter;
       },
       {
-        '../common/parameterConverter': 82,
-        '../converters/converter': 84,
-        '../helpers/converter': 87,
-        '../helpers/raml': 89,
-        '../raml/ramlAnnotationConverter': 111,
-        '../raml/ramlMethodConverter': 117,
-        'lodash': 79,
-        'oas-raml-converter-model': 81
+        '../common/parameterConverter': 76,
+        '../converters/converter': 78,
+        '../helpers/converter': 81,
+        '../helpers/raml': 83,
+        '../raml/ramlAnnotationConverter': 105,
+        '../raml/ramlMethodConverter': 111,
+        'lodash': 74,
+        'oas-raml-converter-model': 75
       }
     ],
-    119: [
+    113: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -45821,17 +44373,17 @@
         module.exports = RamlResourceTypeConverter;
       },
       {
-        '../converters/converter': 84,
-        '../helpers/converter': 87,
-        '../helpers/raml': 89,
-        '../raml/ramlDefinitionConverter': 115,
-        '../raml/ramlMethodConverter': 117,
-        '../raml/ramlResourceConverter': 118,
-        'lodash': 79,
-        'oas-raml-converter-model': 81
+        '../converters/converter': 78,
+        '../helpers/converter': 81,
+        '../helpers/raml': 83,
+        '../raml/ramlDefinitionConverter': 109,
+        '../raml/ramlMethodConverter': 111,
+        '../raml/ramlResourceConverter': 112,
+        'lodash': 74,
+        'oas-raml-converter-model': 75
       }
     ],
-    120: [
+    114: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -46255,18 +44807,18 @@
         module.exports = RamlRootConverter;
       },
       {
-        '../common/parameterConverter': 82,
-        '../converters/converter': 84,
-        '../raml/ramlAnnotationConverter': 111,
-        '../raml/ramlCustomAnnotationConverter': 114,
-        '../raml/ramlDefinitionConverter': 115,
-        '../raml/ramlInfoConverter': 116,
-        '../utils/url': 128,
-        'lodash': 79,
-        'oas-raml-converter-model': 81
+        '../common/parameterConverter': 76,
+        '../converters/converter': 78,
+        '../raml/ramlAnnotationConverter': 105,
+        '../raml/ramlCustomAnnotationConverter': 108,
+        '../raml/ramlDefinitionConverter': 109,
+        '../raml/ramlInfoConverter': 110,
+        '../utils/url': 122,
+        'lodash': 74,
+        'oas-raml-converter-model': 75
       }
     ],
-    121: [
+    115: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -46649,14 +45201,14 @@
         module.exports = RamlSecurityDefinitionConverter;
       },
       {
-        '../converters/converter': 84,
-        '../raml/ramlAnnotationConverter': 111,
-        '../raml/ramlMethodConverter': 117,
-        'lodash': 79,
-        'oas-raml-converter-model': 81
+        '../converters/converter': 78,
+        '../raml/ramlAnnotationConverter': 105,
+        '../raml/ramlMethodConverter': 111,
+        'lodash': 74,
+        'oas-raml-converter-model': 75
       }
     ],
-    122: [
+    116: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -46819,14 +45371,14 @@
         module.exports = RamlTraitConverter;
       },
       {
-        '../converters/converter': 84,
-        '../helpers/converter': 87,
-        '../raml/ramlMethodConverter': 117,
-        'lodash': 79,
-        'oas-raml-converter-model': 81
+        '../converters/converter': 78,
+        '../helpers/converter': 81,
+        '../raml/ramlMethodConverter': 111,
+        'lodash': 74,
+        'oas-raml-converter-model': 75
       }
     ],
-    123: [
+    117: [
       function (require, module, exports) {
         'use strict';
         var _ = require('lodash');
@@ -46838,9 +45390,9 @@
           }
         };
       },
-      { 'lodash': 79 }
+      { 'lodash': 74 }
     ],
-    124: [
+    118: [
       function (require, module, exports) {
         'use strict';
         var _ = require('lodash');
@@ -46860,9 +45412,9 @@
           }
         };
       },
-      { 'lodash': 79 }
+      { 'lodash': 74 }
     ],
-    125: [
+    119: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -46995,11 +45547,11 @@
         };
       },
       {
-        'json-schema-compatibility': 21,
-        'lodash': 79
+        'json-schema-compatibility': 18,
+        'lodash': 74
       }
     ],
-    126: [
+    120: [
       function (require, module, exports) {
         'use strict';
         var _createClass = function () {
@@ -47082,7 +45634,7 @@
       },
       {}
     ],
-    127: [
+    121: [
       function (require, module, exports) {
         'use strict';
         var _ = require('lodash');
@@ -47132,9 +45684,9 @@
           }
         };
       },
-      { 'lodash': 79 }
+      { 'lodash': 74 }
     ],
-    128: [
+    122: [
       function (require, module, exports) {
         'use strict';
         var request = require('request');
@@ -47192,11 +45744,11 @@
         };
       },
       {
-        'lodash': 79,
+        'lodash': 74,
         'request': 2
       }
     ],
-    129: [
+    123: [
       function (require, module, exports) {
         'use strict';
         var parseString = require('xml2js').parseString;
@@ -47211,313 +45763,313 @@
           }
         };
       },
-      { 'xml2js': 288 }
+      { 'xml2js': 305 }
     ],
-    130: [
+    124: [
+      function (require, module, exports) {
+        arguments[4][41][0].apply(exports, arguments);
+      },
+      {
+        './lib/js-yaml.js': 125,
+        'dup': 41
+      }
+    ],
+    125: [
+      function (require, module, exports) {
+        arguments[4][42][0].apply(exports, arguments);
+      },
+      {
+        './js-yaml/dumper': 127,
+        './js-yaml/exception': 128,
+        './js-yaml/loader': 129,
+        './js-yaml/schema': 131,
+        './js-yaml/schema/core': 132,
+        './js-yaml/schema/default_full': 133,
+        './js-yaml/schema/default_safe': 134,
+        './js-yaml/schema/failsafe': 135,
+        './js-yaml/schema/json': 136,
+        './js-yaml/type': 137,
+        'dup': 42
+      }
+    ],
+    126: [
+      function (require, module, exports) {
+        arguments[4][43][0].apply(exports, arguments);
+      },
+      { 'dup': 43 }
+    ],
+    127: [
+      function (require, module, exports) {
+        arguments[4][44][0].apply(exports, arguments);
+      },
+      {
+        './common': 126,
+        './exception': 128,
+        './schema/default_full': 133,
+        './schema/default_safe': 134,
+        'dup': 44
+      }
+    ],
+    128: [
       function (require, module, exports) {
         arguments[4][45][0].apply(exports, arguments);
       },
-      {
-        './lib/js-yaml.js': 131,
-        'dup': 45
-      }
+      { 'dup': 45 }
     ],
-    131: [
+    129: [
       function (require, module, exports) {
         arguments[4][46][0].apply(exports, arguments);
       },
       {
-        './js-yaml/dumper': 133,
-        './js-yaml/exception': 134,
-        './js-yaml/loader': 135,
-        './js-yaml/schema': 137,
-        './js-yaml/schema/core': 138,
-        './js-yaml/schema/default_full': 139,
-        './js-yaml/schema/default_safe': 140,
-        './js-yaml/schema/failsafe': 141,
-        './js-yaml/schema/json': 142,
-        './js-yaml/type': 143,
+        './common': 126,
+        './exception': 128,
+        './mark': 130,
+        './schema/default_full': 133,
+        './schema/default_safe': 134,
         'dup': 46
       }
     ],
-    132: [
+    130: [
       function (require, module, exports) {
         arguments[4][47][0].apply(exports, arguments);
       },
-      { 'dup': 47 }
+      {
+        './common': 126,
+        'dup': 47
+      }
     ],
-    133: [
+    131: [
       function (require, module, exports) {
         arguments[4][48][0].apply(exports, arguments);
       },
       {
-        './common': 132,
-        './exception': 134,
-        './schema/default_full': 139,
-        './schema/default_safe': 140,
+        './common': 126,
+        './exception': 128,
+        './type': 137,
         'dup': 48
       }
     ],
-    134: [
+    132: [
       function (require, module, exports) {
         arguments[4][49][0].apply(exports, arguments);
       },
-      { 'dup': 49 }
+      {
+        '../schema': 131,
+        './json': 136,
+        'dup': 49
+      }
     ],
-    135: [
+    133: [
       function (require, module, exports) {
         arguments[4][50][0].apply(exports, arguments);
       },
       {
-        './common': 132,
-        './exception': 134,
-        './mark': 136,
-        './schema/default_full': 139,
-        './schema/default_safe': 140,
+        '../schema': 131,
+        '../type/js/function': 142,
+        '../type/js/regexp': 143,
+        '../type/js/undefined': 144,
+        './default_safe': 134,
         'dup': 50
       }
     ],
-    136: [
+    134: [
       function (require, module, exports) {
         arguments[4][51][0].apply(exports, arguments);
       },
       {
-        './common': 132,
+        '../schema': 131,
+        '../type/binary': 138,
+        '../type/merge': 146,
+        '../type/omap': 148,
+        '../type/pairs': 149,
+        '../type/set': 151,
+        '../type/timestamp': 153,
+        './core': 132,
         'dup': 51
       }
     ],
-    137: [
+    135: [
       function (require, module, exports) {
         arguments[4][52][0].apply(exports, arguments);
       },
       {
-        './common': 132,
-        './exception': 134,
-        './type': 143,
+        '../schema': 131,
+        '../type/map': 145,
+        '../type/seq': 150,
+        '../type/str': 152,
         'dup': 52
       }
     ],
-    138: [
+    136: [
       function (require, module, exports) {
         arguments[4][53][0].apply(exports, arguments);
       },
       {
-        '../schema': 137,
-        './json': 142,
+        '../schema': 131,
+        '../type/bool': 139,
+        '../type/float': 140,
+        '../type/int': 141,
+        '../type/null': 147,
+        './failsafe': 135,
         'dup': 53
       }
     ],
-    139: [
+    137: [
       function (require, module, exports) {
         arguments[4][54][0].apply(exports, arguments);
       },
       {
-        '../schema': 137,
-        '../type/js/function': 148,
-        '../type/js/regexp': 149,
-        '../type/js/undefined': 150,
-        './default_safe': 140,
+        './exception': 128,
         'dup': 54
       }
     ],
-    140: [
+    138: [
       function (require, module, exports) {
         arguments[4][55][0].apply(exports, arguments);
       },
       {
-        '../schema': 137,
-        '../type/binary': 144,
-        '../type/merge': 152,
-        '../type/omap': 154,
-        '../type/pairs': 155,
-        '../type/set': 157,
-        '../type/timestamp': 159,
-        './core': 138,
+        '../type': 137,
         'dup': 55
       }
     ],
-    141: [
+    139: [
       function (require, module, exports) {
         arguments[4][56][0].apply(exports, arguments);
       },
       {
-        '../schema': 137,
-        '../type/map': 151,
-        '../type/seq': 156,
-        '../type/str': 158,
+        '../type': 137,
         'dup': 56
       }
     ],
-    142: [
+    140: [
       function (require, module, exports) {
         arguments[4][57][0].apply(exports, arguments);
       },
       {
-        '../schema': 137,
-        '../type/bool': 145,
-        '../type/float': 146,
-        '../type/int': 147,
-        '../type/null': 153,
-        './failsafe': 141,
+        '../common': 126,
+        '../type': 137,
         'dup': 57
       }
     ],
-    143: [
+    141: [
       function (require, module, exports) {
         arguments[4][58][0].apply(exports, arguments);
       },
       {
-        './exception': 134,
+        '../common': 126,
+        '../type': 137,
         'dup': 58
       }
     ],
-    144: [
+    142: [
       function (require, module, exports) {
         arguments[4][59][0].apply(exports, arguments);
       },
       {
-        '../type': 143,
+        '../../type': 137,
         'dup': 59
       }
     ],
-    145: [
+    143: [
       function (require, module, exports) {
         arguments[4][60][0].apply(exports, arguments);
       },
       {
-        '../type': 143,
+        '../../type': 137,
         'dup': 60
       }
     ],
-    146: [
+    144: [
       function (require, module, exports) {
         arguments[4][61][0].apply(exports, arguments);
       },
       {
-        '../common': 132,
-        '../type': 143,
+        '../../type': 137,
         'dup': 61
       }
     ],
-    147: [
+    145: [
       function (require, module, exports) {
         arguments[4][62][0].apply(exports, arguments);
       },
       {
-        '../common': 132,
-        '../type': 143,
+        '../type': 137,
         'dup': 62
       }
     ],
-    148: [
+    146: [
       function (require, module, exports) {
         arguments[4][63][0].apply(exports, arguments);
       },
       {
-        '../../type': 143,
+        '../type': 137,
         'dup': 63
       }
     ],
-    149: [
+    147: [
       function (require, module, exports) {
         arguments[4][64][0].apply(exports, arguments);
       },
       {
-        '../../type': 143,
+        '../type': 137,
         'dup': 64
       }
     ],
-    150: [
+    148: [
       function (require, module, exports) {
         arguments[4][65][0].apply(exports, arguments);
       },
       {
-        '../../type': 143,
+        '../type': 137,
         'dup': 65
       }
     ],
-    151: [
+    149: [
       function (require, module, exports) {
         arguments[4][66][0].apply(exports, arguments);
       },
       {
-        '../type': 143,
+        '../type': 137,
         'dup': 66
       }
     ],
-    152: [
+    150: [
       function (require, module, exports) {
         arguments[4][67][0].apply(exports, arguments);
       },
       {
-        '../type': 143,
+        '../type': 137,
         'dup': 67
       }
     ],
-    153: [
+    151: [
       function (require, module, exports) {
         arguments[4][68][0].apply(exports, arguments);
       },
       {
-        '../type': 143,
+        '../type': 137,
         'dup': 68
       }
     ],
-    154: [
+    152: [
       function (require, module, exports) {
         arguments[4][69][0].apply(exports, arguments);
       },
       {
-        '../type': 143,
+        '../type': 137,
         'dup': 69
       }
     ],
-    155: [
+    153: [
       function (require, module, exports) {
         arguments[4][70][0].apply(exports, arguments);
       },
       {
-        '../type': 143,
+        '../type': 137,
         'dup': 70
       }
     ],
-    156: [
-      function (require, module, exports) {
-        arguments[4][71][0].apply(exports, arguments);
-      },
-      {
-        '../type': 143,
-        'dup': 71
-      }
-    ],
-    157: [
-      function (require, module, exports) {
-        arguments[4][72][0].apply(exports, arguments);
-      },
-      {
-        '../type': 143,
-        'dup': 72
-      }
-    ],
-    158: [
-      function (require, module, exports) {
-        arguments[4][73][0].apply(exports, arguments);
-      },
-      {
-        '../type': 143,
-        'dup': 73
-      }
-    ],
-    159: [
-      function (require, module, exports) {
-        arguments[4][74][0].apply(exports, arguments);
-      },
-      {
-        '../type': 143,
-        'dup': 74
-      }
-    ],
-    160: [
+    154: [
       function (require, module, exports) {
         'use strict';
         // modified from https://github.com/es-shims/es5-shim
@@ -47659,9 +46211,9 @@
         };
         module.exports = keysShim;
       },
-      { './isArguments': 161 }
+      { './isArguments': 155 }
     ],
-    161: [
+    155: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -47681,7 +46233,7 @@
       },
       {}
     ],
-    162: [
+    156: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -47689,11 +46241,19 @@
           } : function (obj) {
             return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
           };
-        var util = require('util'), slice = Array.prototype.slice, vendorSpecificErrorProperties = [
+        var format = require('format-util');
+        var slice = Array.prototype.slice;
+        var protectedProperties = [
+            'name',
+            'message',
+            'stack'
+          ];
+        var errorPrototypeProperties = [
             'name',
             'message',
             'description',
             'number',
+            'code',
             'fileName',
             'lineNumber',
             'columnNumber',
@@ -47710,7 +46270,7 @@
         module.exports.syntax = create(SyntaxError);
         module.exports.type = create(TypeError);
         module.exports.uri = create(URIError);
-        module.exports.formatter = util.format;
+        module.exports.formatter = format;
         /**
  * Creates a new {@link ono} function that creates the given Error class.
  *
@@ -47725,23 +46285,25 @@
    * @param {...*}    [params]  - Parameters that map to the `message` placeholders
    * @returns {Error}
    */
-          return function ono(err, props, message, params) {
+          return function onoFactory(err, props, message, params) {
             // eslint-disable-line no-unused-vars
-            var formattedMessage;
-            var formatter = module.exports.formatter;
+            var formatArgs = [];
+            var formattedMessage = '';
+            // Determine which arguments were actually specified
             if (typeof err === 'string') {
-              formattedMessage = formatter.apply(null, arguments);
+              formatArgs = slice.call(arguments);
               err = props = undefined;
             } else if (typeof props === 'string') {
-              formattedMessage = formatter.apply(null, slice.call(arguments, 1));
-            } else {
-              formattedMessage = formatter.apply(null, slice.call(arguments, 2));
+              formatArgs = slice.call(arguments, 1);
+              props = undefined;
+            } else if (typeof message === 'string') {
+              formatArgs = slice.call(arguments, 2);
             }
-            if (!(err instanceof Error)) {
-              props = err;
-              err = undefined;
+            // If there are any format arguments, then format the error message
+            if (formatArgs.length > 0) {
+              formattedMessage = module.exports.formatter.apply(null, formatArgs);
             }
-            if (err) {
+            if (err && err.message) {
               // The inner-error's message will be added to the new message
               formattedMessage += (formattedMessage ? ' \n' : '') + err.message;
             }
@@ -47765,10 +46327,8 @@
  * @param {?Error}  sourceError - The source error object, if any
  */
         function extendError(targetError, sourceError) {
-          if (sourceError) {
-            extendStack(targetError, sourceError);
-            extend(targetError, sourceError, true);
-          }
+          extendStack(targetError, sourceError);
+          extend(targetError, sourceError);
         }
         /**
  * JavaScript engines differ in how errors are serialized to JSON - especially when it comes
@@ -47785,15 +46345,15 @@
  *
  * @param {object}  target - The object to extend
  * @param {?source} source - The object whose properties are copied
- * @param {boolean} omitVendorSpecificProperties - Skip vendor-specific Error properties
  */
-        function extend(target, source, omitVendorSpecificProperties) {
+        function extend(target, source) {
           if (source && (typeof source === 'undefined' ? 'undefined' : _typeof(source)) === 'object') {
             var keys = Object.keys(source);
             for (var i = 0; i < keys.length; i++) {
               var key = keys[i];
-              // Don't bother trying to copy read-only vendor-specific Error properties
-              if (omitVendorSpecificProperties && vendorSpecificErrorProperties.indexOf(key) >= 0) {
+              // Don't copy "protected" properties, since they have special meaning/behavior
+              // and are set by the onoFactory function
+              if (protectedProperties.indexOf(key) >= 0) {
                 continue;
               }
               try {
@@ -47813,8 +46373,8 @@
           var json = {};
           // Get all the properties of this error
           var keys = Object.keys(this);
-          // Also include vendor-specific properties from the prototype
-          keys = keys.concat(vendorSpecificErrorProperties);
+          // Also include properties from the Error prototype
+          keys = keys.concat(errorPrototypeProperties);
           for (var i = 0; i < keys.length; i++) {
             var key = keys[i];
             var value = this[key];
@@ -47835,15 +46395,65 @@
         }
         /**
  * Extend the error stack to include its cause
+ *
+ * @param {Error} targetError
+ * @param {Error} sourceError
  */
         function extendStack(targetError, sourceError) {
-          if (hasLazyStack(sourceError)) {
-            extendStackProperty(targetError, sourceError);
-          } else {
-            var stack = sourceError.stack;
-            if (stack) {
-              targetError.stack += ' \n\n' + sourceError.stack;
+          if (hasLazyStack(targetError)) {
+            if (sourceError) {
+              lazyJoinStacks(targetError, sourceError);
+            } else {
+              lazyPopStack(targetError);
             }
+          } else {
+            if (sourceError) {
+              targetError.stack = joinStacks(targetError.stack, sourceError.stack);
+            } else {
+              targetError.stack = popStack(targetError.stack);
+            }
+          }
+        }
+        /**
+ * Appends the original {@link Error#stack} property to the new Error's stack.
+ *
+ * @param {string} newStack
+ * @param {string} originalStack
+ * @returns {string}
+ */
+        function joinStacks(newStack, originalStack) {
+          newStack = popStack(newStack);
+          if (newStack && originalStack) {
+            return newStack + '\n\n' + originalStack;
+          } else {
+            return newStack || originalStack;
+          }
+        }
+        /**
+ * Removes Ono from the stack, so that the stack starts at the original error location
+ *
+ * @param {string} stack
+ * @returns {string}
+ */
+        function popStack(stack) {
+          if (stack) {
+            var lines = stack.split('\n');
+            if (lines.length < 2) {
+              // The stack only has one line, so there's nothing we can remove
+              return stack;
+            }
+            // Find the `onoFactory` call in the stack, and remove it
+            for (var i = 0; i < lines.length; i++) {
+              var line = lines[i];
+              if (line.indexOf('onoFactory') >= 0) {
+                lines.splice(i, 1);
+                return lines.join('\n');
+              }
+            }
+            // If we get here, then the stack doesn't contain a call to `onoFactory`.
+            // This may be due to minification or some optimization of the JS engine.
+            // So just return the stack as-is.
+            return stack;
           }
         }
         /**
@@ -47856,6 +46466,7 @@
         /**
  * Does this error have a lazy stack property?
  *
+ * @param {Error} err
  * @returns {boolean}
  */
         function hasLazyStack(err) {
@@ -47869,25 +46480,711 @@
           return typeof descriptor.get === 'function';
         }
         /**
- * Extend the error stack to include its cause, lazily
+ * Calls {@link joinStacks} lazily, when the {@link Error#stack} property is accessed.
+ *
+ * @param {Error} targetError
+ * @param {Error} sourceError
  */
-        function extendStackProperty(targetError, sourceError) {
-          var sourceStack = Object.getOwnPropertyDescriptor(sourceError, 'stack');
-          if (sourceStack) {
-            var targetStack = Object.getOwnPropertyDescriptor(targetError, 'stack');
-            Object.defineProperty(targetError, 'stack', {
-              get: function get() {
-                return targetStack.get.apply(targetError) + ' \n\n' + sourceError.stack;
-              },
-              enumerable: false,
-              configurable: true
-            });
-          }
+        function lazyJoinStacks(targetError, sourceError) {
+          var targetStack = Object.getOwnPropertyDescriptor(targetError, 'stack');
+          Object.defineProperty(targetError, 'stack', {
+            get: function get() {
+              return joinStacks(targetStack.get.apply(targetError), sourceError.stack);
+            },
+            enumerable: false,
+            configurable: true
+          });
+        }
+        /**
+ * Calls {@link popStack} lazily, when the {@link Error#stack} property is accessed.
+ *
+ * @param {Error} error
+ */
+        function lazyPopStack(error) {
+          var targetStack = Object.getOwnPropertyDescriptor(error, 'stack');
+          Object.defineProperty(error, 'stack', {
+            get: function get() {
+              return popStack(targetStack.get.apply(error));
+            },
+            enumerable: false,
+            configurable: true
+          });
         }
       },
-      { 'util': 214 }
+      { 'format-util': 12 }
     ],
-    163: [
+    157: [
+      function (require, module, exports) {
+        module.exports = {
+          'title': 'A JSON Schema for OpenAPI 3.0.',
+          'id': 'http://openapis.org/v3/schema.json#',
+          '$schema': 'http://json-schema.org/draft-04/schema#',
+          'type': 'object',
+          'description': 'This is the root document object of the OpenAPI document.',
+          'required': [
+            'openapi',
+            'info',
+            'paths'
+          ],
+          'additionalProperties': false,
+          'patternProperties': { '^x-': { '$ref': '#/definitions/specificationExtension' } },
+          'properties': {
+            'openapi': { 'type': 'string' },
+            'info': { '$ref': '#/definitions/info' },
+            'servers': {
+              'type': 'array',
+              'items': { '$ref': '#/definitions/server' },
+              'uniqueItems': true
+            },
+            'paths': { '$ref': '#/definitions/paths' },
+            'components': { '$ref': '#/definitions/components' },
+            'security': {
+              'type': 'array',
+              'items': { '$ref': '#/definitions/securityRequirement' },
+              'uniqueItems': true
+            },
+            'tags': {
+              'type': 'array',
+              'items': { '$ref': '#/definitions/tag' },
+              'uniqueItems': true
+            },
+            'externalDocs': { '$ref': '#/definitions/externalDocs' }
+          },
+          'definitions': {
+            'info': {
+              'type': 'object',
+              'description': 'The object provides metadata about the API. The metadata MAY be used by the clients if needed, and MAY be presented in editing or documentation generation tools for convenience.',
+              'required': [
+                'title',
+                'version'
+              ],
+              'additionalProperties': false,
+              'patternProperties': { '^x-': { '$ref': '#/definitions/specificationExtension' } },
+              'properties': {
+                'title': { 'type': 'string' },
+                'description': { 'type': 'string' },
+                'termsOfService': { 'type': 'string' },
+                'contact': { '$ref': '#/definitions/contact' },
+                'license': { '$ref': '#/definitions/license' },
+                'version': { 'type': 'string' }
+              }
+            },
+            'contact': {
+              'type': 'object',
+              'description': 'Contact information for the exposed API.',
+              'additionalProperties': false,
+              'patternProperties': { '^x-': { '$ref': '#/definitions/specificationExtension' } },
+              'properties': {
+                'name': { 'type': 'string' },
+                'url': { 'type': 'string' },
+                'email': { 'type': 'string' }
+              }
+            },
+            'license': {
+              'type': 'object',
+              'description': 'License information for the exposed API.',
+              'required': ['name'],
+              'additionalProperties': false,
+              'patternProperties': { '^x-': { '$ref': '#/definitions/specificationExtension' } },
+              'properties': {
+                'name': { 'type': 'string' },
+                'url': { 'type': 'string' }
+              }
+            },
+            'server': {
+              'type': 'object',
+              'description': 'An object representing a Server.',
+              'required': ['url'],
+              'additionalProperties': false,
+              'patternProperties': { '^x-': { '$ref': '#/definitions/specificationExtension' } },
+              'properties': {
+                'url': { 'type': 'string' },
+                'description': { 'type': 'string' },
+                'variables': { '$ref': '#/definitions/serverVariables' }
+              }
+            },
+            'serverVariable': {
+              'type': 'object',
+              'description': 'An object representing a Server Variable for server URL template substitution.',
+              'required': ['default'],
+              'additionalProperties': false,
+              'patternProperties': { '^x-': { '$ref': '#/definitions/specificationExtension' } },
+              'properties': {
+                'enum': {
+                  'type': 'array',
+                  'items': { 'type': 'string' },
+                  'uniqueItems': true
+                },
+                'default': { 'type': 'string' },
+                'description': { 'type': 'string' }
+              }
+            },
+            'components': {
+              'type': 'object',
+              'description': 'Holds a set of reusable objects for different aspects of the OAS. All objects defined within the components object will have no effect on the API unless they are explicitly referenced from properties outside the components object.',
+              'additionalProperties': false,
+              'patternProperties': { '^x-': { '$ref': '#/definitions/specificationExtension' } },
+              'properties': {
+                'schemas': { '$ref': '#/definitions/schemasOrReferences' },
+                'responses': { '$ref': '#/definitions/responsesOrReferences' },
+                'parameters': { '$ref': '#/definitions/parametersOrReferences' },
+                'examples': { '$ref': '#/definitions/examplesOrReferences' },
+                'requestBodies': { '$ref': '#/definitions/requestBodiesOrReferences' },
+                'headers': { '$ref': '#/definitions/headersOrReferences' },
+                'securitySchemes': { '$ref': '#/definitions/securitySchemesOrReferences' },
+                'links': { '$ref': '#/definitions/linksOrReferences' },
+                'callbacks': { '$ref': '#/definitions/callbacksOrReferences' }
+              }
+            },
+            'paths': {
+              'type': 'object',
+              'description': 'Holds the relative paths to the individual endpoints and their operations. The path is appended to the URL from the `Server Object` in order to construct the full URL.  The Paths MAY be empty, due to ACL constraints.',
+              'additionalProperties': false,
+              'patternProperties': {
+                '^/': { '$ref': '#/definitions/pathItem' },
+                '^x-': { '$ref': '#/definitions/specificationExtension' }
+              }
+            },
+            'pathItem': {
+              'type': 'object',
+              'description': 'Describes the operations available on a single path. A Path Item MAY be empty, due to ACL constraints. The path itself is still exposed to the documentation viewer but they will not know which operations and parameters are available.',
+              'additionalProperties': false,
+              'patternProperties': { '^x-': { '$ref': '#/definitions/specificationExtension' } },
+              'properties': {
+                '$ref': { 'type': 'string' },
+                'summary': { 'type': 'string' },
+                'description': { 'type': 'string' },
+                'get': { '$ref': '#/definitions/operation' },
+                'put': { '$ref': '#/definitions/operation' },
+                'post': { '$ref': '#/definitions/operation' },
+                'delete': { '$ref': '#/definitions/operation' },
+                'options': { '$ref': '#/definitions/operation' },
+                'head': { '$ref': '#/definitions/operation' },
+                'patch': { '$ref': '#/definitions/operation' },
+                'trace': { '$ref': '#/definitions/operation' },
+                'servers': {
+                  'type': 'array',
+                  'items': { '$ref': '#/definitions/server' },
+                  'uniqueItems': true
+                },
+                'parameters': {
+                  'type': 'array',
+                  'items': { '$ref': '#/definitions/parameterOrReference' },
+                  'uniqueItems': true
+                }
+              }
+            },
+            'operation': {
+              'type': 'object',
+              'description': 'Describes a single API operation on a path.',
+              'required': ['responses'],
+              'additionalProperties': false,
+              'patternProperties': { '^x-': { '$ref': '#/definitions/specificationExtension' } },
+              'properties': {
+                'tags': {
+                  'type': 'array',
+                  'items': { 'type': 'string' },
+                  'uniqueItems': true
+                },
+                'summary': { 'type': 'string' },
+                'description': { 'type': 'string' },
+                'externalDocs': { '$ref': '#/definitions/externalDocs' },
+                'operationId': { 'type': 'string' },
+                'parameters': {
+                  'type': 'array',
+                  'items': { '$ref': '#/definitions/parameterOrReference' },
+                  'uniqueItems': true
+                },
+                'requestBody': { '$ref': '#/definitions/requestBodyOrReference' },
+                'responses': { '$ref': '#/definitions/responses' },
+                'callbacks': { '$ref': '#/definitions/callbacksOrReferences' },
+                'deprecated': { 'type': 'boolean' },
+                'security': {
+                  'type': 'array',
+                  'items': { '$ref': '#/definitions/securityRequirement' },
+                  'uniqueItems': true
+                },
+                'servers': {
+                  'type': 'array',
+                  'items': { '$ref': '#/definitions/server' },
+                  'uniqueItems': true
+                }
+              }
+            },
+            'externalDocs': {
+              'type': 'object',
+              'description': 'Allows referencing an external resource for extended documentation.',
+              'required': ['url'],
+              'additionalProperties': false,
+              'patternProperties': { '^x-': { '$ref': '#/definitions/specificationExtension' } },
+              'properties': {
+                'description': { 'type': 'string' },
+                'url': { 'type': 'string' }
+              }
+            },
+            'parameter': {
+              'type': 'object',
+              'description': 'Describes a single operation parameter.  A unique parameter is defined by a combination of a name and location.',
+              'required': [
+                'name',
+                'in'
+              ],
+              'additionalProperties': false,
+              'patternProperties': { '^x-': { '$ref': '#/definitions/specificationExtension' } },
+              'properties': {
+                'name': { 'type': 'string' },
+                'in': { 'type': 'string' },
+                'description': { 'type': 'string' },
+                'required': { 'type': 'boolean' },
+                'deprecated': { 'type': 'boolean' },
+                'allowEmptyValue': { 'type': 'boolean' },
+                'style': { 'type': 'string' },
+                'explode': { 'type': 'boolean' },
+                'allowReserved': { 'type': 'boolean' },
+                'schema': { '$ref': '#/definitions/schemaOrReference' },
+                'example': { '$ref': '#/definitions/any' },
+                'examples': { '$ref': '#/definitions/examplesOrReferences' },
+                'content': { '$ref': '#/definitions/mediaTypes' }
+              }
+            },
+            'requestBody': {
+              'type': 'object',
+              'description': 'Describes a single request body.',
+              'required': ['content'],
+              'additionalProperties': false,
+              'patternProperties': { '^x-': { '$ref': '#/definitions/specificationExtension' } },
+              'properties': {
+                'description': { 'type': 'string' },
+                'content': { '$ref': '#/definitions/mediaTypes' },
+                'required': { 'type': 'boolean' }
+              }
+            },
+            'mediaType': {
+              'type': 'object',
+              'description': 'Each Media Type Object provides schema and examples for the media type identified by its key.',
+              'additionalProperties': false,
+              'patternProperties': { '^x-': { '$ref': '#/definitions/specificationExtension' } },
+              'properties': {
+                'schema': { '$ref': '#/definitions/schemaOrReference' },
+                'example': { '$ref': '#/definitions/any' },
+                'examples': { '$ref': '#/definitions/examplesOrReferences' },
+                'encoding': { '$ref': '#/definitions/encodings' }
+              }
+            },
+            'encoding': {
+              'type': 'object',
+              'description': 'A single encoding definition applied to a single schema property.',
+              'additionalProperties': false,
+              'patternProperties': { '^x-': { '$ref': '#/definitions/specificationExtension' } },
+              'properties': {
+                'contentType': { 'type': 'string' },
+                'headers': { '$ref': '#/definitions/headersOrReferences' },
+                'style': { 'type': 'string' },
+                'explode': { 'type': 'boolean' },
+                'allowReserved': { 'type': 'boolean' }
+              }
+            },
+            'responses': {
+              'type': 'object',
+              'description': 'A container for the expected responses of an operation. The container maps a HTTP response code to the expected response.  The documentation is not necessarily expected to cover all possible HTTP response codes because they may not be known in advance. However, documentation is expected to cover a successful operation response and any known errors.  The `default` MAY be used as a default response object for all HTTP codes  that are not covered individually by the specification.  The `Responses Object` MUST contain at least one response code, and it  SHOULD be the response for a successful operation call.',
+              'additionalProperties': false,
+              'patternProperties': {
+                '^([0-9X]{3})$': { '$ref': '#/definitions/responseOrReference' },
+                '^x-': { '$ref': '#/definitions/specificationExtension' }
+              },
+              'properties': { 'default': { '$ref': '#/definitions/responseOrReference' } }
+            },
+            'response': {
+              'type': 'object',
+              'description': 'Describes a single response from an API Operation, including design-time, static  `links` to operations based on the response.',
+              'required': ['description'],
+              'additionalProperties': false,
+              'patternProperties': { '^x-': { '$ref': '#/definitions/specificationExtension' } },
+              'properties': {
+                'description': { 'type': 'string' },
+                'headers': { '$ref': '#/definitions/headersOrReferences' },
+                'content': { '$ref': '#/definitions/mediaTypes' },
+                'links': { '$ref': '#/definitions/linksOrReferences' }
+              }
+            },
+            'callback': {
+              'type': 'object',
+              'description': 'A map of possible out-of band callbacks related to the parent operation. Each value in the map is a Path Item Object that describes a set of requests that may be initiated by the API provider and the expected responses. The key value used to identify the callback object is an expression, evaluated at runtime, that identifies a URL to use for the callback operation.',
+              'additionalProperties': false,
+              'patternProperties': {
+                '^': { '$ref': '#/definitions/pathItem' },
+                '^x-': { '$ref': '#/definitions/specificationExtension' }
+              }
+            },
+            'example': {
+              'type': 'object',
+              'description': '',
+              'additionalProperties': false,
+              'patternProperties': { '^x-': { '$ref': '#/definitions/specificationExtension' } },
+              'properties': {
+                'summary': { 'type': 'string' },
+                'description': { 'type': 'string' },
+                'value': { '$ref': '#/definitions/any' },
+                'externalValue': { 'type': 'string' }
+              }
+            },
+            'link': {
+              'type': 'object',
+              'description': 'The `Link object` represents a possible design-time link for a response. The presence of a link does not guarantee the caller\'s ability to successfully invoke it, rather it provides a known relationship and traversal mechanism between responses and other operations.  Unlike _dynamic_ links (i.e. links provided **in** the response payload), the OAS linking mechanism does not require link information in the runtime response.  For computing links, and providing instructions to execute them, a runtime expression is used for accessing values in an operation and using them as parameters while invoking the linked operation.',
+              'additionalProperties': false,
+              'patternProperties': { '^x-': { '$ref': '#/definitions/specificationExtension' } },
+              'properties': {
+                'operationRef': { 'type': 'string' },
+                'operationId': { 'type': 'string' },
+                'parameters': { '$ref': '#/definitions/anysOrExpressions' },
+                'requestBody': { '$ref': '#/definitions/anyOrExpression' },
+                'description': { 'type': 'string' },
+                'server': { '$ref': '#/definitions/server' }
+              }
+            },
+            'header': {
+              'type': 'object',
+              'description': 'The Header Object follows the structure of the Parameter Object with the following changes:  1. `name` MUST NOT be specified, it is given in the corresponding `headers` map. 1. `in` MUST NOT be specified, it is implicitly in `header`. 1. All traits that are affected by the location MUST be applicable to a location of `header` (for example, `style`).',
+              'additionalProperties': false,
+              'patternProperties': { '^x-': { '$ref': '#/definitions/specificationExtension' } },
+              'properties': {
+                'description': { 'type': 'string' },
+                'required': { 'type': 'boolean' },
+                'deprecated': { 'type': 'boolean' },
+                'allowEmptyValue': { 'type': 'boolean' },
+                'style': { 'type': 'string' },
+                'explode': { 'type': 'boolean' },
+                'allowReserved': { 'type': 'boolean' },
+                'schema': { '$ref': '#/definitions/schemaOrReference' },
+                'example': { '$ref': '#/definitions/any' },
+                'examples': { '$ref': '#/definitions/examplesOrReferences' },
+                'content': { '$ref': '#/definitions/mediaTypes' }
+              }
+            },
+            'tag': {
+              'type': 'object',
+              'description': 'Adds metadata to a single tag that is used by the Operation Object. It is not mandatory to have a Tag Object per tag defined in the Operation Object instances.',
+              'required': ['name'],
+              'additionalProperties': false,
+              'patternProperties': { '^x-': { '$ref': '#/definitions/specificationExtension' } },
+              'properties': {
+                'name': { 'type': 'string' },
+                'description': { 'type': 'string' },
+                'externalDocs': { '$ref': '#/definitions/externalDocs' }
+              }
+            },
+            'examples': {
+              'type': 'object',
+              'description': '',
+              'additionalProperties': false
+            },
+            'reference': {
+              'type': 'object',
+              'description': 'A simple object to allow referencing other components in the specification, internally and externally.  The Reference Object is defined by JSON Reference and follows the same structure, behavior and rules.   For this specification, reference resolution is accomplished as defined by the JSON Reference specification and not by the JSON Schema specification.',
+              'required': ['$ref'],
+              'additionalProperties': false,
+              'properties': { '$ref': { 'type': 'string' } }
+            },
+            'schema': {
+              'type': 'object',
+              'description': 'The Schema Object allows the definition of input and output data types. These types can be objects, but also primitives and arrays. This object is an extended subset of the JSON Schema Specification Wright Draft 00.  For more information about the properties, see JSON Schema Core and JSON Schema Validation. Unless stated otherwise, the property definitions follow the JSON Schema.',
+              'additionalProperties': false,
+              'patternProperties': { '^x-': { '$ref': '#/definitions/specificationExtension' } },
+              'properties': {
+                'nullable': { 'type': 'boolean' },
+                'discriminator': { '$ref': '#/definitions/discriminator' },
+                'readOnly': { 'type': 'boolean' },
+                'writeOnly': { 'type': 'boolean' },
+                'xml': { '$ref': '#/definitions/xml' },
+                'externalDocs': { '$ref': '#/definitions/externalDocs' },
+                'example': { '$ref': '#/definitions/any' },
+                'deprecated': { 'type': 'boolean' },
+                'title': { '$ref': 'http://json-schema.org/draft-04/schema#/properties/title' },
+                'multipleOf': { '$ref': 'http://json-schema.org/draft-04/schema#/properties/multipleOf' },
+                'maximum': { '$ref': 'http://json-schema.org/draft-04/schema#/properties/maximum' },
+                'exclusiveMaximum': { '$ref': 'http://json-schema.org/draft-04/schema#/properties/exclusiveMaximum' },
+                'minimum': { '$ref': 'http://json-schema.org/draft-04/schema#/properties/minimum' },
+                'exclusiveMinimum': { '$ref': 'http://json-schema.org/draft-04/schema#/properties/exclusiveMinimum' },
+                'maxLength': { '$ref': 'http://json-schema.org/draft-04/schema#/properties/maxLength' },
+                'minLength': { '$ref': 'http://json-schema.org/draft-04/schema#/properties/minLength' },
+                'pattern': { '$ref': 'http://json-schema.org/draft-04/schema#/properties/pattern' },
+                'maxItems': { '$ref': 'http://json-schema.org/draft-04/schema#/properties/maxItems' },
+                'minItems': { '$ref': 'http://json-schema.org/draft-04/schema#/properties/minItems' },
+                'uniqueItems': { '$ref': 'http://json-schema.org/draft-04/schema#/properties/uniqueItems' },
+                'maxProperties': { '$ref': 'http://json-schema.org/draft-04/schema#/properties/maxProperties' },
+                'minProperties': { '$ref': 'http://json-schema.org/draft-04/schema#/properties/minProperties' },
+                'required': { '$ref': 'http://json-schema.org/draft-04/schema#/properties/required' },
+                'enum': { '$ref': 'http://json-schema.org/draft-04/schema#/properties/enum' },
+                'type': { 'type': 'string' },
+                'allOf': {
+                  'type': 'array',
+                  'items': { '$ref': '#/definitions/schemaOrReference' },
+                  'minItems': 1
+                },
+                'oneOf': {
+                  'type': 'array',
+                  'items': { '$ref': '#/definitions/schemaOrReference' },
+                  'minItems': 1
+                },
+                'anyOf': {
+                  'type': 'array',
+                  'items': { '$ref': '#/definitions/schemaOrReference' },
+                  'minItems': 1
+                },
+                'not': { '$ref': '#/definitions/schema' },
+                'items': {
+                  'anyOf': [
+                    { '$ref': '#/definitions/schemaOrReference' },
+                    {
+                      'type': 'array',
+                      'items': { '$ref': '#/definitions/schemaOrReference' },
+                      'minItems': 1
+                    }
+                  ]
+                },
+                'properties': {
+                  'type': 'object',
+                  'additionalProperties': { '$ref': '#/definitions/schemaOrReference' }
+                },
+                'additionalProperties': {
+                  'oneOf': [
+                    { '$ref': '#/definitions/schemaOrReference' },
+                    { 'type': 'boolean' }
+                  ]
+                },
+                'default': { '$ref': '#/definitions/defaultType' },
+                'description': { 'type': 'string' },
+                'format': { 'type': 'string' }
+              }
+            },
+            'discriminator': {
+              'type': 'object',
+              'description': 'When request bodies or response payloads may be one of a number of different schemas, a `discriminator` object can be used to aid in serialization, deserialization, and validation.  The discriminator is a specific object in a schema which is used to inform the consumer of the specification of an alternative schema based on the value associated with it.  When using the discriminator, _inline_ schemas will not be considered.',
+              'required': ['propertyName'],
+              'additionalProperties': false,
+              'properties': {
+                'propertyName': { 'type': 'string' },
+                'mapping': { '$ref': '#/definitions/strings' }
+              }
+            },
+            'xml': {
+              'type': 'object',
+              'description': 'A metadata object that allows for more fine-tuned XML model definitions.  When using arrays, XML element names are *not* inferred (for singular/plural forms) and the `name` property SHOULD be used to add that information. See examples for expected behavior.',
+              'additionalProperties': false,
+              'patternProperties': { '^x-': { '$ref': '#/definitions/specificationExtension' } },
+              'properties': {
+                'name': { 'type': 'string' },
+                'namespace': { 'type': 'string' },
+                'prefix': { 'type': 'string' },
+                'attribute': { 'type': 'boolean' },
+                'wrapped': { 'type': 'boolean' }
+              }
+            },
+            'securityScheme': {
+              'type': 'object',
+              'description': 'Defines a security scheme that can be used by the operations. Supported schemes are HTTP authentication, an API key (either as a header or as a query parameter), OAuth2\'s common flows (implicit, password, application and access code) as defined in RFC6749, and OpenID Connect Discovery.',
+              'required': ['type'],
+              'additionalProperties': false,
+              'patternProperties': { '^x-': { '$ref': '#/definitions/specificationExtension' } },
+              'properties': {
+                'type': { 'type': 'string' },
+                'description': { 'type': 'string' },
+                'name': { 'type': 'string' },
+                'in': { 'type': 'string' },
+                'scheme': { 'type': 'string' },
+                'bearerFormat': { 'type': 'string' },
+                'flows': { '$ref': '#/definitions/oauthFlows' },
+                'openIdConnectUrl': { 'type': 'string' }
+              }
+            },
+            'oauthFlows': {
+              'type': 'object',
+              'description': 'Allows configuration of the supported OAuth Flows.',
+              'additionalProperties': false,
+              'patternProperties': { '^x-': { '$ref': '#/definitions/specificationExtension' } },
+              'properties': {
+                'implicit': { '$ref': '#/definitions/oauthFlow' },
+                'password': { '$ref': '#/definitions/oauthFlow' },
+                'clientCredentials': { '$ref': '#/definitions/oauthFlow' },
+                'authorizationCode': { '$ref': '#/definitions/oauthFlow' }
+              }
+            },
+            'oauthFlow': {
+              'type': 'object',
+              'description': 'Configuration details for a supported OAuth Flow',
+              'additionalProperties': false,
+              'patternProperties': { '^x-': { '$ref': '#/definitions/specificationExtension' } },
+              'properties': {
+                'authorizationUrl': { 'type': 'string' },
+                'tokenUrl': { 'type': 'string' },
+                'refreshUrl': { 'type': 'string' },
+                'scopes': { '$ref': '#/definitions/strings' }
+              }
+            },
+            'securityRequirement': {
+              'type': 'object',
+              'description': 'Lists the required security schemes to execute this operation. The name used for each property MUST correspond to a security scheme declared in the Security Schemes under the Components Object.  Security Requirement Objects that contain multiple schemes require that all schemes MUST be satisfied for a request to be authorized. This enables support for scenarios where multiple query parameters or HTTP headers are required to convey security information.  When a list of Security Requirement Objects is defined on the Open API object or Operation Object, only one of Security Requirement Objects in the list needs to be satisfied to authorize the request.',
+              'additionalProperties': false,
+              'patternProperties': {
+                '^[a-zA-Z0-9\\.\\-_]+$': {
+                  'type': 'array',
+                  'items': { 'type': 'string' },
+                  'uniqueItems': true
+                }
+              }
+            },
+            'anyOrExpression': {
+              'oneOf': [
+                { '$ref': '#/definitions/any' },
+                { '$ref': '#/definitions/expression' }
+              ]
+            },
+            'callbackOrReference': {
+              'oneOf': [
+                { '$ref': '#/definitions/callback' },
+                { '$ref': '#/definitions/reference' }
+              ]
+            },
+            'exampleOrReference': {
+              'oneOf': [
+                { '$ref': '#/definitions/example' },
+                { '$ref': '#/definitions/reference' }
+              ]
+            },
+            'headerOrReference': {
+              'oneOf': [
+                { '$ref': '#/definitions/header' },
+                { '$ref': '#/definitions/reference' }
+              ]
+            },
+            'linkOrReference': {
+              'oneOf': [
+                { '$ref': '#/definitions/link' },
+                { '$ref': '#/definitions/reference' }
+              ]
+            },
+            'parameterOrReference': {
+              'oneOf': [
+                { '$ref': '#/definitions/parameter' },
+                { '$ref': '#/definitions/reference' }
+              ]
+            },
+            'requestBodyOrReference': {
+              'oneOf': [
+                { '$ref': '#/definitions/requestBody' },
+                { '$ref': '#/definitions/reference' }
+              ]
+            },
+            'responseOrReference': {
+              'oneOf': [
+                { '$ref': '#/definitions/response' },
+                { '$ref': '#/definitions/reference' }
+              ]
+            },
+            'schemaOrReference': {
+              'oneOf': [
+                { '$ref': '#/definitions/schema' },
+                { '$ref': '#/definitions/reference' }
+              ]
+            },
+            'securitySchemeOrReference': {
+              'oneOf': [
+                { '$ref': '#/definitions/securityScheme' },
+                { '$ref': '#/definitions/reference' }
+              ]
+            },
+            'anysOrExpressions': {
+              'type': 'object',
+              'additionalProperties': { '$ref': '#/definitions/anyOrExpression' }
+            },
+            'callbacksOrReferences': {
+              'type': 'object',
+              'additionalProperties': { '$ref': '#/definitions/callbackOrReference' }
+            },
+            'encodings': {
+              'type': 'object',
+              'additionalProperties': { '$ref': '#/definitions/encoding' }
+            },
+            'examplesOrReferences': {
+              'type': 'object',
+              'additionalProperties': { '$ref': '#/definitions/exampleOrReference' }
+            },
+            'headersOrReferences': {
+              'type': 'object',
+              'additionalProperties': { '$ref': '#/definitions/headerOrReference' }
+            },
+            'linksOrReferences': {
+              'type': 'object',
+              'additionalProperties': { '$ref': '#/definitions/linkOrReference' }
+            },
+            'mediaTypes': {
+              'type': 'object',
+              'additionalProperties': { '$ref': '#/definitions/mediaType' }
+            },
+            'parametersOrReferences': {
+              'type': 'object',
+              'additionalProperties': { '$ref': '#/definitions/parameterOrReference' }
+            },
+            'requestBodiesOrReferences': {
+              'type': 'object',
+              'additionalProperties': { '$ref': '#/definitions/requestBodyOrReference' }
+            },
+            'responsesOrReferences': {
+              'type': 'object',
+              'additionalProperties': { '$ref': '#/definitions/responseOrReference' }
+            },
+            'schemasOrReferences': {
+              'type': 'object',
+              'additionalProperties': { '$ref': '#/definitions/schemaOrReference' }
+            },
+            'securitySchemesOrReferences': {
+              'type': 'object',
+              'additionalProperties': { '$ref': '#/definitions/securitySchemeOrReference' }
+            },
+            'serverVariables': {
+              'type': 'object',
+              'additionalProperties': { '$ref': '#/definitions/serverVariable' }
+            },
+            'strings': {
+              'type': 'object',
+              'additionalProperties': { 'type': 'string' }
+            },
+            'object': {
+              'type': 'object',
+              'additionalProperties': true
+            },
+            'any': { 'additionalProperties': true },
+            'expression': {
+              'type': 'object',
+              'additionalProperties': true
+            },
+            'specificationExtension': {
+              'description': 'Any property starting with x- is valid.',
+              'oneOf': [
+                { 'type': 'null' },
+                { 'type': 'number' },
+                { 'type': 'boolean' },
+                { 'type': 'string' },
+                { 'type': 'object' },
+                { 'type': 'array' }
+              ]
+            },
+            'defaultType': {
+              'oneOf': [
+                { 'type': 'null' },
+                { 'type': 'array' },
+                { 'type': 'object' },
+                { 'type': 'number' },
+                { 'type': 'boolean' },
+                { 'type': 'string' }
+              ]
+            }
+          }
+        };
+      },
+      {}
+    ],
+    158: [
       function (require, module, exports) {
         exports.endianness = function () {
           return 'LE';
@@ -47938,7 +47235,7 @@
       },
       {}
     ],
-    164: [
+    159: [
       function (require, module, exports) {
         (function (process) {
           // Copyright Joyent, Inc. and other Node contributors.
@@ -48130,9 +47427,9 @@
           ;
         }.call(this, require('_process')));
       },
-      { '_process': 166 }
+      { '_process': 161 }
     ],
-    165: [
+    160: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -48176,9 +47473,9 @@
           }
         }.call(this, require('_process')));
       },
-      { '_process': 166 }
+      { '_process': 161 }
     ],
-    166: [
+    161: [
       function (require, module, exports) {
         // shim for using process in browser
         var process = module.exports = {};
@@ -48357,7 +47654,7 @@
       },
       {}
     ],
-    167: [
+    162: [
       function (require, module, exports) {
         (function (global) {
           /*! https://mths.be/punycode v1.4.1 by @mathias */
@@ -48775,7 +48072,7 @@
       },
       {}
     ],
-    168: [
+    163: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -48852,7 +48149,7 @@
       },
       {}
     ],
-    169: [
+    164: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -48937,18 +48234,18 @@
       },
       {}
     ],
-    170: [
+    165: [
       function (require, module, exports) {
         'use strict';
         exports.decode = exports.parse = require('./decode');
         exports.encode = exports.stringify = require('./encode');
       },
       {
-        './decode': 168,
-        './encode': 169
+        './decode': 163,
+        './encode': 164
       }
     ],
-    171: [
+    166: [
       function (require, module, exports) {
         (function (process, global) {
           'use strict';
@@ -50156,9 +49453,9 @@ and limitations under the License.
           }(Reflect || (Reflect = {})));
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
       },
-      { '_process': 166 }
+      { '_process': 161 }
     ],
-    172: [
+    167: [
       function (require, module, exports) {
         'use strict';
         /* eslint-disable node/no-deprecated-api */
@@ -50219,7 +49516,7 @@ and limitations under the License.
       },
       { 'buffer': 5 }
     ],
-    173: [
+    168: [
       function (require, module, exports) {
         (function (Buffer) {
           'use strict';
@@ -51689,11 +50986,11 @@ and limitations under the License.
       },
       {
         'buffer': 5,
-        'stream': 179,
-        'string_decoder': 199
+        'stream': 174,
+        'string_decoder': 194
       }
     ],
-    174: [
+    169: [
       function (require, module, exports) {
         'use strict';
         require('reflect-metadata');
@@ -51726,13 +51023,13 @@ and limitations under the License.
         exports.Skip = Skip;
       },
       {
-        './metadata/MetadataStorage': 175,
-        './metadata/SkipMetadata': 177,
-        './metadata/TypeMetadata': 178,
-        'reflect-metadata': 171
+        './metadata/MetadataStorage': 170,
+        './metadata/SkipMetadata': 172,
+        './metadata/TypeMetadata': 173,
+        'reflect-metadata': 166
       }
     ],
-    175: [
+    170: [
       function (require, module, exports) {
         'use strict';
         /**
@@ -51786,7 +51083,7 @@ and limitations under the License.
       },
       {}
     ],
-    176: [
+    171: [
       function (require, module, exports) {
         'use strict';
         var PropertyMetadata = function () {
@@ -51814,7 +51111,7 @@ and limitations under the License.
       },
       {}
     ],
-    177: [
+    172: [
       function (require, module, exports) {
         'use strict';
         var __extends = undefined && undefined.__extends || function (d, b) {
@@ -51859,9 +51156,9 @@ and limitations under the License.
           }(PropertyMetadata_1.PropertyMetadata);
         exports.SkipMetadata = SkipMetadata;
       },
-      { './PropertyMetadata': 176 }
+      { './PropertyMetadata': 171 }
     ],
-    178: [
+    173: [
       function (require, module, exports) {
         'use strict';
         var __extends = undefined && undefined.__extends || function (d, b) {
@@ -51900,9 +51197,9 @@ and limitations under the License.
           }(PropertyMetadata_1.PropertyMetadata);
         exports.TypeMetadata = TypeMetadata;
       },
-      { './PropertyMetadata': 176 }
+      { './PropertyMetadata': 171 }
     ],
-    179: [
+    174: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -52006,28 +51303,28 @@ and limitations under the License.
         };
       },
       {
-        'events': 13,
-        'inherits': 19,
-        'readable-stream/duplex.js': 181,
-        'readable-stream/passthrough.js': 190,
-        'readable-stream/readable.js': 191,
-        'readable-stream/transform.js': 192,
-        'readable-stream/writable.js': 193
+        'events': 10,
+        'inherits': 16,
+        'readable-stream/duplex.js': 176,
+        'readable-stream/passthrough.js': 185,
+        'readable-stream/readable.js': 186,
+        'readable-stream/transform.js': 187,
+        'readable-stream/writable.js': 188
       }
     ],
-    180: [
+    175: [
       function (require, module, exports) {
         arguments[4][6][0].apply(exports, arguments);
       },
       { 'dup': 6 }
     ],
-    181: [
+    176: [
       function (require, module, exports) {
         module.exports = require('./lib/_stream_duplex.js');
       },
-      { './lib/_stream_duplex.js': 182 }
+      { './lib/_stream_duplex.js': 177 }
     ],
-    182: [
+    177: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -52138,14 +51435,14 @@ and limitations under the License.
         }
       },
       {
-        './_stream_readable': 184,
-        './_stream_writable': 186,
+        './_stream_readable': 179,
+        './_stream_writable': 181,
         'core-util-is': 9,
-        'inherits': 19,
-        'process-nextick-args': 165
+        'inherits': 16,
+        'process-nextick-args': 160
       }
     ],
-    183: [
+    178: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -52188,12 +51485,12 @@ and limitations under the License.
         };
       },
       {
-        './_stream_transform': 185,
+        './_stream_transform': 180,
         'core-util-is': 9,
-        'inherits': 19
+        'inherits': 16
       }
     ],
-    184: [
+    179: [
       function (require, module, exports) {
         (function (process, global) {
           // Copyright Joyent, Inc. and other Node contributors.
@@ -53166,22 +52463,22 @@ and limitations under the License.
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
       },
       {
-        './_stream_duplex': 182,
-        './internal/streams/BufferList': 187,
-        './internal/streams/destroy': 188,
-        './internal/streams/stream': 189,
-        '_process': 166,
+        './_stream_duplex': 177,
+        './internal/streams/BufferList': 182,
+        './internal/streams/destroy': 183,
+        './internal/streams/stream': 184,
+        '_process': 161,
         'core-util-is': 9,
-        'events': 13,
-        'inherits': 19,
-        'isarray': 180,
-        'process-nextick-args': 165,
-        'safe-buffer': 172,
-        'string_decoder/': 194,
+        'events': 10,
+        'inherits': 16,
+        'isarray': 175,
+        'process-nextick-args': 160,
+        'safe-buffer': 167,
+        'string_decoder/': 189,
         'util': 3
       }
     ],
-    185: [
+    180: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -53374,12 +52671,12 @@ and limitations under the License.
         }
       },
       {
-        './_stream_duplex': 182,
+        './_stream_duplex': 177,
         'core-util-is': 9,
-        'inherits': 19
+        'inherits': 16
       }
     ],
-    186: [
+    181: [
       function (require, module, exports) {
         (function (process, global) {
           // Copyright Joyent, Inc. and other Node contributors.
@@ -53980,18 +53277,18 @@ and limitations under the License.
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
       },
       {
-        './_stream_duplex': 182,
-        './internal/streams/destroy': 188,
-        './internal/streams/stream': 189,
-        '_process': 166,
+        './_stream_duplex': 177,
+        './internal/streams/destroy': 183,
+        './internal/streams/stream': 184,
+        '_process': 161,
         'core-util-is': 9,
-        'inherits': 19,
-        'process-nextick-args': 165,
-        'safe-buffer': 172,
-        'util-deprecate': 211
+        'inherits': 16,
+        'process-nextick-args': 160,
+        'safe-buffer': 167,
+        'util-deprecate': 219
       }
     ],
-    187: [
+    182: [
       function (require, module, exports) {
         'use strict';
         /*<replacement>*/
@@ -54077,9 +53374,9 @@ and limitations under the License.
           return BufferList;
         }();
       },
-      { 'safe-buffer': 172 }
+      { 'safe-buffer': 167 }
     ],
-    188: [
+    183: [
       function (require, module, exports) {
         'use strict';
         /*<replacement>*/
@@ -54141,21 +53438,21 @@ and limitations under the License.
           undestroy: undestroy
         };
       },
-      { 'process-nextick-args': 165 }
+      { 'process-nextick-args': 160 }
     ],
-    189: [
+    184: [
       function (require, module, exports) {
         module.exports = require('events').EventEmitter;
       },
-      { 'events': 13 }
+      { 'events': 10 }
     ],
-    190: [
+    185: [
       function (require, module, exports) {
         module.exports = require('./readable').PassThrough;
       },
-      { './readable': 191 }
+      { './readable': 186 }
     ],
-    191: [
+    186: [
       function (require, module, exports) {
         exports = module.exports = require('./lib/_stream_readable.js');
         exports.Stream = exports;
@@ -54166,26 +53463,26 @@ and limitations under the License.
         exports.PassThrough = require('./lib/_stream_passthrough.js');
       },
       {
-        './lib/_stream_duplex.js': 182,
-        './lib/_stream_passthrough.js': 183,
-        './lib/_stream_readable.js': 184,
-        './lib/_stream_transform.js': 185,
-        './lib/_stream_writable.js': 186
+        './lib/_stream_duplex.js': 177,
+        './lib/_stream_passthrough.js': 178,
+        './lib/_stream_readable.js': 179,
+        './lib/_stream_transform.js': 180,
+        './lib/_stream_writable.js': 181
       }
     ],
-    192: [
+    187: [
       function (require, module, exports) {
         module.exports = require('./readable').Transform;
       },
-      { './readable': 191 }
+      { './readable': 186 }
     ],
-    193: [
+    188: [
       function (require, module, exports) {
         module.exports = require('./lib/_stream_writable.js');
       },
-      { './lib/_stream_writable.js': 186 }
+      { './lib/_stream_writable.js': 181 }
     ],
-    194: [
+    189: [
       function (require, module, exports) {
         'use strict';
         var Buffer = require('safe-buffer').Buffer;
@@ -54477,9 +53774,9 @@ and limitations under the License.
           return buf && buf.length ? this.write(buf) : '';
         }
       },
-      { 'safe-buffer': 172 }
+      { 'safe-buffer': 167 }
     ],
-    195: [
+    190: [
       function (require, module, exports) {
         var ClientRequest = require('./lib/request');
         var extend = require('xtend');
@@ -54547,13 +53844,13 @@ and limitations under the License.
         ];
       },
       {
-        './lib/request': 197,
+        './lib/request': 192,
         'builtin-status-codes': 7,
-        'url': 210,
-        'xtend': 311
+        'url': 218,
+        'xtend': 328
       }
     ],
-    196: [
+    191: [
       function (require, module, exports) {
         (function (global) {
           'use strict';
@@ -54595,7 +53892,7 @@ and limitations under the License.
       },
       {}
     ],
-    197: [
+    192: [
       function (require, module, exports) {
         (function (process, global, Buffer) {
           'use strict';
@@ -54846,18 +54143,18 @@ and limitations under the License.
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}, require('buffer').Buffer));
       },
       {
-        './capability': 196,
-        './response': 198,
-        '_process': 166,
+        './capability': 191,
+        './response': 193,
+        '_process': 161,
         'buffer': 5,
-        'foreach': 14,
-        'indexof': 18,
-        'inherits': 19,
-        'object-keys': 160,
-        'stream': 179
+        'foreach': 11,
+        'indexof': 15,
+        'inherits': 16,
+        'object-keys': 154,
+        'stream': 174
       }
     ],
-    198: [
+    193: [
       function (require, module, exports) {
         (function (process, global, Buffer) {
           'use strict';
@@ -55026,15 +54323,15 @@ and limitations under the License.
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}, require('buffer').Buffer));
       },
       {
-        './capability': 196,
-        '_process': 166,
+        './capability': 191,
+        '_process': 161,
         'buffer': 5,
-        'foreach': 14,
-        'inherits': 19,
-        'stream': 179
+        'foreach': 11,
+        'inherits': 16,
+        'stream': 174
       }
     ],
-    199: [
+    194: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -55238,7 +54535,7 @@ and limitations under the License.
       },
       { 'buffer': 5 }
     ],
-    200: [
+    195: [
       function (require, module, exports) {
         'use strict';
         module.exports = [
@@ -55253,24 +54550,13 @@ and limitations under the License.
       },
       {}
     ],
-    201: [
+    196: [
       function (require, module, exports) {
-        /** !
- * Swagger Parser v4.0.0-beta.2
- *
- * @link https://github.com/BigstickCarpet/swagger-parser
- * @license MIT
- */
         'use strict';
-        var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
-            return typeof obj;
-          } : function (obj) {
-            return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
-          };
-        var validateSchema = require('./validate-schema'), validateSpec = require('./validate-spec'), util = require('./util'), Options = require('./options'), Promise = require('./promise'), maybe = require('call-me-maybe'), ono = require('ono'), $RefParser = require('json-schema-ref-parser'), dereference = require('json-schema-ref-parser/lib/dereference');
+        var validateSchema = require('./validators/schema'), validateSpec = require('./validators/spec'), normalizeArgs = require('json-schema-ref-parser/lib/normalize-args'), util = require('./util'), Options = require('./options'), maybe = require('call-me-maybe'), ono = require('ono'), $RefParser = require('json-schema-ref-parser'), dereference = require('json-schema-ref-parser/lib/dereference');
         module.exports = SwaggerParser;
         /**
- * This class parses a Swagger 2.0 API, resolves its JSON references and their resolved values,
+ * This class parses a Swagger 2.0 or 3.0 API, resolves its JSON references and their resolved values,
  * and provides methods for traversing, dereferencing, and validating the API.
  *
  * @constructor
@@ -55300,26 +54586,46 @@ and limitations under the License.
  * This method does not resolve any JSON references.
  * It just reads a single file in JSON or YAML format, and parse it as a JavaScript object.
  *
- * @param {string|object} api - The file path or URL of the Swagger API. Or a Swagger object.
+ * @param {string} [path] - The file path or URL of the JSON schema
+ * @param {object} [api] - The Swagger API object. This object will be used instead of reading from `path`.
  * @param {ParserOptions} [options] - Options that determine how the API is parsed
  * @param {function} [callback] - An error-first callback. The second parameter is the parsed API object.
  * @returns {Promise} - The returned promise resolves with the parsed API object.
  */
-        SwaggerParser.prototype.parse = function (api, options, callback) {
+        SwaggerParser.prototype.parse = function (path, api, options, callback) {
           var args = normalizeArgs(arguments);
-          return $RefParser.prototype.parse.call(this, args.path, args.api, args.options).then(function (schema) {
-            var supportedSwaggerVersions = ['2.0'];
-            // Verify that the parsed object is a Swagger API
-            if (schema.swagger === undefined || schema.info === undefined || schema.paths === undefined) {
-              throw ono.syntax('%s is not a valid Swagger API definition', args.path || args.api);
-            } else if (typeof schema.swagger === 'number') {
-              // This is a very common mistake, so give a helpful error message
-              throw ono.syntax('Swagger version number must be a string (e.g. "2.0") not a number.');
-            } else if (typeof schema.info.version === 'number') {
-              // This is a very common mistake, so give a helpful error message
-              throw ono.syntax('API version number must be a string (e.g. "1.0.0") not a number.');
-            } else if (supportedSwaggerVersions.indexOf(schema.swagger) === -1) {
-              throw ono.syntax('Unsupported Swagger version: %d. Swagger Parser only supports version %s', schema.swagger, supportedSwaggerVersions.join(', '));
+          args.options = new Options(args.options);
+          return $RefParser.prototype.parse.call(this, args.path, args.schema, args.options).then(function (schema) {
+            if (schema.swagger) {
+              // Verify that the parsed object is a Swagger API
+              if (schema.swagger === undefined || schema.info === undefined || schema.paths === undefined) {
+                throw ono.syntax('%s is not a valid Swagger API definition', args.path || args.schema);
+              } else if (typeof schema.swagger === 'number') {
+                // This is a very common mistake, so give a helpful error message
+                throw ono.syntax('Swagger version number must be a string (e.g. "2.0") not a number.');
+              } else if (typeof schema.info.version === 'number') {
+                // This is a very common mistake, so give a helpful error message
+                throw ono.syntax('API version number must be a string (e.g. "1.0.0") not a number.');
+              } else if (schema.swagger !== '2.0') {
+                throw ono.syntax('Unrecognized Swagger version: %d. Expected 2.0', schema.swagger);
+              }
+            } else {
+              var supportedVersions = [
+                  '3.0.0',
+                  '3.0.1'
+                ];
+              // Verify that the parsed object is a Openapi API
+              if (schema.openapi === undefined || schema.info === undefined || schema.paths === undefined) {
+                throw ono.syntax('%s is not a valid Openapi API definition', args.path || args.schema);
+              } else if (typeof schema.openapi === 'number') {
+                // This is a very common mistake, so give a helpful error message
+                throw ono.syntax('Openapi version number must be a string (e.g. "3.0.0") not a number.');
+              } else if (typeof schema.info.version === 'number') {
+                // This is a very common mistake, so give a helpful error message
+                throw ono.syntax('API version number must be a string (e.g. "1.0.0") not a number.');
+              } else if (supportedVersions.indexOf(schema.openapi) === -1) {
+                throw ono.syntax('Unsupported OpenAPI version: %d. Swagger Parser only supports versions %s', schema.openapi, supportedVersions.join(', '));
+              }
             }
             // Looks good!
             return maybe(args.callback, Promise.resolve(schema));
@@ -55331,12 +54637,13 @@ and limitations under the License.
  * Parses, dereferences, and validates the given Swagger API.
  * Depending on the options, validation can include JSON Schema validation and/or Swagger Spec validation.
  *
- * @param {string|object} api - The file path or URL of the Swagger API. Or a Swagger object.
+ * @param {string} [path] - The file path or URL of the JSON schema
+ * @param {object} [api] - The Swagger API object. This object will be used instead of reading from `path`.
  * @param {ParserOptions} [options] - Options that determine how the API is parsed, dereferenced, and validated
  * @param {function} [callback] - An error-first callback. The second parameter is the parsed API object.
  * @returns {Promise} - The returned promise resolves with the parsed API object.
  */
-        SwaggerParser.validate = function (api, options, callback) {
+        SwaggerParser.validate = function (path, api, options, callback) {
           var Class = this;
           // eslint-disable-line consistent-this
           var instance = new Class();
@@ -55346,19 +54653,21 @@ and limitations under the License.
  * Parses, dereferences, and validates the given Swagger API.
  * Depending on the options, validation can include JSON Schema validation and/or Swagger Spec validation.
  *
- * @param {string|object} api - The file path or URL of the Swagger API. Or a Swagger object.
+ * @param {string} [path] - The file path or URL of the JSON schema
+ * @param {object} [api] - The Swagger API object. This object will be used instead of reading from `path`.
  * @param {ParserOptions} [options] - Options that determine how the API is parsed, dereferenced, and validated
  * @param {function} [callback] - An error-first callback. The second parameter is the parsed API object.
  * @returns {Promise} - The returned promise resolves with the parsed API object.
  */
-        SwaggerParser.prototype.validate = function (api, options, callback) {
+        SwaggerParser.prototype.validate = function (path, api, options, callback) {
           var me = this;
           var args = normalizeArgs(arguments);
+          args.options = new Options(args.options);
           // ZSchema doesn't support circular objects, so don't dereference circular $refs yet
           // (see https://github.com/zaggino/z-schema/issues/137)
           var circular$RefOption = args.options.dereference.circular;
           args.options.validate.schema && (args.options.dereference.circular = 'ignore');
-          return this.dereference(args.path, args.api, args.options).then(function () {
+          return this.dereference(args.path, args.schema, args.options).then(function () {
             // Restore the original options, now that we're done dereferencing
             args.options.dereference.circular = circular$RefOption;
             if (args.options.validate.schema) {
@@ -55384,71 +54693,29 @@ and limitations under the License.
           }).catch(function (err) {
             return maybe(args.callback, Promise.reject(err));
           });
-        };
-        /**
+        };  /**
  * The Swagger object
  * https://github.com/swagger-api/swagger-spec/blob/master/versions/2.0.md#swagger-object
  *
  * @typedef {{swagger: string, info: {}, paths: {}}} SwaggerObject
  */
-        /**
- * Normalizes the given arguments, accounting for optional args.
- *
- * @param {Arguments} args
- * @returns {object}
- */
-        function normalizeArgs(args) {
-          var path, api, options, callback;
-          args = Array.prototype.slice.call(args);
-          if (typeof args[args.length - 1] === 'function') {
-            // The last parameter is a callback function
-            callback = args.pop();
-          }
-          if (typeof args[0] === 'string') {
-            // The first parameter is the path
-            path = args[0];
-            if (_typeof(args[2]) === 'object') {
-              // The second parameter is the api, and the third parameter is the options
-              api = args[1];
-              options = args[2];
-            } else {
-              // The second parameter is the options
-              api = undefined;
-              options = args[1];
-            }
-          } else {
-            // The first parameter is the api
-            path = '';
-            api = args[0];
-            options = args[1];
-          }
-          if (!(options instanceof Options)) {
-            options = new Options(options);
-          }
-          return {
-            path: path,
-            api: api,
-            options: options,
-            callback: callback
-          };
-        }
       },
       {
-        './options': 202,
-        './promise': 203,
-        './util': 204,
-        './validate-schema': 205,
-        './validate-spec': 206,
+        './options': 197,
+        './util': 198,
+        './validators/schema': 199,
+        './validators/spec': 200,
         'call-me-maybe': 8,
-        'json-schema-ref-parser': 24,
-        'json-schema-ref-parser/lib/dereference': 23,
-        'ono': 162
+        'json-schema-ref-parser': 21,
+        'json-schema-ref-parser/lib/dereference': 20,
+        'json-schema-ref-parser/lib/normalize-args': 22,
+        'ono': 156
       }
     ],
-    202: [
+    197: [
       function (require, module, exports) {
         'use strict';
-        var $RefParserOptions = require('json-schema-ref-parser/lib/options'), util = require('util');
+        var $RefParserOptions = require('json-schema-ref-parser/lib/options'), schemaValidator = require('./validators/schema'), specValidator = require('./validators/spec'), util = require('util');
         module.exports = ParserOptions;
         /**
  * Options that determine how Swagger APIs are parsed, resolved, dereferenced, and validated.
@@ -55463,27 +54730,20 @@ and limitations under the License.
         }
         ParserOptions.defaults = {
           validate: {
-            schema: { order: 1 },
-            spec: { order: 2 }
+            schema: schemaValidator,
+            spec: specValidator
           }
         };
         util.inherits(ParserOptions, $RefParserOptions);
       },
       {
-        'json-schema-ref-parser/lib/options': 25,
-        'util': 214
+        './validators/schema': 199,
+        './validators/spec': 200,
+        'json-schema-ref-parser/lib/options': 23,
+        'util': 222
       }
     ],
-    203: [
-      function (require, module, exports) {
-        arguments[4][39][0].apply(exports, arguments);
-      },
-      {
-        'dup': 39,
-        'es6-promise': 207
-      }
-    ],
-    204: [
+    198: [
       function (require, module, exports) {
         'use strict';
         var debug = require('debug'), util = require('util');
@@ -55501,25 +54761,26 @@ and limitations under the License.
         exports.swaggerParamRegExp = /\{([^\/}]+)}/g;
       },
       {
-        'debug': 10,
-        'util': 214
+        'debug': 201,
+        'util': 222
       }
     ],
-    205: [
+    199: [
       function (require, module, exports) {
         'use strict';
-        var util = require('./util'), ono = require('ono'), ZSchema = require('z-schema'), swaggerSchema = require('swagger-schema-official/schema');
+        var util = require('../util'), ono = require('ono'), ZSchema = require('z-schema');
         module.exports = validateSchema;
         initializeZSchema();
         /**
- * Validates the given Swagger API against the Swagger 2.0 schema.
+ * Validates the given Swagger API against the Swagger 2.0 or 3.0 schema.
  *
  * @param {SwaggerObject} api
  */
         function validateSchema(api) {
-          util.debug('Validating against the Swagger 2.0 schema');
-          // Validate the API against the Swagger schema
-          var isValid = ZSchema.validate(api, swaggerSchema);
+          util.debug('Validating against the Swagger schema');
+          // Choose the appropriate schema (Swagger or OpenAPI)
+          var schema = api.swagger ? require('swagger-schema-official/schema.json') : require('openapi-schema-validation/schema/openapi-3.0.json');
+          var isValid = ZSchema.validate(api, schema);
           if (isValid) {
             util.debug('    Validated successfully');
           } else {
@@ -55560,16 +54821,17 @@ and limitations under the License.
         }
       },
       {
-        './util': 204,
-        'ono': 162,
-        'swagger-schema-official/schema': 208,
-        'z-schema': 321
+        '../util': 198,
+        'ono': 156,
+        'openapi-schema-validation/schema/openapi-3.0.json': 157,
+        'swagger-schema-official/schema.json': 216,
+        'z-schema': 213
       }
     ],
-    206: [
+    200: [
       function (require, module, exports) {
         'use strict';
-        var util = require('./util'), ono = require('ono'), swaggerMethods = require('swagger-methods'), primitiveTypes = [
+        var util = require('../util'), ono = require('ono'), swaggerMethods = require('swagger-methods'), primitiveTypes = [
             'array',
             'boolean',
             'integer',
@@ -55592,35 +54854,55 @@ and limitations under the License.
  * @param {SwaggerObject} api
  */
         function validateSpec(api) {
-          util.debug('Validating against the Swagger 2.0 spec');
+          if (api.openapi) {
+            // We don't (yet) support validating against the OpenAPI spec
+            return;
+          }
+          util.debug('Validating against the Swagger spec');
           var paths = Object.keys(api.paths || {});
+          var operationIds = [];
           paths.forEach(function (pathName) {
             var path = api.paths[pathName];
             var pathId = '/paths' + pathName;
             if (path && pathName.indexOf('/') === 0) {
-              validatePath(api, path, pathId);
+              validatePath(api, path, pathId, operationIds);
             }
+          });
+          var definitions = Object.keys(api.definitions || {});
+          definitions.forEach(function (definitionName) {
+            var definition = api.definitions[definitionName];
+            var definitionId = '/definitions/' + definitionName;
+            validateRequiredPropertiesExist(definition, definitionId);
           });
           util.debug('    Validated successfully');
         }
         /**
  * Validates the given path.
  *
- * @param {SwaggerObject} api      - The entire Swagger API object
- * @param {object}        path     - A Path object, from the Swagger API
- * @param {string}        pathId   - A value that uniquely identifies the path
+ * @param {SwaggerObject} api           - The entire Swagger API object
+ * @param {object}        path          - A Path object, from the Swagger API
+ * @param {string}        pathId        - A value that uniquely identifies the path
+ * @param {string}        operationIds  - An array of collected operationIds found in other paths
  */
-        function validatePath(api, path, pathId) {
+        function validatePath(api, path, pathId, operationIds) {
           swaggerMethods.forEach(function (operationName) {
             var operation = path[operationName];
             var operationId = pathId + '/' + operationName;
             if (operation) {
+              var declaredOperationId = operation.operationId;
+              if (declaredOperationId) {
+                if (operationIds.indexOf(declaredOperationId) === -1) {
+                  operationIds.push(declaredOperationId);
+                } else {
+                  throw ono.syntax('Validation failed. Duplicate operation id \'%s\'', declaredOperationId);
+                }
+              }
               validateParameters(api, path, pathId, operation, operationId);
               var responses = Object.keys(operation.responses || {});
               responses.forEach(function (responseName) {
                 var response = operation.responses[responseName];
                 var responseId = operationId + '/responses/' + responseName;
-                validateResponse(responseName, response, responseId);
+                validateResponse(responseName, response || {}, responseId);
               });
             }
           });
@@ -55745,10 +55027,16 @@ and limitations under the License.
               validTypes = primitiveTypes;
             }
             validateSchema(schema, parameterId, validTypes);
+            validateRequiredPropertiesExist(schema, parameterId);
             if (schema.type === 'file') {
-              // "file" params require specific "consumes" types
+              // "file" params must consume at least one of these MIME types
+              var formData = /multipart\/(.*\+)?form-data/;
+              var urlEncoded = /application\/(.*\+)?x-www-form-urlencoded/;
               var consumes = operation.consumes || api.consumes || [];
-              if (consumes.indexOf('multipart/form-data') === -1 && consumes.indexOf('application/x-www-form-urlencoded') === -1) {
+              var hasValidMimeType = consumes.some(function (consume) {
+                  return formData.test(consume) || urlEncoded.test(consume);
+                });
+              if (!hasValidMimeType) {
                 throw ono.syntax('Validation failed. %s has a file parameter, so it must consume multipart/form-data ' + 'or application/x-www-form-urlencoded', operationId);
               }
             }
@@ -55791,6 +55079,8 @@ and limitations under the License.
             var validTypes = schemaTypes.concat('file');
             if (validTypes.indexOf(response.schema.type) === -1) {
               throw ono.syntax('Validation failed. %s has an invalid response schema type (%s)', responseId, response.schema.type);
+            } else {
+              validateSchema(response.schema, responseId + '/schema', validTypes);
             }
           }
         }
@@ -55809,834 +55099,3015 @@ and limitations under the License.
             throw ono.syntax('Validation failed. %s is an array, so it must include an "items" schema', schemaId);
           }
         }
+        /**
+ * Validates that the declared properties of the given Swagger schema object actually exist.
+ *
+ * @param {object}    schema      - A Schema object, from the Swagger API
+ * @param {string}    schemaId    - A value that uniquely identifies the schema object
+ */
+        function validateRequiredPropertiesExist(schema, schemaId) {
+          /**
+   * Recursively collects all properties of the schema and its ancestors. They are added to the props object.
+   */
+          function collectProperties(schemaObj, props) {
+            if (schemaObj.properties) {
+              for (var property in schemaObj.properties) {
+                if (schemaObj.properties.hasOwnProperty(property)) {
+                  props[property] = schemaObj.properties[property];
+                }
+              }
+            }
+            if (schemaObj.allOf) {
+              schemaObj.allOf.forEach(function (parent) {
+                collectProperties(parent, props);
+              });
+            }
+          }
+          if (schema.required && Array.isArray(schema.required)) {
+            var props = {};
+            collectProperties(schema, props);
+            schema.required.forEach(function (requiredProperty) {
+              if (!props[requiredProperty]) {
+                throw ono.syntax('Validation failed. Property \'%s\' listed as required but does not exist in \'%s\'', requiredProperty, schemaId);
+              }
+            });
+          }
+        }
       },
       {
-        './util': 204,
-        'ono': 162,
-        'swagger-methods': 200
+        '../util': 198,
+        'ono': 156,
+        'swagger-methods': 195
+      }
+    ],
+    201: [
+      function (require, module, exports) {
+        arguments[4][39][0].apply(exports, arguments);
+      },
+      {
+        './common': 202,
+        '_process': 161,
+        'dup': 39
+      }
+    ],
+    202: [
+      function (require, module, exports) {
+        arguments[4][40][0].apply(exports, arguments);
+      },
+      {
+        'dup': 40,
+        'ms': 203
+      }
+    ],
+    203: [
+      function (require, module, exports) {
+        arguments[4][71][0].apply(exports, arguments);
+      },
+      { 'dup': 71 }
+    ],
+    204: [
+      function (require, module, exports) {
+        'use strict';
+        module.exports = {
+          INVALID_TYPE: 'Expected type {0} but found type {1}',
+          INVALID_FORMAT: 'Object didn\'t pass validation for format {0}: {1}',
+          ENUM_MISMATCH: 'No enum match for: {0}',
+          ENUM_CASE_MISMATCH: 'Enum does not match case for: {0}',
+          ANY_OF_MISSING: 'Data does not match any schemas from \'anyOf\'',
+          ONE_OF_MISSING: 'Data does not match any schemas from \'oneOf\'',
+          ONE_OF_MULTIPLE: 'Data is valid against more than one schema from \'oneOf\'',
+          NOT_PASSED: 'Data matches schema from \'not\'',
+          ARRAY_LENGTH_SHORT: 'Array is too short ({0}), minimum {1}',
+          ARRAY_LENGTH_LONG: 'Array is too long ({0}), maximum {1}',
+          ARRAY_UNIQUE: 'Array items are not unique (indexes {0} and {1})',
+          ARRAY_ADDITIONAL_ITEMS: 'Additional items not allowed',
+          MULTIPLE_OF: 'Value {0} is not a multiple of {1}',
+          MINIMUM: 'Value {0} is less than minimum {1}',
+          MINIMUM_EXCLUSIVE: 'Value {0} is equal or less than exclusive minimum {1}',
+          MAXIMUM: 'Value {0} is greater than maximum {1}',
+          MAXIMUM_EXCLUSIVE: 'Value {0} is equal or greater than exclusive maximum {1}',
+          OBJECT_PROPERTIES_MINIMUM: 'Too few properties defined ({0}), minimum {1}',
+          OBJECT_PROPERTIES_MAXIMUM: 'Too many properties defined ({0}), maximum {1}',
+          OBJECT_MISSING_REQUIRED_PROPERTY: 'Missing required property: {0}',
+          OBJECT_ADDITIONAL_PROPERTIES: 'Additional properties not allowed: {0}',
+          OBJECT_DEPENDENCY_KEY: 'Dependency failed - key must exist: {0} (due to key: {1})',
+          MIN_LENGTH: 'String is too short ({0} chars), minimum {1}',
+          MAX_LENGTH: 'String is too long ({0} chars), maximum {1}',
+          PATTERN: 'String does not match pattern {0}: {1}',
+          KEYWORD_TYPE_EXPECTED: 'Keyword \'{0}\' is expected to be of type \'{1}\'',
+          KEYWORD_UNDEFINED_STRICT: 'Keyword \'{0}\' must be defined in strict mode',
+          KEYWORD_UNEXPECTED: 'Keyword \'{0}\' is not expected to appear in the schema',
+          KEYWORD_MUST_BE: 'Keyword \'{0}\' must be {1}',
+          KEYWORD_DEPENDENCY: 'Keyword \'{0}\' requires keyword \'{1}\'',
+          KEYWORD_PATTERN: 'Keyword \'{0}\' is not a valid RegExp pattern: {1}',
+          KEYWORD_VALUE_TYPE: 'Each element of keyword \'{0}\' array must be a \'{1}\'',
+          UNKNOWN_FORMAT: 'There is no validation function for format \'{0}\'',
+          CUSTOM_MODE_FORCE_PROPERTIES: '{0} must define at least one property if present',
+          REF_UNRESOLVED: 'Reference has not been resolved during compilation: {0}',
+          UNRESOLVABLE_REFERENCE: 'Reference could not be resolved: {0}',
+          SCHEMA_NOT_REACHABLE: 'Validator was not able to read schema with uri: {0}',
+          SCHEMA_TYPE_EXPECTED: 'Schema is expected to be of type \'object\'',
+          SCHEMA_NOT_AN_OBJECT: 'Schema is not an object: {0}',
+          ASYNC_TIMEOUT: '{0} asynchronous task(s) have timed out after {1} ms',
+          PARENT_SCHEMA_VALIDATION_FAILED: 'Schema failed to validate against its parent schema, see inner errors for details.',
+          REMOTE_NOT_VALID: 'Remote reference didn\'t compile successfully: {0}'
+        };
+      },
+      {}
+    ],
+    205: [
+      function (require, module, exports) {
+        /*jshint maxlen: false*/
+        var validator = require('validator');
+        var FormatValidators = {
+            'date': function (date) {
+              if (typeof date !== 'string') {
+                return true;
+              }
+              // full-date from http://tools.ietf.org/html/rfc3339#section-5.6
+              var matches = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(date);
+              if (matches === null) {
+                return false;
+              }
+              // var year = matches[1];
+              // var month = matches[2];
+              // var day = matches[3];
+              if (matches[2] < '01' || matches[2] > '12' || matches[3] < '01' || matches[3] > '31') {
+                return false;
+              }
+              return true;
+            },
+            'date-time': function (dateTime) {
+              if (typeof dateTime !== 'string') {
+                return true;
+              }
+              // date-time from http://tools.ietf.org/html/rfc3339#section-5.6
+              var s = dateTime.toLowerCase().split('t');
+              if (!FormatValidators.date(s[0])) {
+                return false;
+              }
+              var matches = /^([0-9]{2}):([0-9]{2}):([0-9]{2})(.[0-9]+)?(z|([+-][0-9]{2}:[0-9]{2}))$/.exec(s[1]);
+              if (matches === null) {
+                return false;
+              }
+              // var hour = matches[1];
+              // var minute = matches[2];
+              // var second = matches[3];
+              // var fraction = matches[4];
+              // var timezone = matches[5];
+              if (matches[1] > '23' || matches[2] > '59' || matches[3] > '59') {
+                return false;
+              }
+              return true;
+            },
+            'email': function (email) {
+              if (typeof email !== 'string') {
+                return true;
+              }
+              return validator.isEmail(email, { 'require_tld': true });
+            },
+            'hostname': function (hostname) {
+              if (typeof hostname !== 'string') {
+                return true;
+              }
+              /*
+            http://json-schema.org/latest/json-schema-validation.html#anchor114
+            A string instance is valid against this attribute if it is a valid
+            representation for an Internet host name, as defined by RFC 1034, section 3.1 [RFC1034].
+
+            http://tools.ietf.org/html/rfc1034#section-3.5
+
+            <digit> ::= any one of the ten digits 0 through 9
+            var digit = /[0-9]/;
+
+            <letter> ::= any one of the 52 alphabetic characters A through Z in upper case and a through z in lower case
+            var letter = /[a-zA-Z]/;
+
+            <let-dig> ::= <letter> | <digit>
+            var letDig = /[0-9a-zA-Z]/;
+
+            <let-dig-hyp> ::= <let-dig> | "-"
+            var letDigHyp = /[-0-9a-zA-Z]/;
+
+            <ldh-str> ::= <let-dig-hyp> | <let-dig-hyp> <ldh-str>
+            var ldhStr = /[-0-9a-zA-Z]+/;
+
+            <label> ::= <letter> [ [ <ldh-str> ] <let-dig> ]
+            var label = /[a-zA-Z](([-0-9a-zA-Z]+)?[0-9a-zA-Z])?/;
+
+            <subdomain> ::= <label> | <subdomain> "." <label>
+            var subdomain = /^[a-zA-Z](([-0-9a-zA-Z]+)?[0-9a-zA-Z])?(\.[a-zA-Z](([-0-9a-zA-Z]+)?[0-9a-zA-Z])?)*$/;
+
+            <domain> ::= <subdomain> | " "
+            var domain = null;
+        */
+              var valid = /^[a-zA-Z](([-0-9a-zA-Z]+)?[0-9a-zA-Z])?(\.[a-zA-Z](([-0-9a-zA-Z]+)?[0-9a-zA-Z])?)*$/.test(hostname);
+              if (valid) {
+                // the sum of all label octets and label lengths is limited to 255.
+                if (hostname.length > 255) {
+                  return false;
+                }
+                // Each node has a label, which is zero to 63 octets in length
+                var labels = hostname.split('.');
+                for (var i = 0; i < labels.length; i++) {
+                  if (labels[i].length > 63) {
+                    return false;
+                  }
+                }
+              }
+              return valid;
+            },
+            'host-name': function (hostname) {
+              return FormatValidators.hostname.call(this, hostname);
+            },
+            'ipv4': function (ipv4) {
+              if (typeof ipv4 !== 'string') {
+                return true;
+              }
+              return validator.isIP(ipv4, 4);
+            },
+            'ipv6': function (ipv6) {
+              if (typeof ipv6 !== 'string') {
+                return true;
+              }
+              return validator.isIP(ipv6, 6);
+            },
+            'regex': function (str) {
+              try {
+                RegExp(str);
+                return true;
+              } catch (e) {
+                return false;
+              }
+            },
+            'uri': function (uri) {
+              if (this.options.strictUris) {
+                return FormatValidators['strict-uri'].apply(this, arguments);
+              }
+              // https://github.com/zaggino/z-schema/issues/18
+              // RegExp from http://tools.ietf.org/html/rfc3986#appendix-B
+              return typeof uri !== 'string' || RegExp('^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?').test(uri);
+            },
+            'strict-uri': function (uri) {
+              return typeof uri !== 'string' || validator.isURL(uri);
+            }
+          };
+        module.exports = FormatValidators;
+      },
+      { 'validator': 223 }
+    ],
+    206: [
+      function (require, module, exports) {
+        'use strict';
+        var FormatValidators = require('./FormatValidators'), Report = require('./Report'), Utils = require('./Utils');
+        var JsonValidators = {
+            multipleOf: function (report, schema, json) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.1.1.2
+              if (typeof json !== 'number') {
+                return;
+              }
+              if (Utils.whatIs(json / schema.multipleOf) !== 'integer') {
+                report.addError('MULTIPLE_OF', [
+                  json,
+                  schema.multipleOf
+                ], null, schema);
+              }
+            },
+            maximum: function (report, schema, json) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.1.2.2
+              if (typeof json !== 'number') {
+                return;
+              }
+              if (schema.exclusiveMaximum !== true) {
+                if (json > schema.maximum) {
+                  report.addError('MAXIMUM', [
+                    json,
+                    schema.maximum
+                  ], null, schema);
+                }
+              } else {
+                if (json >= schema.maximum) {
+                  report.addError('MAXIMUM_EXCLUSIVE', [
+                    json,
+                    schema.maximum
+                  ], null, schema);
+                }
+              }
+            },
+            exclusiveMaximum: function () {
+            },
+            minimum: function (report, schema, json) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.1.3.2
+              if (typeof json !== 'number') {
+                return;
+              }
+              if (schema.exclusiveMinimum !== true) {
+                if (json < schema.minimum) {
+                  report.addError('MINIMUM', [
+                    json,
+                    schema.minimum
+                  ], null, schema);
+                }
+              } else {
+                if (json <= schema.minimum) {
+                  report.addError('MINIMUM_EXCLUSIVE', [
+                    json,
+                    schema.minimum
+                  ], null, schema);
+                }
+              }
+            },
+            exclusiveMinimum: function () {
+            },
+            maxLength: function (report, schema, json) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.2.1.2
+              if (typeof json !== 'string') {
+                return;
+              }
+              if (Utils.ucs2decode(json).length > schema.maxLength) {
+                report.addError('MAX_LENGTH', [
+                  json.length,
+                  schema.maxLength
+                ], null, schema);
+              }
+            },
+            minLength: function (report, schema, json) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.2.2.2
+              if (typeof json !== 'string') {
+                return;
+              }
+              if (Utils.ucs2decode(json).length < schema.minLength) {
+                report.addError('MIN_LENGTH', [
+                  json.length,
+                  schema.minLength
+                ], null, schema);
+              }
+            },
+            pattern: function (report, schema, json) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.2.3.2
+              if (typeof json !== 'string') {
+                return;
+              }
+              if (RegExp(schema.pattern).test(json) === false) {
+                report.addError('PATTERN', [
+                  schema.pattern,
+                  json
+                ], null, schema);
+              }
+            },
+            additionalItems: function (report, schema, json) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.3.1.2
+              if (!Array.isArray(json)) {
+                return;
+              }
+              // if the value of "additionalItems" is boolean value false and the value of "items" is an array,
+              // the json is valid if its size is less than, or equal to, the size of "items".
+              if (schema.additionalItems === false && Array.isArray(schema.items)) {
+                if (json.length > schema.items.length) {
+                  report.addError('ARRAY_ADDITIONAL_ITEMS', null, null, schema);
+                }
+              }
+            },
+            items: function () {
+            },
+            maxItems: function (report, schema, json) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.3.2.2
+              if (!Array.isArray(json)) {
+                return;
+              }
+              if (json.length > schema.maxItems) {
+                report.addError('ARRAY_LENGTH_LONG', [
+                  json.length,
+                  schema.maxItems
+                ], null, schema);
+              }
+            },
+            minItems: function (report, schema, json) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.3.3.2
+              if (!Array.isArray(json)) {
+                return;
+              }
+              if (json.length < schema.minItems) {
+                report.addError('ARRAY_LENGTH_SHORT', [
+                  json.length,
+                  schema.minItems
+                ], null, schema);
+              }
+            },
+            uniqueItems: function (report, schema, json) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.3.4.2
+              if (!Array.isArray(json)) {
+                return;
+              }
+              if (schema.uniqueItems === true) {
+                var matches = [];
+                if (Utils.isUniqueArray(json, matches) === false) {
+                  report.addError('ARRAY_UNIQUE', matches, null, schema);
+                }
+              }
+            },
+            maxProperties: function (report, schema, json) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4.1.2
+              if (Utils.whatIs(json) !== 'object') {
+                return;
+              }
+              var keysCount = Object.keys(json).length;
+              if (keysCount > schema.maxProperties) {
+                report.addError('OBJECT_PROPERTIES_MAXIMUM', [
+                  keysCount,
+                  schema.maxProperties
+                ], null, schema);
+              }
+            },
+            minProperties: function (report, schema, json) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4.2.2
+              if (Utils.whatIs(json) !== 'object') {
+                return;
+              }
+              var keysCount = Object.keys(json).length;
+              if (keysCount < schema.minProperties) {
+                report.addError('OBJECT_PROPERTIES_MINIMUM', [
+                  keysCount,
+                  schema.minProperties
+                ], null, schema);
+              }
+            },
+            required: function (report, schema, json) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4.3.2
+              if (Utils.whatIs(json) !== 'object') {
+                return;
+              }
+              var idx = schema.required.length;
+              while (idx--) {
+                var requiredPropertyName = schema.required[idx];
+                if (json[requiredPropertyName] === undefined) {
+                  report.addError('OBJECT_MISSING_REQUIRED_PROPERTY', [requiredPropertyName], null, schema);
+                }
+              }
+            },
+            additionalProperties: function (report, schema, json) {
+              // covered in properties and patternProperties
+              if (schema.properties === undefined && schema.patternProperties === undefined) {
+                return JsonValidators.properties.call(this, report, schema, json);
+              }
+            },
+            patternProperties: function (report, schema, json) {
+              // covered in properties
+              if (schema.properties === undefined) {
+                return JsonValidators.properties.call(this, report, schema, json);
+              }
+            },
+            properties: function (report, schema, json) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4.4.2
+              if (Utils.whatIs(json) !== 'object') {
+                return;
+              }
+              var properties = schema.properties !== undefined ? schema.properties : {};
+              var patternProperties = schema.patternProperties !== undefined ? schema.patternProperties : {};
+              if (schema.additionalProperties === false) {
+                // The property set of the json to validate.
+                var s = Object.keys(json);
+                // The property set from "properties".
+                var p = Object.keys(properties);
+                // The property set from "patternProperties".
+                var pp = Object.keys(patternProperties);
+                // remove from "s" all elements of "p", if any;
+                s = Utils.difference(s, p);
+                // for each regex in "pp", remove all elements of "s" which this regex matches.
+                var idx = pp.length;
+                while (idx--) {
+                  var regExp = RegExp(pp[idx]), idx2 = s.length;
+                  while (idx2--) {
+                    if (regExp.test(s[idx2]) === true) {
+                      s.splice(idx2, 1);
+                    }
+                  }
+                }
+                // Validation of the json succeeds if, after these two steps, set "s" is empty.
+                if (s.length > 0) {
+                  // assumeAdditional can be an array of allowed properties
+                  var idx3 = this.options.assumeAdditional.length;
+                  if (idx3) {
+                    while (idx3--) {
+                      var io = s.indexOf(this.options.assumeAdditional[idx3]);
+                      if (io !== -1) {
+                        s.splice(io, 1);
+                      }
+                    }
+                  }
+                  if (s.length > 0) {
+                    report.addError('OBJECT_ADDITIONAL_PROPERTIES', [s], null, schema);
+                  }
+                }
+              }
+            },
+            dependencies: function (report, schema, json) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4.5.2
+              if (Utils.whatIs(json) !== 'object') {
+                return;
+              }
+              var keys = Object.keys(schema.dependencies), idx = keys.length;
+              while (idx--) {
+                // iterate all dependencies
+                var dependencyName = keys[idx];
+                if (json[dependencyName]) {
+                  var dependencyDefinition = schema.dependencies[dependencyName];
+                  if (Utils.whatIs(dependencyDefinition) === 'object') {
+                    // if dependency is a schema, validate against this schema
+                    exports.validate.call(this, report, dependencyDefinition, json);
+                  } else {
+                    // Array
+                    // if dependency is an array, object needs to have all properties in this array
+                    var idx2 = dependencyDefinition.length;
+                    while (idx2--) {
+                      var requiredPropertyName = dependencyDefinition[idx2];
+                      if (json[requiredPropertyName] === undefined) {
+                        report.addError('OBJECT_DEPENDENCY_KEY', [
+                          requiredPropertyName,
+                          dependencyName
+                        ], null, schema);
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            enum: function (report, schema, json) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.1.2
+              var match = false, caseInsensitiveMatch = false, idx = schema.enum.length;
+              while (idx--) {
+                if (Utils.areEqual(json, schema.enum[idx])) {
+                  match = true;
+                  break;
+                } else if (Utils.areEqual(json, schema.enum[idx]), { caseInsensitiveComparison: true }) {
+                  caseInsensitiveMatch = true;
+                }
+              }
+              if (match === false) {
+                var error = caseInsensitiveMatch && this.options.enumCaseInsensitiveComparison ? 'ENUM_CASE_MISMATCH' : 'ENUM_MISMATCH';
+                report.addError(error, [json], null, schema);
+              }
+            },
+            type: function (report, schema, json) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.2.2
+              var jsonType = Utils.whatIs(json);
+              if (typeof schema.type === 'string') {
+                if (jsonType !== schema.type && (jsonType !== 'integer' || schema.type !== 'number')) {
+                  report.addError('INVALID_TYPE', [
+                    schema.type,
+                    jsonType
+                  ], null, schema);
+                }
+              } else {
+                if (schema.type.indexOf(jsonType) === -1 && (jsonType !== 'integer' || schema.type.indexOf('number') === -1)) {
+                  report.addError('INVALID_TYPE', [
+                    schema.type,
+                    jsonType
+                  ], null, schema);
+                }
+              }
+            },
+            allOf: function (report, schema, json) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.3.2
+              var idx = schema.allOf.length;
+              while (idx--) {
+                var validateResult = exports.validate.call(this, report, schema.allOf[idx], json);
+                if (this.options.breakOnFirstError && validateResult === false) {
+                  break;
+                }
+              }
+            },
+            anyOf: function (report, schema, json) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.4.2
+              var subReports = [], passed = false, idx = schema.anyOf.length;
+              while (idx-- && passed === false) {
+                var subReport = new Report(report);
+                subReports.push(subReport);
+                passed = exports.validate.call(this, subReport, schema.anyOf[idx], json);
+              }
+              if (passed === false) {
+                report.addError('ANY_OF_MISSING', undefined, subReports, schema);
+              }
+            },
+            oneOf: function (report, schema, json) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.5.2
+              var passes = 0, subReports = [], idx = schema.oneOf.length;
+              while (idx--) {
+                var subReport = new Report(report, { maxErrors: 1 });
+                subReports.push(subReport);
+                if (exports.validate.call(this, subReport, schema.oneOf[idx], json) === true) {
+                  passes++;
+                }
+              }
+              if (passes === 0) {
+                report.addError('ONE_OF_MISSING', undefined, subReports, schema);
+              } else if (passes > 1) {
+                report.addError('ONE_OF_MULTIPLE', null, null, schema);
+              }
+            },
+            not: function (report, schema, json) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.6.2
+              var subReport = new Report(report);
+              if (exports.validate.call(this, subReport, schema.not, json) === true) {
+                report.addError('NOT_PASSED', null, null, schema);
+              }
+            },
+            definitions: function () {
+            },
+            format: function (report, schema, json) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.7.2
+              var formatValidatorFn = FormatValidators[schema.format];
+              if (typeof formatValidatorFn === 'function') {
+                if (formatValidatorFn.length === 2) {
+                  // async
+                  report.addAsyncTask(formatValidatorFn, [json], function (result) {
+                    if (result !== true) {
+                      report.addError('INVALID_FORMAT', [
+                        schema.format,
+                        json
+                      ], null, schema);
+                    }
+                  });
+                } else {
+                  // sync
+                  if (formatValidatorFn.call(this, json) !== true) {
+                    report.addError('INVALID_FORMAT', [
+                      schema.format,
+                      json
+                    ], null, schema);
+                  }
+                }
+              } else if (this.options.ignoreUnknownFormats !== true) {
+                report.addError('UNKNOWN_FORMAT', [schema.format], null, schema);
+              }
+            }
+          };
+        var recurseArray = function (report, schema, json) {
+          // http://json-schema.org/latest/json-schema-validation.html#rfc.section.8.2
+          var idx = json.length;
+          // If "items" is an array, this situation, the schema depends on the index:
+          // if the index is less than, or equal to, the size of "items",
+          // the child instance must be valid against the corresponding schema in the "items" array;
+          // otherwise, it must be valid against the schema defined by "additionalItems".
+          if (Array.isArray(schema.items)) {
+            while (idx--) {
+              // equal to doesnt make sense here
+              if (idx < schema.items.length) {
+                report.path.push(idx.toString());
+                exports.validate.call(this, report, schema.items[idx], json[idx]);
+                report.path.pop();
+              } else {
+                // might be boolean, so check that it's an object
+                if (typeof schema.additionalItems === 'object') {
+                  report.path.push(idx.toString());
+                  exports.validate.call(this, report, schema.additionalItems, json[idx]);
+                  report.path.pop();
+                }
+              }
+            }
+          } else if (typeof schema.items === 'object') {
+            // If items is a schema, then the child instance must be valid against this schema,
+            // regardless of its index, and regardless of the value of "additionalItems".
+            while (idx--) {
+              report.path.push(idx.toString());
+              exports.validate.call(this, report, schema.items, json[idx]);
+              report.path.pop();
+            }
+          }
+        };
+        var recurseObject = function (report, schema, json) {
+          // http://json-schema.org/latest/json-schema-validation.html#rfc.section.8.3
+          // If "additionalProperties" is absent, it is considered present with an empty schema as a value.
+          // In addition, boolean value true is considered equivalent to an empty schema.
+          var additionalProperties = schema.additionalProperties;
+          if (additionalProperties === true || additionalProperties === undefined) {
+            additionalProperties = {};
+          }
+          // p - The property set from "properties".
+          var p = schema.properties ? Object.keys(schema.properties) : [];
+          // pp - The property set from "patternProperties". Elements of this set will be called regexes for convenience.
+          var pp = schema.patternProperties ? Object.keys(schema.patternProperties) : [];
+          // m - The property name of the child.
+          var keys = Object.keys(json), idx = keys.length;
+          while (idx--) {
+            var m = keys[idx], propertyValue = json[m];
+            // s - The set of schemas for the child instance.
+            var s = [];
+            // 1. If set "p" contains value "m", then the corresponding schema in "properties" is added to "s".
+            if (p.indexOf(m) !== -1) {
+              s.push(schema.properties[m]);
+            }
+            // 2. For each regex in "pp", if it matches "m" successfully, the corresponding schema in "patternProperties" is added to "s".
+            var idx2 = pp.length;
+            while (idx2--) {
+              var regexString = pp[idx2];
+              if (RegExp(regexString).test(m) === true) {
+                s.push(schema.patternProperties[regexString]);
+              }
+            }
+            // 3. The schema defined by "additionalProperties" is added to "s" if and only if, at this stage, "s" is empty.
+            if (s.length === 0 && additionalProperties !== false) {
+              s.push(additionalProperties);
+            }
+            // we are passing tests even without this assert because this is covered by properties check
+            // if s is empty in this stage, no additionalProperties are allowed
+            // report.expect(s.length !== 0, 'E001', m);
+            // Instance property value must pass all schemas from s
+            idx2 = s.length;
+            while (idx2--) {
+              report.path.push(m);
+              exports.validate.call(this, report, s[idx2], propertyValue);
+              report.path.pop();
+            }
+          }
+        };
+        exports.validate = function (report, schema, json) {
+          report.commonErrorMessage = 'JSON_OBJECT_VALIDATION_FAILED';
+          // check if schema is an object
+          var to = Utils.whatIs(schema);
+          if (to !== 'object') {
+            report.addError('SCHEMA_NOT_AN_OBJECT', [to], null, schema);
+            return false;
+          }
+          // check if schema is empty, everything is valid against empty schema
+          var keys = Object.keys(schema);
+          if (keys.length === 0) {
+            return true;
+          }
+          // this method can be called recursively, so we need to remember our root
+          var isRoot = false;
+          if (!report.rootSchema) {
+            report.rootSchema = schema;
+            isRoot = true;
+          }
+          // follow schema.$ref keys
+          if (schema.$ref !== undefined) {
+            // avoid infinite loop with maxRefs
+            var maxRefs = 99;
+            while (schema.$ref && maxRefs > 0) {
+              if (!schema.__$refResolved) {
+                report.addError('REF_UNRESOLVED', [schema.$ref], null, schema);
+                break;
+              } else if (schema.__$refResolved === schema) {
+                break;
+              } else {
+                schema = schema.__$refResolved;
+                keys = Object.keys(schema);
+              }
+              maxRefs--;
+            }
+            if (maxRefs === 0) {
+              throw new Error('Circular dependency by $ref references!');
+            }
+          }
+          // type checking first
+          var jsonType = Utils.whatIs(json);
+          if (schema.type) {
+            keys.splice(keys.indexOf('type'), 1);
+            JsonValidators.type.call(this, report, schema, json);
+            if (report.errors.length && this.options.breakOnFirstError) {
+              return false;
+            }
+          }
+          // now iterate all the keys in schema and execute validation methods
+          var idx = keys.length;
+          while (idx--) {
+            if (JsonValidators[keys[idx]]) {
+              JsonValidators[keys[idx]].call(this, report, schema, json);
+              if (report.errors.length && this.options.breakOnFirstError) {
+                break;
+              }
+            }
+          }
+          if (report.errors.length === 0 || this.options.breakOnFirstError === false) {
+            if (jsonType === 'array') {
+              recurseArray.call(this, report, schema, json);
+            } else if (jsonType === 'object') {
+              recurseObject.call(this, report, schema, json);
+            }
+          }
+          if (typeof this.options.customValidator === 'function') {
+            this.options.customValidator(report, schema, json);
+          }
+          // we don't need the root pointer anymore
+          if (isRoot) {
+            report.rootSchema = undefined;
+          }
+          // return valid just to be able to break at some code points
+          return report.errors.length === 0;
+        };
+      },
+      {
+        './FormatValidators': 205,
+        './Report': 208,
+        './Utils': 212
       }
     ],
     207: [
       function (require, module, exports) {
-        (function (process, global) {
-          /*!
- * @overview es6-promise - a tiny implementation of Promises/A+.
- * @copyright Copyright (c) 2014 Yehuda Katz, Tom Dale, Stefan Penner and contributors (Conversion to ES6 API by Jake Archibald)
- * @license   Licensed under MIT license
- *            See https://raw.githubusercontent.com/stefanpenner/es6-promise/master/LICENSE
- * @version   3.3.1
- */
-          (function (global, factory) {
-            typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() : typeof define === 'function' && define.amd ? define(factory) : global.ES6Promise = factory();
-          }(this, function () {
-            'use strict';
-            function objectOrFunction(x) {
-              return typeof x === 'function' || typeof x === 'object' && x !== null;
+        // Number.isFinite polyfill
+        // http://people.mozilla.org/~jorendorff/es6-draft.html#sec-number.isfinite
+        if (typeof Number.isFinite !== 'function') {
+          Number.isFinite = function isFinite(value) {
+            // 1. If Type(number) is not Number, return false.
+            if (typeof value !== 'number') {
+              return false;
             }
-            function isFunction(x) {
-              return typeof x === 'function';
+            // 2. If number is NaN, +∞, or −∞, return false.
+            if (value !== value || value === Infinity || value === -Infinity) {
+              return false;
             }
-            var _isArray = undefined;
-            if (!Array.isArray) {
-              _isArray = function (x) {
-                return Object.prototype.toString.call(x) === '[object Array]';
-              };
-            } else {
-              _isArray = Array.isArray;
-            }
-            var isArray = _isArray;
-            var len = 0;
-            var vertxNext = undefined;
-            var customSchedulerFn = undefined;
-            var asap = function asap(callback, arg) {
-              queue[len] = callback;
-              queue[len + 1] = arg;
-              len += 2;
-              if (len === 2) {
-                // If len is 2, that means that we need to schedule an async flush.
-                // If additional callbacks are queued before the queue is flushed, they
-                // will be processed by this flush that we are scheduling.
-                if (customSchedulerFn) {
-                  customSchedulerFn(flush);
-                } else {
-                  scheduleFlush();
-                }
-              }
-            };
-            function setScheduler(scheduleFn) {
-              customSchedulerFn = scheduleFn;
-            }
-            function setAsap(asapFn) {
-              asap = asapFn;
-            }
-            var browserWindow = typeof window !== 'undefined' ? window : undefined;
-            var browserGlobal = browserWindow || {};
-            var BrowserMutationObserver = browserGlobal.MutationObserver || browserGlobal.WebKitMutationObserver;
-            var isNode = typeof self === 'undefined' && typeof process !== 'undefined' && {}.toString.call(process) === '[object process]';
-            // test for web worker but not in IE10
-            var isWorker = typeof Uint8ClampedArray !== 'undefined' && typeof importScripts !== 'undefined' && typeof MessageChannel !== 'undefined';
-            // node
-            function useNextTick() {
-              // node version 0.10.x displays a deprecation warning when nextTick is used recursively
-              // see https://github.com/cujojs/when/issues/410 for details
-              return function () {
-                return process.nextTick(flush);
-              };
-            }
-            // vertx
-            function useVertxTimer() {
-              return function () {
-                vertxNext(flush);
-              };
-            }
-            function useMutationObserver() {
-              var iterations = 0;
-              var observer = new BrowserMutationObserver(flush);
-              var node = document.createTextNode('');
-              observer.observe(node, { characterData: true });
-              return function () {
-                node.data = iterations = ++iterations % 2;
-              };
-            }
-            // web worker
-            function useMessageChannel() {
-              var channel = new MessageChannel();
-              channel.port1.onmessage = flush;
-              return function () {
-                return channel.port2.postMessage(0);
-              };
-            }
-            function useSetTimeout() {
-              // Store setTimeout reference so es6-promise will be unaffected by
-              // other code modifying setTimeout (like sinon.useFakeTimers())
-              var globalSetTimeout = setTimeout;
-              return function () {
-                return globalSetTimeout(flush, 1);
-              };
-            }
-            var queue = new Array(1000);
-            function flush() {
-              for (var i = 0; i < len; i += 2) {
-                var callback = queue[i];
-                var arg = queue[i + 1];
-                callback(arg);
-                queue[i] = undefined;
-                queue[i + 1] = undefined;
-              }
-              len = 0;
-            }
-            function attemptVertx() {
-              try {
-                var r = require;
-                var vertx = r('vertx');
-                vertxNext = vertx.runOnLoop || vertx.runOnContext;
-                return useVertxTimer();
-              } catch (e) {
-                return useSetTimeout();
-              }
-            }
-            var scheduleFlush = undefined;
-            // Decide what async method to use to triggering processing of queued callbacks:
-            if (isNode) {
-              scheduleFlush = useNextTick();
-            } else if (BrowserMutationObserver) {
-              scheduleFlush = useMutationObserver();
-            } else if (isWorker) {
-              scheduleFlush = useMessageChannel();
-            } else if (browserWindow === undefined && typeof require === 'function') {
-              scheduleFlush = attemptVertx();
-            } else {
-              scheduleFlush = useSetTimeout();
-            }
-            function then(onFulfillment, onRejection) {
-              var _arguments = arguments;
-              var parent = this;
-              var child = new this.constructor(noop);
-              if (child[PROMISE_ID] === undefined) {
-                makePromise(child);
-              }
-              var _state = parent._state;
-              if (_state) {
-                (function () {
-                  var callback = _arguments[_state - 1];
-                  asap(function () {
-                    return invokeCallback(_state, child, callback, parent._result);
-                  });
-                }());
-              } else {
-                subscribe(parent, child, onFulfillment, onRejection);
-              }
-              return child;
-            }
-            /**
-  `Promise.resolve` returns a promise that will become resolved with the
-  passed `value`. It is shorthand for the following:
-
-  ```javascript
-  let promise = new Promise(function(resolve, reject){
-    resolve(1);
-  });
-
-  promise.then(function(value){
-    // value === 1
-  });
-  ```
-
-  Instead of writing the above, your code now simply becomes the following:
-
-  ```javascript
-  let promise = Promise.resolve(1);
-
-  promise.then(function(value){
-    // value === 1
-  });
-  ```
-
-  @method resolve
-  @static
-  @param {Any} value value that the returned promise will be resolved with
-  Useful for tooling.
-  @return {Promise} a promise that will become fulfilled with the given
-  `value`
-*/
-            function resolve(object) {
-              /*jshint validthis:true */
-              var Constructor = this;
-              if (object && typeof object === 'object' && object.constructor === Constructor) {
-                return object;
-              }
-              var promise = new Constructor(noop);
-              _resolve(promise, object);
-              return promise;
-            }
-            var PROMISE_ID = Math.random().toString(36).substring(16);
-            function noop() {
-            }
-            var PENDING = void 0;
-            var FULFILLED = 1;
-            var REJECTED = 2;
-            var GET_THEN_ERROR = new ErrorObject();
-            function selfFulfillment() {
-              return new TypeError('You cannot resolve a promise with itself');
-            }
-            function cannotReturnOwn() {
-              return new TypeError('A promises callback cannot return that same promise.');
-            }
-            function getThen(promise) {
-              try {
-                return promise.then;
-              } catch (error) {
-                GET_THEN_ERROR.error = error;
-                return GET_THEN_ERROR;
-              }
-            }
-            function tryThen(then, value, fulfillmentHandler, rejectionHandler) {
-              try {
-                then.call(value, fulfillmentHandler, rejectionHandler);
-              } catch (e) {
-                return e;
-              }
-            }
-            function handleForeignThenable(promise, thenable, then) {
-              asap(function (promise) {
-                var sealed = false;
-                var error = tryThen(then, thenable, function (value) {
-                    if (sealed) {
-                      return;
-                    }
-                    sealed = true;
-                    if (thenable !== value) {
-                      _resolve(promise, value);
-                    } else {
-                      fulfill(promise, value);
-                    }
-                  }, function (reason) {
-                    if (sealed) {
-                      return;
-                    }
-                    sealed = true;
-                    _reject(promise, reason);
-                  }, 'Settle: ' + (promise._label || ' unknown promise'));
-                if (!sealed && error) {
-                  sealed = true;
-                  _reject(promise, error);
-                }
-              }, promise);
-            }
-            function handleOwnThenable(promise, thenable) {
-              if (thenable._state === FULFILLED) {
-                fulfill(promise, thenable._result);
-              } else if (thenable._state === REJECTED) {
-                _reject(promise, thenable._result);
-              } else {
-                subscribe(thenable, undefined, function (value) {
-                  return _resolve(promise, value);
-                }, function (reason) {
-                  return _reject(promise, reason);
-                });
-              }
-            }
-            function handleMaybeThenable(promise, maybeThenable, then$$) {
-              if (maybeThenable.constructor === promise.constructor && then$$ === then && maybeThenable.constructor.resolve === resolve) {
-                handleOwnThenable(promise, maybeThenable);
-              } else {
-                if (then$$ === GET_THEN_ERROR) {
-                  _reject(promise, GET_THEN_ERROR.error);
-                } else if (then$$ === undefined) {
-                  fulfill(promise, maybeThenable);
-                } else if (isFunction(then$$)) {
-                  handleForeignThenable(promise, maybeThenable, then$$);
-                } else {
-                  fulfill(promise, maybeThenable);
-                }
-              }
-            }
-            function _resolve(promise, value) {
-              if (promise === value) {
-                _reject(promise, selfFulfillment());
-              } else if (objectOrFunction(value)) {
-                handleMaybeThenable(promise, value, getThen(value));
-              } else {
-                fulfill(promise, value);
-              }
-            }
-            function publishRejection(promise) {
-              if (promise._onerror) {
-                promise._onerror(promise._result);
-              }
-              publish(promise);
-            }
-            function fulfill(promise, value) {
-              if (promise._state !== PENDING) {
-                return;
-              }
-              promise._result = value;
-              promise._state = FULFILLED;
-              if (promise._subscribers.length !== 0) {
-                asap(publish, promise);
-              }
-            }
-            function _reject(promise, reason) {
-              if (promise._state !== PENDING) {
-                return;
-              }
-              promise._state = REJECTED;
-              promise._result = reason;
-              asap(publishRejection, promise);
-            }
-            function subscribe(parent, child, onFulfillment, onRejection) {
-              var _subscribers = parent._subscribers;
-              var length = _subscribers.length;
-              parent._onerror = null;
-              _subscribers[length] = child;
-              _subscribers[length + FULFILLED] = onFulfillment;
-              _subscribers[length + REJECTED] = onRejection;
-              if (length === 0 && parent._state) {
-                asap(publish, parent);
-              }
-            }
-            function publish(promise) {
-              var subscribers = promise._subscribers;
-              var settled = promise._state;
-              if (subscribers.length === 0) {
-                return;
-              }
-              var child = undefined, callback = undefined, detail = promise._result;
-              for (var i = 0; i < subscribers.length; i += 3) {
-                child = subscribers[i];
-                callback = subscribers[i + settled];
-                if (child) {
-                  invokeCallback(settled, child, callback, detail);
-                } else {
-                  callback(detail);
-                }
-              }
-              promise._subscribers.length = 0;
-            }
-            function ErrorObject() {
-              this.error = null;
-            }
-            var TRY_CATCH_ERROR = new ErrorObject();
-            function tryCatch(callback, detail) {
-              try {
-                return callback(detail);
-              } catch (e) {
-                TRY_CATCH_ERROR.error = e;
-                return TRY_CATCH_ERROR;
-              }
-            }
-            function invokeCallback(settled, promise, callback, detail) {
-              var hasCallback = isFunction(callback), value = undefined, error = undefined, succeeded = undefined, failed = undefined;
-              if (hasCallback) {
-                value = tryCatch(callback, detail);
-                if (value === TRY_CATCH_ERROR) {
-                  failed = true;
-                  error = value.error;
-                  value = null;
-                } else {
-                  succeeded = true;
-                }
-                if (promise === value) {
-                  _reject(promise, cannotReturnOwn());
-                  return;
-                }
-              } else {
-                value = detail;
-                succeeded = true;
-              }
-              if (promise._state !== PENDING) {
-              } else if (hasCallback && succeeded) {
-                _resolve(promise, value);
-              } else if (failed) {
-                _reject(promise, error);
-              } else if (settled === FULFILLED) {
-                fulfill(promise, value);
-              } else if (settled === REJECTED) {
-                _reject(promise, value);
-              }
-            }
-            function initializePromise(promise, resolver) {
-              try {
-                resolver(function resolvePromise(value) {
-                  _resolve(promise, value);
-                }, function rejectPromise(reason) {
-                  _reject(promise, reason);
-                });
-              } catch (e) {
-                _reject(promise, e);
-              }
-            }
-            var id = 0;
-            function nextId() {
-              return id++;
-            }
-            function makePromise(promise) {
-              promise[PROMISE_ID] = id++;
-              promise._state = undefined;
-              promise._result = undefined;
-              promise._subscribers = [];
-            }
-            function Enumerator(Constructor, input) {
-              this._instanceConstructor = Constructor;
-              this.promise = new Constructor(noop);
-              if (!this.promise[PROMISE_ID]) {
-                makePromise(this.promise);
-              }
-              if (isArray(input)) {
-                this._input = input;
-                this.length = input.length;
-                this._remaining = input.length;
-                this._result = new Array(this.length);
-                if (this.length === 0) {
-                  fulfill(this.promise, this._result);
-                } else {
-                  this.length = this.length || 0;
-                  this._enumerate();
-                  if (this._remaining === 0) {
-                    fulfill(this.promise, this._result);
-                  }
-                }
-              } else {
-                _reject(this.promise, validationError());
-              }
-            }
-            function validationError() {
-              return new Error('Array Methods must be provided an Array');
-            }
-            ;
-            Enumerator.prototype._enumerate = function () {
-              var length = this.length;
-              var _input = this._input;
-              for (var i = 0; this._state === PENDING && i < length; i++) {
-                this._eachEntry(_input[i], i);
-              }
-            };
-            Enumerator.prototype._eachEntry = function (entry, i) {
-              var c = this._instanceConstructor;
-              var resolve$$ = c.resolve;
-              if (resolve$$ === resolve) {
-                var _then = getThen(entry);
-                if (_then === then && entry._state !== PENDING) {
-                  this._settledAt(entry._state, i, entry._result);
-                } else if (typeof _then !== 'function') {
-                  this._remaining--;
-                  this._result[i] = entry;
-                } else if (c === Promise) {
-                  var promise = new c(noop);
-                  handleMaybeThenable(promise, entry, _then);
-                  this._willSettleAt(promise, i);
-                } else {
-                  this._willSettleAt(new c(function (resolve$$) {
-                    return resolve$$(entry);
-                  }), i);
-                }
-              } else {
-                this._willSettleAt(resolve$$(entry), i);
-              }
-            };
-            Enumerator.prototype._settledAt = function (state, i, value) {
-              var promise = this.promise;
-              if (promise._state === PENDING) {
-                this._remaining--;
-                if (state === REJECTED) {
-                  _reject(promise, value);
-                } else {
-                  this._result[i] = value;
-                }
-              }
-              if (this._remaining === 0) {
-                fulfill(promise, this._result);
-              }
-            };
-            Enumerator.prototype._willSettleAt = function (promise, i) {
-              var enumerator = this;
-              subscribe(promise, undefined, function (value) {
-                return enumerator._settledAt(FULFILLED, i, value);
-              }, function (reason) {
-                return enumerator._settledAt(REJECTED, i, reason);
-              });
-            };
-            /**
-  `Promise.all` accepts an array of promises, and returns a new promise which
-  is fulfilled with an array of fulfillment values for the passed promises, or
-  rejected with the reason of the first passed promise to be rejected. It casts all
-  elements of the passed iterable to promises as it runs this algorithm.
-
-  Example:
-
-  ```javascript
-  let promise1 = resolve(1);
-  let promise2 = resolve(2);
-  let promise3 = resolve(3);
-  let promises = [ promise1, promise2, promise3 ];
-
-  Promise.all(promises).then(function(array){
-    // The array here would be [ 1, 2, 3 ];
-  });
-  ```
-
-  If any of the `promises` given to `all` are rejected, the first promise
-  that is rejected will be given as an argument to the returned promises's
-  rejection handler. For example:
-
-  Example:
-
-  ```javascript
-  let promise1 = resolve(1);
-  let promise2 = reject(new Error("2"));
-  let promise3 = reject(new Error("3"));
-  let promises = [ promise1, promise2, promise3 ];
-
-  Promise.all(promises).then(function(array){
-    // Code here never runs because there are rejected promises!
-  }, function(error) {
-    // error.message === "2"
-  });
-  ```
-
-  @method all
-  @static
-  @param {Array} entries array of promises
-  @param {String} label optional string for labeling the promise.
-  Useful for tooling.
-  @return {Promise} promise that is fulfilled when all `promises` have been
-  fulfilled, or rejected if any of them become rejected.
-  @static
-*/
-            function all(entries) {
-              return new Enumerator(this, entries).promise;
-            }
-            /**
-  `Promise.race` returns a new promise which is settled in the same way as the
-  first passed promise to settle.
-
-  Example:
-
-  ```javascript
-  let promise1 = new Promise(function(resolve, reject){
-    setTimeout(function(){
-      resolve('promise 1');
-    }, 200);
-  });
-
-  let promise2 = new Promise(function(resolve, reject){
-    setTimeout(function(){
-      resolve('promise 2');
-    }, 100);
-  });
-
-  Promise.race([promise1, promise2]).then(function(result){
-    // result === 'promise 2' because it was resolved before promise1
-    // was resolved.
-  });
-  ```
-
-  `Promise.race` is deterministic in that only the state of the first
-  settled promise matters. For example, even if other promises given to the
-  `promises` array argument are resolved, but the first settled promise has
-  become rejected before the other promises became fulfilled, the returned
-  promise will become rejected:
-
-  ```javascript
-  let promise1 = new Promise(function(resolve, reject){
-    setTimeout(function(){
-      resolve('promise 1');
-    }, 200);
-  });
-
-  let promise2 = new Promise(function(resolve, reject){
-    setTimeout(function(){
-      reject(new Error('promise 2'));
-    }, 100);
-  });
-
-  Promise.race([promise1, promise2]).then(function(result){
-    // Code here never runs
-  }, function(reason){
-    // reason.message === 'promise 2' because promise 2 became rejected before
-    // promise 1 became fulfilled
-  });
-  ```
-
-  An example real-world use case is implementing timeouts:
-
-  ```javascript
-  Promise.race([ajax('foo.json'), timeout(5000)])
-  ```
-
-  @method race
-  @static
-  @param {Array} promises array of promises to observe
-  Useful for tooling.
-  @return {Promise} a promise which settles in the same way as the first passed
-  promise to settle.
-*/
-            function race(entries) {
-              /*jshint validthis:true */
-              var Constructor = this;
-              if (!isArray(entries)) {
-                return new Constructor(function (_, reject) {
-                  return reject(new TypeError('You must pass an array to race.'));
-                });
-              } else {
-                return new Constructor(function (resolve, reject) {
-                  var length = entries.length;
-                  for (var i = 0; i < length; i++) {
-                    Constructor.resolve(entries[i]).then(resolve, reject);
-                  }
-                });
-              }
-            }
-            /**
-  `Promise.reject` returns a promise rejected with the passed `reason`.
-  It is shorthand for the following:
-
-  ```javascript
-  let promise = new Promise(function(resolve, reject){
-    reject(new Error('WHOOPS'));
-  });
-
-  promise.then(function(value){
-    // Code here doesn't run because the promise is rejected!
-  }, function(reason){
-    // reason.message === 'WHOOPS'
-  });
-  ```
-
-  Instead of writing the above, your code now simply becomes the following:
-
-  ```javascript
-  let promise = Promise.reject(new Error('WHOOPS'));
-
-  promise.then(function(value){
-    // Code here doesn't run because the promise is rejected!
-  }, function(reason){
-    // reason.message === 'WHOOPS'
-  });
-  ```
-
-  @method reject
-  @static
-  @param {Any} reason value that the returned promise will be rejected with.
-  Useful for tooling.
-  @return {Promise} a promise rejected with the given `reason`.
-*/
-            function reject(reason) {
-              /*jshint validthis:true */
-              var Constructor = this;
-              var promise = new Constructor(noop);
-              _reject(promise, reason);
-              return promise;
-            }
-            function needsResolver() {
-              throw new TypeError('You must pass a resolver function as the first argument to the promise constructor');
-            }
-            function needsNew() {
-              throw new TypeError('Failed to construct \'Promise\': Please use the \'new\' operator, this object constructor cannot be called as a function.');
-            }
-            /**
-  Promise objects represent the eventual result of an asynchronous operation. The
-  primary way of interacting with a promise is through its `then` method, which
-  registers callbacks to receive either a promise's eventual value or the reason
-  why the promise cannot be fulfilled.
-
-  Terminology
-  -----------
-
-  - `promise` is an object or function with a `then` method whose behavior conforms to this specification.
-  - `thenable` is an object or function that defines a `then` method.
-  - `value` is any legal JavaScript value (including undefined, a thenable, or a promise).
-  - `exception` is a value that is thrown using the throw statement.
-  - `reason` is a value that indicates why a promise was rejected.
-  - `settled` the final resting state of a promise, fulfilled or rejected.
-
-  A promise can be in one of three states: pending, fulfilled, or rejected.
-
-  Promises that are fulfilled have a fulfillment value and are in the fulfilled
-  state.  Promises that are rejected have a rejection reason and are in the
-  rejected state.  A fulfillment value is never a thenable.
-
-  Promises can also be said to *resolve* a value.  If this value is also a
-  promise, then the original promise's settled state will match the value's
-  settled state.  So a promise that *resolves* a promise that rejects will
-  itself reject, and a promise that *resolves* a promise that fulfills will
-  itself fulfill.
-
-
-  Basic Usage:
-  ------------
-
-  ```js
-  let promise = new Promise(function(resolve, reject) {
-    // on success
-    resolve(value);
-
-    // on failure
-    reject(reason);
-  });
-
-  promise.then(function(value) {
-    // on fulfillment
-  }, function(reason) {
-    // on rejection
-  });
-  ```
-
-  Advanced Usage:
-  ---------------
-
-  Promises shine when abstracting away asynchronous interactions such as
-  `XMLHttpRequest`s.
-
-  ```js
-  function getJSON(url) {
-    return new Promise(function(resolve, reject){
-      let xhr = new XMLHttpRequest();
-
-      xhr.open('GET', url);
-      xhr.onreadystatechange = handler;
-      xhr.responseType = 'json';
-      xhr.setRequestHeader('Accept', 'application/json');
-      xhr.send();
-
-      function handler() {
-        if (this.readyState === this.DONE) {
-          if (this.status === 200) {
-            resolve(this.response);
-          } else {
-            reject(new Error('getJSON: `' + url + '` failed with status: [' + this.status + ']'));
-          }
+            // 3. Otherwise, return true.
+            return true;
+          };
         }
-      };
-    });
-  }
-
-  getJSON('/posts.json').then(function(json) {
-    // on fulfillment
-  }, function(reason) {
-    // on rejection
-  });
-  ```
-
-  Unlike callbacks, promises are great composable primitives.
-
-  ```js
-  Promise.all([
-    getJSON('/posts'),
-    getJSON('/comments')
-  ]).then(function(values){
-    values[0] // => postsJSON
-    values[1] // => commentsJSON
-
-    return values;
-  });
-  ```
-
-  @class Promise
-  @param {function} resolver
-  Useful for tooling.
-  @constructor
-*/
-            function Promise(resolver) {
-              this[PROMISE_ID] = nextId();
-              this._result = this._state = undefined;
-              this._subscribers = [];
-              if (noop !== resolver) {
-                typeof resolver !== 'function' && needsResolver();
-                this instanceof Promise ? initializePromise(this, resolver) : needsNew();
-              }
-            }
-            Promise.all = all;
-            Promise.race = race;
-            Promise.resolve = resolve;
-            Promise.reject = reject;
-            Promise._setScheduler = setScheduler;
-            Promise._setAsap = setAsap;
-            Promise._asap = asap;
-            Promise.prototype = {
-              constructor: Promise,
-              then: then,
-              'catch': function _catch(onRejection) {
-                return this.then(null, onRejection);
-              }
-            };
-            function polyfill() {
-              var local = undefined;
-              if (typeof global !== 'undefined') {
-                local = global;
-              } else if (typeof self !== 'undefined') {
-                local = self;
-              } else {
-                try {
-                  local = Function('return this')();
-                } catch (e) {
-                  throw new Error('polyfill failed because global object is unavailable in this environment');
-                }
-              }
-              var P = local.Promise;
-              if (P) {
-                var promiseToString = null;
-                try {
-                  promiseToString = Object.prototype.toString.call(P.resolve());
-                } catch (e) {
-                }
-                if (promiseToString === '[object Promise]' && !P.cast) {
-                  return;
-                }
-              }
-              local.Promise = Promise;
-            }
-            polyfill();
-            // Strange compat..
-            Promise.polyfill = polyfill;
-            Promise.Promise = Promise;
-            return Promise;
-          }));
-        }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
       },
-      { '_process': 166 }
+      {}
     ],
     208: [
+      function (require, module, exports) {
+        (function (process) {
+          'use strict';
+          var get = require('lodash.get');
+          var Errors = require('./Errors');
+          var Utils = require('./Utils');
+          function Report(parentOrOptions, reportOptions) {
+            this.parentReport = parentOrOptions instanceof Report ? parentOrOptions : undefined;
+            this.options = parentOrOptions instanceof Report ? parentOrOptions.options : parentOrOptions || {};
+            this.reportOptions = reportOptions || {};
+            this.errors = [];
+            this.path = [];
+            this.asyncTasks = [];
+          }
+          Report.prototype.isValid = function () {
+            if (this.asyncTasks.length > 0) {
+              throw new Error('Async tasks pending, can\'t answer isValid');
+            }
+            return this.errors.length === 0;
+          };
+          Report.prototype.addAsyncTask = function (fn, args, asyncTaskResultProcessFn) {
+            this.asyncTasks.push([
+              fn,
+              args,
+              asyncTaskResultProcessFn
+            ]);
+          };
+          Report.prototype.processAsyncTasks = function (timeout, callback) {
+            var validationTimeout = timeout || 2000, tasksCount = this.asyncTasks.length, idx = tasksCount, timedOut = false, self = this;
+            function finish() {
+              process.nextTick(function () {
+                var valid = self.errors.length === 0, err = valid ? undefined : self.errors;
+                callback(err, valid);
+              });
+            }
+            function respond(asyncTaskResultProcessFn) {
+              return function (asyncTaskResult) {
+                if (timedOut) {
+                  return;
+                }
+                asyncTaskResultProcessFn(asyncTaskResult);
+                if (--tasksCount === 0) {
+                  finish();
+                }
+              };
+            }
+            // finish if tasks are completed or there are any errors and breaking on first error was requested
+            if (tasksCount === 0 || this.errors.length > 0 && this.options.breakOnFirstError) {
+              finish();
+              return;
+            }
+            while (idx--) {
+              var task = this.asyncTasks[idx];
+              task[0].apply(null, task[1].concat(respond(task[2])));
+            }
+            setTimeout(function () {
+              if (tasksCount > 0) {
+                timedOut = true;
+                self.addError('ASYNC_TIMEOUT', [
+                  tasksCount,
+                  validationTimeout
+                ]);
+                callback(self.errors, false);
+              }
+            }, validationTimeout);
+          };
+          Report.prototype.getPath = function (returnPathAsString) {
+            var path = [];
+            if (this.parentReport) {
+              path = path.concat(this.parentReport.path);
+            }
+            path = path.concat(this.path);
+            if (returnPathAsString !== true) {
+              // Sanitize the path segments (http://tools.ietf.org/html/rfc6901#section-4)
+              path = '#/' + path.map(function (segment) {
+                if (Utils.isAbsoluteUri(segment)) {
+                  return 'uri(' + segment + ')';
+                }
+                return segment.replace(/\~/g, '~0').replace(/\//g, '~1');
+              }).join('/');
+            }
+            return path;
+          };
+          Report.prototype.getSchemaId = function () {
+            if (!this.rootSchema) {
+              return null;
+            }
+            // get the error path as an array
+            var path = [];
+            if (this.parentReport) {
+              path = path.concat(this.parentReport.path);
+            }
+            path = path.concat(this.path);
+            // try to find id in the error path
+            while (path.length > 0) {
+              var obj = get(this.rootSchema, path);
+              if (obj && obj.id) {
+                return obj.id;
+              }
+              path.pop();
+            }
+            // return id of the root
+            return this.rootSchema.id;
+          };
+          Report.prototype.hasError = function (errorCode, params) {
+            var idx = this.errors.length;
+            while (idx--) {
+              if (this.errors[idx].code === errorCode) {
+                // assume match
+                var match = true;
+                // check the params too
+                var idx2 = this.errors[idx].params.length;
+                while (idx2--) {
+                  if (this.errors[idx].params[idx2] !== params[idx2]) {
+                    match = false;
+                  }
+                }
+                // if match, return true
+                if (match) {
+                  return match;
+                }
+              }
+            }
+            return false;
+          };
+          Report.prototype.addError = function (errorCode, params, subReports, schema) {
+            if (!errorCode) {
+              throw new Error('No errorCode passed into addError()');
+            }
+            this.addCustomError(errorCode, Errors[errorCode], params, subReports, schema);
+          };
+          Report.prototype.addCustomError = function (errorCode, errorMessage, params, subReports, schema) {
+            if (this.errors.length >= this.reportOptions.maxErrors) {
+              return;
+            }
+            if (!errorMessage) {
+              throw new Error('No errorMessage known for code ' + errorCode);
+            }
+            params = params || [];
+            var idx = params.length;
+            while (idx--) {
+              var whatIs = Utils.whatIs(params[idx]);
+              var param = whatIs === 'object' || whatIs === 'null' ? JSON.stringify(params[idx]) : params[idx];
+              errorMessage = errorMessage.replace('{' + idx + '}', param);
+            }
+            var err = {
+                code: errorCode,
+                params: params,
+                message: errorMessage,
+                path: this.getPath(this.options.reportPathAsArray),
+                schemaId: this.getSchemaId()
+              };
+            if (schema && typeof schema === 'string') {
+              err.description = schema;
+            } else if (schema && typeof schema === 'object') {
+              if (schema.title) {
+                err.title = schema.title;
+              }
+              if (schema.description) {
+                err.description = schema.description;
+              }
+            }
+            if (subReports != null) {
+              if (!Array.isArray(subReports)) {
+                subReports = [subReports];
+              }
+              err.inner = [];
+              idx = subReports.length;
+              while (idx--) {
+                var subReport = subReports[idx], idx2 = subReport.errors.length;
+                while (idx2--) {
+                  err.inner.push(subReport.errors[idx2]);
+                }
+              }
+              if (err.inner.length === 0) {
+                err.inner = undefined;
+              }
+            }
+            this.errors.push(err);
+          };
+          module.exports = Report;
+        }.call(this, require('_process')));
+      },
+      {
+        './Errors': 204,
+        './Utils': 212,
+        '_process': 161,
+        'lodash.get': 72
+      }
+    ],
+    209: [
+      function (require, module, exports) {
+        'use strict';
+        var isequal = require('lodash.isequal');
+        var Report = require('./Report');
+        var SchemaCompilation = require('./SchemaCompilation');
+        var SchemaValidation = require('./SchemaValidation');
+        var Utils = require('./Utils');
+        function decodeJSONPointer(str) {
+          // http://tools.ietf.org/html/draft-ietf-appsawg-json-pointer-07#section-3
+          return decodeURIComponent(str).replace(/~[0-1]/g, function (x) {
+            return x === '~1' ? '/' : '~';
+          });
+        }
+        function getRemotePath(uri) {
+          var io = uri.indexOf('#');
+          return io === -1 ? uri : uri.slice(0, io);
+        }
+        function getQueryPath(uri) {
+          var io = uri.indexOf('#');
+          var res = io === -1 ? undefined : uri.slice(io + 1);
+          // WARN: do not slice slash, #/ means take root and go down from it
+          // if (res && res[0] === "/") { res = res.slice(1); }
+          return res;
+        }
+        function findId(schema, id) {
+          // process only arrays and objects
+          if (typeof schema !== 'object' || schema === null) {
+            return;
+          }
+          // no id means root so return itself
+          if (!id) {
+            return schema;
+          }
+          if (schema.id) {
+            if (schema.id === id || schema.id[0] === '#' && schema.id.substring(1) === id) {
+              return schema;
+            }
+          }
+          var idx, result;
+          if (Array.isArray(schema)) {
+            idx = schema.length;
+            while (idx--) {
+              result = findId(schema[idx], id);
+              if (result) {
+                return result;
+              }
+            }
+          } else {
+            var keys = Object.keys(schema);
+            idx = keys.length;
+            while (idx--) {
+              var k = keys[idx];
+              if (k.indexOf('__$') === 0) {
+                continue;
+              }
+              result = findId(schema[k], id);
+              if (result) {
+                return result;
+              }
+            }
+          }
+        }
+        exports.cacheSchemaByUri = function (uri, schema) {
+          var remotePath = getRemotePath(uri);
+          if (remotePath) {
+            this.cache[remotePath] = schema;
+          }
+        };
+        exports.removeFromCacheByUri = function (uri) {
+          var remotePath = getRemotePath(uri);
+          if (remotePath) {
+            delete this.cache[remotePath];
+          }
+        };
+        exports.checkCacheForUri = function (uri) {
+          var remotePath = getRemotePath(uri);
+          return remotePath ? this.cache[remotePath] != null : false;
+        };
+        exports.getSchema = function (report, schema) {
+          if (typeof schema === 'object') {
+            schema = exports.getSchemaByReference.call(this, report, schema);
+          }
+          if (typeof schema === 'string') {
+            schema = exports.getSchemaByUri.call(this, report, schema);
+          }
+          return schema;
+        };
+        exports.getSchemaByReference = function (report, key) {
+          var i = this.referenceCache.length;
+          while (i--) {
+            if (isequal(this.referenceCache[i][0], key)) {
+              return this.referenceCache[i][1];
+            }
+          }
+          // not found
+          var schema = Utils.cloneDeep(key);
+          this.referenceCache.push([
+            key,
+            schema
+          ]);
+          return schema;
+        };
+        exports.getSchemaByUri = function (report, uri, root) {
+          var remotePath = getRemotePath(uri), queryPath = getQueryPath(uri), result = remotePath ? this.cache[remotePath] : root;
+          if (result && remotePath) {
+            // we need to avoid compiling schemas in a recursive loop
+            var compileRemote = result !== root;
+            // now we need to compile and validate resolved schema (in case it's not already)
+            if (compileRemote) {
+              report.path.push(remotePath);
+              var remoteReport = new Report(report);
+              if (SchemaCompilation.compileSchema.call(this, remoteReport, result)) {
+                var savedOptions = this.options;
+                try {
+                  // If custom validationOptions were provided to setRemoteReference(),
+                  // use them instead of the default options
+                  this.options = result.__$validationOptions || this.options;
+                  SchemaValidation.validateSchema.call(this, remoteReport, result);
+                } finally {
+                  this.options = savedOptions;
+                }
+              }
+              var remoteReportIsValid = remoteReport.isValid();
+              if (!remoteReportIsValid) {
+                report.addError('REMOTE_NOT_VALID', [uri], remoteReport);
+              }
+              report.path.pop();
+              if (!remoteReportIsValid) {
+                return undefined;
+              }
+            }
+          }
+          if (result && queryPath) {
+            var parts = queryPath.split('/');
+            for (var idx = 0, lim = parts.length; result && idx < lim; idx++) {
+              var key = decodeJSONPointer(parts[idx]);
+              if (idx === 0) {
+                // it's an id
+                result = findId(result, key);
+              } else {
+                // it's a path behind id
+                result = result[key];
+              }
+            }
+          }
+          return result;
+        };
+        exports.getRemotePath = getRemotePath;
+      },
+      {
+        './Report': 208,
+        './SchemaCompilation': 210,
+        './SchemaValidation': 211,
+        './Utils': 212,
+        'lodash.isequal': 73
+      }
+    ],
+    210: [
+      function (require, module, exports) {
+        'use strict';
+        var Report = require('./Report');
+        var SchemaCache = require('./SchemaCache');
+        var Utils = require('./Utils');
+        function mergeReference(scope, ref) {
+          if (Utils.isAbsoluteUri(ref)) {
+            return ref;
+          }
+          var joinedScope = scope.join(''), isScopeAbsolute = Utils.isAbsoluteUri(joinedScope), isScopeRelative = Utils.isRelativeUri(joinedScope), isRefRelative = Utils.isRelativeUri(ref), toRemove;
+          if (isScopeAbsolute && isRefRelative) {
+            toRemove = joinedScope.match(/\/[^\/]*$/);
+            if (toRemove) {
+              joinedScope = joinedScope.slice(0, toRemove.index + 1);
+            }
+          } else if (isScopeRelative && isRefRelative) {
+            joinedScope = '';
+          } else {
+            toRemove = joinedScope.match(/[^#\/]+$/);
+            if (toRemove) {
+              joinedScope = joinedScope.slice(0, toRemove.index);
+            }
+          }
+          var res = joinedScope + ref;
+          res = res.replace(/##/, '#');
+          return res;
+        }
+        function collectReferences(obj, results, scope, path) {
+          results = results || [];
+          scope = scope || [];
+          path = path || [];
+          if (typeof obj !== 'object' || obj === null) {
+            return results;
+          }
+          if (typeof obj.id === 'string') {
+            scope.push(obj.id);
+          }
+          if (typeof obj.$ref === 'string' && typeof obj.__$refResolved === 'undefined') {
+            results.push({
+              ref: mergeReference(scope, obj.$ref),
+              key: '$ref',
+              obj: obj,
+              path: path.slice(0)
+            });
+          }
+          if (typeof obj.$schema === 'string' && typeof obj.__$schemaResolved === 'undefined') {
+            results.push({
+              ref: mergeReference(scope, obj.$schema),
+              key: '$schema',
+              obj: obj,
+              path: path.slice(0)
+            });
+          }
+          var idx;
+          if (Array.isArray(obj)) {
+            idx = obj.length;
+            while (idx--) {
+              path.push(idx.toString());
+              collectReferences(obj[idx], results, scope, path);
+              path.pop();
+            }
+          } else {
+            var keys = Object.keys(obj);
+            idx = keys.length;
+            while (idx--) {
+              // do not recurse through resolved references and other z-schema props
+              if (keys[idx].indexOf('__$') === 0) {
+                continue;
+              }
+              path.push(keys[idx]);
+              collectReferences(obj[keys[idx]], results, scope, path);
+              path.pop();
+            }
+          }
+          if (typeof obj.id === 'string') {
+            scope.pop();
+          }
+          return results;
+        }
+        var compileArrayOfSchemasLoop = function (mainReport, arr) {
+          var idx = arr.length, compiledCount = 0;
+          while (idx--) {
+            // try to compile each schema separately
+            var report = new Report(mainReport);
+            var isValid = exports.compileSchema.call(this, report, arr[idx]);
+            if (isValid) {
+              compiledCount++;
+            }
+            // copy errors to report
+            mainReport.errors = mainReport.errors.concat(report.errors);
+          }
+          return compiledCount;
+        };
+        function findId(arr, id) {
+          var idx = arr.length;
+          while (idx--) {
+            if (arr[idx].id === id) {
+              return arr[idx];
+            }
+          }
+          return null;
+        }
+        var compileArrayOfSchemas = function (report, arr) {
+          var compiled = 0, lastLoopCompiled;
+          do {
+            // remove all UNRESOLVABLE_REFERENCE errors before compiling array again
+            var idx = report.errors.length;
+            while (idx--) {
+              if (report.errors[idx].code === 'UNRESOLVABLE_REFERENCE') {
+                report.errors.splice(idx, 1);
+              }
+            }
+            // remember how many were compiled in the last loop
+            lastLoopCompiled = compiled;
+            // count how many are compiled now
+            compiled = compileArrayOfSchemasLoop.call(this, report, arr);
+            // fix __$missingReferences if possible
+            idx = arr.length;
+            while (idx--) {
+              var sch = arr[idx];
+              if (sch.__$missingReferences) {
+                var idx2 = sch.__$missingReferences.length;
+                while (idx2--) {
+                  var refObj = sch.__$missingReferences[idx2];
+                  var response = findId(arr, refObj.ref);
+                  if (response) {
+                    // this might create circular references
+                    refObj.obj['__' + refObj.key + 'Resolved'] = response;
+                    // it's resolved now so delete it
+                    sch.__$missingReferences.splice(idx2, 1);
+                  }
+                }
+                if (sch.__$missingReferences.length === 0) {
+                  delete sch.__$missingReferences;
+                }
+              }
+            }  // keep repeating if not all compiled and at least one more was compiled in the last loop
+          } while (compiled !== arr.length && compiled !== lastLoopCompiled);
+          return report.isValid();
+        };
+        exports.compileSchema = function (report, schema) {
+          report.commonErrorMessage = 'SCHEMA_COMPILATION_FAILED';
+          // if schema is a string, assume it's a uri
+          if (typeof schema === 'string') {
+            var loadedSchema = SchemaCache.getSchemaByUri.call(this, report, schema);
+            if (!loadedSchema) {
+              report.addError('SCHEMA_NOT_REACHABLE', [schema]);
+              return false;
+            }
+            schema = loadedSchema;
+          }
+          // if schema is an array, assume it's an array of schemas
+          if (Array.isArray(schema)) {
+            return compileArrayOfSchemas.call(this, report, schema);
+          }
+          // if we have an id than it should be cached already (if this instance has compiled it)
+          if (schema.__$compiled && schema.id && SchemaCache.checkCacheForUri.call(this, schema.id) === false) {
+            schema.__$compiled = undefined;
+          }
+          // do not re-compile schemas
+          if (schema.__$compiled) {
+            return true;
+          }
+          if (schema.id && typeof schema.id === 'string') {
+            // add this to our schemaCache (before compilation in case we have references including id)
+            SchemaCache.cacheSchemaByUri.call(this, schema.id, schema);
+          }
+          // this method can be called recursively, so we need to remember our root
+          var isRoot = false;
+          if (!report.rootSchema) {
+            report.rootSchema = schema;
+            isRoot = true;
+          }
+          // delete all __$missingReferences from previous compilation attempts
+          var isValidExceptReferences = report.isValid();
+          delete schema.__$missingReferences;
+          // collect all references that need to be resolved - $ref and $schema
+          var refs = collectReferences.call(this, schema), idx = refs.length;
+          while (idx--) {
+            // resolve all the collected references into __xxxResolved pointer
+            var refObj = refs[idx];
+            var response = SchemaCache.getSchemaByUri.call(this, report, refObj.ref, schema);
+            // we can try to use custom schemaReader if available
+            if (!response) {
+              var schemaReader = this.getSchemaReader();
+              if (schemaReader) {
+                // it's supposed to return a valid schema
+                var s = schemaReader(refObj.ref);
+                if (s) {
+                  // it needs to have the id
+                  s.id = refObj.ref;
+                  // try to compile the schema
+                  var subreport = new Report(report);
+                  if (!exports.compileSchema.call(this, subreport, s)) {
+                    // copy errors to report
+                    report.errors = report.errors.concat(subreport.errors);
+                  } else {
+                    response = SchemaCache.getSchemaByUri.call(this, report, refObj.ref, schema);
+                  }
+                }
+              }
+            }
+            if (!response) {
+              var hasNotValid = report.hasError('REMOTE_NOT_VALID', [refObj.ref]);
+              var isAbsolute = Utils.isAbsoluteUri(refObj.ref);
+              var isDownloaded = false;
+              var ignoreUnresolvableRemotes = this.options.ignoreUnresolvableReferences === true;
+              if (isAbsolute) {
+                // we shouldn't add UNRESOLVABLE_REFERENCE for schemas we already have downloaded
+                // and set through setRemoteReference method
+                isDownloaded = SchemaCache.checkCacheForUri.call(this, refObj.ref);
+              }
+              if (hasNotValid) {
+              } else if (ignoreUnresolvableRemotes && isAbsolute) {
+              } else if (isDownloaded) {
+              } else {
+                Array.prototype.push.apply(report.path, refObj.path);
+                report.addError('UNRESOLVABLE_REFERENCE', [refObj.ref]);
+                report.path = report.path.slice(0, -refObj.path.length);
+                // pusblish unresolved references out
+                if (isValidExceptReferences) {
+                  schema.__$missingReferences = schema.__$missingReferences || [];
+                  schema.__$missingReferences.push(refObj);
+                }
+              }
+            }
+            // this might create circular references
+            refObj.obj['__' + refObj.key + 'Resolved'] = response;
+          }
+          var isValid = report.isValid();
+          if (isValid) {
+            schema.__$compiled = true;
+          } else {
+            if (schema.id && typeof schema.id === 'string') {
+              // remove this schema from schemaCache because it failed to compile
+              SchemaCache.removeFromCacheByUri.call(this, schema.id);
+            }
+          }
+          // we don't need the root pointer anymore
+          if (isRoot) {
+            report.rootSchema = undefined;
+          }
+          return isValid;
+        };
+      },
+      {
+        './Report': 208,
+        './SchemaCache': 209,
+        './Utils': 212
+      }
+    ],
+    211: [
+      function (require, module, exports) {
+        'use strict';
+        var FormatValidators = require('./FormatValidators'), JsonValidation = require('./JsonValidation'), Report = require('./Report'), Utils = require('./Utils');
+        var SchemaValidators = {
+            $ref: function (report, schema) {
+              // http://tools.ietf.org/html/draft-ietf-appsawg-json-pointer-07
+              // http://tools.ietf.org/html/draft-pbryan-zyp-json-ref-03
+              if (typeof schema.$ref !== 'string') {
+                report.addError('KEYWORD_TYPE_EXPECTED', [
+                  '$ref',
+                  'string'
+                ]);
+              }
+            },
+            $schema: function (report, schema) {
+              // http://json-schema.org/latest/json-schema-core.html#rfc.section.6
+              if (typeof schema.$schema !== 'string') {
+                report.addError('KEYWORD_TYPE_EXPECTED', [
+                  '$schema',
+                  'string'
+                ]);
+              }
+            },
+            multipleOf: function (report, schema) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.1.1.1
+              if (typeof schema.multipleOf !== 'number') {
+                report.addError('KEYWORD_TYPE_EXPECTED', [
+                  'multipleOf',
+                  'number'
+                ]);
+              } else if (schema.multipleOf <= 0) {
+                report.addError('KEYWORD_MUST_BE', [
+                  'multipleOf',
+                  'strictly greater than 0'
+                ]);
+              }
+            },
+            maximum: function (report, schema) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.1.2.1
+              if (typeof schema.maximum !== 'number') {
+                report.addError('KEYWORD_TYPE_EXPECTED', [
+                  'maximum',
+                  'number'
+                ]);
+              }
+            },
+            exclusiveMaximum: function (report, schema) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.1.2.1
+              if (typeof schema.exclusiveMaximum !== 'boolean') {
+                report.addError('KEYWORD_TYPE_EXPECTED', [
+                  'exclusiveMaximum',
+                  'boolean'
+                ]);
+              } else if (schema.maximum === undefined) {
+                report.addError('KEYWORD_DEPENDENCY', [
+                  'exclusiveMaximum',
+                  'maximum'
+                ]);
+              }
+            },
+            minimum: function (report, schema) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.1.3.1
+              if (typeof schema.minimum !== 'number') {
+                report.addError('KEYWORD_TYPE_EXPECTED', [
+                  'minimum',
+                  'number'
+                ]);
+              }
+            },
+            exclusiveMinimum: function (report, schema) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.1.3.1
+              if (typeof schema.exclusiveMinimum !== 'boolean') {
+                report.addError('KEYWORD_TYPE_EXPECTED', [
+                  'exclusiveMinimum',
+                  'boolean'
+                ]);
+              } else if (schema.minimum === undefined) {
+                report.addError('KEYWORD_DEPENDENCY', [
+                  'exclusiveMinimum',
+                  'minimum'
+                ]);
+              }
+            },
+            maxLength: function (report, schema) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.2.1.1
+              if (Utils.whatIs(schema.maxLength) !== 'integer') {
+                report.addError('KEYWORD_TYPE_EXPECTED', [
+                  'maxLength',
+                  'integer'
+                ]);
+              } else if (schema.maxLength < 0) {
+                report.addError('KEYWORD_MUST_BE', [
+                  'maxLength',
+                  'greater than, or equal to 0'
+                ]);
+              }
+            },
+            minLength: function (report, schema) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.2.2.1
+              if (Utils.whatIs(schema.minLength) !== 'integer') {
+                report.addError('KEYWORD_TYPE_EXPECTED', [
+                  'minLength',
+                  'integer'
+                ]);
+              } else if (schema.minLength < 0) {
+                report.addError('KEYWORD_MUST_BE', [
+                  'minLength',
+                  'greater than, or equal to 0'
+                ]);
+              }
+            },
+            pattern: function (report, schema) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.2.3.1
+              if (typeof schema.pattern !== 'string') {
+                report.addError('KEYWORD_TYPE_EXPECTED', [
+                  'pattern',
+                  'string'
+                ]);
+              } else {
+                try {
+                  RegExp(schema.pattern);
+                } catch (e) {
+                  report.addError('KEYWORD_PATTERN', [
+                    'pattern',
+                    schema.pattern
+                  ]);
+                }
+              }
+            },
+            additionalItems: function (report, schema) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.3.1.1
+              var type = Utils.whatIs(schema.additionalItems);
+              if (type !== 'boolean' && type !== 'object') {
+                report.addError('KEYWORD_TYPE_EXPECTED', [
+                  'additionalItems',
+                  [
+                    'boolean',
+                    'object'
+                  ]
+                ]);
+              } else if (type === 'object') {
+                report.path.push('additionalItems');
+                exports.validateSchema.call(this, report, schema.additionalItems);
+                report.path.pop();
+              }
+            },
+            items: function (report, schema) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.3.1.1
+              var type = Utils.whatIs(schema.items);
+              if (type === 'object') {
+                report.path.push('items');
+                exports.validateSchema.call(this, report, schema.items);
+                report.path.pop();
+              } else if (type === 'array') {
+                var idx = schema.items.length;
+                while (idx--) {
+                  report.path.push('items');
+                  report.path.push(idx.toString());
+                  exports.validateSchema.call(this, report, schema.items[idx]);
+                  report.path.pop();
+                  report.path.pop();
+                }
+              } else {
+                report.addError('KEYWORD_TYPE_EXPECTED', [
+                  'items',
+                  [
+                    'array',
+                    'object'
+                  ]
+                ]);
+              }
+              // custom - strict mode
+              if (this.options.forceAdditional === true && schema.additionalItems === undefined && Array.isArray(schema.items)) {
+                report.addError('KEYWORD_UNDEFINED_STRICT', ['additionalItems']);
+              }
+              // custome - assume defined false mode
+              if (this.options.assumeAdditional && schema.additionalItems === undefined && Array.isArray(schema.items)) {
+                schema.additionalItems = false;
+              }
+            },
+            maxItems: function (report, schema) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.3.2.1
+              if (typeof schema.maxItems !== 'number') {
+                report.addError('KEYWORD_TYPE_EXPECTED', [
+                  'maxItems',
+                  'integer'
+                ]);
+              } else if (schema.maxItems < 0) {
+                report.addError('KEYWORD_MUST_BE', [
+                  'maxItems',
+                  'greater than, or equal to 0'
+                ]);
+              }
+            },
+            minItems: function (report, schema) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.3.3.1
+              if (Utils.whatIs(schema.minItems) !== 'integer') {
+                report.addError('KEYWORD_TYPE_EXPECTED', [
+                  'minItems',
+                  'integer'
+                ]);
+              } else if (schema.minItems < 0) {
+                report.addError('KEYWORD_MUST_BE', [
+                  'minItems',
+                  'greater than, or equal to 0'
+                ]);
+              }
+            },
+            uniqueItems: function (report, schema) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.3.4.1
+              if (typeof schema.uniqueItems !== 'boolean') {
+                report.addError('KEYWORD_TYPE_EXPECTED', [
+                  'uniqueItems',
+                  'boolean'
+                ]);
+              }
+            },
+            maxProperties: function (report, schema) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4.1.1
+              if (Utils.whatIs(schema.maxProperties) !== 'integer') {
+                report.addError('KEYWORD_TYPE_EXPECTED', [
+                  'maxProperties',
+                  'integer'
+                ]);
+              } else if (schema.maxProperties < 0) {
+                report.addError('KEYWORD_MUST_BE', [
+                  'maxProperties',
+                  'greater than, or equal to 0'
+                ]);
+              }
+            },
+            minProperties: function (report, schema) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4.2.1
+              if (Utils.whatIs(schema.minProperties) !== 'integer') {
+                report.addError('KEYWORD_TYPE_EXPECTED', [
+                  'minProperties',
+                  'integer'
+                ]);
+              } else if (schema.minProperties < 0) {
+                report.addError('KEYWORD_MUST_BE', [
+                  'minProperties',
+                  'greater than, or equal to 0'
+                ]);
+              }
+            },
+            required: function (report, schema) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4.3.1
+              if (Utils.whatIs(schema.required) !== 'array') {
+                report.addError('KEYWORD_TYPE_EXPECTED', [
+                  'required',
+                  'array'
+                ]);
+              } else if (schema.required.length === 0) {
+                report.addError('KEYWORD_MUST_BE', [
+                  'required',
+                  'an array with at least one element'
+                ]);
+              } else {
+                var idx = schema.required.length;
+                while (idx--) {
+                  if (typeof schema.required[idx] !== 'string') {
+                    report.addError('KEYWORD_VALUE_TYPE', [
+                      'required',
+                      'string'
+                    ]);
+                  }
+                }
+                if (Utils.isUniqueArray(schema.required) === false) {
+                  report.addError('KEYWORD_MUST_BE', [
+                    'required',
+                    'an array with unique items'
+                  ]);
+                }
+              }
+            },
+            additionalProperties: function (report, schema) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4.4.1
+              var type = Utils.whatIs(schema.additionalProperties);
+              if (type !== 'boolean' && type !== 'object') {
+                report.addError('KEYWORD_TYPE_EXPECTED', [
+                  'additionalProperties',
+                  [
+                    'boolean',
+                    'object'
+                  ]
+                ]);
+              } else if (type === 'object') {
+                report.path.push('additionalProperties');
+                exports.validateSchema.call(this, report, schema.additionalProperties);
+                report.path.pop();
+              }
+            },
+            properties: function (report, schema) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4.4.1
+              if (Utils.whatIs(schema.properties) !== 'object') {
+                report.addError('KEYWORD_TYPE_EXPECTED', [
+                  'properties',
+                  'object'
+                ]);
+                return;
+              }
+              var keys = Object.keys(schema.properties), idx = keys.length;
+              while (idx--) {
+                var key = keys[idx], val = schema.properties[key];
+                report.path.push('properties');
+                report.path.push(key);
+                exports.validateSchema.call(this, report, val);
+                report.path.pop();
+                report.path.pop();
+              }
+              // custom - strict mode
+              if (this.options.forceAdditional === true && schema.additionalProperties === undefined) {
+                report.addError('KEYWORD_UNDEFINED_STRICT', ['additionalProperties']);
+              }
+              // custome - assume defined false mode
+              if (this.options.assumeAdditional && schema.additionalProperties === undefined) {
+                schema.additionalProperties = false;
+              }
+              // custom - forceProperties
+              if (this.options.forceProperties === true && keys.length === 0) {
+                report.addError('CUSTOM_MODE_FORCE_PROPERTIES', ['properties']);
+              }
+            },
+            patternProperties: function (report, schema) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4.4.1
+              if (Utils.whatIs(schema.patternProperties) !== 'object') {
+                report.addError('KEYWORD_TYPE_EXPECTED', [
+                  'patternProperties',
+                  'object'
+                ]);
+                return;
+              }
+              var keys = Object.keys(schema.patternProperties), idx = keys.length;
+              while (idx--) {
+                var key = keys[idx], val = schema.patternProperties[key];
+                try {
+                  RegExp(key);
+                } catch (e) {
+                  report.addError('KEYWORD_PATTERN', [
+                    'patternProperties',
+                    key
+                  ]);
+                }
+                report.path.push('patternProperties');
+                report.path.push(key.toString());
+                exports.validateSchema.call(this, report, val);
+                report.path.pop();
+                report.path.pop();
+              }
+              // custom - forceProperties
+              if (this.options.forceProperties === true && keys.length === 0) {
+                report.addError('CUSTOM_MODE_FORCE_PROPERTIES', ['patternProperties']);
+              }
+            },
+            dependencies: function (report, schema) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4.5.1
+              if (Utils.whatIs(schema.dependencies) !== 'object') {
+                report.addError('KEYWORD_TYPE_EXPECTED', [
+                  'dependencies',
+                  'object'
+                ]);
+              } else {
+                var keys = Object.keys(schema.dependencies), idx = keys.length;
+                while (idx--) {
+                  var schemaKey = keys[idx], schemaDependency = schema.dependencies[schemaKey], type = Utils.whatIs(schemaDependency);
+                  if (type === 'object') {
+                    report.path.push('dependencies');
+                    report.path.push(schemaKey);
+                    exports.validateSchema.call(this, report, schemaDependency);
+                    report.path.pop();
+                    report.path.pop();
+                  } else if (type === 'array') {
+                    var idx2 = schemaDependency.length;
+                    if (idx2 === 0) {
+                      report.addError('KEYWORD_MUST_BE', [
+                        'dependencies',
+                        'not empty array'
+                      ]);
+                    }
+                    while (idx2--) {
+                      if (typeof schemaDependency[idx2] !== 'string') {
+                        report.addError('KEYWORD_VALUE_TYPE', [
+                          'dependensices',
+                          'string'
+                        ]);
+                      }
+                    }
+                    if (Utils.isUniqueArray(schemaDependency) === false) {
+                      report.addError('KEYWORD_MUST_BE', [
+                        'dependencies',
+                        'an array with unique items'
+                      ]);
+                    }
+                  } else {
+                    report.addError('KEYWORD_VALUE_TYPE', [
+                      'dependencies',
+                      'object or array'
+                    ]);
+                  }
+                }
+              }
+            },
+            enum: function (report, schema) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.1.1
+              if (Array.isArray(schema.enum) === false) {
+                report.addError('KEYWORD_TYPE_EXPECTED', [
+                  'enum',
+                  'array'
+                ]);
+              } else if (schema.enum.length === 0) {
+                report.addError('KEYWORD_MUST_BE', [
+                  'enum',
+                  'an array with at least one element'
+                ]);
+              } else if (Utils.isUniqueArray(schema.enum) === false) {
+                report.addError('KEYWORD_MUST_BE', [
+                  'enum',
+                  'an array with unique elements'
+                ]);
+              }
+            },
+            type: function (report, schema) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.2.1
+              var primitiveTypes = [
+                  'array',
+                  'boolean',
+                  'integer',
+                  'number',
+                  'null',
+                  'object',
+                  'string'
+                ], primitiveTypeStr = primitiveTypes.join(','), isArray = Array.isArray(schema.type);
+              if (isArray) {
+                var idx = schema.type.length;
+                while (idx--) {
+                  if (primitiveTypes.indexOf(schema.type[idx]) === -1) {
+                    report.addError('KEYWORD_TYPE_EXPECTED', [
+                      'type',
+                      primitiveTypeStr
+                    ]);
+                  }
+                }
+                if (Utils.isUniqueArray(schema.type) === false) {
+                  report.addError('KEYWORD_MUST_BE', [
+                    'type',
+                    'an object with unique properties'
+                  ]);
+                }
+              } else if (typeof schema.type === 'string') {
+                if (primitiveTypes.indexOf(schema.type) === -1) {
+                  report.addError('KEYWORD_TYPE_EXPECTED', [
+                    'type',
+                    primitiveTypeStr
+                  ]);
+                }
+              } else {
+                report.addError('KEYWORD_TYPE_EXPECTED', [
+                  'type',
+                  [
+                    'string',
+                    'array'
+                  ]
+                ]);
+              }
+              if (this.options.noEmptyStrings === true) {
+                if (schema.type === 'string' || isArray && schema.type.indexOf('string') !== -1) {
+                  if (schema.minLength === undefined && schema.enum === undefined && schema.format === undefined) {
+                    schema.minLength = 1;
+                  }
+                }
+              }
+              if (this.options.noEmptyArrays === true) {
+                if (schema.type === 'array' || isArray && schema.type.indexOf('array') !== -1) {
+                  if (schema.minItems === undefined) {
+                    schema.minItems = 1;
+                  }
+                }
+              }
+              if (this.options.forceProperties === true) {
+                if (schema.type === 'object' || isArray && schema.type.indexOf('object') !== -1) {
+                  if (schema.properties === undefined && schema.patternProperties === undefined) {
+                    report.addError('KEYWORD_UNDEFINED_STRICT', ['properties']);
+                  }
+                }
+              }
+              if (this.options.forceItems === true) {
+                if (schema.type === 'array' || isArray && schema.type.indexOf('array') !== -1) {
+                  if (schema.items === undefined) {
+                    report.addError('KEYWORD_UNDEFINED_STRICT', ['items']);
+                  }
+                }
+              }
+              if (this.options.forceMinItems === true) {
+                if (schema.type === 'array' || isArray && schema.type.indexOf('array') !== -1) {
+                  if (schema.minItems === undefined) {
+                    report.addError('KEYWORD_UNDEFINED_STRICT', ['minItems']);
+                  }
+                }
+              }
+              if (this.options.forceMaxItems === true) {
+                if (schema.type === 'array' || isArray && schema.type.indexOf('array') !== -1) {
+                  if (schema.maxItems === undefined) {
+                    report.addError('KEYWORD_UNDEFINED_STRICT', ['maxItems']);
+                  }
+                }
+              }
+              if (this.options.forceMinLength === true) {
+                if (schema.type === 'string' || isArray && schema.type.indexOf('string') !== -1) {
+                  if (schema.minLength === undefined && schema.format === undefined && schema.enum === undefined && schema.pattern === undefined) {
+                    report.addError('KEYWORD_UNDEFINED_STRICT', ['minLength']);
+                  }
+                }
+              }
+              if (this.options.forceMaxLength === true) {
+                if (schema.type === 'string' || isArray && schema.type.indexOf('string') !== -1) {
+                  if (schema.maxLength === undefined && schema.format === undefined && schema.enum === undefined && schema.pattern === undefined) {
+                    report.addError('KEYWORD_UNDEFINED_STRICT', ['maxLength']);
+                  }
+                }
+              }
+            },
+            allOf: function (report, schema) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.3.1
+              if (Array.isArray(schema.allOf) === false) {
+                report.addError('KEYWORD_TYPE_EXPECTED', [
+                  'allOf',
+                  'array'
+                ]);
+              } else if (schema.allOf.length === 0) {
+                report.addError('KEYWORD_MUST_BE', [
+                  'allOf',
+                  'an array with at least one element'
+                ]);
+              } else {
+                var idx = schema.allOf.length;
+                while (idx--) {
+                  report.path.push('allOf');
+                  report.path.push(idx.toString());
+                  exports.validateSchema.call(this, report, schema.allOf[idx]);
+                  report.path.pop();
+                  report.path.pop();
+                }
+              }
+            },
+            anyOf: function (report, schema) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.4.1
+              if (Array.isArray(schema.anyOf) === false) {
+                report.addError('KEYWORD_TYPE_EXPECTED', [
+                  'anyOf',
+                  'array'
+                ]);
+              } else if (schema.anyOf.length === 0) {
+                report.addError('KEYWORD_MUST_BE', [
+                  'anyOf',
+                  'an array with at least one element'
+                ]);
+              } else {
+                var idx = schema.anyOf.length;
+                while (idx--) {
+                  report.path.push('anyOf');
+                  report.path.push(idx.toString());
+                  exports.validateSchema.call(this, report, schema.anyOf[idx]);
+                  report.path.pop();
+                  report.path.pop();
+                }
+              }
+            },
+            oneOf: function (report, schema) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.5.1
+              if (Array.isArray(schema.oneOf) === false) {
+                report.addError('KEYWORD_TYPE_EXPECTED', [
+                  'oneOf',
+                  'array'
+                ]);
+              } else if (schema.oneOf.length === 0) {
+                report.addError('KEYWORD_MUST_BE', [
+                  'oneOf',
+                  'an array with at least one element'
+                ]);
+              } else {
+                var idx = schema.oneOf.length;
+                while (idx--) {
+                  report.path.push('oneOf');
+                  report.path.push(idx.toString());
+                  exports.validateSchema.call(this, report, schema.oneOf[idx]);
+                  report.path.pop();
+                  report.path.pop();
+                }
+              }
+            },
+            not: function (report, schema) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.6.1
+              if (Utils.whatIs(schema.not) !== 'object') {
+                report.addError('KEYWORD_TYPE_EXPECTED', [
+                  'not',
+                  'object'
+                ]);
+              } else {
+                report.path.push('not');
+                exports.validateSchema.call(this, report, schema.not);
+                report.path.pop();
+              }
+            },
+            definitions: function (report, schema) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.7.1
+              if (Utils.whatIs(schema.definitions) !== 'object') {
+                report.addError('KEYWORD_TYPE_EXPECTED', [
+                  'definitions',
+                  'object'
+                ]);
+              } else {
+                var keys = Object.keys(schema.definitions), idx = keys.length;
+                while (idx--) {
+                  var key = keys[idx], val = schema.definitions[key];
+                  report.path.push('definitions');
+                  report.path.push(key);
+                  exports.validateSchema.call(this, report, val);
+                  report.path.pop();
+                  report.path.pop();
+                }
+              }
+            },
+            format: function (report, schema) {
+              if (typeof schema.format !== 'string') {
+                report.addError('KEYWORD_TYPE_EXPECTED', [
+                  'format',
+                  'string'
+                ]);
+              } else {
+                if (FormatValidators[schema.format] === undefined && this.options.ignoreUnknownFormats !== true) {
+                  report.addError('UNKNOWN_FORMAT', [schema.format]);
+                }
+              }
+            },
+            id: function (report, schema) {
+              // http://json-schema.org/latest/json-schema-core.html#rfc.section.7.2
+              if (typeof schema.id !== 'string') {
+                report.addError('KEYWORD_TYPE_EXPECTED', [
+                  'id',
+                  'string'
+                ]);
+              }
+            },
+            title: function (report, schema) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.6.1
+              if (typeof schema.title !== 'string') {
+                report.addError('KEYWORD_TYPE_EXPECTED', [
+                  'title',
+                  'string'
+                ]);
+              }
+            },
+            description: function (report, schema) {
+              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.6.1
+              if (typeof schema.description !== 'string') {
+                report.addError('KEYWORD_TYPE_EXPECTED', [
+                  'description',
+                  'string'
+                ]);
+              }
+            },
+            'default': function () {
+            }
+          };
+        var validateArrayOfSchemas = function (report, arr) {
+          var idx = arr.length;
+          while (idx--) {
+            exports.validateSchema.call(this, report, arr[idx]);
+          }
+          return report.isValid();
+        };
+        exports.validateSchema = function (report, schema) {
+          report.commonErrorMessage = 'SCHEMA_VALIDATION_FAILED';
+          // if schema is an array, assume it's an array of schemas
+          if (Array.isArray(schema)) {
+            return validateArrayOfSchemas.call(this, report, schema);
+          }
+          // do not revalidate schema that has already been validated once
+          if (schema.__$validated) {
+            return true;
+          }
+          // if $schema is present, this schema should validate against that $schema
+          var hasParentSchema = schema.$schema && schema.id !== schema.$schema;
+          if (hasParentSchema) {
+            if (schema.__$schemaResolved && schema.__$schemaResolved !== schema) {
+              var subReport = new Report(report);
+              var valid = JsonValidation.validate.call(this, subReport, schema.__$schemaResolved, schema);
+              if (valid === false) {
+                report.addError('PARENT_SCHEMA_VALIDATION_FAILED', null, subReport);
+              }
+            } else {
+              if (this.options.ignoreUnresolvableReferences !== true) {
+                report.addError('REF_UNRESOLVED', [schema.$schema]);
+              }
+            }
+          }
+          if (this.options.noTypeless === true) {
+            // issue #36 - inherit type to anyOf, oneOf, allOf if noTypeless is defined
+            if (schema.type !== undefined) {
+              var schemas = [];
+              if (Array.isArray(schema.anyOf)) {
+                schemas = schemas.concat(schema.anyOf);
+              }
+              if (Array.isArray(schema.oneOf)) {
+                schemas = schemas.concat(schema.oneOf);
+              }
+              if (Array.isArray(schema.allOf)) {
+                schemas = schemas.concat(schema.allOf);
+              }
+              schemas.forEach(function (sch) {
+                if (!sch.type) {
+                  sch.type = schema.type;
+                }
+              });
+            }
+            // end issue #36
+            if (schema.enum === undefined && schema.type === undefined && schema.anyOf === undefined && schema.oneOf === undefined && schema.not === undefined && schema.$ref === undefined) {
+              report.addError('KEYWORD_UNDEFINED_STRICT', ['type']);
+            }
+          }
+          var keys = Object.keys(schema), idx = keys.length;
+          while (idx--) {
+            var key = keys[idx];
+            if (key.indexOf('__') === 0) {
+              continue;
+            }
+            if (SchemaValidators[key] !== undefined) {
+              SchemaValidators[key].call(this, report, schema);
+            } else if (!hasParentSchema) {
+              if (this.options.noExtraKeywords === true) {
+                report.addError('KEYWORD_UNEXPECTED', [key]);
+              }
+            }
+          }
+          if (this.options.pedanticCheck === true) {
+            if (schema.enum) {
+              // break recursion
+              var tmpSchema = Utils.clone(schema);
+              delete tmpSchema.enum;
+              delete tmpSchema.default;
+              report.path.push('enum');
+              idx = schema.enum.length;
+              while (idx--) {
+                report.path.push(idx.toString());
+                JsonValidation.validate.call(this, report, tmpSchema, schema.enum[idx]);
+                report.path.pop();
+              }
+              report.path.pop();
+            }
+            if (schema.default) {
+              report.path.push('default');
+              JsonValidation.validate.call(this, report, schema, schema.default);
+              report.path.pop();
+            }
+          }
+          var isValid = report.isValid();
+          if (isValid) {
+            schema.__$validated = true;
+          }
+          return isValid;
+        };
+      },
+      {
+        './FormatValidators': 205,
+        './JsonValidation': 206,
+        './Report': 208,
+        './Utils': 212
+      }
+    ],
+    212: [
+      function (require, module, exports) {
+        'use strict';
+        exports.isAbsoluteUri = function (uri) {
+          return /^https?:\/\//.test(uri);
+        };
+        exports.isRelativeUri = function (uri) {
+          // relative URIs that end with a hash sign, issue #56
+          return /.+#/.test(uri);
+        };
+        exports.whatIs = function (what) {
+          var to = typeof what;
+          if (to === 'object') {
+            if (what === null) {
+              return 'null';
+            }
+            if (Array.isArray(what)) {
+              return 'array';
+            }
+            return 'object';  // typeof what === 'object' && what === Object(what) && !Array.isArray(what);
+          }
+          if (to === 'number') {
+            if (Number.isFinite(what)) {
+              if (what % 1 === 0) {
+                return 'integer';
+              } else {
+                return 'number';
+              }
+            }
+            if (Number.isNaN(what)) {
+              return 'not-a-number';
+            }
+            return 'unknown-number';
+          }
+          return to;  // undefined, boolean, string, function
+        };
+        exports.areEqual = function areEqual(json1, json2, options) {
+          options = options || {};
+          var caseInsensitiveComparison = options.caseInsensitiveComparison || false;
+          // http://json-schema.org/latest/json-schema-core.html#rfc.section.3.6
+          // Two JSON values are said to be equal if and only if:
+          // both are nulls; or
+          // both are booleans, and have the same value; or
+          // both are strings, and have the same value; or
+          // both are numbers, and have the same mathematical value; or
+          if (json1 === json2) {
+            return true;
+          }
+          if (caseInsensitiveComparison === true && typeof json1 === 'string' && typeof json2 === 'string' && json1.toUpperCase() === json2.toUpperCase()) {
+            return true;
+          }
+          var i, len;
+          // both are arrays, and:
+          if (Array.isArray(json1) && Array.isArray(json2)) {
+            // have the same number of items; and
+            if (json1.length !== json2.length) {
+              return false;
+            }
+            // items at the same index are equal according to this definition; or
+            len = json1.length;
+            for (i = 0; i < len; i++) {
+              if (!areEqual(json1[i], json2[i], { caseInsensitiveComparison: caseInsensitiveComparison })) {
+                return false;
+              }
+            }
+            return true;
+          }
+          // both are objects, and:
+          if (exports.whatIs(json1) === 'object' && exports.whatIs(json2) === 'object') {
+            // have the same set of property names; and
+            var keys1 = Object.keys(json1);
+            var keys2 = Object.keys(json2);
+            if (!areEqual(keys1, keys2, { caseInsensitiveComparison: caseInsensitiveComparison })) {
+              return false;
+            }
+            // values for a same property name are equal according to this definition.
+            len = keys1.length;
+            for (i = 0; i < len; i++) {
+              if (!areEqual(json1[keys1[i]], json2[keys1[i]], { caseInsensitiveComparison: caseInsensitiveComparison })) {
+                return false;
+              }
+            }
+            return true;
+          }
+          return false;
+        };
+        exports.isUniqueArray = function (arr, indexes) {
+          var i, j, l = arr.length;
+          for (i = 0; i < l; i++) {
+            for (j = i + 1; j < l; j++) {
+              if (exports.areEqual(arr[i], arr[j])) {
+                if (indexes) {
+                  indexes.push(i, j);
+                }
+                return false;
+              }
+            }
+          }
+          return true;
+        };
+        exports.difference = function (bigSet, subSet) {
+          var arr = [], idx = bigSet.length;
+          while (idx--) {
+            if (subSet.indexOf(bigSet[idx]) === -1) {
+              arr.push(bigSet[idx]);
+            }
+          }
+          return arr;
+        };
+        // NOT a deep version of clone
+        exports.clone = function (src) {
+          if (typeof src === 'undefined') {
+            return void 0;
+          }
+          if (typeof src !== 'object' || src === null) {
+            return src;
+          }
+          var res, idx;
+          if (Array.isArray(src)) {
+            res = [];
+            idx = src.length;
+            while (idx--) {
+              res[idx] = src[idx];
+            }
+          } else {
+            res = {};
+            var keys = Object.keys(src);
+            idx = keys.length;
+            while (idx--) {
+              var key = keys[idx];
+              res[key] = src[key];
+            }
+          }
+          return res;
+        };
+        exports.cloneDeep = function (src) {
+          var visited = [], cloned = [];
+          function cloneDeep(src) {
+            if (typeof src !== 'object' || src === null) {
+              return src;
+            }
+            var res, idx, cidx;
+            cidx = visited.indexOf(src);
+            if (cidx !== -1) {
+              return cloned[cidx];
+            }
+            visited.push(src);
+            if (Array.isArray(src)) {
+              res = [];
+              cloned.push(res);
+              idx = src.length;
+              while (idx--) {
+                res[idx] = cloneDeep(src[idx]);
+              }
+            } else {
+              res = {};
+              cloned.push(res);
+              var keys = Object.keys(src);
+              idx = keys.length;
+              while (idx--) {
+                var key = keys[idx];
+                res[key] = cloneDeep(src[key]);
+              }
+            }
+            return res;
+          }
+          return cloneDeep(src);
+        };
+        /*
+  following function comes from punycode.js library
+  see: https://github.com/bestiejs/punycode.js
+*/
+        /*jshint -W016*/
+        /**
+ * Creates an array containing the numeric code points of each Unicode
+ * character in the string. While JavaScript uses UCS-2 internally,
+ * this function will convert a pair of surrogate halves (each of which
+ * UCS-2 exposes as separate characters) into a single code point,
+ * matching UTF-16.
+ * @see `punycode.ucs2.encode`
+ * @see <https://mathiasbynens.be/notes/javascript-encoding>
+ * @memberOf punycode.ucs2
+ * @name decode
+ * @param {String} string The Unicode input string (UCS-2).
+ * @returns {Array} The new array of code points.
+ */
+        exports.ucs2decode = function (string) {
+          var output = [], counter = 0, length = string.length, value, extra;
+          while (counter < length) {
+            value = string.charCodeAt(counter++);
+            if (value >= 55296 && value <= 56319 && counter < length) {
+              // high surrogate, and there is a next character
+              extra = string.charCodeAt(counter++);
+              if ((extra & 64512) == 56320) {
+                // low surrogate
+                output.push(((value & 1023) << 10) + (extra & 1023) + 65536);
+              } else {
+                // unmatched surrogate; only append this code unit, in case the next
+                // code unit is the high surrogate of a surrogate pair
+                output.push(value);
+                counter--;
+              }
+            } else {
+              output.push(value);
+            }
+          }
+          return output;
+        };  /*jshint +W016*/
+      },
+      {}
+    ],
+    213: [
+      function (require, module, exports) {
+        (function (process) {
+          'use strict';
+          require('./Polyfills');
+          var get = require('lodash.get');
+          var Report = require('./Report');
+          var FormatValidators = require('./FormatValidators');
+          var JsonValidation = require('./JsonValidation');
+          var SchemaCache = require('./SchemaCache');
+          var SchemaCompilation = require('./SchemaCompilation');
+          var SchemaValidation = require('./SchemaValidation');
+          var Utils = require('./Utils');
+          var Draft4Schema = require('./schemas/schema.json');
+          var Draft4HyperSchema = require('./schemas/hyper-schema.json');
+          /*
+    default options
+*/
+          var defaultOptions = {
+              asyncTimeout: 2000,
+              forceAdditional: false,
+              assumeAdditional: false,
+              enumCaseInsensitiveComparison: false,
+              forceItems: false,
+              forceMinItems: false,
+              forceMaxItems: false,
+              forceMinLength: false,
+              forceMaxLength: false,
+              forceProperties: false,
+              ignoreUnresolvableReferences: false,
+              noExtraKeywords: false,
+              noTypeless: false,
+              noEmptyStrings: false,
+              noEmptyArrays: false,
+              strictUris: false,
+              strictMode: false,
+              reportPathAsArray: false,
+              breakOnFirstError: true,
+              pedanticCheck: false,
+              ignoreUnknownFormats: false,
+              customValidator: null
+            };
+          function normalizeOptions(options) {
+            var normalized;
+            // options
+            if (typeof options === 'object') {
+              var keys = Object.keys(options), idx = keys.length, key;
+              // check that the options are correctly configured
+              while (idx--) {
+                key = keys[idx];
+                if (defaultOptions[key] === undefined) {
+                  throw new Error('Unexpected option passed to constructor: ' + key);
+                }
+              }
+              // copy the default options into passed options
+              keys = Object.keys(defaultOptions);
+              idx = keys.length;
+              while (idx--) {
+                key = keys[idx];
+                if (options[key] === undefined) {
+                  options[key] = Utils.clone(defaultOptions[key]);
+                }
+              }
+              normalized = options;
+            } else {
+              normalized = Utils.clone(defaultOptions);
+            }
+            if (normalized.strictMode === true) {
+              normalized.forceAdditional = true;
+              normalized.forceItems = true;
+              normalized.forceMaxLength = true;
+              normalized.forceProperties = true;
+              normalized.noExtraKeywords = true;
+              normalized.noTypeless = true;
+              normalized.noEmptyStrings = true;
+              normalized.noEmptyArrays = true;
+            }
+            return normalized;
+          }
+          /*
+    constructor
+*/
+          function ZSchema(options) {
+            this.cache = {};
+            this.referenceCache = [];
+            this.validateOptions = {};
+            this.options = normalizeOptions(options);
+            // Disable strict validation for the built-in schemas
+            var metaschemaOptions = normalizeOptions({});
+            this.setRemoteReference('http://json-schema.org/draft-04/schema', Draft4Schema, metaschemaOptions);
+            this.setRemoteReference('http://json-schema.org/draft-04/hyper-schema', Draft4HyperSchema, metaschemaOptions);
+          }
+          /*
+    instance methods
+*/
+          ZSchema.prototype.compileSchema = function (schema) {
+            var report = new Report(this.options);
+            schema = SchemaCache.getSchema.call(this, report, schema);
+            SchemaCompilation.compileSchema.call(this, report, schema);
+            this.lastReport = report;
+            return report.isValid();
+          };
+          ZSchema.prototype.validateSchema = function (schema) {
+            if (Array.isArray(schema) && schema.length === 0) {
+              throw new Error('.validateSchema was called with an empty array');
+            }
+            var report = new Report(this.options);
+            schema = SchemaCache.getSchema.call(this, report, schema);
+            var compiled = SchemaCompilation.compileSchema.call(this, report, schema);
+            if (compiled) {
+              SchemaValidation.validateSchema.call(this, report, schema);
+            }
+            this.lastReport = report;
+            return report.isValid();
+          };
+          ZSchema.prototype.validate = function (json, schema, options, callback) {
+            if (Utils.whatIs(options) === 'function') {
+              callback = options;
+              options = {};
+            }
+            if (!options) {
+              options = {};
+            }
+            this.validateOptions = options;
+            var whatIs = Utils.whatIs(schema);
+            if (whatIs !== 'string' && whatIs !== 'object') {
+              var e = new Error('Invalid .validate call - schema must be an string or object but ' + whatIs + ' was passed!');
+              if (callback) {
+                process.nextTick(function () {
+                  callback(e, false);
+                });
+                return;
+              }
+              throw e;
+            }
+            var foundError = false;
+            var report = new Report(this.options);
+            if (typeof schema === 'string') {
+              var schemaName = schema;
+              schema = SchemaCache.getSchema.call(this, report, schemaName);
+              if (!schema) {
+                throw new Error('Schema with id \'' + schemaName + '\' wasn\'t found in the validator cache!');
+              }
+            } else {
+              schema = SchemaCache.getSchema.call(this, report, schema);
+            }
+            var compiled = false;
+            if (!foundError) {
+              compiled = SchemaCompilation.compileSchema.call(this, report, schema);
+            }
+            if (!compiled) {
+              this.lastReport = report;
+              foundError = true;
+            }
+            var validated = false;
+            if (!foundError) {
+              validated = SchemaValidation.validateSchema.call(this, report, schema);
+            }
+            if (!validated) {
+              this.lastReport = report;
+              foundError = true;
+            }
+            if (options.schemaPath) {
+              report.rootSchema = schema;
+              schema = get(schema, options.schemaPath);
+              if (!schema) {
+                throw new Error('Schema path \'' + options.schemaPath + '\' wasn\'t found in the schema!');
+              }
+            }
+            if (!foundError) {
+              JsonValidation.validate.call(this, report, schema, json);
+            }
+            if (callback) {
+              report.processAsyncTasks(this.options.asyncTimeout, callback);
+              return;
+            } else if (report.asyncTasks.length > 0) {
+              throw new Error('This validation has async tasks and cannot be done in sync mode, please provide callback argument.');
+            }
+            // assign lastReport so errors are retrievable in sync mode
+            this.lastReport = report;
+            return report.isValid();
+          };
+          ZSchema.prototype.getLastError = function () {
+            if (this.lastReport.errors.length === 0) {
+              return null;
+            }
+            var e = new Error();
+            e.name = 'z-schema validation error';
+            e.message = this.lastReport.commonErrorMessage;
+            e.details = this.lastReport.errors;
+            return e;
+          };
+          ZSchema.prototype.getLastErrors = function () {
+            return this.lastReport && this.lastReport.errors.length > 0 ? this.lastReport.errors : undefined;
+          };
+          ZSchema.prototype.getMissingReferences = function (arr) {
+            arr = arr || this.lastReport.errors;
+            var res = [], idx = arr.length;
+            while (idx--) {
+              var error = arr[idx];
+              if (error.code === 'UNRESOLVABLE_REFERENCE') {
+                var reference = error.params[0];
+                if (res.indexOf(reference) === -1) {
+                  res.push(reference);
+                }
+              }
+              if (error.inner) {
+                res = res.concat(this.getMissingReferences(error.inner));
+              }
+            }
+            return res;
+          };
+          ZSchema.prototype.getMissingRemoteReferences = function () {
+            var missingReferences = this.getMissingReferences(), missingRemoteReferences = [], idx = missingReferences.length;
+            while (idx--) {
+              var remoteReference = SchemaCache.getRemotePath(missingReferences[idx]);
+              if (remoteReference && missingRemoteReferences.indexOf(remoteReference) === -1) {
+                missingRemoteReferences.push(remoteReference);
+              }
+            }
+            return missingRemoteReferences;
+          };
+          ZSchema.prototype.setRemoteReference = function (uri, schema, validationOptions) {
+            if (typeof schema === 'string') {
+              schema = JSON.parse(schema);
+            } else {
+              schema = Utils.cloneDeep(schema);
+            }
+            if (validationOptions) {
+              schema.__$validationOptions = normalizeOptions(validationOptions);
+            }
+            SchemaCache.cacheSchemaByUri.call(this, uri, schema);
+          };
+          ZSchema.prototype.getResolvedSchema = function (schema) {
+            var report = new Report(this.options);
+            schema = SchemaCache.getSchema.call(this, report, schema);
+            // clone before making any modifications
+            schema = Utils.cloneDeep(schema);
+            var visited = [];
+            // clean-up the schema and resolve references
+            var cleanup = function (schema) {
+              var key, typeOf = Utils.whatIs(schema);
+              if (typeOf !== 'object' && typeOf !== 'array') {
+                return;
+              }
+              if (schema.___$visited) {
+                return;
+              }
+              schema.___$visited = true;
+              visited.push(schema);
+              if (schema.$ref && schema.__$refResolved) {
+                var from = schema.__$refResolved;
+                var to = schema;
+                delete schema.$ref;
+                delete schema.__$refResolved;
+                for (key in from) {
+                  if (from.hasOwnProperty(key)) {
+                    to[key] = from[key];
+                  }
+                }
+              }
+              for (key in schema) {
+                if (schema.hasOwnProperty(key)) {
+                  if (key.indexOf('__$') === 0) {
+                    delete schema[key];
+                  } else {
+                    cleanup(schema[key]);
+                  }
+                }
+              }
+            };
+            cleanup(schema);
+            visited.forEach(function (s) {
+              delete s.___$visited;
+            });
+            this.lastReport = report;
+            if (report.isValid()) {
+              return schema;
+            } else {
+              throw this.getLastError();
+            }
+          };
+          ZSchema.prototype.setSchemaReader = function (schemaReader) {
+            return ZSchema.setSchemaReader(schemaReader);
+          };
+          ZSchema.prototype.getSchemaReader = function () {
+            return ZSchema.schemaReader;
+          };
+          /*
+    static methods
+*/
+          ZSchema.setSchemaReader = function (schemaReader) {
+            ZSchema.schemaReader = schemaReader;
+          };
+          ZSchema.registerFormat = function (formatName, validatorFunction) {
+            FormatValidators[formatName] = validatorFunction;
+          };
+          ZSchema.unregisterFormat = function (formatName) {
+            delete FormatValidators[formatName];
+          };
+          ZSchema.getRegisteredFormats = function () {
+            return Object.keys(FormatValidators);
+          };
+          ZSchema.getDefaultOptions = function () {
+            return Utils.cloneDeep(defaultOptions);
+          };
+          module.exports = ZSchema;
+        }.call(this, require('_process')));
+      },
+      {
+        './FormatValidators': 205,
+        './JsonValidation': 206,
+        './Polyfills': 207,
+        './Report': 208,
+        './SchemaCache': 209,
+        './SchemaCompilation': 210,
+        './SchemaValidation': 211,
+        './Utils': 212,
+        './schemas/hyper-schema.json': 214,
+        './schemas/schema.json': 215,
+        '_process': 161,
+        'lodash.get': 72
+      }
+    ],
+    214: [
+      function (require, module, exports) {
+        module.exports = {
+          '$schema': 'http://json-schema.org/draft-04/hyper-schema#',
+          'id': 'http://json-schema.org/draft-04/hyper-schema#',
+          'title': 'JSON Hyper-Schema',
+          'allOf': [{ '$ref': 'http://json-schema.org/draft-04/schema#' }],
+          'properties': {
+            'additionalItems': {
+              'anyOf': [
+                { 'type': 'boolean' },
+                { '$ref': '#' }
+              ]
+            },
+            'additionalProperties': {
+              'anyOf': [
+                { 'type': 'boolean' },
+                { '$ref': '#' }
+              ]
+            },
+            'dependencies': {
+              'additionalProperties': {
+                'anyOf': [
+                  { '$ref': '#' },
+                  { 'type': 'array' }
+                ]
+              }
+            },
+            'items': {
+              'anyOf': [
+                { '$ref': '#' },
+                { '$ref': '#/definitions/schemaArray' }
+              ]
+            },
+            'definitions': { 'additionalProperties': { '$ref': '#' } },
+            'patternProperties': { 'additionalProperties': { '$ref': '#' } },
+            'properties': { 'additionalProperties': { '$ref': '#' } },
+            'allOf': { '$ref': '#/definitions/schemaArray' },
+            'anyOf': { '$ref': '#/definitions/schemaArray' },
+            'oneOf': { '$ref': '#/definitions/schemaArray' },
+            'not': { '$ref': '#' },
+            'links': {
+              'type': 'array',
+              'items': { '$ref': '#/definitions/linkDescription' }
+            },
+            'fragmentResolution': { 'type': 'string' },
+            'media': {
+              'type': 'object',
+              'properties': {
+                'type': {
+                  'description': 'A media type, as described in RFC 2046',
+                  'type': 'string'
+                },
+                'binaryEncoding': {
+                  'description': 'A content encoding scheme, as described in RFC 2045',
+                  'type': 'string'
+                }
+              }
+            },
+            'pathStart': {
+              'description': 'Instances\' URIs must start with this value for this schema to apply to them',
+              'type': 'string',
+              'format': 'uri'
+            }
+          },
+          'definitions': {
+            'schemaArray': {
+              'type': 'array',
+              'items': { '$ref': '#' }
+            },
+            'linkDescription': {
+              'title': 'Link Description Object',
+              'type': 'object',
+              'required': [
+                'href',
+                'rel'
+              ],
+              'properties': {
+                'href': {
+                  'description': 'a URI template, as defined by RFC 6570, with the addition of the $, ( and ) characters for pre-processing',
+                  'type': 'string'
+                },
+                'rel': {
+                  'description': 'relation to the target resource of the link',
+                  'type': 'string'
+                },
+                'title': {
+                  'description': 'a title for the link',
+                  'type': 'string'
+                },
+                'targetSchema': {
+                  'description': 'JSON Schema describing the link target',
+                  '$ref': '#'
+                },
+                'mediaType': {
+                  'description': 'media type (as defined by RFC 2046) describing the link target',
+                  'type': 'string'
+                },
+                'method': {
+                  'description': 'method for requesting the target of the link (e.g. for HTTP this might be "GET" or "DELETE")',
+                  'type': 'string'
+                },
+                'encType': {
+                  'description': 'The media type in which to submit data along with the request',
+                  'type': 'string',
+                  'default': 'application/json'
+                },
+                'schema': {
+                  'description': 'Schema describing the data to submit along with the request',
+                  '$ref': '#'
+                }
+              }
+            }
+          }
+        };
+      },
+      {}
+    ],
+    215: [
+      function (require, module, exports) {
+        module.exports = {
+          'id': 'http://json-schema.org/draft-04/schema#',
+          '$schema': 'http://json-schema.org/draft-04/schema#',
+          'description': 'Core schema meta-schema',
+          'definitions': {
+            'schemaArray': {
+              'type': 'array',
+              'minItems': 1,
+              'items': { '$ref': '#' }
+            },
+            'positiveInteger': {
+              'type': 'integer',
+              'minimum': 0
+            },
+            'positiveIntegerDefault0': {
+              'allOf': [
+                { '$ref': '#/definitions/positiveInteger' },
+                { 'default': 0 }
+              ]
+            },
+            'simpleTypes': {
+              'enum': [
+                'array',
+                'boolean',
+                'integer',
+                'null',
+                'number',
+                'object',
+                'string'
+              ]
+            },
+            'stringArray': {
+              'type': 'array',
+              'items': { 'type': 'string' },
+              'minItems': 1,
+              'uniqueItems': true
+            }
+          },
+          'type': 'object',
+          'properties': {
+            'id': {
+              'type': 'string',
+              'format': 'uri'
+            },
+            '$schema': {
+              'type': 'string',
+              'format': 'uri'
+            },
+            'title': { 'type': 'string' },
+            'description': { 'type': 'string' },
+            'default': {},
+            'multipleOf': {
+              'type': 'number',
+              'minimum': 0,
+              'exclusiveMinimum': true
+            },
+            'maximum': { 'type': 'number' },
+            'exclusiveMaximum': {
+              'type': 'boolean',
+              'default': false
+            },
+            'minimum': { 'type': 'number' },
+            'exclusiveMinimum': {
+              'type': 'boolean',
+              'default': false
+            },
+            'maxLength': { '$ref': '#/definitions/positiveInteger' },
+            'minLength': { '$ref': '#/definitions/positiveIntegerDefault0' },
+            'pattern': {
+              'type': 'string',
+              'format': 'regex'
+            },
+            'additionalItems': {
+              'anyOf': [
+                { 'type': 'boolean' },
+                { '$ref': '#' }
+              ],
+              'default': {}
+            },
+            'items': {
+              'anyOf': [
+                { '$ref': '#' },
+                { '$ref': '#/definitions/schemaArray' }
+              ],
+              'default': {}
+            },
+            'maxItems': { '$ref': '#/definitions/positiveInteger' },
+            'minItems': { '$ref': '#/definitions/positiveIntegerDefault0' },
+            'uniqueItems': {
+              'type': 'boolean',
+              'default': false
+            },
+            'maxProperties': { '$ref': '#/definitions/positiveInteger' },
+            'minProperties': { '$ref': '#/definitions/positiveIntegerDefault0' },
+            'required': { '$ref': '#/definitions/stringArray' },
+            'additionalProperties': {
+              'anyOf': [
+                { 'type': 'boolean' },
+                { '$ref': '#' }
+              ],
+              'default': {}
+            },
+            'definitions': {
+              'type': 'object',
+              'additionalProperties': { '$ref': '#' },
+              'default': {}
+            },
+            'properties': {
+              'type': 'object',
+              'additionalProperties': { '$ref': '#' },
+              'default': {}
+            },
+            'patternProperties': {
+              'type': 'object',
+              'additionalProperties': { '$ref': '#' },
+              'default': {}
+            },
+            'dependencies': {
+              'type': 'object',
+              'additionalProperties': {
+                'anyOf': [
+                  { '$ref': '#' },
+                  { '$ref': '#/definitions/stringArray' }
+                ]
+              }
+            },
+            'enum': {
+              'type': 'array',
+              'minItems': 1,
+              'uniqueItems': true
+            },
+            'type': {
+              'anyOf': [
+                { '$ref': '#/definitions/simpleTypes' },
+                {
+                  'type': 'array',
+                  'items': { '$ref': '#/definitions/simpleTypes' },
+                  'minItems': 1,
+                  'uniqueItems': true
+                }
+              ]
+            },
+            'format': { 'type': 'string' },
+            'allOf': { '$ref': '#/definitions/schemaArray' },
+            'anyOf': { '$ref': '#/definitions/schemaArray' },
+            'oneOf': { '$ref': '#/definitions/schemaArray' },
+            'not': { '$ref': '#' }
+          },
+          'dependencies': {
+            'exclusiveMaximum': ['maximum'],
+            'exclusiveMinimum': ['minimum']
+          },
+          'default': {}
+        };
+      },
+      {}
+    ],
+    216: [
       function (require, module, exports) {
         module.exports = {
           'title': 'A JSON Schema for Swagger 2.0 API.',
@@ -57614,7 +59085,7 @@ and limitations under the License.
       },
       {}
     ],
-    209: [
+    217: [
       function (require, module, exports) {
         var nextTick = require('process/browser.js').nextTick;
         var apply = Function.prototype.apply;
@@ -57683,9 +59154,9 @@ and limitations under the License.
           delete immediateIds[id];
         };
       },
-      { 'process/browser.js': 166 }
+      { 'process/browser.js': 161 }
     ],
-    210: [
+    218: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -58320,11 +59791,11 @@ and limitations under the License.
         }
       },
       {
-        'punycode': 167,
-        'querystring': 170
+        'punycode': 162,
+        'querystring': 165
       }
     ],
-    211: [
+    219: [
       function (require, module, exports) {
         (function (global) {
           'use strict';
@@ -58393,7 +59864,7 @@ and limitations under the License.
       },
       {}
     ],
-    212: [
+    220: [
       function (require, module, exports) {
         if (typeof Object.create === 'function') {
           // implementation from standard node.js 'util' module
@@ -58422,7 +59893,7 @@ and limitations under the License.
       },
       {}
     ],
-    213: [
+    221: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -58436,7 +59907,7 @@ and limitations under the License.
       },
       {}
     ],
-    214: [
+    222: [
       function (require, module, exports) {
         (function (process, global) {
           // Copyright Joyent, Inc. and other Node contributors.
@@ -58995,12 +60466,12 @@ and limitations under the License.
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
       },
       {
-        './support/isBuffer': 213,
-        '_process': 166,
-        'inherits': 212
+        './support/isBuffer': 221,
+        '_process': 161,
+        'inherits': 220
       }
     ],
-    215: [
+    223: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -59026,6 +60497,8 @@ and limitations under the License.
         var _isMACAddress2 = _interopRequireDefault(_isMACAddress);
         var _isIP = require('./lib/isIP');
         var _isIP2 = _interopRequireDefault(_isIP);
+        var _isIPRange = require('./lib/isIPRange');
+        var _isIPRange2 = _interopRequireDefault(_isIPRange);
         var _isFQDN = require('./lib/isFQDN');
         var _isFQDN2 = _interopRequireDefault(_isFQDN);
         var _isBoolean = require('./lib/isBoolean');
@@ -59036,6 +60509,8 @@ and limitations under the License.
         var _isAlphanumeric2 = _interopRequireDefault(_isAlphanumeric);
         var _isNumeric = require('./lib/isNumeric');
         var _isNumeric2 = _interopRequireDefault(_isNumeric);
+        var _isPort = require('./lib/isPort');
+        var _isPort2 = _interopRequireDefault(_isPort);
         var _isLowercase = require('./lib/isLowercase');
         var _isLowercase2 = _interopRequireDefault(_isLowercase);
         var _isUppercase = require('./lib/isUppercase');
@@ -59070,6 +60545,8 @@ and limitations under the License.
         var _isMD2 = _interopRequireDefault(_isMD);
         var _isHash = require('./lib/isHash');
         var _isHash2 = _interopRequireDefault(_isHash);
+        var _isJWT = require('./lib/isJWT');
+        var _isJWT2 = _interopRequireDefault(_isJWT);
         var _isJSON = require('./lib/isJSON');
         var _isJSON2 = _interopRequireDefault(_isJSON);
         var _isEmpty = require('./lib/isEmpty');
@@ -59102,10 +60579,20 @@ and limitations under the License.
         var _isCurrency2 = _interopRequireDefault(_isCurrency);
         var _isISO = require('./lib/isISO8601');
         var _isISO2 = _interopRequireDefault(_isISO);
+        var _isRFC = require('./lib/isRFC3339');
+        var _isRFC2 = _interopRequireDefault(_isRFC);
+        var _isISO31661Alpha = require('./lib/isISO31661Alpha2');
+        var _isISO31661Alpha2 = _interopRequireDefault(_isISO31661Alpha);
+        var _isISO31661Alpha3 = require('./lib/isISO31661Alpha3');
+        var _isISO31661Alpha4 = _interopRequireDefault(_isISO31661Alpha3);
         var _isBase = require('./lib/isBase64');
         var _isBase2 = _interopRequireDefault(_isBase);
         var _isDataURI = require('./lib/isDataURI');
         var _isDataURI2 = _interopRequireDefault(_isDataURI);
+        var _isMagnetURI = require('./lib/isMagnetURI');
+        var _isMagnetURI2 = _interopRequireDefault(_isMagnetURI);
+        var _isMimeType = require('./lib/isMimeType');
+        var _isMimeType2 = _interopRequireDefault(_isMimeType);
         var _isLatLong = require('./lib/isLatLong');
         var _isLatLong2 = _interopRequireDefault(_isLatLong);
         var _isPostalCode = require('./lib/isPostalCode');
@@ -59135,7 +60622,7 @@ and limitations under the License.
         function _interopRequireDefault(obj) {
           return obj && obj.__esModule ? obj : { default: obj };
         }
-        var version = '8.2.0';
+        var version = '10.7.1';
         var validator = {
             version: version,
             toDate: _toDate2.default,
@@ -59149,11 +60636,13 @@ and limitations under the License.
             isURL: _isURL2.default,
             isMACAddress: _isMACAddress2.default,
             isIP: _isIP2.default,
+            isIPRange: _isIPRange2.default,
             isFQDN: _isFQDN2.default,
             isBoolean: _isBoolean2.default,
             isAlpha: _isAlpha2.default,
             isAlphanumeric: _isAlphanumeric2.default,
             isNumeric: _isNumeric2.default,
+            isPort: _isPort2.default,
             isLowercase: _isLowercase2.default,
             isUppercase: _isUppercase2.default,
             isAscii: _isAscii2.default,
@@ -59171,6 +60660,7 @@ and limitations under the License.
             isISRC: _isISRC2.default,
             isMD5: _isMD2.default,
             isHash: _isHash2.default,
+            isJWT: _isJWT2.default,
             isJSON: _isJSON2.default,
             isEmpty: _isEmpty2.default,
             isLength: _isLength2.default,
@@ -59186,10 +60676,16 @@ and limitations under the License.
             isISSN: _isISSN2.default,
             isMobilePhone: _isMobilePhone2.default,
             isPostalCode: _isPostalCode2.default,
+            isPostalCodeLocales: _isPostalCode.locales,
             isCurrency: _isCurrency2.default,
             isISO8601: _isISO2.default,
+            isRFC3339: _isRFC2.default,
+            isISO31661Alpha2: _isISO31661Alpha2.default,
+            isISO31661Alpha3: _isISO31661Alpha4.default,
             isBase64: _isBase2.default,
             isDataURI: _isDataURI2.default,
+            isMagnetURI: _isMagnetURI2.default,
+            isMimeType: _isMimeType2.default,
             isLatLong: _isLatLong2.default,
             ltrim: _ltrim2.default,
             rtrim: _rtrim2.default,
@@ -59207,81 +60703,91 @@ and limitations under the License.
         module.exports = exports['default'];
       },
       {
-        './lib/blacklist': 217,
-        './lib/contains': 218,
-        './lib/equals': 219,
-        './lib/escape': 220,
-        './lib/isAfter': 221,
-        './lib/isAlpha': 222,
-        './lib/isAlphanumeric': 223,
-        './lib/isAscii': 224,
-        './lib/isBase64': 225,
-        './lib/isBefore': 226,
-        './lib/isBoolean': 227,
-        './lib/isByteLength': 228,
-        './lib/isCreditCard': 229,
-        './lib/isCurrency': 230,
-        './lib/isDataURI': 231,
-        './lib/isDecimal': 232,
-        './lib/isDivisibleBy': 233,
-        './lib/isEmail': 234,
-        './lib/isEmpty': 235,
-        './lib/isFQDN': 236,
-        './lib/isFloat': 237,
-        './lib/isFullWidth': 238,
-        './lib/isHalfWidth': 239,
-        './lib/isHash': 240,
-        './lib/isHexColor': 241,
-        './lib/isHexadecimal': 242,
-        './lib/isIP': 243,
-        './lib/isISBN': 244,
-        './lib/isISIN': 245,
-        './lib/isISO8601': 246,
-        './lib/isISRC': 247,
-        './lib/isISSN': 248,
-        './lib/isIn': 249,
-        './lib/isInt': 250,
-        './lib/isJSON': 251,
-        './lib/isLatLong': 252,
-        './lib/isLength': 253,
-        './lib/isLowercase': 254,
-        './lib/isMACAddress': 255,
-        './lib/isMD5': 256,
-        './lib/isMobilePhone': 257,
-        './lib/isMongoId': 258,
-        './lib/isMultibyte': 259,
-        './lib/isNumeric': 260,
-        './lib/isPostalCode': 261,
-        './lib/isSurrogatePair': 262,
-        './lib/isURL': 263,
-        './lib/isUUID': 264,
-        './lib/isUppercase': 265,
-        './lib/isVariableWidth': 266,
-        './lib/isWhitelisted': 267,
-        './lib/ltrim': 268,
-        './lib/matches': 269,
-        './lib/normalizeEmail': 270,
-        './lib/rtrim': 271,
-        './lib/stripLow': 272,
-        './lib/toBoolean': 273,
-        './lib/toDate': 274,
-        './lib/toFloat': 275,
-        './lib/toInt': 276,
-        './lib/trim': 277,
-        './lib/unescape': 278,
-        './lib/util/toString': 281,
-        './lib/whitelist': 282
+        './lib/blacklist': 225,
+        './lib/contains': 226,
+        './lib/equals': 227,
+        './lib/escape': 228,
+        './lib/isAfter': 229,
+        './lib/isAlpha': 230,
+        './lib/isAlphanumeric': 231,
+        './lib/isAscii': 232,
+        './lib/isBase64': 233,
+        './lib/isBefore': 234,
+        './lib/isBoolean': 235,
+        './lib/isByteLength': 236,
+        './lib/isCreditCard': 237,
+        './lib/isCurrency': 238,
+        './lib/isDataURI': 239,
+        './lib/isDecimal': 240,
+        './lib/isDivisibleBy': 241,
+        './lib/isEmail': 242,
+        './lib/isEmpty': 243,
+        './lib/isFQDN': 244,
+        './lib/isFloat': 245,
+        './lib/isFullWidth': 246,
+        './lib/isHalfWidth': 247,
+        './lib/isHash': 248,
+        './lib/isHexColor': 249,
+        './lib/isHexadecimal': 250,
+        './lib/isIP': 251,
+        './lib/isIPRange': 252,
+        './lib/isISBN': 253,
+        './lib/isISIN': 254,
+        './lib/isISO31661Alpha2': 255,
+        './lib/isISO31661Alpha3': 256,
+        './lib/isISO8601': 257,
+        './lib/isISRC': 258,
+        './lib/isISSN': 259,
+        './lib/isIn': 260,
+        './lib/isInt': 261,
+        './lib/isJSON': 262,
+        './lib/isJWT': 263,
+        './lib/isLatLong': 264,
+        './lib/isLength': 265,
+        './lib/isLowercase': 266,
+        './lib/isMACAddress': 267,
+        './lib/isMD5': 268,
+        './lib/isMagnetURI': 269,
+        './lib/isMimeType': 270,
+        './lib/isMobilePhone': 271,
+        './lib/isMongoId': 272,
+        './lib/isMultibyte': 273,
+        './lib/isNumeric': 274,
+        './lib/isPort': 275,
+        './lib/isPostalCode': 276,
+        './lib/isRFC3339': 277,
+        './lib/isSurrogatePair': 278,
+        './lib/isURL': 279,
+        './lib/isUUID': 280,
+        './lib/isUppercase': 281,
+        './lib/isVariableWidth': 282,
+        './lib/isWhitelisted': 283,
+        './lib/ltrim': 284,
+        './lib/matches': 285,
+        './lib/normalizeEmail': 286,
+        './lib/rtrim': 287,
+        './lib/stripLow': 288,
+        './lib/toBoolean': 289,
+        './lib/toDate': 290,
+        './lib/toFloat': 291,
+        './lib/toInt': 292,
+        './lib/trim': 293,
+        './lib/unescape': 294,
+        './lib/util/toString': 298,
+        './lib/whitelist': 299
       }
     ],
-    216: [
+    224: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
         var alpha = exports.alpha = {
             'en-US': /^[A-Z]+$/i,
+            'bg-BG': /^[А-Я]+$/i,
             'cs-CZ': /^[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]+$/i,
             'da-DK': /^[A-ZÆØÅ]+$/i,
             'de-DE': /^[A-ZÄÖÜß]+$/i,
+            'el-GR': /^[Α-ω]+$/i,
             'es-ES': /^[A-ZÁÉÍÑÓÚÜ]+$/i,
             'fr-FR': /^[A-ZÀÂÆÇÉÈÊËÏÎÔŒÙÛÜŸ]+$/i,
             'it-IT': /^[A-ZÀÉÈÌÎÓÒÙ]+$/i,
@@ -59292,18 +60798,22 @@ and limitations under the License.
             'pl-PL': /^[A-ZĄĆĘŚŁŃÓŻŹ]+$/i,
             'pt-PT': /^[A-ZÃÁÀÂÇÉÊÍÕÓÔÚÜ]+$/i,
             'ru-RU': /^[А-ЯЁ]+$/i,
+            'sk-SK': /^[A-ZÁČĎÉÍŇÓŠŤÚÝŽĹŔĽÄÔ]+$/i,
             'sr-RS@latin': /^[A-ZČĆŽŠĐ]+$/i,
             'sr-RS': /^[А-ЯЂЈЉЊЋЏ]+$/i,
             'sv-SE': /^[A-ZÅÄÖ]+$/i,
             'tr-TR': /^[A-ZÇĞİıÖŞÜ]+$/i,
-            'uk-UA': /^[А-ЩЬЮЯЄIЇҐ]+$/i,
+            'uk-UA': /^[А-ЩЬЮЯЄIЇҐі]+$/i,
+            'ku-IQ': /^[ئابپتجچحخدرڕزژسشعغفڤقکگلڵمنوۆھەیێيطؤثآإأكضصةظذ]+$/i,
             ar: /^[ءآأؤإئابةتثجحخدذرزسشصضطظعغفقكلمنهوىيًٌٍَُِّْٰ]+$/
           };
         var alphanumeric = exports.alphanumeric = {
             'en-US': /^[0-9A-Z]+$/i,
+            'bg-BG': /^[0-9А-Я]+$/i,
             'cs-CZ': /^[0-9A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]+$/i,
             'da-DK': /^[0-9A-ZÆØÅ]+$/i,
             'de-DE': /^[0-9A-ZÄÖÜß]+$/i,
+            'el-GR': /^[0-9Α-ω]+$/i,
             'es-ES': /^[0-9A-ZÁÉÍÑÓÚÜ]+$/i,
             'fr-FR': /^[0-9A-ZÀÂÆÇÉÈÊËÏÎÔŒÙÛÜŸ]+$/i,
             'it-IT': /^[0-9A-ZÀÉÈÌÎÓÒÙ]+$/i,
@@ -59314,12 +60824,18 @@ and limitations under the License.
             'pl-PL': /^[0-9A-ZĄĆĘŚŁŃÓŻŹ]+$/i,
             'pt-PT': /^[0-9A-ZÃÁÀÂÇÉÊÍÕÓÔÚÜ]+$/i,
             'ru-RU': /^[0-9А-ЯЁ]+$/i,
+            'sk-SK': /^[0-9A-ZÁČĎÉÍŇÓŠŤÚÝŽĹŔĽÄÔ]+$/i,
             'sr-RS@latin': /^[0-9A-ZČĆŽŠĐ]+$/i,
             'sr-RS': /^[0-9А-ЯЂЈЉЊЋЏ]+$/i,
             'sv-SE': /^[0-9A-ZÅÄÖ]+$/i,
             'tr-TR': /^[0-9A-ZÇĞİıÖŞÜ]+$/i,
-            'uk-UA': /^[0-9А-ЩЬЮЯЄIЇҐ]+$/i,
+            'uk-UA': /^[0-9А-ЩЬЮЯЄIЇҐі]+$/i,
+            'ku-IQ': /^[٠١٢٣٤٥٦٧٨٩0-9ئابپتجچحخدرڕزژسشعغفڤقکگلڵمنوۆھەیێيطؤثآإأكضصةظذ]+$/i,
             ar: /^[٠١٢٣٤٥٦٧٨٩0-9ءآأؤإئابةتثجحخدذرزسشصضطظعغفقكلمنهوىيًٌٍَُِّْٰ]+$/
+          };
+        var decimal = exports.decimal = {
+            'en-US': '.',
+            ar: '\u066b'
           };
         var englishLocales = exports.englishLocales = [
             'AU',
@@ -59334,9 +60850,8 @@ and limitations under the License.
           locale = 'en-' + englishLocales[i];
           alpha[locale] = alpha['en-US'];
           alphanumeric[locale] = alphanumeric['en-US'];
+          decimal[locale] = decimal['en-US'];
         }
-        alpha['pt-BR'] = alpha['pt-PT'];
-        alphanumeric['pt-BR'] = alphanumeric['pt-PT'];
         // Source: http://www.localeplanet.com/java/
         var arabicLocales = exports.arabicLocales = [
             'AE',
@@ -59361,11 +60876,50 @@ and limitations under the License.
           _locale = 'ar-' + arabicLocales[_i];
           alpha[_locale] = alpha.ar;
           alphanumeric[_locale] = alphanumeric.ar;
+          decimal[_locale] = decimal.ar;
         }
+        // Source: https://en.wikipedia.org/wiki/Decimal_mark
+        var dotDecimal = exports.dotDecimal = [];
+        var commaDecimal = exports.commaDecimal = [
+            'bg-BG',
+            'cs-CZ',
+            'da-DK',
+            'de-DE',
+            'el-GR',
+            'es-ES',
+            'fr-FR',
+            'it-IT',
+            'ku-IQ',
+            'hu-HU',
+            'nb-NO',
+            'nn-NO',
+            'nl-NL',
+            'pl-PL',
+            'pt-PT',
+            'ru-RU',
+            'sr-RS@latin',
+            'sr-RS',
+            'sv-SE',
+            'tr-TR',
+            'uk-UA'
+          ];
+        for (var _i2 = 0; _i2 < dotDecimal.length; _i2++) {
+          decimal[dotDecimal[_i2]] = decimal['en-US'];
+        }
+        for (var _i3 = 0; _i3 < commaDecimal.length; _i3++) {
+          decimal[commaDecimal[_i3]] = ',';
+        }
+        alpha['pt-BR'] = alpha['pt-PT'];
+        alphanumeric['pt-BR'] = alphanumeric['pt-PT'];
+        decimal['pt-BR'] = decimal['pt-PT'];
+        // see #862
+        alpha['pl-Pl'] = alpha['pl-PL'];
+        alphanumeric['pl-Pl'] = alphanumeric['pl-PL'];
+        decimal['pl-Pl'] = decimal['pl-PL'];
       },
       {}
     ],
-    217: [
+    225: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -59381,9 +60935,9 @@ and limitations under the License.
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    218: [
+    226: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -59402,11 +60956,11 @@ and limitations under the License.
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 279,
-        './util/toString': 281
+        './util/assertString': 295,
+        './util/toString': 298
       }
     ],
-    219: [
+    227: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -59422,9 +60976,9 @@ and limitations under the License.
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    220: [
+    228: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -59440,9 +60994,9 @@ and limitations under the License.
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    221: [
+    229: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -59464,11 +61018,11 @@ and limitations under the License.
         module.exports = exports['default'];
       },
       {
-        './toDate': 274,
-        './util/assertString': 279
+        './toDate': 290,
+        './util/assertString': 295
       }
     ],
-    222: [
+    230: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -59490,11 +61044,11 @@ and limitations under the License.
         module.exports = exports['default'];
       },
       {
-        './alpha': 216,
-        './util/assertString': 279
+        './alpha': 224,
+        './util/assertString': 295
       }
     ],
-    223: [
+    231: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -59516,11 +61070,11 @@ and limitations under the License.
         module.exports = exports['default'];
       },
       {
-        './alpha': 216,
-        './util/assertString': 279
+        './alpha': 224,
+        './util/assertString': 295
       }
     ],
-    224: [
+    232: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -59539,9 +61093,9 @@ and limitations under the License.
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    225: [
+    233: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -59563,9 +61117,9 @@ and limitations under the License.
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    226: [
+    234: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -59587,11 +61141,11 @@ and limitations under the License.
         module.exports = exports['default'];
       },
       {
-        './toDate': 274,
-        './util/assertString': 279
+        './toDate': 290,
+        './util/assertString': 295
       }
     ],
-    227: [
+    235: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -59612,9 +61166,9 @@ and limitations under the License.
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    228: [
+    236: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -59652,9 +61206,9 @@ and limitations under the License.
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    229: [
+    237: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -59665,7 +61219,7 @@ and limitations under the License.
           return obj && obj.__esModule ? obj : { default: obj };
         }
         /* eslint-disable max-len */
-        var creditCard = /^(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|(222[1-9]|22[3-9][0-9]|2[3-6][0-9]{2}|27[01][0-9]|2720)[0-9]{12}|6(?:011|5[0-9][0-9])[0-9]{12}|3[47][0-9]{13}|3(?:0[0-5]|[68][0-9])[0-9]{11}|(?:2131|1800|35\d{3})\d{11}|62[0-9]{14})$/;
+        var creditCard = /^(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|(222[1-9]|22[3-9][0-9]|2[3-6][0-9]{2}|27[01][0-9]|2720)[0-9]{12}|6(?:011|5[0-9][0-9])[0-9]{12}|3[47][0-9]{13}|3(?:0[0-5]|[68][0-9])[0-9]{11}|(?:2131|1800|35\d{3})\d{11}|6[27][0-9]{14})$/;
         /* eslint-enable max-len */
         function isCreditCard(str) {
           (0, _assertString2.default)(str);
@@ -59696,9 +61250,9 @@ and limitations under the License.
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    230: [
+    238: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -59779,11 +61333,11 @@ and limitations under the License.
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 279,
-        './util/merge': 280
+        './util/assertString': 295,
+        './util/merge': 297
       }
     ],
-    231: [
+    239: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -59793,36 +61347,88 @@ and limitations under the License.
         function _interopRequireDefault(obj) {
           return obj && obj.__esModule ? obj : { default: obj };
         }
-        var dataURI = /^\s*data:([a-z]+\/[a-z0-9\-\+]+(;[a-z\-]+=[a-z0-9\-]+)?)?(;base64)?,[a-z0-9!\$&',\(\)\*\+,;=\-\._~:@\/\?%\s]*\s*$/i;
-        // eslint-disable-line max-len
+        var validMediaType = /^[a-z]+\/[a-z0-9\-\+]+$/i;
+        var validAttribute = /^[a-z\-]+=[a-z0-9\-]+$/i;
+        var validData = /^[a-z0-9!\$&'\(\)\*\+,;=\-\._~:@\/\?%\s]*$/i;
         function isDataURI(str) {
           (0, _assertString2.default)(str);
-          return dataURI.test(str);
+          var data = str.split(',');
+          if (data.length < 2) {
+            return false;
+          }
+          var attributes = data.shift().trim().split(';');
+          var schemeAndMediaType = attributes.shift();
+          if (schemeAndMediaType.substr(0, 5) !== 'data:') {
+            return false;
+          }
+          var mediaType = schemeAndMediaType.substr(5);
+          if (mediaType !== '' && !validMediaType.test(mediaType)) {
+            return false;
+          }
+          for (var i = 0; i < attributes.length; i++) {
+            if (i === attributes.length - 1 && attributes[i].toLowerCase() === 'base64') {
+            } else if (!validAttribute.test(attributes[i])) {
+              return false;
+            }
+          }
+          for (var _i = 0; _i < data.length; _i++) {
+            if (!validData.test(data[_i])) {
+              return false;
+            }
+          }
+          return true;
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    232: [
+    240: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
         exports.default = isDecimal;
+        var _merge = require('./util/merge');
+        var _merge2 = _interopRequireDefault(_merge);
         var _assertString = require('./util/assertString');
         var _assertString2 = _interopRequireDefault(_assertString);
+        var _includes = require('./util/includes');
+        var _includes2 = _interopRequireDefault(_includes);
+        var _alpha = require('./alpha');
         function _interopRequireDefault(obj) {
           return obj && obj.__esModule ? obj : { default: obj };
         }
-        var decimal = /^[-+]?([0-9]+|\.[0-9]+|[0-9]+\.[0-9]+)$/;
-        function isDecimal(str) {
+        function decimalRegExp(options) {
+          var regExp = new RegExp('^[-+]?([0-9]+)?(\\' + _alpha.decimal[options.locale] + '[0-9]{' + options.decimal_digits + '})' + (options.force_decimal ? '' : '?') + '$');
+          return regExp;
+        }
+        var default_decimal_options = {
+            force_decimal: false,
+            decimal_digits: '1,',
+            locale: 'en-US'
+          };
+        var blacklist = [
+            '',
+            '-',
+            '+'
+          ];
+        function isDecimal(str, options) {
           (0, _assertString2.default)(str);
-          return str !== '' && decimal.test(str);
+          options = (0, _merge2.default)(options, default_decimal_options);
+          if (options.locale in _alpha.decimal) {
+            return !(0, _includes2.default)(blacklist, str.replace(/ /g, '')) && decimalRegExp(options).test(str);
+          }
+          throw new Error('Invalid locale \'' + options.locale + '\'');
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      {
+        './alpha': 224,
+        './util/assertString': 295,
+        './util/includes': 296,
+        './util/merge': 297
+      }
     ],
-    233: [
+    241: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -59841,11 +61447,11 @@ and limitations under the License.
         module.exports = exports['default'];
       },
       {
-        './toFloat': 275,
-        './util/assertString': 279
+        './toFloat': 291,
+        './util/assertString': 295
       }
     ],
-    234: [
+    242: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -59858,6 +61464,8 @@ and limitations under the License.
         var _isByteLength2 = _interopRequireDefault(_isByteLength);
         var _isFQDN = require('./isFQDN');
         var _isFQDN2 = _interopRequireDefault(_isFQDN);
+        var _isIP = require('./isIP');
+        var _isIP2 = _interopRequireDefault(_isIP);
         function _interopRequireDefault(obj) {
           return obj && obj.__esModule ? obj : { default: obj };
         }
@@ -59871,6 +61479,7 @@ and limitations under the License.
         /* eslint-disable no-control-regex */
         var displayName = /^[a-z\d!#\$%&'\*\+\-\/=\?\^_`{\|}~\.\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]+[a-z\d!#\$%&'\*\+\-\/=\?\^_`{\|}~\,\.\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF\s]*<(.+)>$/i;
         var emailUserPart = /^[a-z\d!#\$%&'\*\+\-\/=\?\^_`{\|}~]+$/i;
+        var gmailUserPart = /^[a-z\d]+$/;
         var quotedEmailUser = /^([\s\x01-\x08\x0b\x0c\x0e-\x1f\x7f\x21\x23-\x5b\x5d-\x7e]|(\\[\x01-\x09\x0b\x0c\x0d-\x7f]))*$/i;
         var emailUserUtf8Part = /^[a-z\d!#\$%&'\*\+\-\/=\?\^_`{\|}~\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]+$/i;
         var quotedEmailUserUtf8 = /^([\s\x01-\x08\x0b\x0c\x0e-\x1f\x7f\x21\x23-\x5b\x5d-\x7e\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]|(\\[\x01-\x09\x0b\x0c\x0d-\x7f\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]))*$/i;
@@ -59891,14 +61500,47 @@ and limitations under the License.
           var domain = parts.pop();
           var user = parts.join('@');
           var lower_domain = domain.toLowerCase();
-          if (lower_domain === 'gmail.com' || lower_domain === 'googlemail.com') {
-            user = user.replace(/\./g, '').toLowerCase();
+          if (options.domain_specific_validation && (lower_domain === 'gmail.com' || lower_domain === 'googlemail.com')) {
+            /*
+      Previously we removed dots for gmail addresses before validating.
+      This was removed because it allows `multiple..dots@gmail.com`
+      to be reported as valid, but it is not.
+      Gmail only normalizes single dots, removing them from here is pointless,
+      should be done in normalizeEmail
+    */
+            user = user.toLowerCase();
+            // Removing sub-address from username before gmail validation
+            var username = user.split('+')[0];
+            // Dots are not included in gmail length restriction
+            if (!(0, _isByteLength2.default)(username.replace('.', ''), {
+                min: 6,
+                max: 30
+              })) {
+              return false;
+            }
+            var _user_parts = username.split('.');
+            for (var i = 0; i < _user_parts.length; i++) {
+              if (!gmailUserPart.test(_user_parts[i])) {
+                return false;
+              }
+            }
           }
           if (!(0, _isByteLength2.default)(user, { max: 64 }) || !(0, _isByteLength2.default)(domain, { max: 254 })) {
             return false;
           }
           if (!(0, _isFQDN2.default)(domain, { require_tld: options.require_tld })) {
-            return false;
+            if (!options.allow_ip_domain) {
+              return false;
+            }
+            if (!(0, _isIP2.default)(domain)) {
+              if (!domain.startsWith('[') || !domain.endsWith(']')) {
+                return false;
+              }
+              var noBracketdomain = domain.substr(1, domain.length - 2);
+              if (noBracketdomain.length === 0 || !(0, _isIP2.default)(noBracketdomain)) {
+                return false;
+              }
+            }
           }
           if (user[0] === '"') {
             user = user.slice(1, user.length - 1);
@@ -59906,8 +61548,8 @@ and limitations under the License.
           }
           var pattern = options.allow_utf8_local_part ? emailUserUtf8Part : emailUserPart;
           var user_parts = user.split('.');
-          for (var i = 0; i < user_parts.length; i++) {
-            if (!pattern.test(user_parts[i])) {
+          for (var _i = 0; _i < user_parts.length; _i++) {
+            if (!pattern.test(user_parts[_i])) {
               return false;
             }
           }
@@ -59916,35 +61558,43 @@ and limitations under the License.
         module.exports = exports['default'];
       },
       {
-        './isByteLength': 228,
-        './isFQDN': 236,
-        './util/assertString': 279,
-        './util/merge': 280
+        './isByteLength': 236,
+        './isFQDN': 244,
+        './isIP': 251,
+        './util/assertString': 295,
+        './util/merge': 297
       }
     ],
-    235: [
+    243: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
         exports.default = isEmpty;
         var _assertString = require('./util/assertString');
         var _assertString2 = _interopRequireDefault(_assertString);
+        var _merge = require('./util/merge');
+        var _merge2 = _interopRequireDefault(_merge);
         function _interopRequireDefault(obj) {
           return obj && obj.__esModule ? obj : { default: obj };
         }
-        function isEmpty(str) {
+        var default_is_empty_options = { ignore_whitespace: false };
+        function isEmpty(str, options) {
           (0, _assertString2.default)(str);
-          return str.length === 0;
+          options = (0, _merge2.default)(options, default_is_empty_options);
+          return (options.ignore_whitespace ? str.trim().length : str.length) === 0;
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      {
+        './util/assertString': 295,
+        './util/merge': 297
+      }
     ],
-    236: [
+    244: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
-        exports.default = isFDQN;
+        exports.default = isFQDN;
         var _assertString = require('./util/assertString');
         var _assertString2 = _interopRequireDefault(_assertString);
         var _merge = require('./util/merge');
@@ -59957,7 +61607,7 @@ and limitations under the License.
             allow_underscores: false,
             allow_trailing_dot: false
           };
-        function isFDQN(str, options) {
+        function isFQDN(str, options) {
           (0, _assertString2.default)(str);
           options = (0, _merge2.default)(options, default_fqdn_options);
           /* Remove the optional trailing dot before checking validity */
@@ -59965,6 +61615,11 @@ and limitations under the License.
             str = str.substring(0, str.length - 1);
           }
           var parts = str.split('.');
+          for (var i = 0; i < parts.length; i++) {
+            if (parts[i].length > 63) {
+              return false;
+            }
+          }
           if (options.require_tld) {
             var tld = parts.pop();
             if (!parts.length || !/^([a-z\u00a1-\uffff]{2,}|xn[a-z0-9-]{2,})$/i.test(tld)) {
@@ -59975,8 +61630,8 @@ and limitations under the License.
               return false;
             }
           }
-          for (var part, i = 0; i < parts.length; i++) {
-            part = parts[i];
+          for (var part, _i = 0; _i < parts.length; _i++) {
+            part = parts[_i];
             if (options.allow_underscores) {
               part = part.replace(/_/g, '');
             }
@@ -59996,34 +61651,39 @@ and limitations under the License.
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 279,
-        './util/merge': 280
+        './util/assertString': 295,
+        './util/merge': 297
       }
     ],
-    237: [
+    245: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
         exports.default = isFloat;
         var _assertString = require('./util/assertString');
         var _assertString2 = _interopRequireDefault(_assertString);
+        var _alpha = require('./alpha');
         function _interopRequireDefault(obj) {
           return obj && obj.__esModule ? obj : { default: obj };
         }
-        var float = /^(?:[-+])?(?:[0-9]+)?(?:\.[0-9]*)?(?:[eE][\+\-]?(?:[0-9]+))?$/;
         function isFloat(str, options) {
           (0, _assertString2.default)(str);
           options = options || {};
-          if (str === '' || str === '.') {
+          var float = new RegExp('^(?:[-+])?(?:[0-9]+)?(?:\\' + (options.locale ? _alpha.decimal[options.locale] : '.') + '[0-9]*)?(?:[eE][\\+\\-]?(?:[0-9]+))?$');
+          if (str === '' || str === '.' || str === '-' || str === '+') {
             return false;
           }
-          return float.test(str) && (!options.hasOwnProperty('min') || str >= options.min) && (!options.hasOwnProperty('max') || str <= options.max) && (!options.hasOwnProperty('lt') || str < options.lt) && (!options.hasOwnProperty('gt') || str > options.gt);
+          var value = parseFloat(str.replace(',', '.'));
+          return float.test(str) && (!options.hasOwnProperty('min') || value >= options.min) && (!options.hasOwnProperty('max') || value <= options.max) && (!options.hasOwnProperty('lt') || value < options.lt) && (!options.hasOwnProperty('gt') || value > options.gt);
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      {
+        './alpha': 224,
+        './util/assertString': 295
+      }
     ],
-    238: [
+    246: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -60040,9 +61700,9 @@ and limitations under the License.
           return fullWidth.test(str);
         }
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    239: [
+    247: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -60059,9 +61719,9 @@ and limitations under the License.
           return halfWidth.test(str);
         }
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    240: [
+    248: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -60093,9 +61753,9 @@ and limitations under the License.
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    241: [
+    249: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -60112,9 +61772,9 @@ and limitations under the License.
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    242: [
+    250: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -60131,9 +61791,9 @@ and limitations under the License.
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    243: [
+    251: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -60206,9 +61866,45 @@ and limitations under the License.
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    244: [
+    252: [
+      function (require, module, exports) {
+        'use strict';
+        Object.defineProperty(exports, '__esModule', { value: true });
+        exports.default = isIPRange;
+        var _assertString = require('./util/assertString');
+        var _assertString2 = _interopRequireDefault(_assertString);
+        var _isIP = require('./isIP');
+        var _isIP2 = _interopRequireDefault(_isIP);
+        function _interopRequireDefault(obj) {
+          return obj && obj.__esModule ? obj : { default: obj };
+        }
+        var subnetMaybe = /^\d{1,2}$/;
+        function isIPRange(str) {
+          (0, _assertString2.default)(str);
+          var parts = str.split('/');
+          // parts[0] -> ip, parts[1] -> subnet
+          if (parts.length !== 2) {
+            return false;
+          }
+          if (!subnetMaybe.test(parts[1])) {
+            return false;
+          }
+          // Disallow preceding 0 i.e. 01, 02, ...
+          if (parts[1].length > 1 && parts[1].startsWith('0')) {
+            return false;
+          }
+          return (0, _isIP2.default)(parts[0], 4) && parts[1] <= 32 && parts[1] >= 0;
+        }
+        module.exports = exports['default'];
+      },
+      {
+        './isIP': 251,
+        './util/assertString': 295
+      }
+    ],
+    253: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -60264,9 +61960,9 @@ and limitations under the License.
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    245: [
+    254: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -60308,9 +62004,559 @@ and limitations under the License.
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    246: [
+    255: [
+      function (require, module, exports) {
+        'use strict';
+        Object.defineProperty(exports, '__esModule', { value: true });
+        exports.default = isISO31661Alpha2;
+        var _assertString = require('./util/assertString');
+        var _assertString2 = _interopRequireDefault(_assertString);
+        var _includes = require('./util/includes');
+        var _includes2 = _interopRequireDefault(_includes);
+        function _interopRequireDefault(obj) {
+          return obj && obj.__esModule ? obj : { default: obj };
+        }
+        // from https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
+        var validISO31661Alpha2CountriesCodes = [
+            'AD',
+            'AE',
+            'AF',
+            'AG',
+            'AI',
+            'AL',
+            'AM',
+            'AO',
+            'AQ',
+            'AR',
+            'AS',
+            'AT',
+            'AU',
+            'AW',
+            'AX',
+            'AZ',
+            'BA',
+            'BB',
+            'BD',
+            'BE',
+            'BF',
+            'BG',
+            'BH',
+            'BI',
+            'BJ',
+            'BL',
+            'BM',
+            'BN',
+            'BO',
+            'BQ',
+            'BR',
+            'BS',
+            'BT',
+            'BV',
+            'BW',
+            'BY',
+            'BZ',
+            'CA',
+            'CC',
+            'CD',
+            'CF',
+            'CG',
+            'CH',
+            'CI',
+            'CK',
+            'CL',
+            'CM',
+            'CN',
+            'CO',
+            'CR',
+            'CU',
+            'CV',
+            'CW',
+            'CX',
+            'CY',
+            'CZ',
+            'DE',
+            'DJ',
+            'DK',
+            'DM',
+            'DO',
+            'DZ',
+            'EC',
+            'EE',
+            'EG',
+            'EH',
+            'ER',
+            'ES',
+            'ET',
+            'FI',
+            'FJ',
+            'FK',
+            'FM',
+            'FO',
+            'FR',
+            'GA',
+            'GB',
+            'GD',
+            'GE',
+            'GF',
+            'GG',
+            'GH',
+            'GI',
+            'GL',
+            'GM',
+            'GN',
+            'GP',
+            'GQ',
+            'GR',
+            'GS',
+            'GT',
+            'GU',
+            'GW',
+            'GY',
+            'HK',
+            'HM',
+            'HN',
+            'HR',
+            'HT',
+            'HU',
+            'ID',
+            'IE',
+            'IL',
+            'IM',
+            'IN',
+            'IO',
+            'IQ',
+            'IR',
+            'IS',
+            'IT',
+            'JE',
+            'JM',
+            'JO',
+            'JP',
+            'KE',
+            'KG',
+            'KH',
+            'KI',
+            'KM',
+            'KN',
+            'KP',
+            'KR',
+            'KW',
+            'KY',
+            'KZ',
+            'LA',
+            'LB',
+            'LC',
+            'LI',
+            'LK',
+            'LR',
+            'LS',
+            'LT',
+            'LU',
+            'LV',
+            'LY',
+            'MA',
+            'MC',
+            'MD',
+            'ME',
+            'MF',
+            'MG',
+            'MH',
+            'MK',
+            'ML',
+            'MM',
+            'MN',
+            'MO',
+            'MP',
+            'MQ',
+            'MR',
+            'MS',
+            'MT',
+            'MU',
+            'MV',
+            'MW',
+            'MX',
+            'MY',
+            'MZ',
+            'NA',
+            'NC',
+            'NE',
+            'NF',
+            'NG',
+            'NI',
+            'NL',
+            'NO',
+            'NP',
+            'NR',
+            'NU',
+            'NZ',
+            'OM',
+            'PA',
+            'PE',
+            'PF',
+            'PG',
+            'PH',
+            'PK',
+            'PL',
+            'PM',
+            'PN',
+            'PR',
+            'PS',
+            'PT',
+            'PW',
+            'PY',
+            'QA',
+            'RE',
+            'RO',
+            'RS',
+            'RU',
+            'RW',
+            'SA',
+            'SB',
+            'SC',
+            'SD',
+            'SE',
+            'SG',
+            'SH',
+            'SI',
+            'SJ',
+            'SK',
+            'SL',
+            'SM',
+            'SN',
+            'SO',
+            'SR',
+            'SS',
+            'ST',
+            'SV',
+            'SX',
+            'SY',
+            'SZ',
+            'TC',
+            'TD',
+            'TF',
+            'TG',
+            'TH',
+            'TJ',
+            'TK',
+            'TL',
+            'TM',
+            'TN',
+            'TO',
+            'TR',
+            'TT',
+            'TV',
+            'TW',
+            'TZ',
+            'UA',
+            'UG',
+            'UM',
+            'US',
+            'UY',
+            'UZ',
+            'VA',
+            'VC',
+            'VE',
+            'VG',
+            'VI',
+            'VN',
+            'VU',
+            'WF',
+            'WS',
+            'YE',
+            'YT',
+            'ZA',
+            'ZM',
+            'ZW'
+          ];
+        function isISO31661Alpha2(str) {
+          (0, _assertString2.default)(str);
+          return (0, _includes2.default)(validISO31661Alpha2CountriesCodes, str.toUpperCase());
+        }
+        module.exports = exports['default'];
+      },
+      {
+        './util/assertString': 295,
+        './util/includes': 296
+      }
+    ],
+    256: [
+      function (require, module, exports) {
+        'use strict';
+        Object.defineProperty(exports, '__esModule', { value: true });
+        exports.default = isISO31661Alpha3;
+        var _assertString = require('./util/assertString');
+        var _assertString2 = _interopRequireDefault(_assertString);
+        var _includes = require('./util/includes');
+        var _includes2 = _interopRequireDefault(_includes);
+        function _interopRequireDefault(obj) {
+          return obj && obj.__esModule ? obj : { default: obj };
+        }
+        // from https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3
+        var validISO31661Alpha3CountriesCodes = [
+            'AFG',
+            'ALA',
+            'ALB',
+            'DZA',
+            'ASM',
+            'AND',
+            'AGO',
+            'AIA',
+            'ATA',
+            'ATG',
+            'ARG',
+            'ARM',
+            'ABW',
+            'AUS',
+            'AUT',
+            'AZE',
+            'BHS',
+            'BHR',
+            'BGD',
+            'BRB',
+            'BLR',
+            'BEL',
+            'BLZ',
+            'BEN',
+            'BMU',
+            'BTN',
+            'BOL',
+            'BES',
+            'BIH',
+            'BWA',
+            'BVT',
+            'BRA',
+            'IOT',
+            'BRN',
+            'BGR',
+            'BFA',
+            'BDI',
+            'KHM',
+            'CMR',
+            'CAN',
+            'CPV',
+            'CYM',
+            'CAF',
+            'TCD',
+            'CHL',
+            'CHN',
+            'CXR',
+            'CCK',
+            'COL',
+            'COM',
+            'COG',
+            'COD',
+            'COK',
+            'CRI',
+            'CIV',
+            'HRV',
+            'CUB',
+            'CUW',
+            'CYP',
+            'CZE',
+            'DNK',
+            'DJI',
+            'DMA',
+            'DOM',
+            'ECU',
+            'EGY',
+            'SLV',
+            'GNQ',
+            'ERI',
+            'EST',
+            'ETH',
+            'FLK',
+            'FRO',
+            'FJI',
+            'FIN',
+            'FRA',
+            'GUF',
+            'PYF',
+            'ATF',
+            'GAB',
+            'GMB',
+            'GEO',
+            'DEU',
+            'GHA',
+            'GIB',
+            'GRC',
+            'GRL',
+            'GRD',
+            'GLP',
+            'GUM',
+            'GTM',
+            'GGY',
+            'GIN',
+            'GNB',
+            'GUY',
+            'HTI',
+            'HMD',
+            'VAT',
+            'HND',
+            'HKG',
+            'HUN',
+            'ISL',
+            'IND',
+            'IDN',
+            'IRN',
+            'IRQ',
+            'IRL',
+            'IMN',
+            'ISR',
+            'ITA',
+            'JAM',
+            'JPN',
+            'JEY',
+            'JOR',
+            'KAZ',
+            'KEN',
+            'KIR',
+            'PRK',
+            'KOR',
+            'KWT',
+            'KGZ',
+            'LAO',
+            'LVA',
+            'LBN',
+            'LSO',
+            'LBR',
+            'LBY',
+            'LIE',
+            'LTU',
+            'LUX',
+            'MAC',
+            'MKD',
+            'MDG',
+            'MWI',
+            'MYS',
+            'MDV',
+            'MLI',
+            'MLT',
+            'MHL',
+            'MTQ',
+            'MRT',
+            'MUS',
+            'MYT',
+            'MEX',
+            'FSM',
+            'MDA',
+            'MCO',
+            'MNG',
+            'MNE',
+            'MSR',
+            'MAR',
+            'MOZ',
+            'MMR',
+            'NAM',
+            'NRU',
+            'NPL',
+            'NLD',
+            'NCL',
+            'NZL',
+            'NIC',
+            'NER',
+            'NGA',
+            'NIU',
+            'NFK',
+            'MNP',
+            'NOR',
+            'OMN',
+            'PAK',
+            'PLW',
+            'PSE',
+            'PAN',
+            'PNG',
+            'PRY',
+            'PER',
+            'PHL',
+            'PCN',
+            'POL',
+            'PRT',
+            'PRI',
+            'QAT',
+            'REU',
+            'ROU',
+            'RUS',
+            'RWA',
+            'BLM',
+            'SHN',
+            'KNA',
+            'LCA',
+            'MAF',
+            'SPM',
+            'VCT',
+            'WSM',
+            'SMR',
+            'STP',
+            'SAU',
+            'SEN',
+            'SRB',
+            'SYC',
+            'SLE',
+            'SGP',
+            'SXM',
+            'SVK',
+            'SVN',
+            'SLB',
+            'SOM',
+            'ZAF',
+            'SGS',
+            'SSD',
+            'ESP',
+            'LKA',
+            'SDN',
+            'SUR',
+            'SJM',
+            'SWZ',
+            'SWE',
+            'CHE',
+            'SYR',
+            'TWN',
+            'TJK',
+            'TZA',
+            'THA',
+            'TLS',
+            'TGO',
+            'TKL',
+            'TON',
+            'TTO',
+            'TUN',
+            'TUR',
+            'TKM',
+            'TCA',
+            'TUV',
+            'UGA',
+            'UKR',
+            'ARE',
+            'GBR',
+            'USA',
+            'UMI',
+            'URY',
+            'UZB',
+            'VUT',
+            'VEN',
+            'VNM',
+            'VGB',
+            'VIR',
+            'WLF',
+            'ESH',
+            'YEM',
+            'ZMB',
+            'ZWE'
+          ];
+        function isISO31661Alpha3(str) {
+          (0, _assertString2.default)(str);
+          return (0, _includes2.default)(validISO31661Alpha3CountriesCodes, str.toUpperCase());
+        }
+        module.exports = exports['default'];
+      },
+      {
+        './util/assertString': 295,
+        './util/includes': 296
+      }
+    ],
+    257: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -60330,9 +62576,9 @@ and limitations under the License.
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    247: [
+    258: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -60350,9 +62596,9 @@ and limitations under the License.
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    248: [
+    259: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -60372,40 +62618,19 @@ and limitations under the License.
           if (!testIssn.test(str)) {
             return false;
           }
-          var issnDigits = str.replace('-', '');
-          var position = 8;
+          var digits = str.replace('-', '').toUpperCase();
           var checksum = 0;
-          var _iteratorNormalCompletion = true;
-          var _didIteratorError = false;
-          var _iteratorError = undefined;
-          try {
-            for (var _iterator = issnDigits[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-              var digit = _step.value;
-              var digitValue = digit.toUpperCase() === 'X' ? 10 : +digit;
-              checksum += digitValue * position;
-              --position;
-            }
-          } catch (err) {
-            _didIteratorError = true;
-            _iteratorError = err;
-          } finally {
-            try {
-              if (!_iteratorNormalCompletion && _iterator.return) {
-                _iterator.return();
-              }
-            } finally {
-              if (_didIteratorError) {
-                throw _iteratorError;
-              }
-            }
+          for (var i = 0; i < digits.length; i++) {
+            var digit = digits[i];
+            checksum += (digit === 'X' ? 10 : +digit) * (8 - i);
           }
           return checksum % 11 === 0;
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    249: [
+    260: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -60448,11 +62673,11 @@ and limitations under the License.
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 279,
-        './util/toString': 281
+        './util/assertString': 295,
+        './util/toString': 298
       }
     ],
-    250: [
+    261: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -60479,9 +62704,9 @@ and limitations under the License.
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    251: [
+    262: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -60512,9 +62737,28 @@ and limitations under the License.
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    252: [
+    263: [
+      function (require, module, exports) {
+        'use strict';
+        Object.defineProperty(exports, '__esModule', { value: true });
+        exports.default = isJWT;
+        var _assertString = require('./util/assertString');
+        var _assertString2 = _interopRequireDefault(_assertString);
+        function _interopRequireDefault(obj) {
+          return obj && obj.__esModule ? obj : { default: obj };
+        }
+        var jwt = /^[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]+$/;
+        function isJWT(str) {
+          (0, _assertString2.default)(str);
+          return jwt.test(str);
+        }
+        module.exports = exports['default'];
+      },
+      { './util/assertString': 295 }
+    ],
+    264: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -60534,9 +62778,9 @@ and limitations under the License.
         var long = /^\s?[+-]?(180(\.0+)?|1[0-7]\d(\.\d+)?|\d{1,2}(\.\d+)?)\)?$/;
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    253: [
+    265: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -60575,9 +62819,9 @@ and limitations under the License.
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    254: [
+    266: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -60593,9 +62837,9 @@ and limitations under the License.
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    255: [
+    267: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -60606,15 +62850,19 @@ and limitations under the License.
           return obj && obj.__esModule ? obj : { default: obj };
         }
         var macAddress = /^([0-9a-fA-F][0-9a-fA-F]:){5}([0-9a-fA-F][0-9a-fA-F])$/;
-        function isMACAddress(str) {
+        var macAddressNoColons = /^([0-9a-fA-F]){12}$/;
+        function isMACAddress(str, options) {
           (0, _assertString2.default)(str);
+          if (options && options.no_colons) {
+            return macAddressNoColons.test(str);
+          }
           return macAddress.test(str);
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    256: [
+    268: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -60631,9 +62879,79 @@ and limitations under the License.
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    257: [
+    269: [
+      function (require, module, exports) {
+        'use strict';
+        Object.defineProperty(exports, '__esModule', { value: true });
+        exports.default = isMagnetURI;
+        var _assertString = require('./util/assertString');
+        var _assertString2 = _interopRequireDefault(_assertString);
+        function _interopRequireDefault(obj) {
+          return obj && obj.__esModule ? obj : { default: obj };
+        }
+        var magnetURI = /^magnet:\?xt=urn:[a-z0-9]+:[a-z0-9]{32,40}&dn=.+&tr=.+$/i;
+        function isMagnetURI(url) {
+          (0, _assertString2.default)(url);
+          return magnetURI.test(url.trim());
+        }
+        module.exports = exports['default'];
+      },
+      { './util/assertString': 295 }
+    ],
+    270: [
+      function (require, module, exports) {
+        'use strict';
+        Object.defineProperty(exports, '__esModule', { value: true });
+        exports.default = isMimeType;
+        var _assertString = require('./util/assertString');
+        var _assertString2 = _interopRequireDefault(_assertString);
+        function _interopRequireDefault(obj) {
+          return obj && obj.__esModule ? obj : { default: obj };
+        }
+        /*
+  Checks if the provided string matches to a correct Media type format (MIME type)
+
+  This function only checks is the string format follows the
+  etablished rules by the according RFC specifications.
+  This function supports 'charset' in textual media types
+  (https://tools.ietf.org/html/rfc6657).
+
+  This function does not check against all the media types listed
+  by the IANA (https://www.iana.org/assignments/media-types/media-types.xhtml)
+  because of lightness purposes : it would require to include
+  all these MIME types in this librairy, which would weigh it
+  significantly. This kind of effort maybe is not worth for the use that
+  this function has in this entire librairy.
+
+  More informations in the RFC specifications :
+  - https://tools.ietf.org/html/rfc2045
+  - https://tools.ietf.org/html/rfc2046
+  - https://tools.ietf.org/html/rfc7231#section-3.1.1.1
+  - https://tools.ietf.org/html/rfc7231#section-3.1.1.5
+*/
+        // Match simple MIME types
+        // NB :
+        //   Subtype length must not exceed 100 characters.
+        //   This rule does not comply to the RFC specs (what is the max length ?).
+        var mimeTypeSimple = /^(application|audio|font|image|message|model|multipart|text|video)\/[a-zA-Z0-9\.\-\+]{1,100}$/i;
+        // eslint-disable-line max-len
+        // Handle "charset" in "text/*"
+        var mimeTypeText = /^text\/[a-zA-Z0-9\.\-\+]{1,100};\s?charset=("[a-zA-Z0-9\.\-\+\s]{0,70}"|[a-zA-Z0-9\.\-\+]{0,70})(\s?\([a-zA-Z0-9\.\-\+\s]{1,20}\))?$/i;
+        // eslint-disable-line max-len
+        // Handle "boundary" in "multipart/*"
+        var mimeTypeMultipart = /^multipart\/[a-zA-Z0-9\.\-\+]{1,100}(;\s?(boundary|charset)=("[a-zA-Z0-9\.\-\+\s]{0,70}"|[a-zA-Z0-9\.\-\+]{0,70})(\s?\([a-zA-Z0-9\.\-\+\s]{1,20}\))?){0,2}$/i;
+        // eslint-disable-line max-len
+        function isMimeType(str) {
+          (0, _assertString2.default)(str);
+          return mimeTypeSimple.test(str) || mimeTypeText.test(str) || mimeTypeMultipart.test(str);
+        }
+        module.exports = exports['default'];
+      },
+      { './util/assertString': 295 }
+    ],
+    271: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -60648,52 +62966,67 @@ and limitations under the License.
             'ar-AE': /^((\+?971)|0)?5[024568]\d{7}$/,
             'ar-DZ': /^(\+?213|0)(5|6|7)\d{8}$/,
             'ar-EG': /^((\+?20)|0)?1[012]\d{8}$/,
+            'ar-IQ': /^(\+?964|0)?7[0-9]\d{8}$/,
             'ar-JO': /^(\+?962|0)?7[789]\d{7}$/,
-            'ar-SY': /^(!?(\+?963)|0)?9\d{8}$/,
+            'ar-KW': /^(\+?965)[569]\d{7}$/,
             'ar-SA': /^(!?(\+?966)|0)?5\d{8}$/,
-            'en-US': /^(\+?1)?[2-9]\d{2}[2-9](?!11)\d{6}$/,
+            'ar-SY': /^(!?(\+?963)|0)?9\d{8}$/,
+            'ar-TN': /^(\+?216)?[2459]\d{7}$/,
+            'be-BY': /^(\+?375)?(24|25|29|33|44)\d{7}$/,
+            'bg-BG': /^(\+?359|0)?8[789]\d{7}$/,
+            'bn-BD': /\+?(88)?0?1[156789][0-9]{8}\b/,
             'cs-CZ': /^(\+?420)? ?[1-9][0-9]{2} ?[0-9]{3} ?[0-9]{3}$/,
-            'sk-SK': /^(\+?421)? ?[1-9][0-9]{2} ?[0-9]{3} ?[0-9]{3}$/,
-            'de-DE': /^(\+?49[ \.\-])?([\(]{1}[0-9]{1,6}[\)])?([0-9 \.\-\/]{3,20})((x|ext|extension)[ ]?[0-9]{1,4})?$/,
-            'da-DK': /^(\+?45)?(\d{8})$/,
-            'el-GR': /^(\+?30)?(69\d{8})$/,
+            'da-DK': /^(\+?45)?\s?\d{2}\s?\d{2}\s?\d{2}\s?\d{2}$/,
+            'de-DE': /^(\+?49[ \.\-]?)?([\(]{1}[0-9]{1,6}[\)])?([0-9 \.\-\/]{3,20})((x|ext|extension)[ ]?[0-9]{1,4})?$/,
+            'el-GR': /^(\+?30|0)?(69\d{8})$/,
             'en-AU': /^(\+?61|0)4\d{8}$/,
             'en-GB': /^(\+?44|0)7\d{9}$/,
-            'en-HK': /^(\+?852\-?)?[569]\d{3}\-?\d{4}$/,
-            'en-IN': /^(\+?91|0)?[789]\d{9}$/,
+            'en-HK': /^(\+?852\-?)?[456789]\d{3}\-?\d{4}$/,
+            'en-IN': /^(\+?91|0)?[6789]\d{9}$/,
             'en-KE': /^(\+?254|0)?[7]\d{8}$/,
             'en-NG': /^(\+?234|0)?[789]\d{9}$/,
-            'en-NZ': /^(\+?64|0)2\d{7,9}$/,
-            'en-UG': /^(\+?256|0)?[7]\d{8}$/,
+            'en-NZ': /^(\+?64|0)[28]\d{7,9}$/,
+            'en-PK': /^((\+92)|(0092))-{0,1}\d{3}-{0,1}\d{7}$|^\d{11}$|^\d{4}-\d{7}$/,
             'en-RW': /^(\+?250|0)?[7]\d{8}$/,
+            'en-SG': /^(\+65)?[89]\d{7}$/,
             'en-TZ': /^(\+?255|0)?[67]\d{8}$/,
+            'en-UG': /^(\+?256|0)?[7]\d{8}$/,
+            'en-US': /^(\+?1?( |-)?)?(\([2-9][0-9]{2}\)|[2-9][0-9]{2})( |-)?([2-9][0-9]{2}( |-)?[0-9]{4})$/,
             'en-ZA': /^(\+?27|0)\d{9}$/,
             'en-ZM': /^(\+?26)?09[567]\d{7}$/,
             'es-ES': /^(\+?34)?(6\d{1}|7[1234])\d{7}$/,
-            'fi-FI': /^(\+?358|0)\s?(4(0|1|2|4|5|6)?|50)\s?(\d\s?){4,8}\d$/,
+            'es-MX': /^(\+?52)?(1|01)?\d{10,11}$/,
+            'et-EE': /^(\+?372)?\s?(5|8[1-4])\s?([0-9]\s?){6,7}$/,
             'fa-IR': /^(\+?98[\-\s]?|0)9[0-39]\d[\-\s]?\d{3}[\-\s]?\d{4}$/,
+            'fi-FI': /^(\+?358|0)\s?(4(0|1|2|4|5|6)?|50)\s?(\d\s?){4,8}\d$/,
+            'fo-FO': /^(\+?298)?\s?\d{2}\s?\d{2}\s?\d{2}$/,
             'fr-FR': /^(\+?33|0)[67]\d{8}$/,
-            'he-IL': /^(\+972|0)([23489]|5[0248]|77)[1-9]\d{6}/,
+            'he-IL': /^(\+972|0)([23489]|5[012345689]|77)[1-9]\d{6}$/,
             'hu-HU': /^(\+?36)(20|30|70)\d{7}$/,
-            'lt-LT': /^(\+370|8)\d{8}$/,
-            'id-ID': /^(\+?62|0[1-9])[\s|\d]+$/,
+            'id-ID': /^(\+?62|0)(0?8?\d\d\s?\d?)([\s?|\d]{7,12})$/,
             'it-IT': /^(\+?39)?\s?3\d{2} ?\d{6,7}$/,
+            'ja-JP': /^(\+?81|0)[789]0[ \-]?[1-9]\d{2}[ \-]?\d{5}$/,
+            'kk-KZ': /^(\+?7|8)?7\d{9}$/,
+            'kl-GL': /^(\+?299)?\s?\d{2}\s?\d{2}\s?\d{2}$/,
             'ko-KR': /^((\+?82)[ \-]?)?0?1([0|1|6|7|8|9]{1})[ \-]?\d{3,4}[ \-]?\d{4}$/,
-            'ja-JP': /^(\+?81|0)\d{1,4}[ \-]?\d{1,4}[ \-]?\d{4}$/,
+            'lt-LT': /^(\+370|8)\d{8}$/,
             'ms-MY': /^(\+?6?01){1}(([145]{1}(\-|\s)?\d{7,8})|([236789]{1}(\s|\-)?\d{7}))$/,
             'nb-NO': /^(\+?47)?[49]\d{7}$/,
             'nl-BE': /^(\+?32|0)4?\d{8}$/,
             'nn-NO': /^(\+?47)?[49]\d{7}$/,
             'pl-PL': /^(\+?48)? ?[5-8]\d ?\d{3} ?\d{2} ?\d{2}$/,
-            'pt-BR': /^(\+?55|0)\-?[1-9]{2}\-?[2-9]{1}\d{3,4}\-?\d{4}$/,
+            'pt-BR': /(?=^(\+?5{2}\-?|0)[1-9]{2}\-?\d{4}\-?\d{4}$)(^(\+?5{2}\-?|0)[1-9]{2}\-?[6-9]{1}\d{3}\-?\d{4}$)|(^(\+?5{2}\-?|0)[1-9]{2}\-?9[6-9]{1}\d{3}\-?\d{4}$)/,
             'pt-PT': /^(\+?351)?9[1236]\d{7}$/,
             'ro-RO': /^(\+?4?0)\s?7\d{2}(\/|\s|\.|\-)?\d{3}(\s|\.|\-)?\d{3}$/,
-            'en-PK': /^((\+92)|(0092))-{0,1}\d{3}-{0,1}\d{7}$|^\d{11}$|^\d{4}-\d{7}$/,
             'ru-RU': /^(\+?7|8)?9\d{9}$/,
+            'sk-SK': /^(\+?421)? ?[1-9][0-9]{2} ?[0-9]{3} ?[0-9]{3}$/,
             'sr-RS': /^(\+3816|06)[- \d]{5,9}$/,
+            'sv-SE': /^(\+?46|0)[\s\-]?7[\s\-]?[02369]([\s\-]?\d){7}$/,
+            'th-TH': /^(\+66|66|0)\d{9}$/,
             'tr-TR': /^(\+?90|0)?5\d{9}$/,
+            'uk-UA': /^(\+?38|8)?0\d{9}$/,
             'vi-VN': /^(\+?84|0)?((1(2([0-9])|6([2-9])|88|99))|(9((?!5)[0-9])))([0-9]{7})$/,
-            'zh-CN': /^(\+?0?86\-?)?1[345789]\d{9}$/,
+            'zh-CN': /^((\+|00)86)?1([358][0-9]|4[579]|66|7[0135678]|9[89])[0-9]{8}$/,
             'zh-TW': /^(\+?886\-?|0)?9\d{8}$/
           };
         /* eslint-enable max-len */
@@ -60701,11 +63034,24 @@ and limitations under the License.
         phones['en-CA'] = phones['en-US'];
         phones['fr-BE'] = phones['nl-BE'];
         phones['zh-HK'] = phones['en-HK'];
-        function isMobilePhone(str, locale) {
+        function isMobilePhone(str, locale, options) {
           (0, _assertString2.default)(str);
-          if (locale in phones) {
-            return phones[locale].test(str);
-          } else if (locale === 'any') {
+          if (options && options.strictMode && !str.startsWith('+')) {
+            return false;
+          }
+          if (Array.isArray(locale)) {
+            return locale.some(function (key) {
+              if (phones.hasOwnProperty(key)) {
+                var phone = phones[key];
+                if (phone.test(str)) {
+                  return true;
+                }
+              }
+              return false;
+            });
+          } else if (locale in phones) {
+            return phones[locale].test(str);  // alias falsey locale as 'any'
+          } else if (!locale || locale === 'any') {
             for (var key in phones) {
               if (phones.hasOwnProperty(key)) {
                 var phone = phones[key];
@@ -60720,9 +63066,9 @@ and limitations under the License.
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    258: [
+    272: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -60741,11 +63087,11 @@ and limitations under the License.
         module.exports = exports['default'];
       },
       {
-        './isHexadecimal': 242,
-        './util/assertString': 279
+        './isHexadecimal': 250,
+        './util/assertString': 295
       }
     ],
-    259: [
+    273: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -60764,9 +63110,9 @@ and limitations under the License.
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    260: [
+    274: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -60776,16 +63122,40 @@ and limitations under the License.
         function _interopRequireDefault(obj) {
           return obj && obj.__esModule ? obj : { default: obj };
         }
-        var numeric = /^[-+]?[0-9]+$/;
-        function isNumeric(str) {
+        var numeric = /^[+-]?([0-9]*[.])?[0-9]+$/;
+        var numericNoSymbols = /^[0-9]+$/;
+        function isNumeric(str, options) {
           (0, _assertString2.default)(str);
+          if (options && options.no_symbols) {
+            return numericNoSymbols.test(str);
+          }
           return numeric.test(str);
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    261: [
+    275: [
+      function (require, module, exports) {
+        'use strict';
+        Object.defineProperty(exports, '__esModule', { value: true });
+        exports.default = isPort;
+        var _isInt = require('./isInt');
+        var _isInt2 = _interopRequireDefault(_isInt);
+        function _interopRequireDefault(obj) {
+          return obj && obj.__esModule ? obj : { default: obj };
+        }
+        function isPort(str) {
+          return (0, _isInt2.default)(str, {
+            min: 0,
+            max: 65535
+          });
+        }
+        module.exports = exports['default'];
+      },
+      { './isInt': 261 }
+    ],
+    276: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -60818,20 +63188,25 @@ and limitations under the License.
         var fiveDigit = /^\d{5}$/;
         var sixDigit = /^\d{6}$/;
         var patterns = {
+            AD: /^AD\d{3}$/,
             AT: fourDigit,
-            AU: sixDigit,
+            AU: fourDigit,
             BE: fourDigit,
+            BG: fourDigit,
             CA: /^[ABCEGHJKLMNPRSTVXY]\d[ABCEGHJ-NPRSTV-Z][\s\-]?\d[ABCEGHJ-NPRSTV-Z]\d$/i,
             CH: fourDigit,
             CZ: /^\d{3}\s?\d{2}$/,
             DE: fiveDigit,
             DK: fourDigit,
             DZ: fiveDigit,
+            EE: fiveDigit,
             ES: fiveDigit,
             FI: fiveDigit,
             FR: /^\d{2}\s?\d{3}$/,
             GB: /^(gir\s?0aa|[a-z]{1,2}\d[\da-z]?\s?(\d[a-z]{2})?)$/i,
             GR: /^\d{3}\s?\d{2}$/,
+            HR: /^([1-5]\d{4}$)/,
+            HU: fourDigit,
             IL: fiveDigit,
             IN: sixDigit,
             IS: threeDigit,
@@ -60839,15 +63214,21 @@ and limitations under the License.
             JP: /^\d{3}\-\d{4}$/,
             KE: fiveDigit,
             LI: /^(948[5-9]|949[0-7])$/,
+            LT: /^LT\-\d{5}$/,
+            LU: fourDigit,
+            LV: /^LV\-\d{4}$/,
             MX: fiveDigit,
             NL: /^\d{4}\s?[a-z]{2}$/i,
             NO: fourDigit,
             PL: /^\d{2}\-\d{3}$/,
-            PT: /^\d{4}(\-\d{3})?$/,
+            PT: /^\d{4}\-\d{3}?$/,
             RO: sixDigit,
             RU: sixDigit,
             SA: fiveDigit,
             SE: /^\d{3}\s?\d{2}$/,
+            SI: fourDigit,
+            SK: /^\d{3}\s?\d{2}$/,
+            TN: fourDigit,
             TW: /^\d{3}(\d{2})?$/,
             US: /^\d{5}(-\d{4})?$/,
             ZA: fourDigit,
@@ -60855,9 +63236,41 @@ and limitations under the License.
           };
         var locales = exports.locales = Object.keys(patterns);
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    262: [
+    277: [
+      function (require, module, exports) {
+        'use strict';
+        Object.defineProperty(exports, '__esModule', { value: true });
+        exports.default = isRFC3339;
+        var _assertString = require('./util/assertString');
+        var _assertString2 = _interopRequireDefault(_assertString);
+        function _interopRequireDefault(obj) {
+          return obj && obj.__esModule ? obj : { default: obj };
+        }
+        /* Based on https://tools.ietf.org/html/rfc3339#section-5.6 */
+        var dateFullYear = /[0-9]{4}/;
+        var dateMonth = /(0[1-9]|1[0-2])/;
+        var dateMDay = /([12]\d|0[1-9]|3[01])/;
+        var timeHour = /([01][0-9]|2[0-3])/;
+        var timeMinute = /[0-5][0-9]/;
+        var timeSecond = /([0-5][0-9]|60)/;
+        var timeSecFrac = /(\.[0-9]+)?/;
+        var timeNumOffset = new RegExp('[-+]' + timeHour.source + ':' + timeMinute.source);
+        var timeOffset = new RegExp('([zZ]|' + timeNumOffset.source + ')');
+        var partialTime = new RegExp(timeHour.source + ':' + timeMinute.source + ':' + timeSecond.source + timeSecFrac.source);
+        var fullDate = new RegExp(dateFullYear.source + '-' + dateMonth.source + '-' + dateMDay.source);
+        var fullTime = new RegExp('' + partialTime.source + timeOffset.source);
+        var rfc3339 = new RegExp(fullDate.source + '[ tT]' + fullTime.source);
+        function isRFC3339(str) {
+          (0, _assertString2.default)(str);
+          return rfc3339.test(str);
+        }
+        module.exports = exports['default'];
+      },
+      { './util/assertString': 295 }
+    ],
+    278: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -60874,9 +63287,9 @@ and limitations under the License.
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    263: [
+    279: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -60935,13 +63348,16 @@ and limitations under the License.
           url = split.shift();
           split = url.split('://');
           if (split.length > 1) {
-            protocol = split.shift();
+            protocol = split.shift().toLowerCase();
             if (options.require_valid_protocol && options.protocols.indexOf(protocol) === -1) {
               return false;
             }
           } else if (options.require_protocol) {
             return false;
-          } else if (options.allow_protocol_relative_urls && url.substr(0, 2) === '//') {
+          } else if (url.substr(0, 2) === '//') {
+            if (!options.allow_protocol_relative_urls) {
+              return false;
+            }
             split[0] = url.substr(2);
           }
           url = split.join('://');
@@ -60996,13 +63412,13 @@ and limitations under the License.
         module.exports = exports['default'];
       },
       {
-        './isFQDN': 236,
-        './isIP': 243,
-        './util/assertString': 279,
-        './util/merge': 280
+        './isFQDN': 244,
+        './isIP': 251,
+        './util/assertString': 295,
+        './util/merge': 297
       }
     ],
-    264: [
+    280: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -61026,9 +63442,9 @@ and limitations under the License.
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    265: [
+    281: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -61044,9 +63460,9 @@ and limitations under the License.
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    266: [
+    282: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -61065,12 +63481,12 @@ and limitations under the License.
         module.exports = exports['default'];
       },
       {
-        './isFullWidth': 238,
-        './isHalfWidth': 239,
-        './util/assertString': 279
+        './isFullWidth': 246,
+        './isHalfWidth': 247,
+        './util/assertString': 295
       }
     ],
-    267: [
+    283: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -61091,9 +63507,9 @@ and limitations under the License.
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    268: [
+    284: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -61110,9 +63526,9 @@ and limitations under the License.
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    269: [
+    285: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -61131,15 +63547,13 @@ and limitations under the License.
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    270: [
+    286: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
         exports.default = normalizeEmail;
-        var _isEmail = require('./isEmail');
-        var _isEmail2 = _interopRequireDefault(_isEmail);
         var _merge = require('./util/merge');
         var _merge2 = _interopRequireDefault(_merge);
         function _interopRequireDefault(obj) {
@@ -61155,6 +63569,7 @@ and limitations under the License.
             outlookdotcom_remove_subaddress: true,
             yahoo_lowercase: true,
             yahoo_remove_subaddress: true,
+            yandex_lowercase: true,
             icloud_lowercase: true,
             icloud_remove_subaddress: true
           };
@@ -61264,11 +63679,24 @@ and limitations under the License.
             'yahoo.it',
             'ymail.com'
           ];
+        // List of domains used by yandex.ru
+        var yandex_domains = [
+            'yandex.ru',
+            'yandex.ua',
+            'yandex.kz',
+            'yandex.com',
+            'yandex.by',
+            'ya.ru'
+          ];
+        // replace single dots, but not multiple consecutive dots
+        function dotsReplacer(match) {
+          if (match.length > 1) {
+            return match;
+          }
+          return '';
+        }
         function normalizeEmail(email, options) {
           options = (0, _merge2.default)(options, default_normalize_email_options);
-          if (!(0, _isEmail2.default)(email)) {
-            return false;
-          }
           var raw_parts = email.split('@');
           var domain = raw_parts.pop();
           var user = raw_parts.join('@');
@@ -61284,7 +63712,8 @@ and limitations under the License.
               parts[0] = parts[0].split('+')[0];
             }
             if (options.gmail_remove_dots) {
-              parts[0] = parts[0].replace(/\./g, '');
+              // this does not replace consecutive dots like example..email@gmail.com
+              parts[0] = parts[0].replace(/\.+/g, dotsReplacer);
             }
             if (!parts[0].length) {
               return false;
@@ -61293,7 +63722,7 @@ and limitations under the License.
               parts[0] = parts[0].toLowerCase();
             }
             parts[1] = options.gmail_convert_googlemaildotcom ? 'gmail.com' : parts[1];
-          } else if (~icloud_domains.indexOf(parts[1])) {
+          } else if (icloud_domains.indexOf(parts[1]) >= 0) {
             // Address is iCloud
             if (options.icloud_remove_subaddress) {
               parts[0] = parts[0].split('+')[0];
@@ -61304,7 +63733,7 @@ and limitations under the License.
             if (options.all_lowercase || options.icloud_lowercase) {
               parts[0] = parts[0].toLowerCase();
             }
-          } else if (~outlookdotcom_domains.indexOf(parts[1])) {
+          } else if (outlookdotcom_domains.indexOf(parts[1]) >= 0) {
             // Address is Outlook.com
             if (options.outlookdotcom_remove_subaddress) {
               parts[0] = parts[0].split('+')[0];
@@ -61315,7 +63744,7 @@ and limitations under the License.
             if (options.all_lowercase || options.outlookdotcom_lowercase) {
               parts[0] = parts[0].toLowerCase();
             }
-          } else if (~yahoo_domains.indexOf(parts[1])) {
+          } else if (yahoo_domains.indexOf(parts[1]) >= 0) {
             // Address is Yahoo
             if (options.yahoo_remove_subaddress) {
               var components = parts[0].split('-');
@@ -61327,6 +63756,11 @@ and limitations under the License.
             if (options.all_lowercase || options.yahoo_lowercase) {
               parts[0] = parts[0].toLowerCase();
             }
+          } else if (yandex_domains.indexOf(parts[1]) >= 0) {
+            if (options.all_lowercase || options.yandex_lowercase) {
+              parts[0] = parts[0].toLowerCase();
+            }
+            parts[1] = 'yandex.ru';  // all yandex domains are equal, 1st preffered
           } else if (options.all_lowercase) {
             // Any other address
             parts[0] = parts[0].toLowerCase();
@@ -61335,12 +63769,9 @@ and limitations under the License.
         }
         module.exports = exports['default'];
       },
-      {
-        './isEmail': 234,
-        './util/merge': 280
-      }
+      { './util/merge': 297 }
     ],
-    271: [
+    287: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -61354,16 +63785,15 @@ and limitations under the License.
           (0, _assertString2.default)(str);
           var pattern = chars ? new RegExp('[' + chars + ']') : /\s/;
           var idx = str.length - 1;
-          while (idx >= 0 && pattern.test(str[idx])) {
-            idx--;
+          for (; idx >= 0 && pattern.test(str[idx]); idx--) {
           }
           return idx < str.length ? str.substr(0, idx + 1) : str;
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    272: [
+    288: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -61383,11 +63813,11 @@ and limitations under the License.
         module.exports = exports['default'];
       },
       {
-        './blacklist': 217,
-        './util/assertString': 279
+        './blacklist': 225,
+        './util/assertString': 295
       }
     ],
-    273: [
+    289: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -61406,9 +63836,9 @@ and limitations under the License.
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    274: [
+    290: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -61425,9 +63855,9 @@ and limitations under the License.
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    275: [
+    291: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -61443,9 +63873,9 @@ and limitations under the License.
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    276: [
+    292: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -61461,9 +63891,9 @@ and limitations under the License.
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    277: [
+    293: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -61481,11 +63911,11 @@ and limitations under the License.
         module.exports = exports['default'];
       },
       {
-        './ltrim': 268,
-        './rtrim': 271
+        './ltrim': 284,
+        './rtrim': 287
       }
     ],
-    278: [
+    294: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -61501,9 +63931,9 @@ and limitations under the License.
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    279: [
+    295: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -61518,7 +63948,21 @@ and limitations under the License.
       },
       {}
     ],
-    280: [
+    296: [
+      function (require, module, exports) {
+        'use strict';
+        Object.defineProperty(exports, '__esModule', { value: true });
+        var includes = function includes(arr, val) {
+          return arr.some(function (arrVal) {
+            return val === arrVal;
+          });
+        };
+        exports.default = includes;
+        module.exports = exports['default'];
+      },
+      {}
+    ],
+    297: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -61537,7 +63981,7 @@ and limitations under the License.
       },
       {}
     ],
-    281: [
+    298: [
       function (require, module, exports) {
         'use strict';
         var _typeof2 = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -61568,7 +64012,7 @@ and limitations under the License.
       },
       {}
     ],
-    282: [
+    299: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -61584,9 +64028,9 @@ and limitations under the License.
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 279 }
+      { './util/assertString': 295 }
     ],
-    283: [
+    300: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.12.7
@@ -61603,7 +64047,7 @@ and limitations under the License.
       },
       {}
     ],
-    284: [
+    301: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -61734,11 +64178,11 @@ and limitations under the License.
         }.call(undefined));
       },
       {
-        './defaults': 285,
-        'xmlbuilder': 310
+        './defaults': 302,
+        'xmlbuilder': 327
       }
     ],
-    285: [
+    302: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.12.7
@@ -61815,7 +64259,7 @@ and limitations under the License.
       },
       {}
     ],
-    286: [
+    303: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -62179,15 +64623,15 @@ and limitations under the License.
         }.call(undefined));
       },
       {
-        './bom': 283,
-        './defaults': 285,
-        './processors': 287,
-        'events': 13,
-        'sax': 173,
-        'timers': 209
+        './bom': 300,
+        './defaults': 302,
+        './processors': 304,
+        'events': 10,
+        'sax': 168,
+        'timers': 217
       }
     ],
-    287: [
+    304: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.12.7
@@ -62220,7 +64664,7 @@ and limitations under the License.
       },
       {}
     ],
-    288: [
+    305: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.12.7
@@ -62258,13 +64702,13 @@ and limitations under the License.
         }.call(undefined));
       },
       {
-        './builder': 284,
-        './defaults': 285,
-        './parser': 286,
-        './processors': 287
+        './builder': 301,
+        './defaults': 302,
+        './parser': 303,
+        './processors': 304
       }
     ],
-    289: [
+    306: [
       function (require, module, exports) {
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
@@ -62335,7 +64779,7 @@ and limitations under the License.
       },
       {}
     ],
-    290: [
+    307: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.12.6
@@ -62366,7 +64810,7 @@ and limitations under the License.
       },
       {}
     ],
-    291: [
+    308: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.12.6
@@ -62404,9 +64848,9 @@ and limitations under the License.
           }(XMLNode);
         }.call(undefined));
       },
-      { './XMLNode': 302 }
+      { './XMLNode': 319 }
     ],
-    292: [
+    309: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.12.6
@@ -62444,9 +64888,9 @@ and limitations under the License.
           }(XMLNode);
         }.call(undefined));
       },
-      { './XMLNode': 302 }
+      { './XMLNode': 319 }
     ],
-    293: [
+    310: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.12.6
@@ -62503,9 +64947,9 @@ and limitations under the License.
           }(XMLNode);
         }.call(undefined));
       },
-      { './XMLNode': 302 }
+      { './XMLNode': 319 }
     ],
-    294: [
+    311: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.12.6
@@ -62547,9 +64991,9 @@ and limitations under the License.
           }(XMLNode);
         }.call(undefined));
       },
-      { './XMLNode': 302 }
+      { './XMLNode': 319 }
     ],
-    295: [
+    312: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.12.6
@@ -62612,11 +65056,11 @@ and limitations under the License.
         }.call(undefined));
       },
       {
-        './Utility': 289,
-        './XMLNode': 302
+        './Utility': 306,
+        './XMLNode': 319
       }
     ],
-    296: [
+    313: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.12.6
@@ -62660,9 +65104,9 @@ and limitations under the License.
           }(XMLNode);
         }.call(undefined));
       },
-      { './XMLNode': 302 }
+      { './XMLNode': 319 }
     ],
-    297: [
+    314: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.12.6
@@ -62709,11 +65153,11 @@ and limitations under the License.
         }.call(undefined));
       },
       {
-        './Utility': 289,
-        './XMLNode': 302
+        './Utility': 306,
+        './XMLNode': 319
       }
     ],
-    298: [
+    315: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.12.6
@@ -62815,15 +65259,15 @@ and limitations under the License.
         }.call(undefined));
       },
       {
-        './Utility': 289,
-        './XMLDTDAttList': 293,
-        './XMLDTDElement': 294,
-        './XMLDTDEntity': 295,
-        './XMLDTDNotation': 296,
-        './XMLNode': 302
+        './Utility': 306,
+        './XMLDTDAttList': 310,
+        './XMLDTDElement': 311,
+        './XMLDTDEntity': 312,
+        './XMLDTDNotation': 313,
+        './XMLNode': 319
       }
     ],
-    299: [
+    316: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.12.6
@@ -62875,13 +65319,13 @@ and limitations under the License.
         }.call(undefined));
       },
       {
-        './Utility': 289,
-        './XMLNode': 302,
-        './XMLStringWriter': 306,
-        './XMLStringifier': 307
+        './Utility': 306,
+        './XMLNode': 319,
+        './XMLStringWriter': 323,
+        './XMLStringifier': 324
       }
     ],
-    300: [
+    317: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.12.6
@@ -63232,25 +65676,25 @@ and limitations under the License.
         }.call(undefined));
       },
       {
-        './Utility': 289,
-        './XMLAttribute': 290,
-        './XMLCData': 291,
-        './XMLComment': 292,
-        './XMLDTDAttList': 293,
-        './XMLDTDElement': 294,
-        './XMLDTDEntity': 295,
-        './XMLDTDNotation': 296,
-        './XMLDeclaration': 297,
-        './XMLDocType': 298,
-        './XMLElement': 301,
-        './XMLProcessingInstruction': 303,
-        './XMLRaw': 304,
-        './XMLStringWriter': 306,
-        './XMLStringifier': 307,
-        './XMLText': 308
+        './Utility': 306,
+        './XMLAttribute': 307,
+        './XMLCData': 308,
+        './XMLComment': 309,
+        './XMLDTDAttList': 310,
+        './XMLDTDElement': 311,
+        './XMLDTDEntity': 312,
+        './XMLDTDNotation': 313,
+        './XMLDeclaration': 314,
+        './XMLDocType': 315,
+        './XMLElement': 318,
+        './XMLProcessingInstruction': 320,
+        './XMLRaw': 321,
+        './XMLStringWriter': 323,
+        './XMLStringifier': 324,
+        './XMLText': 325
       }
     ],
-    301: [
+    318: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.12.6
@@ -63364,12 +65808,12 @@ and limitations under the License.
         }.call(undefined));
       },
       {
-        './Utility': 289,
-        './XMLAttribute': 290,
-        './XMLNode': 302
+        './Utility': 306,
+        './XMLAttribute': 307,
+        './XMLNode': 319
       }
     ],
-    302: [
+    319: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.12.6
@@ -63762,18 +66206,18 @@ and limitations under the License.
         }.call(undefined));
       },
       {
-        './Utility': 289,
-        './XMLCData': 291,
-        './XMLComment': 292,
-        './XMLDeclaration': 297,
-        './XMLDocType': 298,
-        './XMLElement': 301,
-        './XMLProcessingInstruction': 303,
-        './XMLRaw': 304,
-        './XMLText': 308
+        './Utility': 306,
+        './XMLCData': 308,
+        './XMLComment': 309,
+        './XMLDeclaration': 314,
+        './XMLDocType': 315,
+        './XMLElement': 318,
+        './XMLProcessingInstruction': 320,
+        './XMLRaw': 321,
+        './XMLText': 325
       }
     ],
-    303: [
+    320: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.12.6
@@ -63814,9 +66258,9 @@ and limitations under the License.
           }(XMLNode);
         }.call(undefined));
       },
-      { './XMLNode': 302 }
+      { './XMLNode': 319 }
     ],
-    304: [
+    321: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.12.6
@@ -63854,9 +66298,9 @@ and limitations under the License.
           }(XMLNode);
         }.call(undefined));
       },
-      { './XMLNode': 302 }
+      { './XMLNode': 319 }
     ],
-    305: [
+    322: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.12.6
@@ -64118,22 +66562,22 @@ and limitations under the License.
         }.call(undefined));
       },
       {
-        './XMLCData': 291,
-        './XMLComment': 292,
-        './XMLDTDAttList': 293,
-        './XMLDTDElement': 294,
-        './XMLDTDEntity': 295,
-        './XMLDTDNotation': 296,
-        './XMLDeclaration': 297,
-        './XMLDocType': 298,
-        './XMLElement': 301,
-        './XMLProcessingInstruction': 303,
-        './XMLRaw': 304,
-        './XMLText': 308,
-        './XMLWriterBase': 309
+        './XMLCData': 308,
+        './XMLComment': 309,
+        './XMLDTDAttList': 310,
+        './XMLDTDElement': 311,
+        './XMLDTDEntity': 312,
+        './XMLDTDNotation': 313,
+        './XMLDeclaration': 314,
+        './XMLDocType': 315,
+        './XMLElement': 318,
+        './XMLProcessingInstruction': 320,
+        './XMLRaw': 321,
+        './XMLText': 325,
+        './XMLWriterBase': 326
       }
     ],
-    306: [
+    323: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.12.6
@@ -64450,22 +66894,22 @@ and limitations under the License.
         }.call(undefined));
       },
       {
-        './XMLCData': 291,
-        './XMLComment': 292,
-        './XMLDTDAttList': 293,
-        './XMLDTDElement': 294,
-        './XMLDTDEntity': 295,
-        './XMLDTDNotation': 296,
-        './XMLDeclaration': 297,
-        './XMLDocType': 298,
-        './XMLElement': 301,
-        './XMLProcessingInstruction': 303,
-        './XMLRaw': 304,
-        './XMLText': 308,
-        './XMLWriterBase': 309
+        './XMLCData': 308,
+        './XMLComment': 309,
+        './XMLDTDAttList': 310,
+        './XMLDTDElement': 311,
+        './XMLDTDEntity': 312,
+        './XMLDTDNotation': 313,
+        './XMLDeclaration': 314,
+        './XMLDocType': 315,
+        './XMLElement': 318,
+        './XMLProcessingInstruction': 320,
+        './XMLRaw': 321,
+        './XMLText': 325,
+        './XMLWriterBase': 326
       }
     ],
-    307: [
+    324: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.12.6
@@ -64605,7 +67049,7 @@ and limitations under the License.
       },
       {}
     ],
-    308: [
+    325: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.12.6
@@ -64643,9 +67087,9 @@ and limitations under the License.
           }(XMLNode);
         }.call(undefined));
       },
-      { './XMLNode': 302 }
+      { './XMLNode': 319 }
     ],
-    309: [
+    326: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.12.6
@@ -64736,7 +67180,7 @@ and limitations under the License.
       },
       {}
     ],
-    310: [
+    327: [
       function (require, module, exports) {
         'use strict';
         // Generated by CoffeeScript 1.12.6
@@ -64787,14 +67231,14 @@ and limitations under the License.
         }.call(undefined));
       },
       {
-        './Utility': 289,
-        './XMLDocument': 299,
-        './XMLDocumentCB': 300,
-        './XMLStreamWriter': 305,
-        './XMLStringWriter': 306
+        './Utility': 306,
+        './XMLDocument': 316,
+        './XMLDocumentCB': 317,
+        './XMLStreamWriter': 322,
+        './XMLStringWriter': 323
       }
     ],
-    311: [
+    328: [
       function (require, module, exports) {
         'use strict';
         module.exports = extend;
@@ -64813,2930 +67257,8 @@ and limitations under the License.
         }
       },
       {}
-    ],
-    312: [
-      function (require, module, exports) {
-        'use strict';
-        module.exports = {
-          INVALID_TYPE: 'Expected type {0} but found type {1}',
-          INVALID_FORMAT: 'Object didn\'t pass validation for format {0}: {1}',
-          ENUM_MISMATCH: 'No enum match for: {0}',
-          ANY_OF_MISSING: 'Data does not match any schemas from \'anyOf\'',
-          ONE_OF_MISSING: 'Data does not match any schemas from \'oneOf\'',
-          ONE_OF_MULTIPLE: 'Data is valid against more than one schema from \'oneOf\'',
-          NOT_PASSED: 'Data matches schema from \'not\'',
-          ARRAY_LENGTH_SHORT: 'Array is too short ({0}), minimum {1}',
-          ARRAY_LENGTH_LONG: 'Array is too long ({0}), maximum {1}',
-          ARRAY_UNIQUE: 'Array items are not unique (indexes {0} and {1})',
-          ARRAY_ADDITIONAL_ITEMS: 'Additional items not allowed',
-          MULTIPLE_OF: 'Value {0} is not a multiple of {1}',
-          MINIMUM: 'Value {0} is less than minimum {1}',
-          MINIMUM_EXCLUSIVE: 'Value {0} is equal or less than exclusive minimum {1}',
-          MAXIMUM: 'Value {0} is greater than maximum {1}',
-          MAXIMUM_EXCLUSIVE: 'Value {0} is equal or greater than exclusive maximum {1}',
-          OBJECT_PROPERTIES_MINIMUM: 'Too few properties defined ({0}), minimum {1}',
-          OBJECT_PROPERTIES_MAXIMUM: 'Too many properties defined ({0}), maximum {1}',
-          OBJECT_MISSING_REQUIRED_PROPERTY: 'Missing required property: {0}',
-          OBJECT_ADDITIONAL_PROPERTIES: 'Additional properties not allowed: {0}',
-          OBJECT_DEPENDENCY_KEY: 'Dependency failed - key must exist: {0} (due to key: {1})',
-          MIN_LENGTH: 'String is too short ({0} chars), minimum {1}',
-          MAX_LENGTH: 'String is too long ({0} chars), maximum {1}',
-          PATTERN: 'String does not match pattern {0}: {1}',
-          KEYWORD_TYPE_EXPECTED: 'Keyword \'{0}\' is expected to be of type \'{1}\'',
-          KEYWORD_UNDEFINED_STRICT: 'Keyword \'{0}\' must be defined in strict mode',
-          KEYWORD_UNEXPECTED: 'Keyword \'{0}\' is not expected to appear in the schema',
-          KEYWORD_MUST_BE: 'Keyword \'{0}\' must be {1}',
-          KEYWORD_DEPENDENCY: 'Keyword \'{0}\' requires keyword \'{1}\'',
-          KEYWORD_PATTERN: 'Keyword \'{0}\' is not a valid RegExp pattern: {1}',
-          KEYWORD_VALUE_TYPE: 'Each element of keyword \'{0}\' array must be a \'{1}\'',
-          UNKNOWN_FORMAT: 'There is no validation function for format \'{0}\'',
-          CUSTOM_MODE_FORCE_PROPERTIES: '{0} must define at least one property if present',
-          REF_UNRESOLVED: 'Reference has not been resolved during compilation: {0}',
-          UNRESOLVABLE_REFERENCE: 'Reference could not be resolved: {0}',
-          SCHEMA_NOT_REACHABLE: 'Validator was not able to read schema with uri: {0}',
-          SCHEMA_TYPE_EXPECTED: 'Schema is expected to be of type \'object\'',
-          SCHEMA_NOT_AN_OBJECT: 'Schema is not an object: {0}',
-          ASYNC_TIMEOUT: '{0} asynchronous task(s) have timed out after {1} ms',
-          PARENT_SCHEMA_VALIDATION_FAILED: 'Schema failed to validate against its parent schema, see inner errors for details.',
-          REMOTE_NOT_VALID: 'Remote reference didn\'t compile successfully: {0}'
-        };
-      },
-      {}
-    ],
-    313: [
-      function (require, module, exports) {
-        'use strict';
-        /*jshint maxlen: false*/
-        var validator = require('validator');
-        var FormatValidators = {
-            'date': function date(_date) {
-              if (typeof _date !== 'string') {
-                return true;
-              }
-              // full-date from http://tools.ietf.org/html/rfc3339#section-5.6
-              var matches = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(_date);
-              if (matches === null) {
-                return false;
-              }
-              // var year = matches[1];
-              // var month = matches[2];
-              // var day = matches[3];
-              if (matches[2] < '01' || matches[2] > '12' || matches[3] < '01' || matches[3] > '31') {
-                return false;
-              }
-              return true;
-            },
-            'date-time': function dateTime(_dateTime) {
-              if (typeof _dateTime !== 'string') {
-                return true;
-              }
-              // date-time from http://tools.ietf.org/html/rfc3339#section-5.6
-              var s = _dateTime.toLowerCase().split('t');
-              if (!FormatValidators.date(s[0])) {
-                return false;
-              }
-              var matches = /^([0-9]{2}):([0-9]{2}):([0-9]{2})(.[0-9]+)?(z|([+-][0-9]{2}:[0-9]{2}))$/.exec(s[1]);
-              if (matches === null) {
-                return false;
-              }
-              // var hour = matches[1];
-              // var minute = matches[2];
-              // var second = matches[3];
-              // var fraction = matches[4];
-              // var timezone = matches[5];
-              if (matches[1] > '23' || matches[2] > '59' || matches[3] > '59') {
-                return false;
-              }
-              return true;
-            },
-            'email': function email(_email) {
-              if (typeof _email !== 'string') {
-                return true;
-              }
-              return validator.isEmail(_email, { 'require_tld': true });
-            },
-            'hostname': function hostname(_hostname) {
-              if (typeof _hostname !== 'string') {
-                return true;
-              }
-              /*
-            http://json-schema.org/latest/json-schema-validation.html#anchor114
-            A string instance is valid against this attribute if it is a valid
-            representation for an Internet host name, as defined by RFC 1034, section 3.1 [RFC1034].
-             http://tools.ietf.org/html/rfc1034#section-3.5
-             <digit> ::= any one of the ten digits 0 through 9
-            var digit = /[0-9]/;
-             <letter> ::= any one of the 52 alphabetic characters A through Z in upper case and a through z in lower case
-            var letter = /[a-zA-Z]/;
-             <let-dig> ::= <letter> | <digit>
-            var letDig = /[0-9a-zA-Z]/;
-             <let-dig-hyp> ::= <let-dig> | "-"
-            var letDigHyp = /[-0-9a-zA-Z]/;
-             <ldh-str> ::= <let-dig-hyp> | <let-dig-hyp> <ldh-str>
-            var ldhStr = /[-0-9a-zA-Z]+/;
-             <label> ::= <letter> [ [ <ldh-str> ] <let-dig> ]
-            var label = /[a-zA-Z](([-0-9a-zA-Z]+)?[0-9a-zA-Z])?/;
-             <subdomain> ::= <label> | <subdomain> "." <label>
-            var subdomain = /^[a-zA-Z](([-0-9a-zA-Z]+)?[0-9a-zA-Z])?(\.[a-zA-Z](([-0-9a-zA-Z]+)?[0-9a-zA-Z])?)*$/;
-             <domain> ::= <subdomain> | " "
-            var domain = null;
-        */
-              var valid = /^[a-zA-Z](([-0-9a-zA-Z]+)?[0-9a-zA-Z])?(\.[a-zA-Z](([-0-9a-zA-Z]+)?[0-9a-zA-Z])?)*$/.test(_hostname);
-              if (valid) {
-                // the sum of all label octets and label lengths is limited to 255.
-                if (_hostname.length > 255) {
-                  return false;
-                }
-                // Each node has a label, which is zero to 63 octets in length
-                var labels = _hostname.split('.');
-                for (var i = 0; i < labels.length; i++) {
-                  if (labels[i].length > 63) {
-                    return false;
-                  }
-                }
-              }
-              return valid;
-            },
-            'host-name': function hostName(hostname) {
-              return FormatValidators.hostname.call(this, hostname);
-            },
-            'ipv4': function ipv4(_ipv) {
-              if (typeof _ipv !== 'string') {
-                return true;
-              }
-              return validator.isIP(_ipv, 4);
-            },
-            'ipv6': function ipv6(_ipv2) {
-              if (typeof _ipv2 !== 'string') {
-                return true;
-              }
-              return validator.isIP(_ipv2, 6);
-            },
-            'regex': function regex(str) {
-              try {
-                RegExp(str);
-                return true;
-              } catch (e) {
-                return false;
-              }
-            },
-            'uri': function uri(_uri) {
-              if (this.options.strictUris) {
-                return FormatValidators['strict-uri'].apply(this, arguments);
-              }
-              // https://github.com/zaggino/z-schema/issues/18
-              // RegExp from http://tools.ietf.org/html/rfc3986#appendix-B
-              return typeof _uri !== 'string' || RegExp('^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?').test(_uri);
-            },
-            'strict-uri': function strictUri(uri) {
-              return typeof uri !== 'string' || validator.isURL(uri);
-            }
-          };
-        module.exports = FormatValidators;
-      },
-      { 'validator': 215 }
-    ],
-    314: [
-      function (require, module, exports) {
-        'use strict';
-        var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
-            return typeof obj;
-          } : function (obj) {
-            return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
-          };
-        var FormatValidators = require('./FormatValidators'), Report = require('./Report'), Utils = require('./Utils');
-        var JsonValidators = {
-            multipleOf: function multipleOf(report, schema, json) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.1.1.2
-              if (typeof json !== 'number') {
-                return;
-              }
-              if (Utils.whatIs(json / schema.multipleOf) !== 'integer') {
-                report.addError('MULTIPLE_OF', [
-                  json,
-                  schema.multipleOf
-                ], null, schema.description);
-              }
-            },
-            maximum: function maximum(report, schema, json) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.1.2.2
-              if (typeof json !== 'number') {
-                return;
-              }
-              if (schema.exclusiveMaximum !== true) {
-                if (json > schema.maximum) {
-                  report.addError('MAXIMUM', [
-                    json,
-                    schema.maximum
-                  ], null, schema.description);
-                }
-              } else {
-                if (json >= schema.maximum) {
-                  report.addError('MAXIMUM_EXCLUSIVE', [
-                    json,
-                    schema.maximum
-                  ], null, schema.description);
-                }
-              }
-            },
-            exclusiveMaximum: function exclusiveMaximum() {
-            },
-            minimum: function minimum(report, schema, json) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.1.3.2
-              if (typeof json !== 'number') {
-                return;
-              }
-              if (schema.exclusiveMinimum !== true) {
-                if (json < schema.minimum) {
-                  report.addError('MINIMUM', [
-                    json,
-                    schema.minimum
-                  ], null, schema.description);
-                }
-              } else {
-                if (json <= schema.minimum) {
-                  report.addError('MINIMUM_EXCLUSIVE', [
-                    json,
-                    schema.minimum
-                  ], null, schema.description);
-                }
-              }
-            },
-            exclusiveMinimum: function exclusiveMinimum() {
-            },
-            maxLength: function maxLength(report, schema, json) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.2.1.2
-              if (typeof json !== 'string') {
-                return;
-              }
-              if (Utils.ucs2decode(json).length > schema.maxLength) {
-                report.addError('MAX_LENGTH', [
-                  json.length,
-                  schema.maxLength
-                ], null, schema.description);
-              }
-            },
-            minLength: function minLength(report, schema, json) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.2.2.2
-              if (typeof json !== 'string') {
-                return;
-              }
-              if (Utils.ucs2decode(json).length < schema.minLength) {
-                report.addError('MIN_LENGTH', [
-                  json.length,
-                  schema.minLength
-                ], null, schema.description);
-              }
-            },
-            pattern: function pattern(report, schema, json) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.2.3.2
-              if (typeof json !== 'string') {
-                return;
-              }
-              if (RegExp(schema.pattern).test(json) === false) {
-                report.addError('PATTERN', [
-                  schema.pattern,
-                  json
-                ], null, schema.description);
-              }
-            },
-            additionalItems: function additionalItems(report, schema, json) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.3.1.2
-              if (!Array.isArray(json)) {
-                return;
-              }
-              // if the value of "additionalItems" is boolean value false and the value of "items" is an array,
-              // the json is valid if its size is less than, or equal to, the size of "items".
-              if (schema.additionalItems === false && Array.isArray(schema.items)) {
-                if (json.length > schema.items.length) {
-                  report.addError('ARRAY_ADDITIONAL_ITEMS', null, null, schema.description);
-                }
-              }
-            },
-            items: function items() {
-            },
-            maxItems: function maxItems(report, schema, json) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.3.2.2
-              if (!Array.isArray(json)) {
-                return;
-              }
-              if (json.length > schema.maxItems) {
-                report.addError('ARRAY_LENGTH_LONG', [
-                  json.length,
-                  schema.maxItems
-                ], null, schema.description);
-              }
-            },
-            minItems: function minItems(report, schema, json) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.3.3.2
-              if (!Array.isArray(json)) {
-                return;
-              }
-              if (json.length < schema.minItems) {
-                report.addError('ARRAY_LENGTH_SHORT', [
-                  json.length,
-                  schema.minItems
-                ], null, schema.description);
-              }
-            },
-            uniqueItems: function uniqueItems(report, schema, json) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.3.4.2
-              if (!Array.isArray(json)) {
-                return;
-              }
-              if (schema.uniqueItems === true) {
-                var matches = [];
-                if (Utils.isUniqueArray(json, matches) === false) {
-                  report.addError('ARRAY_UNIQUE', matches, null, schema.description);
-                }
-              }
-            },
-            maxProperties: function maxProperties(report, schema, json) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4.1.2
-              if (Utils.whatIs(json) !== 'object') {
-                return;
-              }
-              var keysCount = Object.keys(json).length;
-              if (keysCount > schema.maxProperties) {
-                report.addError('OBJECT_PROPERTIES_MAXIMUM', [
-                  keysCount,
-                  schema.maxProperties
-                ], null, schema.description);
-              }
-            },
-            minProperties: function minProperties(report, schema, json) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4.2.2
-              if (Utils.whatIs(json) !== 'object') {
-                return;
-              }
-              var keysCount = Object.keys(json).length;
-              if (keysCount < schema.minProperties) {
-                report.addError('OBJECT_PROPERTIES_MINIMUM', [
-                  keysCount,
-                  schema.minProperties
-                ], null, schema.description);
-              }
-            },
-            required: function required(report, schema, json) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4.3.2
-              if (Utils.whatIs(json) !== 'object') {
-                return;
-              }
-              var idx = schema.required.length;
-              while (idx--) {
-                var requiredPropertyName = schema.required[idx];
-                if (json[requiredPropertyName] === undefined) {
-                  report.addError('OBJECT_MISSING_REQUIRED_PROPERTY', [requiredPropertyName], null, schema.description);
-                }
-              }
-            },
-            additionalProperties: function additionalProperties(report, schema, json) {
-              // covered in properties and patternProperties
-              if (schema.properties === undefined && schema.patternProperties === undefined) {
-                return JsonValidators.properties.call(this, report, schema, json);
-              }
-            },
-            patternProperties: function patternProperties(report, schema, json) {
-              // covered in properties
-              if (schema.properties === undefined) {
-                return JsonValidators.properties.call(this, report, schema, json);
-              }
-            },
-            properties: function properties(report, schema, json) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4.4.2
-              if (Utils.whatIs(json) !== 'object') {
-                return;
-              }
-              var properties = schema.properties !== undefined ? schema.properties : {};
-              var patternProperties = schema.patternProperties !== undefined ? schema.patternProperties : {};
-              if (schema.additionalProperties === false) {
-                // The property set of the json to validate.
-                var s = Object.keys(json);
-                // The property set from "properties".
-                var p = Object.keys(properties);
-                // The property set from "patternProperties".
-                var pp = Object.keys(patternProperties);
-                // remove from "s" all elements of "p", if any;
-                s = Utils.difference(s, p);
-                // for each regex in "pp", remove all elements of "s" which this regex matches.
-                var idx = pp.length;
-                while (idx--) {
-                  var regExp = RegExp(pp[idx]), idx2 = s.length;
-                  while (idx2--) {
-                    if (regExp.test(s[idx2]) === true) {
-                      s.splice(idx2, 1);
-                    }
-                  }
-                }
-                // Validation of the json succeeds if, after these two steps, set "s" is empty.
-                if (s.length > 0) {
-                  // assumeAdditional can be an array of allowed properties
-                  var idx3 = this.options.assumeAdditional.length;
-                  if (idx3) {
-                    while (idx3--) {
-                      var io = s.indexOf(this.options.assumeAdditional[idx3]);
-                      if (io !== -1) {
-                        s.splice(io, 1);
-                      }
-                    }
-                  }
-                  if (s.length > 0) {
-                    report.addError('OBJECT_ADDITIONAL_PROPERTIES', [s], null, schema.description);
-                  }
-                }
-              }
-            },
-            dependencies: function dependencies(report, schema, json) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4.5.2
-              if (Utils.whatIs(json) !== 'object') {
-                return;
-              }
-              var keys = Object.keys(schema.dependencies), idx = keys.length;
-              while (idx--) {
-                // iterate all dependencies
-                var dependencyName = keys[idx];
-                if (json[dependencyName]) {
-                  var dependencyDefinition = schema.dependencies[dependencyName];
-                  if (Utils.whatIs(dependencyDefinition) === 'object') {
-                    // if dependency is a schema, validate against this schema
-                    exports.validate.call(this, report, dependencyDefinition, json);
-                  } else {
-                    // Array
-                    // if dependency is an array, object needs to have all properties in this array
-                    var idx2 = dependencyDefinition.length;
-                    while (idx2--) {
-                      var requiredPropertyName = dependencyDefinition[idx2];
-                      if (json[requiredPropertyName] === undefined) {
-                        report.addError('OBJECT_DEPENDENCY_KEY', [
-                          requiredPropertyName,
-                          dependencyName
-                        ], null, schema.description);
-                      }
-                    }
-                  }
-                }
-              }
-            },
-            enum: function _enum(report, schema, json) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.1.2
-              var match = false, idx = schema.enum.length;
-              while (idx--) {
-                if (Utils.areEqual(json, schema.enum[idx])) {
-                  match = true;
-                  break;
-                }
-              }
-              if (match === false) {
-                report.addError('ENUM_MISMATCH', [json], null, schema.description);
-              }
-            },
-            allOf: function allOf(report, schema, json) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.3.2
-              var idx = schema.allOf.length;
-              while (idx--) {
-                var validateResult = exports.validate.call(this, report, schema.allOf[idx], json);
-                if (this.options.breakOnFirstError && validateResult === false) {
-                  break;
-                }
-              }
-            },
-            anyOf: function anyOf(report, schema, json) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.4.2
-              var subReports = [], passed = false, idx = schema.anyOf.length;
-              while (idx-- && passed === false) {
-                var subReport = new Report(report);
-                subReports.push(subReport);
-                passed = exports.validate.call(this, subReport, schema.anyOf[idx], json);
-              }
-              if (passed === false) {
-                report.addError('ANY_OF_MISSING', undefined, subReports, schema.description);
-              }
-            },
-            oneOf: function oneOf(report, schema, json) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.5.2
-              var passes = 0, subReports = [], idx = schema.oneOf.length;
-              while (idx--) {
-                var subReport = new Report(report, { maxErrors: 1 });
-                subReports.push(subReport);
-                if (exports.validate.call(this, subReport, schema.oneOf[idx], json) === true) {
-                  passes++;
-                }
-              }
-              if (passes === 0) {
-                report.addError('ONE_OF_MISSING', undefined, subReports, schema.description);
-              } else if (passes > 1) {
-                report.addError('ONE_OF_MULTIPLE', null, null, schema.description);
-              }
-            },
-            not: function not(report, schema, json) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.6.2
-              var subReport = new Report(report);
-              if (exports.validate.call(this, subReport, schema.not, json) === true) {
-                report.addError('NOT_PASSED', null, null, schema.description);
-              }
-            },
-            definitions: function definitions() {
-            },
-            format: function format(report, schema, json) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.7.2
-              var formatValidatorFn = FormatValidators[schema.format];
-              if (typeof formatValidatorFn === 'function') {
-                if (formatValidatorFn.length === 2) {
-                  // async
-                  report.addAsyncTask(formatValidatorFn, [json], function (result) {
-                    if (result !== true) {
-                      report.addError('INVALID_FORMAT', [
-                        schema.format,
-                        json
-                      ], null, schema.description);
-                    }
-                  });
-                } else {
-                  // sync
-                  if (formatValidatorFn.call(this, json) !== true) {
-                    report.addError('INVALID_FORMAT', [
-                      schema.format,
-                      json
-                    ], null, schema.description);
-                  }
-                }
-              } else if (this.options.ignoreUnknownFormats !== true) {
-                report.addError('UNKNOWN_FORMAT', [schema.format], null, schema.description);
-              }
-            }
-          };
-        var recurseArray = function recurseArray(report, schema, json) {
-          // http://json-schema.org/latest/json-schema-validation.html#rfc.section.8.2
-          var idx = json.length;
-          // If "items" is an array, this situation, the schema depends on the index:
-          // if the index is less than, or equal to, the size of "items",
-          // the child instance must be valid against the corresponding schema in the "items" array;
-          // otherwise, it must be valid against the schema defined by "additionalItems".
-          if (Array.isArray(schema.items)) {
-            while (idx--) {
-              // equal to doesnt make sense here
-              if (idx < schema.items.length) {
-                report.path.push(idx.toString());
-                exports.validate.call(this, report, schema.items[idx], json[idx]);
-                report.path.pop();
-              } else {
-                // might be boolean, so check that it's an object
-                if (_typeof(schema.additionalItems) === 'object') {
-                  report.path.push(idx.toString());
-                  exports.validate.call(this, report, schema.additionalItems, json[idx]);
-                  report.path.pop();
-                }
-              }
-            }
-          } else if (_typeof(schema.items) === 'object') {
-            // If items is a schema, then the child instance must be valid against this schema,
-            // regardless of its index, and regardless of the value of "additionalItems".
-            while (idx--) {
-              report.path.push(idx.toString());
-              exports.validate.call(this, report, schema.items, json[idx]);
-              report.path.pop();
-            }
-          }
-        };
-        var recurseObject = function recurseObject(report, schema, json) {
-          // http://json-schema.org/latest/json-schema-validation.html#rfc.section.8.3
-          // If "additionalProperties" is absent, it is considered present with an empty schema as a value.
-          // In addition, boolean value true is considered equivalent to an empty schema.
-          var additionalProperties = schema.additionalProperties;
-          if (additionalProperties === true || additionalProperties === undefined) {
-            additionalProperties = {};
-          }
-          // p - The property set from "properties".
-          var p = schema.properties ? Object.keys(schema.properties) : [];
-          // pp - The property set from "patternProperties". Elements of this set will be called regexes for convenience.
-          var pp = schema.patternProperties ? Object.keys(schema.patternProperties) : [];
-          // m - The property name of the child.
-          var keys = Object.keys(json), idx = keys.length;
-          while (idx--) {
-            var m = keys[idx], propertyValue = json[m];
-            // s - The set of schemas for the child instance.
-            var s = [];
-            // 1. If set "p" contains value "m", then the corresponding schema in "properties" is added to "s".
-            if (p.indexOf(m) !== -1) {
-              s.push(schema.properties[m]);
-            }
-            // 2. For each regex in "pp", if it matches "m" successfully, the corresponding schema in "patternProperties" is added to "s".
-            var idx2 = pp.length;
-            while (idx2--) {
-              var regexString = pp[idx2];
-              if (RegExp(regexString).test(m) === true) {
-                s.push(schema.patternProperties[regexString]);
-              }
-            }
-            // 3. The schema defined by "additionalProperties" is added to "s" if and only if, at this stage, "s" is empty.
-            if (s.length === 0 && additionalProperties !== false) {
-              s.push(additionalProperties);
-            }
-            // we are passing tests even without this assert because this is covered by properties check
-            // if s is empty in this stage, no additionalProperties are allowed
-            // report.expect(s.length !== 0, 'E001', m);
-            // Instance property value must pass all schemas from s
-            idx2 = s.length;
-            while (idx2--) {
-              report.path.push(m);
-              exports.validate.call(this, report, s[idx2], propertyValue);
-              report.path.pop();
-            }
-          }
-        };
-        exports.validate = function (report, schema, json) {
-          report.commonErrorMessage = 'JSON_OBJECT_VALIDATION_FAILED';
-          // check if schema is an object
-          var to = Utils.whatIs(schema);
-          if (to !== 'object') {
-            report.addError('SCHEMA_NOT_AN_OBJECT', [to], null, schema.description);
-            return false;
-          }
-          // check if schema is empty, everything is valid against empty schema
-          var keys = Object.keys(schema);
-          if (keys.length === 0) {
-            return true;
-          }
-          // this method can be called recursively, so we need to remember our root
-          var isRoot = false;
-          if (!report.rootSchema) {
-            report.rootSchema = schema;
-            isRoot = true;
-          }
-          // follow schema.$ref keys
-          if (schema.$ref !== undefined) {
-            // avoid infinite loop with maxRefs
-            var maxRefs = 99;
-            while (schema.$ref && maxRefs > 0) {
-              if (!schema.__$refResolved) {
-                report.addError('REF_UNRESOLVED', [schema.$ref], null, schema.description);
-                break;
-              } else if (schema.__$refResolved === schema) {
-                break;
-              } else {
-                schema = schema.__$refResolved;
-                keys = Object.keys(schema);
-              }
-              maxRefs--;
-            }
-            if (maxRefs === 0) {
-              throw new Error('Circular dependency by $ref references!');
-            }
-          }
-          // type checking first
-          // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.2.2
-          var jsonType = Utils.whatIs(json);
-          if (schema.type) {
-            if (typeof schema.type === 'string') {
-              if (jsonType !== schema.type && (jsonType !== 'integer' || schema.type !== 'number')) {
-                report.addError('INVALID_TYPE', [
-                  schema.type,
-                  jsonType
-                ], null, schema.description);
-                if (this.options.breakOnFirstError) {
-                  return false;
-                }
-              }
-            } else {
-              if (schema.type.indexOf(jsonType) === -1 && (jsonType !== 'integer' || schema.type.indexOf('number') === -1)) {
-                report.addError('INVALID_TYPE', [
-                  schema.type,
-                  jsonType
-                ], null, schema.description);
-                if (this.options.breakOnFirstError) {
-                  return false;
-                }
-              }
-            }
-          }
-          // now iterate all the keys in schema and execute validation methods
-          var idx = keys.length;
-          while (idx--) {
-            if (JsonValidators[keys[idx]]) {
-              JsonValidators[keys[idx]].call(this, report, schema, json);
-              if (report.errors.length && this.options.breakOnFirstError) {
-                break;
-              }
-            }
-          }
-          if (report.errors.length === 0 || this.options.breakOnFirstError === false) {
-            if (jsonType === 'array') {
-              recurseArray.call(this, report, schema, json);
-            } else if (jsonType === 'object') {
-              recurseObject.call(this, report, schema, json);
-            }
-          }
-          if (typeof this.options.customValidator === 'function') {
-            this.options.customValidator(report, schema, json);
-          }
-          // we don't need the root pointer anymore
-          if (isRoot) {
-            report.rootSchema = undefined;
-          }
-          // return valid just to be able to break at some code points
-          return report.errors.length === 0;
-        };
-      },
-      {
-        './FormatValidators': 313,
-        './Report': 316,
-        './Utils': 320
-      }
-    ],
-    315: [
-      function (require, module, exports) {
-        'use strict';
-        // Number.isFinite polyfill
-        // http://people.mozilla.org/~jorendorff/es6-draft.html#sec-number.isfinite
-        if (typeof Number.isFinite !== 'function') {
-          Number.isFinite = function isFinite(value) {
-            // 1. If Type(number) is not Number, return false.
-            if (typeof value !== 'number') {
-              return false;
-            }
-            // 2. If number is NaN, +∞, or −∞, return false.
-            if (value !== value || value === Infinity || value === -Infinity) {
-              return false;
-            }
-            // 3. Otherwise, return true.
-            return true;
-          };
-        }
-      },
-      {}
-    ],
-    316: [
-      function (require, module, exports) {
-        (function (process) {
-          'use strict';
-          var get = require('lodash.get');
-          var Errors = require('./Errors');
-          var Utils = require('./Utils');
-          function Report(parentOrOptions, reportOptions) {
-            this.parentReport = parentOrOptions instanceof Report ? parentOrOptions : undefined;
-            this.options = parentOrOptions instanceof Report ? parentOrOptions.options : parentOrOptions || {};
-            this.reportOptions = reportOptions || {};
-            this.errors = [];
-            this.path = [];
-            this.asyncTasks = [];
-          }
-          Report.prototype.isValid = function () {
-            if (this.asyncTasks.length > 0) {
-              throw new Error('Async tasks pending, can\'t answer isValid');
-            }
-            return this.errors.length === 0;
-          };
-          Report.prototype.addAsyncTask = function (fn, args, asyncTaskResultProcessFn) {
-            this.asyncTasks.push([
-              fn,
-              args,
-              asyncTaskResultProcessFn
-            ]);
-          };
-          Report.prototype.processAsyncTasks = function (timeout, callback) {
-            var validationTimeout = timeout || 2000, tasksCount = this.asyncTasks.length, idx = tasksCount, timedOut = false, self = this;
-            function finish() {
-              process.nextTick(function () {
-                var valid = self.errors.length === 0, err = valid ? undefined : self.errors;
-                callback(err, valid);
-              });
-            }
-            function respond(asyncTaskResultProcessFn) {
-              return function (asyncTaskResult) {
-                if (timedOut) {
-                  return;
-                }
-                asyncTaskResultProcessFn(asyncTaskResult);
-                if (--tasksCount === 0) {
-                  finish();
-                }
-              };
-            }
-            if (tasksCount === 0 || this.errors.length > 0) {
-              finish();
-              return;
-            }
-            while (idx--) {
-              var task = this.asyncTasks[idx];
-              task[0].apply(null, task[1].concat(respond(task[2])));
-            }
-            setTimeout(function () {
-              if (tasksCount > 0) {
-                timedOut = true;
-                self.addError('ASYNC_TIMEOUT', [
-                  tasksCount,
-                  validationTimeout
-                ]);
-                callback(self.errors, false);
-              }
-            }, validationTimeout);
-          };
-          Report.prototype.getPath = function (returnPathAsString) {
-            var path = [];
-            if (this.parentReport) {
-              path = path.concat(this.parentReport.path);
-            }
-            path = path.concat(this.path);
-            if (returnPathAsString !== true) {
-              // Sanitize the path segments (http://tools.ietf.org/html/rfc6901#section-4)
-              path = '#/' + path.map(function (segment) {
-                if (Utils.isAbsoluteUri(segment)) {
-                  return 'uri(' + segment + ')';
-                }
-                return segment.replace(/\~/g, '~0').replace(/\//g, '~1');
-              }).join('/');
-            }
-            return path;
-          };
-          Report.prototype.getSchemaId = function () {
-            if (!this.rootSchema) {
-              return null;
-            }
-            // get the error path as an array
-            var path = [];
-            if (this.parentReport) {
-              path = path.concat(this.parentReport.path);
-            }
-            path = path.concat(this.path);
-            // try to find id in the error path
-            while (path.length > 0) {
-              var obj = get(this.rootSchema, path);
-              if (obj && obj.id) {
-                return obj.id;
-              }
-              path.pop();
-            }
-            // return id of the root
-            return this.rootSchema.id;
-          };
-          Report.prototype.hasError = function (errorCode, params) {
-            var idx = this.errors.length;
-            while (idx--) {
-              if (this.errors[idx].code === errorCode) {
-                // assume match
-                var match = true;
-                // check the params too
-                var idx2 = this.errors[idx].params.length;
-                while (idx2--) {
-                  if (this.errors[idx].params[idx2] !== params[idx2]) {
-                    match = false;
-                  }
-                }
-                // if match, return true
-                if (match) {
-                  return match;
-                }
-              }
-            }
-            return false;
-          };
-          Report.prototype.addError = function (errorCode, params, subReports, schemaDescription) {
-            if (!errorCode) {
-              throw new Error('No errorCode passed into addError()');
-            }
-            this.addCustomError(errorCode, Errors[errorCode], params, subReports, schemaDescription);
-          };
-          Report.prototype.addCustomError = function (errorCode, errorMessage, params, subReports, schemaDescription) {
-            if (this.errors.length >= this.reportOptions.maxErrors) {
-              return;
-            }
-            if (!errorMessage) {
-              throw new Error('No errorMessage known for code ' + errorCode);
-            }
-            params = params || [];
-            var idx = params.length;
-            while (idx--) {
-              var whatIs = Utils.whatIs(params[idx]);
-              var param = whatIs === 'object' || whatIs === 'null' ? JSON.stringify(params[idx]) : params[idx];
-              errorMessage = errorMessage.replace('{' + idx + '}', param);
-            }
-            var err = {
-                code: errorCode,
-                params: params,
-                message: errorMessage,
-                path: this.getPath(this.options.reportPathAsArray),
-                schemaId: this.getSchemaId()
-              };
-            if (schemaDescription) {
-              err.description = schemaDescription;
-            }
-            if (subReports != null) {
-              if (!Array.isArray(subReports)) {
-                subReports = [subReports];
-              }
-              err.inner = [];
-              idx = subReports.length;
-              while (idx--) {
-                var subReport = subReports[idx], idx2 = subReport.errors.length;
-                while (idx2--) {
-                  err.inner.push(subReport.errors[idx2]);
-                }
-              }
-              if (err.inner.length === 0) {
-                err.inner = undefined;
-              }
-            }
-            this.errors.push(err);
-          };
-          module.exports = Report;
-        }.call(this, require('_process')));
-      },
-      {
-        './Errors': 312,
-        './Utils': 320,
-        '_process': 166,
-        'lodash.get': 77
-      }
-    ],
-    317: [
-      function (require, module, exports) {
-        'use strict';
-        var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
-            return typeof obj;
-          } : function (obj) {
-            return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
-          };
-        var isequal = require('lodash.isequal');
-        var Report = require('./Report');
-        var SchemaCompilation = require('./SchemaCompilation');
-        var SchemaValidation = require('./SchemaValidation');
-        var Utils = require('./Utils');
-        function decodeJSONPointer(str) {
-          // http://tools.ietf.org/html/draft-ietf-appsawg-json-pointer-07#section-3
-          return decodeURIComponent(str).replace(/~[0-1]/g, function (x) {
-            return x === '~1' ? '/' : '~';
-          });
-        }
-        function getRemotePath(uri) {
-          var io = uri.indexOf('#');
-          return io === -1 ? uri : uri.slice(0, io);
-        }
-        function getQueryPath(uri) {
-          var io = uri.indexOf('#');
-          var res = io === -1 ? undefined : uri.slice(io + 1);
-          // WARN: do not slice slash, #/ means take root and go down from it
-          // if (res && res[0] === "/") { res = res.slice(1); }
-          return res;
-        }
-        function findId(schema, id) {
-          // process only arrays and objects
-          if ((typeof schema === 'undefined' ? 'undefined' : _typeof(schema)) !== 'object' || schema === null) {
-            return;
-          }
-          // no id means root so return itself
-          if (!id) {
-            return schema;
-          }
-          if (schema.id) {
-            if (schema.id === id || schema.id[0] === '#' && schema.id.substring(1) === id) {
-              return schema;
-            }
-          }
-          var idx, result;
-          if (Array.isArray(schema)) {
-            idx = schema.length;
-            while (idx--) {
-              result = findId(schema[idx], id);
-              if (result) {
-                return result;
-              }
-            }
-          } else {
-            var keys = Object.keys(schema);
-            idx = keys.length;
-            while (idx--) {
-              var k = keys[idx];
-              if (k.indexOf('__$') === 0) {
-                continue;
-              }
-              result = findId(schema[k], id);
-              if (result) {
-                return result;
-              }
-            }
-          }
-        }
-        exports.cacheSchemaByUri = function (uri, schema) {
-          var remotePath = getRemotePath(uri);
-          if (remotePath) {
-            this.cache[remotePath] = schema;
-          }
-        };
-        exports.removeFromCacheByUri = function (uri) {
-          var remotePath = getRemotePath(uri);
-          if (remotePath) {
-            delete this.cache[remotePath];
-          }
-        };
-        exports.checkCacheForUri = function (uri) {
-          var remotePath = getRemotePath(uri);
-          return remotePath ? this.cache[remotePath] != null : false;
-        };
-        exports.getSchema = function (report, schema) {
-          if ((typeof schema === 'undefined' ? 'undefined' : _typeof(schema)) === 'object') {
-            schema = exports.getSchemaByReference.call(this, report, schema);
-          }
-          if (typeof schema === 'string') {
-            schema = exports.getSchemaByUri.call(this, report, schema);
-          }
-          return schema;
-        };
-        exports.getSchemaByReference = function (report, key) {
-          var i = this.referenceCache.length;
-          while (i--) {
-            if (isequal(this.referenceCache[i][0], key)) {
-              return this.referenceCache[i][1];
-            }
-          }
-          // not found
-          var schema = Utils.cloneDeep(key);
-          this.referenceCache.push([
-            key,
-            schema
-          ]);
-          return schema;
-        };
-        exports.getSchemaByUri = function (report, uri, root) {
-          var remotePath = getRemotePath(uri), queryPath = getQueryPath(uri), result = remotePath ? this.cache[remotePath] : root;
-          if (result && remotePath) {
-            // we need to avoid compiling schemas in a recursive loop
-            var compileRemote = result !== root;
-            // now we need to compile and validate resolved schema (in case it's not already)
-            if (compileRemote) {
-              report.path.push(remotePath);
-              var remoteReport = new Report(report);
-              if (SchemaCompilation.compileSchema.call(this, remoteReport, result)) {
-                SchemaValidation.validateSchema.call(this, remoteReport, result);
-              }
-              var remoteReportIsValid = remoteReport.isValid();
-              if (!remoteReportIsValid) {
-                report.addError('REMOTE_NOT_VALID', [uri], remoteReport);
-              }
-              report.path.pop();
-              if (!remoteReportIsValid) {
-                return undefined;
-              }
-            }
-          }
-          if (result && queryPath) {
-            var parts = queryPath.split('/');
-            for (var idx = 0, lim = parts.length; result && idx < lim; idx++) {
-              var key = decodeJSONPointer(parts[idx]);
-              if (idx === 0) {
-                // it's an id
-                result = findId(result, key);
-              } else {
-                // it's a path behind id
-                result = result[key];
-              }
-            }
-          }
-          return result;
-        };
-        exports.getRemotePath = getRemotePath;
-      },
-      {
-        './Report': 316,
-        './SchemaCompilation': 318,
-        './SchemaValidation': 319,
-        './Utils': 320,
-        'lodash.isequal': 78
-      }
-    ],
-    318: [
-      function (require, module, exports) {
-        'use strict';
-        var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
-            return typeof obj;
-          } : function (obj) {
-            return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
-          };
-        var Report = require('./Report');
-        var SchemaCache = require('./SchemaCache');
-        var Utils = require('./Utils');
-        function mergeReference(scope, ref) {
-          if (Utils.isAbsoluteUri(ref)) {
-            return ref;
-          }
-          var joinedScope = scope.join(''), isScopeAbsolute = Utils.isAbsoluteUri(joinedScope), isScopeRelative = Utils.isRelativeUri(joinedScope), isRefRelative = Utils.isRelativeUri(ref), toRemove;
-          if (isScopeAbsolute && isRefRelative) {
-            toRemove = joinedScope.match(/\/[^\/]*$/);
-            if (toRemove) {
-              joinedScope = joinedScope.slice(0, toRemove.index + 1);
-            }
-          } else if (isScopeRelative && isRefRelative) {
-            joinedScope = '';
-          } else {
-            toRemove = joinedScope.match(/[^#\/]+$/);
-            if (toRemove) {
-              joinedScope = joinedScope.slice(0, toRemove.index);
-            }
-          }
-          var res = joinedScope + ref;
-          res = res.replace(/##/, '#');
-          return res;
-        }
-        function collectReferences(obj, results, scope, path) {
-          results = results || [];
-          scope = scope || [];
-          path = path || [];
-          if ((typeof obj === 'undefined' ? 'undefined' : _typeof(obj)) !== 'object' || obj === null) {
-            return results;
-          }
-          if (typeof obj.id === 'string') {
-            scope.push(obj.id);
-          }
-          if (typeof obj.$ref === 'string' && typeof obj.__$refResolved === 'undefined') {
-            results.push({
-              ref: mergeReference(scope, obj.$ref),
-              key: '$ref',
-              obj: obj,
-              path: path.slice(0)
-            });
-          }
-          if (typeof obj.$schema === 'string' && typeof obj.__$schemaResolved === 'undefined') {
-            results.push({
-              ref: mergeReference(scope, obj.$schema),
-              key: '$schema',
-              obj: obj,
-              path: path.slice(0)
-            });
-          }
-          var idx;
-          if (Array.isArray(obj)) {
-            idx = obj.length;
-            while (idx--) {
-              path.push(idx.toString());
-              collectReferences(obj[idx], results, scope, path);
-              path.pop();
-            }
-          } else {
-            var keys = Object.keys(obj);
-            idx = keys.length;
-            while (idx--) {
-              // do not recurse through resolved references and other z-schema props
-              if (keys[idx].indexOf('__$') === 0) {
-                continue;
-              }
-              path.push(keys[idx]);
-              collectReferences(obj[keys[idx]], results, scope, path);
-              path.pop();
-            }
-          }
-          if (typeof obj.id === 'string') {
-            scope.pop();
-          }
-          return results;
-        }
-        var compileArrayOfSchemasLoop = function compileArrayOfSchemasLoop(mainReport, arr) {
-          var idx = arr.length, compiledCount = 0;
-          while (idx--) {
-            // try to compile each schema separately
-            var report = new Report(mainReport);
-            var isValid = exports.compileSchema.call(this, report, arr[idx]);
-            if (isValid) {
-              compiledCount++;
-            }
-            // copy errors to report
-            mainReport.errors = mainReport.errors.concat(report.errors);
-          }
-          return compiledCount;
-        };
-        function findId(arr, id) {
-          var idx = arr.length;
-          while (idx--) {
-            if (arr[idx].id === id) {
-              return arr[idx];
-            }
-          }
-          return null;
-        }
-        var compileArrayOfSchemas = function compileArrayOfSchemas(report, arr) {
-          var compiled = 0, lastLoopCompiled;
-          do {
-            // remove all UNRESOLVABLE_REFERENCE errors before compiling array again
-            var idx = report.errors.length;
-            while (idx--) {
-              if (report.errors[idx].code === 'UNRESOLVABLE_REFERENCE') {
-                report.errors.splice(idx, 1);
-              }
-            }
-            // remember how many were compiled in the last loop
-            lastLoopCompiled = compiled;
-            // count how many are compiled now
-            compiled = compileArrayOfSchemasLoop.call(this, report, arr);
-            // fix __$missingReferences if possible
-            idx = arr.length;
-            while (idx--) {
-              var sch = arr[idx];
-              if (sch.__$missingReferences) {
-                var idx2 = sch.__$missingReferences.length;
-                while (idx2--) {
-                  var refObj = sch.__$missingReferences[idx2];
-                  var response = findId(arr, refObj.ref);
-                  if (response) {
-                    // this might create circular references
-                    refObj.obj['__' + refObj.key + 'Resolved'] = response;
-                    // it's resolved now so delete it
-                    sch.__$missingReferences.splice(idx2, 1);
-                  }
-                }
-                if (sch.__$missingReferences.length === 0) {
-                  delete sch.__$missingReferences;
-                }
-              }
-            }  // keep repeating if not all compiled and at least one more was compiled in the last loop
-          } while (compiled !== arr.length && compiled !== lastLoopCompiled);
-          return report.isValid();
-        };
-        exports.compileSchema = function (report, schema) {
-          report.commonErrorMessage = 'SCHEMA_COMPILATION_FAILED';
-          // if schema is a string, assume it's a uri
-          if (typeof schema === 'string') {
-            var loadedSchema = SchemaCache.getSchemaByUri.call(this, report, schema);
-            if (!loadedSchema) {
-              report.addError('SCHEMA_NOT_REACHABLE', [schema]);
-              return false;
-            }
-            schema = loadedSchema;
-          }
-          // if schema is an array, assume it's an array of schemas
-          if (Array.isArray(schema)) {
-            return compileArrayOfSchemas.call(this, report, schema);
-          }
-          // if we have an id than it should be cached already (if this instance has compiled it)
-          if (schema.__$compiled && schema.id && SchemaCache.checkCacheForUri.call(this, schema.id) === false) {
-            schema.__$compiled = undefined;
-          }
-          // do not re-compile schemas
-          if (schema.__$compiled) {
-            return true;
-          }
-          if (schema.id && typeof schema.id === 'string') {
-            // add this to our schemaCache (before compilation in case we have references including id)
-            SchemaCache.cacheSchemaByUri.call(this, schema.id, schema);
-          }
-          // this method can be called recursively, so we need to remember our root
-          var isRoot = false;
-          if (!report.rootSchema) {
-            report.rootSchema = schema;
-            isRoot = true;
-          }
-          // delete all __$missingReferences from previous compilation attempts
-          var isValidExceptReferences = report.isValid();
-          delete schema.__$missingReferences;
-          // collect all references that need to be resolved - $ref and $schema
-          var refs = collectReferences.call(this, schema), idx = refs.length;
-          while (idx--) {
-            // resolve all the collected references into __xxxResolved pointer
-            var refObj = refs[idx];
-            var response = SchemaCache.getSchemaByUri.call(this, report, refObj.ref, schema);
-            // we can try to use custom schemaReader if available
-            if (!response) {
-              var schemaReader = this.getSchemaReader();
-              if (schemaReader) {
-                // it's supposed to return a valid schema
-                var s = schemaReader(refObj.ref);
-                if (s) {
-                  // it needs to have the id
-                  s.id = refObj.ref;
-                  // try to compile the schema
-                  var subreport = new Report(report);
-                  if (!exports.compileSchema.call(this, subreport, s)) {
-                    // copy errors to report
-                    report.errors = report.errors.concat(subreport.errors);
-                  } else {
-                    response = SchemaCache.getSchemaByUri.call(this, report, refObj.ref, schema);
-                  }
-                }
-              }
-            }
-            if (!response) {
-              var hasNotValid = report.hasError('REMOTE_NOT_VALID', [refObj.ref]);
-              var isAbsolute = Utils.isAbsoluteUri(refObj.ref);
-              var isDownloaded = false;
-              var ignoreUnresolvableRemotes = this.options.ignoreUnresolvableReferences === true;
-              if (isAbsolute) {
-                // we shouldn't add UNRESOLVABLE_REFERENCE for schemas we already have downloaded
-                // and set through setRemoteReference method
-                isDownloaded = SchemaCache.checkCacheForUri.call(this, refObj.ref);
-              }
-              if (hasNotValid) {
-              } else if (ignoreUnresolvableRemotes && isAbsolute) {
-              } else if (isDownloaded) {
-              } else {
-                Array.prototype.push.apply(report.path, refObj.path);
-                report.addError('UNRESOLVABLE_REFERENCE', [refObj.ref]);
-                report.path = report.path.slice(0, -refObj.path.length);
-                // pusblish unresolved references out
-                if (isValidExceptReferences) {
-                  schema.__$missingReferences = schema.__$missingReferences || [];
-                  schema.__$missingReferences.push(refObj);
-                }
-              }
-            }
-            // this might create circular references
-            refObj.obj['__' + refObj.key + 'Resolved'] = response;
-          }
-          var isValid = report.isValid();
-          if (isValid) {
-            schema.__$compiled = true;
-          } else {
-            if (schema.id && typeof schema.id === 'string') {
-              // remove this schema from schemaCache because it failed to compile
-              SchemaCache.removeFromCacheByUri.call(this, schema.id);
-            }
-          }
-          // we don't need the root pointer anymore
-          if (isRoot) {
-            report.rootSchema = undefined;
-          }
-          return isValid;
-        };
-      },
-      {
-        './Report': 316,
-        './SchemaCache': 317,
-        './Utils': 320
-      }
-    ],
-    319: [
-      function (require, module, exports) {
-        'use strict';
-        var FormatValidators = require('./FormatValidators'), JsonValidation = require('./JsonValidation'), Report = require('./Report'), Utils = require('./Utils');
-        var SchemaValidators = {
-            $ref: function $ref(report, schema) {
-              // http://tools.ietf.org/html/draft-ietf-appsawg-json-pointer-07
-              // http://tools.ietf.org/html/draft-pbryan-zyp-json-ref-03
-              if (typeof schema.$ref !== 'string') {
-                report.addError('KEYWORD_TYPE_EXPECTED', [
-                  '$ref',
-                  'string'
-                ]);
-              }
-            },
-            $schema: function $schema(report, schema) {
-              // http://json-schema.org/latest/json-schema-core.html#rfc.section.6
-              if (typeof schema.$schema !== 'string') {
-                report.addError('KEYWORD_TYPE_EXPECTED', [
-                  '$schema',
-                  'string'
-                ]);
-              }
-            },
-            multipleOf: function multipleOf(report, schema) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.1.1.1
-              if (typeof schema.multipleOf !== 'number') {
-                report.addError('KEYWORD_TYPE_EXPECTED', [
-                  'multipleOf',
-                  'number'
-                ]);
-              } else if (schema.multipleOf <= 0) {
-                report.addError('KEYWORD_MUST_BE', [
-                  'multipleOf',
-                  'strictly greater than 0'
-                ]);
-              }
-            },
-            maximum: function maximum(report, schema) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.1.2.1
-              if (typeof schema.maximum !== 'number') {
-                report.addError('KEYWORD_TYPE_EXPECTED', [
-                  'maximum',
-                  'number'
-                ]);
-              }
-            },
-            exclusiveMaximum: function exclusiveMaximum(report, schema) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.1.2.1
-              if (typeof schema.exclusiveMaximum !== 'boolean') {
-                report.addError('KEYWORD_TYPE_EXPECTED', [
-                  'exclusiveMaximum',
-                  'boolean'
-                ]);
-              } else if (schema.maximum === undefined) {
-                report.addError('KEYWORD_DEPENDENCY', [
-                  'exclusiveMaximum',
-                  'maximum'
-                ]);
-              }
-            },
-            minimum: function minimum(report, schema) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.1.3.1
-              if (typeof schema.minimum !== 'number') {
-                report.addError('KEYWORD_TYPE_EXPECTED', [
-                  'minimum',
-                  'number'
-                ]);
-              }
-            },
-            exclusiveMinimum: function exclusiveMinimum(report, schema) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.1.3.1
-              if (typeof schema.exclusiveMinimum !== 'boolean') {
-                report.addError('KEYWORD_TYPE_EXPECTED', [
-                  'exclusiveMinimum',
-                  'boolean'
-                ]);
-              } else if (schema.minimum === undefined) {
-                report.addError('KEYWORD_DEPENDENCY', [
-                  'exclusiveMinimum',
-                  'minimum'
-                ]);
-              }
-            },
-            maxLength: function maxLength(report, schema) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.2.1.1
-              if (Utils.whatIs(schema.maxLength) !== 'integer') {
-                report.addError('KEYWORD_TYPE_EXPECTED', [
-                  'maxLength',
-                  'integer'
-                ]);
-              } else if (schema.maxLength < 0) {
-                report.addError('KEYWORD_MUST_BE', [
-                  'maxLength',
-                  'greater than, or equal to 0'
-                ]);
-              }
-            },
-            minLength: function minLength(report, schema) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.2.2.1
-              if (Utils.whatIs(schema.minLength) !== 'integer') {
-                report.addError('KEYWORD_TYPE_EXPECTED', [
-                  'minLength',
-                  'integer'
-                ]);
-              } else if (schema.minLength < 0) {
-                report.addError('KEYWORD_MUST_BE', [
-                  'minLength',
-                  'greater than, or equal to 0'
-                ]);
-              }
-            },
-            pattern: function pattern(report, schema) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.2.3.1
-              if (typeof schema.pattern !== 'string') {
-                report.addError('KEYWORD_TYPE_EXPECTED', [
-                  'pattern',
-                  'string'
-                ]);
-              } else {
-                try {
-                  RegExp(schema.pattern);
-                } catch (e) {
-                  report.addError('KEYWORD_PATTERN', [
-                    'pattern',
-                    schema.pattern
-                  ]);
-                }
-              }
-            },
-            additionalItems: function additionalItems(report, schema) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.3.1.1
-              var type = Utils.whatIs(schema.additionalItems);
-              if (type !== 'boolean' && type !== 'object') {
-                report.addError('KEYWORD_TYPE_EXPECTED', [
-                  'additionalItems',
-                  [
-                    'boolean',
-                    'object'
-                  ]
-                ]);
-              } else if (type === 'object') {
-                report.path.push('additionalItems');
-                exports.validateSchema.call(this, report, schema.additionalItems);
-                report.path.pop();
-              }
-            },
-            items: function items(report, schema) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.3.1.1
-              var type = Utils.whatIs(schema.items);
-              if (type === 'object') {
-                report.path.push('items');
-                exports.validateSchema.call(this, report, schema.items);
-                report.path.pop();
-              } else if (type === 'array') {
-                var idx = schema.items.length;
-                while (idx--) {
-                  report.path.push('items');
-                  report.path.push(idx.toString());
-                  exports.validateSchema.call(this, report, schema.items[idx]);
-                  report.path.pop();
-                  report.path.pop();
-                }
-              } else {
-                report.addError('KEYWORD_TYPE_EXPECTED', [
-                  'items',
-                  [
-                    'array',
-                    'object'
-                  ]
-                ]);
-              }
-              // custom - strict mode
-              if (this.options.forceAdditional === true && schema.additionalItems === undefined && Array.isArray(schema.items)) {
-                report.addError('KEYWORD_UNDEFINED_STRICT', ['additionalItems']);
-              }
-              // custome - assume defined false mode
-              if (this.options.assumeAdditional && schema.additionalItems === undefined && Array.isArray(schema.items)) {
-                schema.additionalItems = false;
-              }
-            },
-            maxItems: function maxItems(report, schema) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.3.2.1
-              if (typeof schema.maxItems !== 'number') {
-                report.addError('KEYWORD_TYPE_EXPECTED', [
-                  'maxItems',
-                  'integer'
-                ]);
-              } else if (schema.maxItems < 0) {
-                report.addError('KEYWORD_MUST_BE', [
-                  'maxItems',
-                  'greater than, or equal to 0'
-                ]);
-              }
-            },
-            minItems: function minItems(report, schema) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.3.3.1
-              if (Utils.whatIs(schema.minItems) !== 'integer') {
-                report.addError('KEYWORD_TYPE_EXPECTED', [
-                  'minItems',
-                  'integer'
-                ]);
-              } else if (schema.minItems < 0) {
-                report.addError('KEYWORD_MUST_BE', [
-                  'minItems',
-                  'greater than, or equal to 0'
-                ]);
-              }
-            },
-            uniqueItems: function uniqueItems(report, schema) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.3.4.1
-              if (typeof schema.uniqueItems !== 'boolean') {
-                report.addError('KEYWORD_TYPE_EXPECTED', [
-                  'uniqueItems',
-                  'boolean'
-                ]);
-              }
-            },
-            maxProperties: function maxProperties(report, schema) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4.1.1
-              if (Utils.whatIs(schema.maxProperties) !== 'integer') {
-                report.addError('KEYWORD_TYPE_EXPECTED', [
-                  'maxProperties',
-                  'integer'
-                ]);
-              } else if (schema.maxProperties < 0) {
-                report.addError('KEYWORD_MUST_BE', [
-                  'maxProperties',
-                  'greater than, or equal to 0'
-                ]);
-              }
-            },
-            minProperties: function minProperties(report, schema) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4.2.1
-              if (Utils.whatIs(schema.minProperties) !== 'integer') {
-                report.addError('KEYWORD_TYPE_EXPECTED', [
-                  'minProperties',
-                  'integer'
-                ]);
-              } else if (schema.minProperties < 0) {
-                report.addError('KEYWORD_MUST_BE', [
-                  'minProperties',
-                  'greater than, or equal to 0'
-                ]);
-              }
-            },
-            required: function required(report, schema) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4.3.1
-              if (Utils.whatIs(schema.required) !== 'array') {
-                report.addError('KEYWORD_TYPE_EXPECTED', [
-                  'required',
-                  'array'
-                ]);
-              } else if (schema.required.length === 0) {
-                report.addError('KEYWORD_MUST_BE', [
-                  'required',
-                  'an array with at least one element'
-                ]);
-              } else {
-                var idx = schema.required.length;
-                while (idx--) {
-                  if (typeof schema.required[idx] !== 'string') {
-                    report.addError('KEYWORD_VALUE_TYPE', [
-                      'required',
-                      'string'
-                    ]);
-                  }
-                }
-                if (Utils.isUniqueArray(schema.required) === false) {
-                  report.addError('KEYWORD_MUST_BE', [
-                    'required',
-                    'an array with unique items'
-                  ]);
-                }
-              }
-            },
-            additionalProperties: function additionalProperties(report, schema) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4.4.1
-              var type = Utils.whatIs(schema.additionalProperties);
-              if (type !== 'boolean' && type !== 'object') {
-                report.addError('KEYWORD_TYPE_EXPECTED', [
-                  'additionalProperties',
-                  [
-                    'boolean',
-                    'object'
-                  ]
-                ]);
-              } else if (type === 'object') {
-                report.path.push('additionalProperties');
-                exports.validateSchema.call(this, report, schema.additionalProperties);
-                report.path.pop();
-              }
-            },
-            properties: function properties(report, schema) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4.4.1
-              if (Utils.whatIs(schema.properties) !== 'object') {
-                report.addError('KEYWORD_TYPE_EXPECTED', [
-                  'properties',
-                  'object'
-                ]);
-                return;
-              }
-              var keys = Object.keys(schema.properties), idx = keys.length;
-              while (idx--) {
-                var key = keys[idx], val = schema.properties[key];
-                report.path.push('properties');
-                report.path.push(key);
-                exports.validateSchema.call(this, report, val);
-                report.path.pop();
-                report.path.pop();
-              }
-              // custom - strict mode
-              if (this.options.forceAdditional === true && schema.additionalProperties === undefined) {
-                report.addError('KEYWORD_UNDEFINED_STRICT', ['additionalProperties']);
-              }
-              // custome - assume defined false mode
-              if (this.options.assumeAdditional && schema.additionalProperties === undefined) {
-                schema.additionalProperties = false;
-              }
-              // custom - forceProperties
-              if (this.options.forceProperties === true && keys.length === 0) {
-                report.addError('CUSTOM_MODE_FORCE_PROPERTIES', ['properties']);
-              }
-            },
-            patternProperties: function patternProperties(report, schema) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4.4.1
-              if (Utils.whatIs(schema.patternProperties) !== 'object') {
-                report.addError('KEYWORD_TYPE_EXPECTED', [
-                  'patternProperties',
-                  'object'
-                ]);
-                return;
-              }
-              var keys = Object.keys(schema.patternProperties), idx = keys.length;
-              while (idx--) {
-                var key = keys[idx], val = schema.patternProperties[key];
-                try {
-                  RegExp(key);
-                } catch (e) {
-                  report.addError('KEYWORD_PATTERN', [
-                    'patternProperties',
-                    key
-                  ]);
-                }
-                report.path.push('patternProperties');
-                report.path.push(key.toString());
-                exports.validateSchema.call(this, report, val);
-                report.path.pop();
-                report.path.pop();
-              }
-              // custom - forceProperties
-              if (this.options.forceProperties === true && keys.length === 0) {
-                report.addError('CUSTOM_MODE_FORCE_PROPERTIES', ['patternProperties']);
-              }
-            },
-            dependencies: function dependencies(report, schema) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4.5.1
-              if (Utils.whatIs(schema.dependencies) !== 'object') {
-                report.addError('KEYWORD_TYPE_EXPECTED', [
-                  'dependencies',
-                  'object'
-                ]);
-              } else {
-                var keys = Object.keys(schema.dependencies), idx = keys.length;
-                while (idx--) {
-                  var schemaKey = keys[idx], schemaDependency = schema.dependencies[schemaKey], type = Utils.whatIs(schemaDependency);
-                  if (type === 'object') {
-                    report.path.push('dependencies');
-                    report.path.push(schemaKey);
-                    exports.validateSchema.call(this, report, schemaDependency);
-                    report.path.pop();
-                    report.path.pop();
-                  } else if (type === 'array') {
-                    var idx2 = schemaDependency.length;
-                    if (idx2 === 0) {
-                      report.addError('KEYWORD_MUST_BE', [
-                        'dependencies',
-                        'not empty array'
-                      ]);
-                    }
-                    while (idx2--) {
-                      if (typeof schemaDependency[idx2] !== 'string') {
-                        report.addError('KEYWORD_VALUE_TYPE', [
-                          'dependensices',
-                          'string'
-                        ]);
-                      }
-                    }
-                    if (Utils.isUniqueArray(schemaDependency) === false) {
-                      report.addError('KEYWORD_MUST_BE', [
-                        'dependencies',
-                        'an array with unique items'
-                      ]);
-                    }
-                  } else {
-                    report.addError('KEYWORD_VALUE_TYPE', [
-                      'dependencies',
-                      'object or array'
-                    ]);
-                  }
-                }
-              }
-            },
-            enum: function _enum(report, schema) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.1.1
-              if (Array.isArray(schema.enum) === false) {
-                report.addError('KEYWORD_TYPE_EXPECTED', [
-                  'enum',
-                  'array'
-                ]);
-              } else if (schema.enum.length === 0) {
-                report.addError('KEYWORD_MUST_BE', [
-                  'enum',
-                  'an array with at least one element'
-                ]);
-              } else if (Utils.isUniqueArray(schema.enum) === false) {
-                report.addError('KEYWORD_MUST_BE', [
-                  'enum',
-                  'an array with unique elements'
-                ]);
-              }
-            },
-            type: function type(report, schema) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.2.1
-              var primitiveTypes = [
-                  'array',
-                  'boolean',
-                  'integer',
-                  'number',
-                  'null',
-                  'object',
-                  'string'
-                ], primitiveTypeStr = primitiveTypes.join(','), isArray = Array.isArray(schema.type);
-              if (isArray) {
-                var idx = schema.type.length;
-                while (idx--) {
-                  if (primitiveTypes.indexOf(schema.type[idx]) === -1) {
-                    report.addError('KEYWORD_TYPE_EXPECTED', [
-                      'type',
-                      primitiveTypeStr
-                    ]);
-                  }
-                }
-                if (Utils.isUniqueArray(schema.type) === false) {
-                  report.addError('KEYWORD_MUST_BE', [
-                    'type',
-                    'an object with unique properties'
-                  ]);
-                }
-              } else if (typeof schema.type === 'string') {
-                if (primitiveTypes.indexOf(schema.type) === -1) {
-                  report.addError('KEYWORD_TYPE_EXPECTED', [
-                    'type',
-                    primitiveTypeStr
-                  ]);
-                }
-              } else {
-                report.addError('KEYWORD_TYPE_EXPECTED', [
-                  'type',
-                  [
-                    'string',
-                    'array'
-                  ]
-                ]);
-              }
-              if (this.options.noEmptyStrings === true) {
-                if (schema.type === 'string' || isArray && schema.type.indexOf('string') !== -1) {
-                  if (schema.minLength === undefined && schema.enum === undefined && schema.format === undefined) {
-                    schema.minLength = 1;
-                  }
-                }
-              }
-              if (this.options.noEmptyArrays === true) {
-                if (schema.type === 'array' || isArray && schema.type.indexOf('array') !== -1) {
-                  if (schema.minItems === undefined) {
-                    schema.minItems = 1;
-                  }
-                }
-              }
-              if (this.options.forceProperties === true) {
-                if (schema.type === 'object' || isArray && schema.type.indexOf('object') !== -1) {
-                  if (schema.properties === undefined && schema.patternProperties === undefined) {
-                    report.addError('KEYWORD_UNDEFINED_STRICT', ['properties']);
-                  }
-                }
-              }
-              if (this.options.forceItems === true) {
-                if (schema.type === 'array' || isArray && schema.type.indexOf('array') !== -1) {
-                  if (schema.items === undefined) {
-                    report.addError('KEYWORD_UNDEFINED_STRICT', ['items']);
-                  }
-                }
-              }
-              if (this.options.forceMinItems === true) {
-                if (schema.type === 'array' || isArray && schema.type.indexOf('array') !== -1) {
-                  if (schema.minItems === undefined) {
-                    report.addError('KEYWORD_UNDEFINED_STRICT', ['minItems']);
-                  }
-                }
-              }
-              if (this.options.forceMaxItems === true) {
-                if (schema.type === 'array' || isArray && schema.type.indexOf('array') !== -1) {
-                  if (schema.maxItems === undefined) {
-                    report.addError('KEYWORD_UNDEFINED_STRICT', ['maxItems']);
-                  }
-                }
-              }
-              if (this.options.forceMinLength === true) {
-                if (schema.type === 'string' || isArray && schema.type.indexOf('string') !== -1) {
-                  if (schema.minLength === undefined && schema.format === undefined && schema.enum === undefined && schema.pattern === undefined) {
-                    report.addError('KEYWORD_UNDEFINED_STRICT', ['minLength']);
-                  }
-                }
-              }
-              if (this.options.forceMaxLength === true) {
-                if (schema.type === 'string' || isArray && schema.type.indexOf('string') !== -1) {
-                  if (schema.maxLength === undefined && schema.format === undefined && schema.enum === undefined && schema.pattern === undefined) {
-                    report.addError('KEYWORD_UNDEFINED_STRICT', ['maxLength']);
-                  }
-                }
-              }
-            },
-            allOf: function allOf(report, schema) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.3.1
-              if (Array.isArray(schema.allOf) === false) {
-                report.addError('KEYWORD_TYPE_EXPECTED', [
-                  'allOf',
-                  'array'
-                ]);
-              } else if (schema.allOf.length === 0) {
-                report.addError('KEYWORD_MUST_BE', [
-                  'allOf',
-                  'an array with at least one element'
-                ]);
-              } else {
-                var idx = schema.allOf.length;
-                while (idx--) {
-                  report.path.push('allOf');
-                  report.path.push(idx.toString());
-                  exports.validateSchema.call(this, report, schema.allOf[idx]);
-                  report.path.pop();
-                  report.path.pop();
-                }
-              }
-            },
-            anyOf: function anyOf(report, schema) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.4.1
-              if (Array.isArray(schema.anyOf) === false) {
-                report.addError('KEYWORD_TYPE_EXPECTED', [
-                  'anyOf',
-                  'array'
-                ]);
-              } else if (schema.anyOf.length === 0) {
-                report.addError('KEYWORD_MUST_BE', [
-                  'anyOf',
-                  'an array with at least one element'
-                ]);
-              } else {
-                var idx = schema.anyOf.length;
-                while (idx--) {
-                  report.path.push('anyOf');
-                  report.path.push(idx.toString());
-                  exports.validateSchema.call(this, report, schema.anyOf[idx]);
-                  report.path.pop();
-                  report.path.pop();
-                }
-              }
-            },
-            oneOf: function oneOf(report, schema) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.5.1
-              if (Array.isArray(schema.oneOf) === false) {
-                report.addError('KEYWORD_TYPE_EXPECTED', [
-                  'oneOf',
-                  'array'
-                ]);
-              } else if (schema.oneOf.length === 0) {
-                report.addError('KEYWORD_MUST_BE', [
-                  'oneOf',
-                  'an array with at least one element'
-                ]);
-              } else {
-                var idx = schema.oneOf.length;
-                while (idx--) {
-                  report.path.push('oneOf');
-                  report.path.push(idx.toString());
-                  exports.validateSchema.call(this, report, schema.oneOf[idx]);
-                  report.path.pop();
-                  report.path.pop();
-                }
-              }
-            },
-            not: function not(report, schema) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.6.1
-              if (Utils.whatIs(schema.not) !== 'object') {
-                report.addError('KEYWORD_TYPE_EXPECTED', [
-                  'not',
-                  'object'
-                ]);
-              } else {
-                report.path.push('not');
-                exports.validateSchema.call(this, report, schema.not);
-                report.path.pop();
-              }
-            },
-            definitions: function definitions(report, schema) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.7.1
-              if (Utils.whatIs(schema.definitions) !== 'object') {
-                report.addError('KEYWORD_TYPE_EXPECTED', [
-                  'definitions',
-                  'object'
-                ]);
-              } else {
-                var keys = Object.keys(schema.definitions), idx = keys.length;
-                while (idx--) {
-                  var key = keys[idx], val = schema.definitions[key];
-                  report.path.push('definitions');
-                  report.path.push(key);
-                  exports.validateSchema.call(this, report, val);
-                  report.path.pop();
-                  report.path.pop();
-                }
-              }
-            },
-            format: function format(report, schema) {
-              if (typeof schema.format !== 'string') {
-                report.addError('KEYWORD_TYPE_EXPECTED', [
-                  'format',
-                  'string'
-                ]);
-              } else {
-                if (FormatValidators[schema.format] === undefined && this.options.ignoreUnknownFormats !== true) {
-                  report.addError('UNKNOWN_FORMAT', [schema.format]);
-                }
-              }
-            },
-            id: function id(report, schema) {
-              // http://json-schema.org/latest/json-schema-core.html#rfc.section.7.2
-              if (typeof schema.id !== 'string') {
-                report.addError('KEYWORD_TYPE_EXPECTED', [
-                  'id',
-                  'string'
-                ]);
-              }
-            },
-            title: function title(report, schema) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.6.1
-              if (typeof schema.title !== 'string') {
-                report.addError('KEYWORD_TYPE_EXPECTED', [
-                  'title',
-                  'string'
-                ]);
-              }
-            },
-            description: function description(report, schema) {
-              // http://json-schema.org/latest/json-schema-validation.html#rfc.section.6.1
-              if (typeof schema.description !== 'string') {
-                report.addError('KEYWORD_TYPE_EXPECTED', [
-                  'description',
-                  'string'
-                ]);
-              }
-            },
-            'default': function _default()
-              /* report, schema */
-              {
-              }
-          };
-        var validateArrayOfSchemas = function validateArrayOfSchemas(report, arr) {
-          var idx = arr.length;
-          while (idx--) {
-            exports.validateSchema.call(this, report, arr[idx]);
-          }
-          return report.isValid();
-        };
-        exports.validateSchema = function (report, schema) {
-          report.commonErrorMessage = 'SCHEMA_VALIDATION_FAILED';
-          // if schema is an array, assume it's an array of schemas
-          if (Array.isArray(schema)) {
-            return validateArrayOfSchemas.call(this, report, schema);
-          }
-          // do not revalidate schema that has already been validated once
-          if (schema.__$validated) {
-            return true;
-          }
-          // if $schema is present, this schema should validate against that $schema
-          var hasParentSchema = schema.$schema && schema.id !== schema.$schema;
-          if (hasParentSchema) {
-            if (schema.__$schemaResolved && schema.__$schemaResolved !== schema) {
-              var subReport = new Report(report);
-              var valid = JsonValidation.validate.call(this, subReport, schema.__$schemaResolved, schema);
-              if (valid === false) {
-                report.addError('PARENT_SCHEMA_VALIDATION_FAILED', null, subReport);
-              }
-            } else {
-              if (this.options.ignoreUnresolvableReferences !== true) {
-                report.addError('REF_UNRESOLVED', [schema.$schema]);
-              }
-            }
-          }
-          if (this.options.noTypeless === true) {
-            // issue #36 - inherit type to anyOf, oneOf, allOf if noTypeless is defined
-            if (schema.type !== undefined) {
-              var schemas = [];
-              if (Array.isArray(schema.anyOf)) {
-                schemas = schemas.concat(schema.anyOf);
-              }
-              if (Array.isArray(schema.oneOf)) {
-                schemas = schemas.concat(schema.oneOf);
-              }
-              if (Array.isArray(schema.allOf)) {
-                schemas = schemas.concat(schema.allOf);
-              }
-              schemas.forEach(function (sch) {
-                if (!sch.type) {
-                  sch.type = schema.type;
-                }
-              });
-            }
-            // end issue #36
-            if (schema.enum === undefined && schema.type === undefined && schema.anyOf === undefined && schema.oneOf === undefined && schema.not === undefined && schema.$ref === undefined) {
-              report.addError('KEYWORD_UNDEFINED_STRICT', ['type']);
-            }
-          }
-          var keys = Object.keys(schema), idx = keys.length;
-          while (idx--) {
-            var key = keys[idx];
-            if (key.indexOf('__') === 0) {
-              continue;
-            }
-            if (SchemaValidators[key] !== undefined) {
-              SchemaValidators[key].call(this, report, schema);
-            } else if (!hasParentSchema) {
-              if (this.options.noExtraKeywords === true) {
-                report.addError('KEYWORD_UNEXPECTED', [key]);
-              }
-            }
-          }
-          if (this.options.pedanticCheck === true) {
-            if (schema.enum) {
-              // break recursion
-              var tmpSchema = Utils.clone(schema);
-              delete tmpSchema.enum;
-              delete tmpSchema.default;
-              report.path.push('enum');
-              idx = schema.enum.length;
-              while (idx--) {
-                report.path.push(idx.toString());
-                JsonValidation.validate.call(this, report, tmpSchema, schema.enum[idx]);
-                report.path.pop();
-              }
-              report.path.pop();
-            }
-            if (schema.default) {
-              report.path.push('default');
-              JsonValidation.validate.call(this, report, schema, schema.default);
-              report.path.pop();
-            }
-          }
-          var isValid = report.isValid();
-          if (isValid) {
-            schema.__$validated = true;
-          }
-          return isValid;
-        };
-      },
-      {
-        './FormatValidators': 313,
-        './JsonValidation': 314,
-        './Report': 316,
-        './Utils': 320
-      }
-    ],
-    320: [
-      function (require, module, exports) {
-        'use strict';
-        var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
-            return typeof obj;
-          } : function (obj) {
-            return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
-          };
-        exports.isAbsoluteUri = function (uri) {
-          return /^https?:\/\//.test(uri);
-        };
-        exports.isRelativeUri = function (uri) {
-          // relative URIs that end with a hash sign, issue #56
-          return /.+#/.test(uri);
-        };
-        exports.whatIs = function (what) {
-          var to = typeof what === 'undefined' ? 'undefined' : _typeof(what);
-          if (to === 'object') {
-            if (what === null) {
-              return 'null';
-            }
-            if (Array.isArray(what)) {
-              return 'array';
-            }
-            return 'object';  // typeof what === 'object' && what === Object(what) && !Array.isArray(what);
-          }
-          if (to === 'number') {
-            if (Number.isFinite(what)) {
-              if (what % 1 === 0) {
-                return 'integer';
-              } else {
-                return 'number';
-              }
-            }
-            if (Number.isNaN(what)) {
-              return 'not-a-number';
-            }
-            return 'unknown-number';
-          }
-          return to;  // undefined, boolean, string, function
-        };
-        exports.areEqual = function areEqual(json1, json2) {
-          // http://json-schema.org/latest/json-schema-core.html#rfc.section.3.6
-          // Two JSON values are said to be equal if and only if:
-          // both are nulls; or
-          // both are booleans, and have the same value; or
-          // both are strings, and have the same value; or
-          // both are numbers, and have the same mathematical value; or
-          if (json1 === json2) {
-            return true;
-          }
-          var i, len;
-          // both are arrays, and:
-          if (Array.isArray(json1) && Array.isArray(json2)) {
-            // have the same number of items; and
-            if (json1.length !== json2.length) {
-              return false;
-            }
-            // items at the same index are equal according to this definition; or
-            len = json1.length;
-            for (i = 0; i < len; i++) {
-              if (!areEqual(json1[i], json2[i])) {
-                return false;
-              }
-            }
-            return true;
-          }
-          // both are objects, and:
-          if (exports.whatIs(json1) === 'object' && exports.whatIs(json2) === 'object') {
-            // have the same set of property names; and
-            var keys1 = Object.keys(json1);
-            var keys2 = Object.keys(json2);
-            if (!areEqual(keys1, keys2)) {
-              return false;
-            }
-            // values for a same property name are equal according to this definition.
-            len = keys1.length;
-            for (i = 0; i < len; i++) {
-              if (!areEqual(json1[keys1[i]], json2[keys1[i]])) {
-                return false;
-              }
-            }
-            return true;
-          }
-          return false;
-        };
-        exports.isUniqueArray = function (arr, indexes) {
-          var i, j, l = arr.length;
-          for (i = 0; i < l; i++) {
-            for (j = i + 1; j < l; j++) {
-              if (exports.areEqual(arr[i], arr[j])) {
-                if (indexes) {
-                  indexes.push(i, j);
-                }
-                return false;
-              }
-            }
-          }
-          return true;
-        };
-        exports.difference = function (bigSet, subSet) {
-          var arr = [], idx = bigSet.length;
-          while (idx--) {
-            if (subSet.indexOf(bigSet[idx]) === -1) {
-              arr.push(bigSet[idx]);
-            }
-          }
-          return arr;
-        };
-        // NOT a deep version of clone
-        exports.clone = function (src) {
-          if (typeof src === 'undefined') {
-            return void 0;
-          }
-          if ((typeof src === 'undefined' ? 'undefined' : _typeof(src)) !== 'object' || src === null) {
-            return src;
-          }
-          var res, idx;
-          if (Array.isArray(src)) {
-            res = [];
-            idx = src.length;
-            while (idx--) {
-              res[idx] = src[idx];
-            }
-          } else {
-            res = {};
-            var keys = Object.keys(src);
-            idx = keys.length;
-            while (idx--) {
-              var key = keys[idx];
-              res[key] = src[key];
-            }
-          }
-          return res;
-        };
-        exports.cloneDeep = function (src) {
-          var visited = [], cloned = [];
-          function cloneDeep(src) {
-            if ((typeof src === 'undefined' ? 'undefined' : _typeof(src)) !== 'object' || src === null) {
-              return src;
-            }
-            var res, idx, cidx;
-            cidx = visited.indexOf(src);
-            if (cidx !== -1) {
-              return cloned[cidx];
-            }
-            visited.push(src);
-            if (Array.isArray(src)) {
-              res = [];
-              cloned.push(res);
-              idx = src.length;
-              while (idx--) {
-                res[idx] = cloneDeep(src[idx]);
-              }
-            } else {
-              res = {};
-              cloned.push(res);
-              var keys = Object.keys(src);
-              idx = keys.length;
-              while (idx--) {
-                var key = keys[idx];
-                res[key] = cloneDeep(src[key]);
-              }
-            }
-            return res;
-          }
-          return cloneDeep(src);
-        };
-        /*
-  following function comes from punycode.js library
-  see: https://github.com/bestiejs/punycode.js
-*/
-        /*jshint -W016*/
-        /**
- * Creates an array containing the numeric code points of each Unicode
- * character in the string. While JavaScript uses UCS-2 internally,
- * this function will convert a pair of surrogate halves (each of which
- * UCS-2 exposes as separate characters) into a single code point,
- * matching UTF-16.
- * @see `punycode.ucs2.encode`
- * @see <https://mathiasbynens.be/notes/javascript-encoding>
- * @memberOf punycode.ucs2
- * @name decode
- * @param {String} string The Unicode input string (UCS-2).
- * @returns {Array} The new array of code points.
- */
-        exports.ucs2decode = function (string) {
-          var output = [], counter = 0, length = string.length, value, extra;
-          while (counter < length) {
-            value = string.charCodeAt(counter++);
-            if (value >= 55296 && value <= 56319 && counter < length) {
-              // high surrogate, and there is a next character
-              extra = string.charCodeAt(counter++);
-              if ((extra & 64512) == 56320) {
-                // low surrogate
-                output.push(((value & 1023) << 10) + (extra & 1023) + 65536);
-              } else {
-                // unmatched surrogate; only append this code unit, in case the next
-                // code unit is the high surrogate of a surrogate pair
-                output.push(value);
-                counter--;
-              }
-            } else {
-              output.push(value);
-            }
-          }
-          return output;
-        };  /*jshint +W016*/
-      },
-      {}
-    ],
-    321: [
-      function (require, module, exports) {
-        (function (process) {
-          'use strict';
-          var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
-              return typeof obj;
-            } : function (obj) {
-              return obj && typeof Symbol === 'function' && obj.constructor === Symbol && obj !== Symbol.prototype ? 'symbol' : typeof obj;
-            };
-          require('./Polyfills');
-          var get = require('lodash.get');
-          var Report = require('./Report');
-          var FormatValidators = require('./FormatValidators');
-          var JsonValidation = require('./JsonValidation');
-          var SchemaCache = require('./SchemaCache');
-          var SchemaCompilation = require('./SchemaCompilation');
-          var SchemaValidation = require('./SchemaValidation');
-          var Utils = require('./Utils');
-          var Draft4Schema = require('./schemas/schema.json');
-          var Draft4HyperSchema = require('./schemas/hyper-schema.json');
-          /*
-    default options
-*/
-          var defaultOptions = {
-              asyncTimeout: 2000,
-              forceAdditional: false,
-              assumeAdditional: false,
-              forceItems: false,
-              forceMinItems: false,
-              forceMaxItems: false,
-              forceMinLength: false,
-              forceMaxLength: false,
-              forceProperties: false,
-              ignoreUnresolvableReferences: false,
-              noExtraKeywords: false,
-              noTypeless: false,
-              noEmptyStrings: false,
-              noEmptyArrays: false,
-              strictUris: false,
-              strictMode: false,
-              reportPathAsArray: false,
-              breakOnFirstError: true,
-              pedanticCheck: false,
-              ignoreUnknownFormats: false,
-              customValidator: null
-            };
-          /*
-    constructor
-*/
-          function ZSchema(options) {
-            this.cache = {};
-            this.referenceCache = [];
-            this.setRemoteReference('http://json-schema.org/draft-04/schema', Draft4Schema);
-            this.setRemoteReference('http://json-schema.org/draft-04/hyper-schema', Draft4HyperSchema);
-            // options
-            if ((typeof options === 'undefined' ? 'undefined' : _typeof(options)) === 'object') {
-              var keys = Object.keys(options), idx = keys.length, key;
-              // check that the options are correctly configured
-              while (idx--) {
-                key = keys[idx];
-                if (defaultOptions[key] === undefined) {
-                  throw new Error('Unexpected option passed to constructor: ' + key);
-                }
-              }
-              // copy the default options into passed options
-              keys = Object.keys(defaultOptions);
-              idx = keys.length;
-              while (idx--) {
-                key = keys[idx];
-                if (options[key] === undefined) {
-                  options[key] = Utils.clone(defaultOptions[key]);
-                }
-              }
-              this.options = options;
-            } else {
-              this.options = Utils.clone(defaultOptions);
-            }
-            if (this.options.strictMode === true) {
-              this.options.forceAdditional = true;
-              this.options.forceItems = true;
-              this.options.forceMaxLength = true;
-              this.options.forceProperties = true;
-              this.options.noExtraKeywords = true;
-              this.options.noTypeless = true;
-              this.options.noEmptyStrings = true;
-              this.options.noEmptyArrays = true;
-            }
-          }
-          /*
-    instance methods
-*/
-          ZSchema.prototype.compileSchema = function (schema) {
-            var report = new Report(this.options);
-            schema = SchemaCache.getSchema.call(this, report, schema);
-            SchemaCompilation.compileSchema.call(this, report, schema);
-            this.lastReport = report;
-            return report.isValid();
-          };
-          ZSchema.prototype.validateSchema = function (schema) {
-            if (Array.isArray(schema) && schema.length === 0) {
-              throw new Error('.validateSchema was called with an empty array');
-            }
-            var report = new Report(this.options);
-            schema = SchemaCache.getSchema.call(this, report, schema);
-            var compiled = SchemaCompilation.compileSchema.call(this, report, schema);
-            if (compiled) {
-              SchemaValidation.validateSchema.call(this, report, schema);
-            }
-            this.lastReport = report;
-            return report.isValid();
-          };
-          ZSchema.prototype.validate = function (json, schema, options, callback) {
-            if (Utils.whatIs(options) === 'function') {
-              callback = options;
-              options = {};
-            }
-            if (!options) {
-              options = {};
-            }
-            var whatIs = Utils.whatIs(schema);
-            if (whatIs !== 'string' && whatIs !== 'object') {
-              var e = new Error('Invalid .validate call - schema must be an string or object but ' + whatIs + ' was passed!');
-              if (callback) {
-                process.nextTick(function () {
-                  callback(e, false);
-                });
-                return;
-              }
-              throw e;
-            }
-            var foundError = false;
-            var report = new Report(this.options);
-            if (typeof schema === 'string') {
-              var schemaName = schema;
-              schema = SchemaCache.getSchema.call(this, report, schemaName);
-              if (!schema) {
-                throw new Error('Schema with id \'' + schemaName + '\' wasn\'t found in the validator cache!');
-              }
-            } else {
-              schema = SchemaCache.getSchema.call(this, report, schema);
-            }
-            var compiled = false;
-            if (!foundError) {
-              compiled = SchemaCompilation.compileSchema.call(this, report, schema);
-            }
-            if (!compiled) {
-              this.lastReport = report;
-              foundError = true;
-            }
-            var validated = false;
-            if (!foundError) {
-              validated = SchemaValidation.validateSchema.call(this, report, schema);
-            }
-            if (!validated) {
-              this.lastReport = report;
-              foundError = true;
-            }
-            if (options.schemaPath) {
-              report.rootSchema = schema;
-              schema = get(schema, options.schemaPath);
-              if (!schema) {
-                throw new Error('Schema path \'' + options.schemaPath + '\' wasn\'t found in the schema!');
-              }
-            }
-            if (!foundError) {
-              JsonValidation.validate.call(this, report, schema, json);
-            }
-            if (callback) {
-              report.processAsyncTasks(this.options.asyncTimeout, callback);
-              return;
-            } else if (report.asyncTasks.length > 0) {
-              throw new Error('This validation has async tasks and cannot be done in sync mode, please provide callback argument.');
-            }
-            // assign lastReport so errors are retrievable in sync mode
-            this.lastReport = report;
-            return report.isValid();
-          };
-          ZSchema.prototype.getLastError = function () {
-            if (this.lastReport.errors.length === 0) {
-              return null;
-            }
-            var e = new Error();
-            e.name = 'z-schema validation error';
-            e.message = this.lastReport.commonErrorMessage;
-            e.details = this.lastReport.errors;
-            return e;
-          };
-          ZSchema.prototype.getLastErrors = function () {
-            return this.lastReport && this.lastReport.errors.length > 0 ? this.lastReport.errors : undefined;
-          };
-          ZSchema.prototype.getMissingReferences = function (arr) {
-            arr = arr || this.lastReport.errors;
-            var res = [], idx = arr.length;
-            while (idx--) {
-              var error = arr[idx];
-              if (error.code === 'UNRESOLVABLE_REFERENCE') {
-                var reference = error.params[0];
-                if (res.indexOf(reference) === -1) {
-                  res.push(reference);
-                }
-              }
-              if (error.inner) {
-                res = res.concat(this.getMissingReferences(error.inner));
-              }
-            }
-            return res;
-          };
-          ZSchema.prototype.getMissingRemoteReferences = function () {
-            var missingReferences = this.getMissingReferences(), missingRemoteReferences = [], idx = missingReferences.length;
-            while (idx--) {
-              var remoteReference = SchemaCache.getRemotePath(missingReferences[idx]);
-              if (remoteReference && missingRemoteReferences.indexOf(remoteReference) === -1) {
-                missingRemoteReferences.push(remoteReference);
-              }
-            }
-            return missingRemoteReferences;
-          };
-          ZSchema.prototype.setRemoteReference = function (uri, schema) {
-            if (typeof schema === 'string') {
-              schema = JSON.parse(schema);
-            } else {
-              schema = Utils.cloneDeep(schema);
-            }
-            SchemaCache.cacheSchemaByUri.call(this, uri, schema);
-          };
-          ZSchema.prototype.getResolvedSchema = function (schema) {
-            var report = new Report(this.options);
-            schema = SchemaCache.getSchema.call(this, report, schema);
-            // clone before making any modifications
-            schema = Utils.cloneDeep(schema);
-            var visited = [];
-            // clean-up the schema and resolve references
-            var cleanup = function cleanup(schema) {
-              var key, typeOf = Utils.whatIs(schema);
-              if (typeOf !== 'object' && typeOf !== 'array') {
-                return;
-              }
-              if (schema.___$visited) {
-                return;
-              }
-              schema.___$visited = true;
-              visited.push(schema);
-              if (schema.$ref && schema.__$refResolved) {
-                var from = schema.__$refResolved;
-                var to = schema;
-                delete schema.$ref;
-                delete schema.__$refResolved;
-                for (key in from) {
-                  if (from.hasOwnProperty(key)) {
-                    to[key] = from[key];
-                  }
-                }
-              }
-              for (key in schema) {
-                if (schema.hasOwnProperty(key)) {
-                  if (key.indexOf('__$') === 0) {
-                    delete schema[key];
-                  } else {
-                    cleanup(schema[key]);
-                  }
-                }
-              }
-            };
-            cleanup(schema);
-            visited.forEach(function (s) {
-              delete s.___$visited;
-            });
-            this.lastReport = report;
-            if (report.isValid()) {
-              return schema;
-            } else {
-              throw this.getLastError();
-            }
-          };
-          ZSchema.prototype.setSchemaReader = function (schemaReader) {
-            return ZSchema.setSchemaReader(schemaReader);
-          };
-          ZSchema.prototype.getSchemaReader = function () {
-            return ZSchema.schemaReader;
-          };
-          /*
-    static methods
-*/
-          ZSchema.setSchemaReader = function (schemaReader) {
-            ZSchema.schemaReader = schemaReader;
-          };
-          ZSchema.registerFormat = function (formatName, validatorFunction) {
-            FormatValidators[formatName] = validatorFunction;
-          };
-          ZSchema.unregisterFormat = function (formatName) {
-            delete FormatValidators[formatName];
-          };
-          ZSchema.getRegisteredFormats = function () {
-            return Object.keys(FormatValidators);
-          };
-          ZSchema.getDefaultOptions = function () {
-            return Utils.cloneDeep(defaultOptions);
-          };
-          module.exports = ZSchema;
-        }.call(this, require('_process')));
-      },
-      {
-        './FormatValidators': 313,
-        './JsonValidation': 314,
-        './Polyfills': 315,
-        './Report': 316,
-        './SchemaCache': 317,
-        './SchemaCompilation': 318,
-        './SchemaValidation': 319,
-        './Utils': 320,
-        './schemas/hyper-schema.json': 322,
-        './schemas/schema.json': 323,
-        '_process': 166,
-        'lodash.get': 77
-      }
-    ],
-    322: [
-      function (require, module, exports) {
-        module.exports = {
-          '$schema': 'http://json-schema.org/draft-04/hyper-schema#',
-          'id': 'http://json-schema.org/draft-04/hyper-schema#',
-          'title': 'JSON Hyper-Schema',
-          'allOf': [{ '$ref': 'http://json-schema.org/draft-04/schema#' }],
-          'properties': {
-            'additionalItems': {
-              'anyOf': [
-                { 'type': 'boolean' },
-                { '$ref': '#' }
-              ]
-            },
-            'additionalProperties': {
-              'anyOf': [
-                { 'type': 'boolean' },
-                { '$ref': '#' }
-              ]
-            },
-            'dependencies': {
-              'additionalProperties': {
-                'anyOf': [
-                  { '$ref': '#' },
-                  { 'type': 'array' }
-                ]
-              }
-            },
-            'items': {
-              'anyOf': [
-                { '$ref': '#' },
-                { '$ref': '#/definitions/schemaArray' }
-              ]
-            },
-            'definitions': { 'additionalProperties': { '$ref': '#' } },
-            'patternProperties': { 'additionalProperties': { '$ref': '#' } },
-            'properties': { 'additionalProperties': { '$ref': '#' } },
-            'allOf': { '$ref': '#/definitions/schemaArray' },
-            'anyOf': { '$ref': '#/definitions/schemaArray' },
-            'oneOf': { '$ref': '#/definitions/schemaArray' },
-            'not': { '$ref': '#' },
-            'links': {
-              'type': 'array',
-              'items': { '$ref': '#/definitions/linkDescription' }
-            },
-            'fragmentResolution': { 'type': 'string' },
-            'media': {
-              'type': 'object',
-              'properties': {
-                'type': {
-                  'description': 'A media type, as described in RFC 2046',
-                  'type': 'string'
-                },
-                'binaryEncoding': {
-                  'description': 'A content encoding scheme, as described in RFC 2045',
-                  'type': 'string'
-                }
-              }
-            },
-            'pathStart': {
-              'description': 'Instances\' URIs must start with this value for this schema to apply to them',
-              'type': 'string',
-              'format': 'uri'
-            }
-          },
-          'definitions': {
-            'schemaArray': {
-              'type': 'array',
-              'items': { '$ref': '#' }
-            },
-            'linkDescription': {
-              'title': 'Link Description Object',
-              'type': 'object',
-              'required': [
-                'href',
-                'rel'
-              ],
-              'properties': {
-                'href': {
-                  'description': 'a URI template, as defined by RFC 6570, with the addition of the $, ( and ) characters for pre-processing',
-                  'type': 'string'
-                },
-                'rel': {
-                  'description': 'relation to the target resource of the link',
-                  'type': 'string'
-                },
-                'title': {
-                  'description': 'a title for the link',
-                  'type': 'string'
-                },
-                'targetSchema': {
-                  'description': 'JSON Schema describing the link target',
-                  '$ref': '#'
-                },
-                'mediaType': {
-                  'description': 'media type (as defined by RFC 2046) describing the link target',
-                  'type': 'string'
-                },
-                'method': {
-                  'description': 'method for requesting the target of the link (e.g. for HTTP this might be "GET" or "DELETE")',
-                  'type': 'string'
-                },
-                'encType': {
-                  'description': 'The media type in which to submit data along with the request',
-                  'type': 'string',
-                  'default': 'application/json'
-                },
-                'schema': {
-                  'description': 'Schema describing the data to submit along with the request',
-                  '$ref': '#'
-                }
-              }
-            }
-          }
-        };
-      },
-      {}
-    ],
-    323: [
-      function (require, module, exports) {
-        module.exports = {
-          'id': 'http://json-schema.org/draft-04/schema#',
-          '$schema': 'http://json-schema.org/draft-04/schema#',
-          'description': 'Core schema meta-schema',
-          'definitions': {
-            'schemaArray': {
-              'type': 'array',
-              'minItems': 1,
-              'items': { '$ref': '#' }
-            },
-            'positiveInteger': {
-              'type': 'integer',
-              'minimum': 0
-            },
-            'positiveIntegerDefault0': {
-              'allOf': [
-                { '$ref': '#/definitions/positiveInteger' },
-                { 'default': 0 }
-              ]
-            },
-            'simpleTypes': {
-              'enum': [
-                'array',
-                'boolean',
-                'integer',
-                'null',
-                'number',
-                'object',
-                'string'
-              ]
-            },
-            'stringArray': {
-              'type': 'array',
-              'items': { 'type': 'string' },
-              'minItems': 1,
-              'uniqueItems': true
-            }
-          },
-          'type': 'object',
-          'properties': {
-            'id': {
-              'type': 'string',
-              'format': 'uri'
-            },
-            '$schema': {
-              'type': 'string',
-              'format': 'uri'
-            },
-            'title': { 'type': 'string' },
-            'description': { 'type': 'string' },
-            'default': {},
-            'multipleOf': {
-              'type': 'number',
-              'minimum': 0,
-              'exclusiveMinimum': true
-            },
-            'maximum': { 'type': 'number' },
-            'exclusiveMaximum': {
-              'type': 'boolean',
-              'default': false
-            },
-            'minimum': { 'type': 'number' },
-            'exclusiveMinimum': {
-              'type': 'boolean',
-              'default': false
-            },
-            'maxLength': { '$ref': '#/definitions/positiveInteger' },
-            'minLength': { '$ref': '#/definitions/positiveIntegerDefault0' },
-            'pattern': {
-              'type': 'string',
-              'format': 'regex'
-            },
-            'additionalItems': {
-              'anyOf': [
-                { 'type': 'boolean' },
-                { '$ref': '#' }
-              ],
-              'default': {}
-            },
-            'items': {
-              'anyOf': [
-                { '$ref': '#' },
-                { '$ref': '#/definitions/schemaArray' }
-              ],
-              'default': {}
-            },
-            'maxItems': { '$ref': '#/definitions/positiveInteger' },
-            'minItems': { '$ref': '#/definitions/positiveIntegerDefault0' },
-            'uniqueItems': {
-              'type': 'boolean',
-              'default': false
-            },
-            'maxProperties': { '$ref': '#/definitions/positiveInteger' },
-            'minProperties': { '$ref': '#/definitions/positiveIntegerDefault0' },
-            'required': { '$ref': '#/definitions/stringArray' },
-            'additionalProperties': {
-              'anyOf': [
-                { 'type': 'boolean' },
-                { '$ref': '#' }
-              ],
-              'default': {}
-            },
-            'definitions': {
-              'type': 'object',
-              'additionalProperties': { '$ref': '#' },
-              'default': {}
-            },
-            'properties': {
-              'type': 'object',
-              'additionalProperties': { '$ref': '#' },
-              'default': {}
-            },
-            'patternProperties': {
-              'type': 'object',
-              'additionalProperties': { '$ref': '#' },
-              'default': {}
-            },
-            'dependencies': {
-              'type': 'object',
-              'additionalProperties': {
-                'anyOf': [
-                  { '$ref': '#' },
-                  { '$ref': '#/definitions/stringArray' }
-                ]
-              }
-            },
-            'enum': {
-              'type': 'array',
-              'minItems': 1,
-              'uniqueItems': true
-            },
-            'type': {
-              'anyOf': [
-                { '$ref': '#/definitions/simpleTypes' },
-                {
-                  'type': 'array',
-                  'items': { '$ref': '#/definitions/simpleTypes' },
-                  'minItems': 1,
-                  'uniqueItems': true
-                }
-              ]
-            },
-            'format': { 'type': 'string' },
-            'allOf': { '$ref': '#/definitions/schemaArray' },
-            'anyOf': { '$ref': '#/definitions/schemaArray' },
-            'oneOf': { '$ref': '#/definitions/schemaArray' },
-            'not': { '$ref': '#' }
-          },
-          'dependencies': {
-            'exclusiveMaximum': ['maximum'],
-            'exclusiveMinimum': ['minimum']
-          },
-          'default': {}
-        };
-      },
-      {}
     ]
-  }, {}, [91])(91);
+  }, {}, [85])(85);
 }));
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE

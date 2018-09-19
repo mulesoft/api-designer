@@ -84274,7 +84274,7 @@ exports.javascript = require('./javascript');
               authStrategy.authenticate().then(function(token) {
                 token.sign(request);
                 $scope.requestOptions = request.toOptions();
-                jQuery.ajax(Object.assign(request.toOptions(),{timeout:10000})).then(
+                jQuery.ajax(request.toOptions()).then(
                   function(data, textStatus, jqXhr) { handleResponse(jqXhr); },
                   function(jqXhr) { handleResponse(jqXhr); }
                 );
@@ -88522,10 +88522,10 @@ RAML.Inspector = (function() {
   var isValidFileTypes = function (values) {
     return function (check) {
       check = check.type;
-      var checkInValue = values.find(function (value) {
+      var checkInValue = values.filter(function (value) {
         return value.toLowerCase() === check
       });
-      return checkInValue ? true : false;
+      return checkInValue.length >= 0;
     }
   };
 
