@@ -86618,6 +86618,66 @@ RAML.Inspector = (function() {
   };
 })();
 
+(function () {
+  /* jshint -W034 */
+  'use strict';
+
+  if (!Array.prototype.find) {
+    Array.prototype.find = function (predicate) {
+      for (var i = 0, len = this.length; i < len; i++) {
+        var item = this[i];
+        if (predicate(item)) {
+          return item;
+        }
+      }
+      return undefined;
+    };
+  }
+
+  if (!Array.prototype.includes) {
+    Array.prototype.includes = function (value) {
+      for (var i = 0, len = this.length; i < len; i++) {
+        var item = this[i];
+        if (item === value) {
+          return true;
+        }
+      }
+      return false;
+    };
+  }
+})();
+
+(function () {
+  /* jshint -W034 */
+  'use strict';
+
+  if (typeof Object.assign !== 'function') {
+    Object.defineProperty(Object, 'assign', {
+      value: function assign(target, varArgs) {
+        'use strict';
+        if (target == null) { throw new TypeError('Cannot convert undefined or null to object'); }
+
+        var to = Object(target);
+
+        for (var index = 1; index < varArgs.length; index++) {
+          var nextSource = varArgs[index];
+
+          if (nextSource != null) {
+            for (var nextKey in nextSource) {
+              if (Object.prototype.hasOwnProperty.call(nextSource, nextKey)) {
+                to[nextKey] = nextSource[nextKey];
+              }
+            }
+          }
+        }
+        return to;
+      },
+      writable: true,
+      configurable: true
+    });
+  }
+})();
+
 (function() {
   'use strict';
 
@@ -88522,10 +88582,10 @@ RAML.Inspector = (function() {
   var isValidFileTypes = function (values) {
     return function (check) {
       check = check.type;
-      var checkInValue = values.filter(function (value) {
+      var checkInValue = values.find(function (value) {
         return value.toLowerCase() === check
       });
-      return checkInValue.length >= 0;
+      return !!checkInValue;
     }
   };
 
