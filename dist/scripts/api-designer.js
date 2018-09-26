@@ -34765,6 +34765,7 @@
                       'reference',
                       'properties',
                       'compositionType',
+                      'oneOf',
                       'schema',
                       'items',
                       'itemsList',
@@ -34866,6 +34867,13 @@
                     else
                       oasDef.allOf = allOf;
                   }
+                  if (model.hasOwnProperty('oneOf')) {
+                    var oneOf = [];
+                    _.values(model.oneOf).map(function (val) {
+                      oneOf.push(_this2._export(val));
+                    });
+                    oasDef.oneOf = oneOf;
+                  }
                   if (model.hasOwnProperty('schema') && model.schema != null) {
                     var schema = model.schema;
                     oasDef.schema = this._export(schema);
@@ -34905,6 +34913,7 @@
                       '$ref',
                       'properties',
                       'allOf',
+                      'oneOf',
                       'schema',
                       'items',
                       'additionalProperties',
@@ -34973,6 +34982,13 @@
                       composition.push(_this3._import(val));
                     });
                     model.compositionType = composition;
+                  }
+                  if (oasDef.hasOwnProperty('oneOf')) {
+                    var oneOf = [];
+                    _.values(oasDef['oneOf']).map(function (val) {
+                      oneOf.push(_this3._import(val));
+                    });
+                    model.oneOf = oneOf;
                   }
                   if (oasDef.hasOwnProperty('schema')) {
                     model.schema = this._import(oasDef.schema);
@@ -35148,7 +35164,7 @@
                       oasDef.type = 'object';
                     } else if (oasDef.hasOwnProperty('items')) {
                       oasDef.type = 'array';
-                    } else if (!oasDef.hasOwnProperty('$ref') && !oasDef.hasOwnProperty('allOf')) {
+                    } else if (!oasDef.hasOwnProperty('$ref') && !oasDef.hasOwnProperty('allOf') && !oasDef.hasOwnProperty('oneOf')) {
                       oasDef.type = 'string';
                     }
                   }
@@ -38309,6 +38325,7 @@
                       'reference',
                       'properties',
                       'compositionType',
+                      'oneOf',
                       'schema',
                       'items',
                       'itemsList',
@@ -38419,6 +38436,13 @@
                     } else {
                       oasDef.allOf = allOf;
                     }
+                  }
+                  if (model.oneOf != null) {
+                    var oneOf = [];
+                    _.values(model.oneOf).map(function (val) {
+                      oneOf.push(_this3._export(val));
+                    });
+                    oasDef.oneOf = oneOf;
                   }
                   // if (model.schema != null) {
                   // 	const schema: Definition = model.schema;
@@ -38589,7 +38613,7 @@
                       oasDef.type = 'object';
                     } else if (oasDef.items != null) {
                       oasDef.type = 'array';
-                    } else if (oasDef.$ref == null && !oasDef.allOf != null) {
+                    } else if (oasDef.$ref == null && !oasDef.allOf != null && oasDef.oneOf == null) {
                       oasDef.type = 'string';
                     }
                   }
@@ -41483,6 +41507,7 @@
                       'properties',
                       'items',
                       'compositionType',
+                      'oneOf',
                       'in',
                       'schema',
                       'additionalProperties',
@@ -41630,6 +41655,17 @@
                     }
                     _.assign(ramlDef, result);
                     delete ramlDef.compositionType;
+                  }
+                  if (model.hasOwnProperty('oneOf')) {
+                    var _result = '';
+                    for (var _i4 = 0; _i4 < model.oneOf.length; _i4++) {
+                      if (_result.length > 0)
+                        _result = _result.concat(' | ');
+                      var _value2 = model.oneOf[_i4];
+                      var _val2 = this._export(_value2);
+                      _result = _result.concat(_val2.type);
+                    }
+                    ramlDef.type = _result;
                   }
                   if (model.hasOwnProperty('schema') && model.schema != null) {
                     var schema = model.schema;
@@ -41882,8 +41918,8 @@
                   } else {
                     if (ramlDef.hasOwnProperty('schemaPath')) {
                       if (ramlDef.name.endsWith('/json')) {
-                        var _value2 = JSON.parse(ramlDef.type);
-                        _.assign(model, this._import(_value2));
+                        var _value3 = JSON.parse(ramlDef.type);
+                        _.assign(model, this._import(_value3));
                       } else
                         model.type = 'object';
                     } else if (ramlDef.hasOwnProperty('type')) {
@@ -41900,10 +41936,10 @@
       	}
       }*/
                       }
-                      var _value3 = RamlDefinitionConverter._readTypeAttribute(ramlDef.type);
-                      if (_.isArray(_value3)) {
+                      var _value4 = RamlDefinitionConverter._readTypeAttribute(ramlDef.type);
+                      if (_.isArray(_value4)) {
                         var compositionType = [];
-                        _value3.map(function (entry) {
+                        _value4.map(function (entry) {
                           var typeModel = new Definition();
                           _this2._convertSimpleType(entry, typeModel);
                           compositionType.push(typeModel);
@@ -41914,9 +41950,11 @@
                           model.compositionType = compositionType;
                         }
                       } else {
-                        if ((typeof _value3 === 'undefined' ? 'undefined' : _typeof(_value3)) === 'object') {
+                        if ((typeof _value4 === 'undefined' ? 'undefined' : _typeof(_value4)) === 'object') {
+                        } else if (_value4.indexOf('|') > -1) {
+                          this._convertOneOfType(_value4, model);
                         } else {
-                          this._convertSimpleType(_value3, model);
+                          this._convertSimpleType(_value4, model);
                         }
                       }
                     } else {
@@ -41935,29 +41973,29 @@
                     for (var id in ramlDef.properties) {
                       if (!ramlDef.properties.hasOwnProperty(id))
                         continue;
-                      var _value4 = ramlDef.properties[id];
+                      var _value5 = ramlDef.properties[id];
                       if (id.startsWith('/') && id.endsWith('/')) {
                         //additionalProperties
-                        model.additionalProperties = this._import(_value4);
+                        model.additionalProperties = this._import(_value5);
                       } else {
-                        if (!required.includes(id) && (!ignoreRequired && !isRaml08Version && !_value4.hasOwnProperty('required') || _value4.hasOwnProperty('required') && _value4.required === true))
+                        if (!required.includes(id) && (!ignoreRequired && !isRaml08Version && !_value5.hasOwnProperty('required') || _value5.hasOwnProperty('required') && _value5.required === true))
                           required.push(id);
-                        if (_.isBoolean(_value4.required))
-                          delete _value4.required;
+                        if (_.isBoolean(_value5.required))
+                          delete _value5.required;
                         //union type property
-                        if (_.isArray(_value4)) {
+                        if (_.isArray(_value5)) {
                           (function () {
                             var val = {
                                 name: id,
                                 type: []
                               };
-                            _value4.map(function (v) {
+                            _value5.map(function (v) {
                               val.type.push(RamlDefinitionConverter._readTypeAttribute(v.type));
                             });
-                            _value4 = val;
+                            _value5 = val;
                           }());
                         }
-                        var prop = this._import(_value4);
+                        var prop = this._import(_value5);
                         prop.name = id;
                         modelProps.push(prop);
                       }
@@ -41976,17 +42014,17 @@
                     }
                   }
                   if (ramlDef.hasOwnProperty('items')) {
-                    var _value5 = RamlDefinitionConverter._readTypeAttribute(ramlDef.items);
-                    if (typeof _value5 === 'string') {
+                    var _value6 = RamlDefinitionConverter._readTypeAttribute(ramlDef.items);
+                    if (typeof _value6 === 'string') {
                       var modelItems = new Definition();
-                      if (_value5.endsWith('[]')) {
+                      if (_value6.endsWith('[]')) {
                         modelItems.type = 'array';
                         var def = new Definition();
-                        this._convertSimpleType(_value5.replace('[]', ''), def);
+                        this._convertSimpleType(_value6.replace('[]', ''), def);
                         RamlDefinitionConverter._convertToInternalType(def);
                         modelItems.items = def;
                       } else {
-                        this._convertSimpleType(_value5, modelItems);
+                        this._convertSimpleType(_value6, modelItems);
                         RamlDefinitionConverter._convertToInternalType(modelItems);
                       }
                       model.items = modelItems;
@@ -42043,13 +42081,13 @@
                   if (ramlDef.hasOwnProperty('examples')) {
                     var ramlExamples = ramlDef.examples;
                     var examples = [];
-                    for (var _i4 = 0; _i4 < ramlExamples.length; _i4++) {
-                      var entry = ramlExamples[_i4];
+                    for (var _i5 = 0; _i5 < ramlExamples.length; _i5++) {
+                      var entry = ramlExamples[_i5];
                       var result = jsonHelper.parse(entry.value);
                       if (entry.hasOwnProperty('strict') && !entry.strict) {
                         result.strict = entry.strict;
                       }
-                      examples[_i4] = result;
+                      examples[_i5] = result;
                     }
                     if (_.isArray(examples))
                       model.examples = examples;
@@ -42127,6 +42165,18 @@
                     } else
                       model.type = val;
                   }
+                }
+              },
+              {
+                key: '_convertOneOfType',
+                value: function _convertOneOfType(values, model) {
+                  var types = values.split('|');
+                  var oneOf = [];
+                  for (var i = 0; i < types.length; i++) {
+                    var type = types[i];
+                    oneOf.push(this._import({ type: type.split(' ').join('') }));
+                  }
+                  model.oneOf = oneOf;
                 }
               },
               {
