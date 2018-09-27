@@ -12,6 +12,45 @@
     <link rel="stylesheet" href="styles/api-designer.css"/>
   </head>
   <body ng-app="ramlEditorApp">
+    <script>
+      (function() {
+        if (!String.prototype.startsWith) {
+          String.prototype.startsWith = function(search, pos) {
+            return this.substr(!pos || pos < 0 ? 0 : +pos, search.length) === search;
+          };
+        }
+
+        if (!String.prototype.endsWith) {
+          String.prototype.endsWith = function(search, thisLen) {
+            if (thisLen === undefined || thisLen > this.length) {
+              thisLen = this.length;
+            }
+            return this.substring(thisLen - search.length, thisLen) === search;
+          };
+        }
+
+        if (!Array.prototype.find) {
+          Array.prototype.find = function (predicate) {
+            for (var i = 0, len = this.length; i < len; i++) {
+              var item = this[i];
+              if (predicate(item)) { return item; }
+            }
+            return undefined;
+          };
+        }
+
+        if (!Array.prototype.includes) {
+          Array.prototype.includes = function (value) {
+            for (var i = 0, len = this.length; i < len; i++) {
+              var item = this[i];
+              if (item === value) { return true; }
+            }
+            return false;
+          };
+        }
+      })();
+    </script>
+
     <div class="container">
         <raml-editor></raml-editor>
     </div>
