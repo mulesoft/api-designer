@@ -200,6 +200,7 @@ if (self.importScripts && self.location.hash) {
   if (self.location.host.indexOf('localhost:9013') > -1) {
     // dev dependencies to parser
     self.importScripts(
+      '/bower_components/js-polyfills/polyfill.js',
       '/bower_components/promise-polyfill/promise.min.js',
       '/bower_components/raml-1-parser/raml-json-validation.js',
       '/bower_components/raml-1-parser/raml-xml-validation.js',
@@ -245,7 +246,7 @@ if (self.importScripts && self.location.hash) {
             // console.timeEnd(type);
             return post(type + '-resolve', result);
           })
-          .catch(function(error) {
+          .catch(function (error) {
             postReject(type, error);
           });
       } catch (e) {
@@ -284,7 +285,7 @@ if (self.importScripts && self.location.hash) {
     });
   };
 
-  var ramlParser = new RamlParser(requestFilePromise, workerParameters.proxy );
+  var ramlParser = new RamlParser(requestFilePromise, workerParameters.proxy);
 
   listenThenPost('ramlParse', function (data) {
     return ramlParser.parse(data.path);
