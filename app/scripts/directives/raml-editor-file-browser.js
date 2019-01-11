@@ -101,6 +101,12 @@
           fileBrowser.selectFile(file);
         });
 
+        $rootScope.$on('event:raml-parse-file-selected', function () {
+          var currentFile = JSON.parse(config.get('currentFile', '{}'));
+          var file = ramlRepository.getByPath(currentFile.path);
+          fileBrowser.selectFile(file);
+        });
+
         fileBrowser.selectFile = function selectFile(file) {
           // If we select a file that is already active, just modify 'currentTarget', no load needed
           if (fileBrowser.selectedFile && fileBrowser.selectedFile.$$hashKey === file.$$hashKey) {
