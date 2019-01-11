@@ -15,7 +15,7 @@
             '<a><i class="fa fa-save"></i>&nbsp;Save All</a>' +
           '</li>',
         link: function(scope) {
-          scope.saveAllFiles = function saveAllFiles() {
+          scope.saveAllFiles = function saveAllFiles(importing) {
             var promises = [];
 
             scope.homeDirectory.forEachChildDo(function (file) {
@@ -30,6 +30,10 @@
 
             return $q.all(promises)
               .then(function success() {
+                if(importing){
+                  $rootScope.$broadcast('event:raml-parse-file-selected');
+                }
+
                 $rootScope.$broadcast('event:notification', {
                   message: 'All files saved.',
                   expires: true
@@ -37,8 +41,8 @@
               });
           };
 
-          $rootScope.$on('event:save-all', function() {
-            scope.saveAllFiles();
+          $rootScope.$on('event:save-all', function(event, importing) {
+            scope.saveAllFiles(importing);
           });
         }
       };

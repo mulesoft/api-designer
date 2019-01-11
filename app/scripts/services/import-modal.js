@@ -60,7 +60,7 @@
         return importService.mergeFile($scope.rootDirectory, mode.value)
           .then(function () {
             if (importService.isZip(mode.value)) {
-              $rootScope.$broadcast('event:save-all');
+              $rootScope.$broadcast('event:save-all', true);
             }
           })
           .then(function () {
@@ -101,7 +101,7 @@
 
       function importSwaggerFile (mode) {
 				$scope.importing = true;
-	
+
 				var importSwaggerPromise;
 				if (importService.isZip(mode.value)) {
 					importSwaggerPromise = swaggerToRAML.zip($scope.rootDirectory, mode.value).then(function () {
