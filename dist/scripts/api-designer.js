@@ -82749,7 +82749,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         $scope.importing = true;
         return importService.mergeFile($scope.rootDirectory, mode.value).then(function () {
           if (importService.isZip(mode.value)) {
-            $rootScope.$broadcast('event:save-all');
+            $rootScope.$broadcast('event:save-all', true);
           }
         }).then(function () {
           return $modalInstance.close(true);
@@ -85103,6 +85103,11 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
           var file = ramlRepository.getByPath(filePath);
           fileBrowser.selectFile(file);
         });
+        $rootScope.$on('event:raml-parse-file-selected', function () {
+          var currentFile = JSON.parse(config.get('currentFile', '{}'));
+          var file = ramlRepository.getByPath(currentFile.path);
+          fileBrowser.selectFile(file);
+        });
         fileBrowser.selectFile = function selectFile(file) {
           // If we select a file that is already active, just modify 'currentTarget', no load needed
           if (fileBrowser.selectedFile && fileBrowser.selectedFile.$$hashKey === file.$$hashKey) {
@@ -85352,7 +85357,7 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
         replace: true,
         template: '<li role="save-all-button" ng-click="saveAllFiles()">' + '<a><i class="fa fa-save"></i>&nbsp;Save All</a>' + '</li>',
         link: function (scope) {
-          scope.saveAllFiles = function saveAllFiles() {
+          scope.saveAllFiles = function saveAllFiles(importing) {
             var promises = [];
             scope.homeDirectory.forEachChildDo(function (file) {
               if (file.isDirectory) {
@@ -85363,14 +85368,17 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
               }
             });
             return $q.all(promises).then(function success() {
+              if (importing) {
+                $rootScope.$broadcast('event:raml-parse-file-selected');
+              }
               $rootScope.$broadcast('event:notification', {
                 message: 'All files saved.',
                 expires: true
               });
             });
           };
-          $rootScope.$on('event:save-all', function () {
-            scope.saveAllFiles();
+          $rootScope.$on('event:save-all', function (event, importing) {
+            scope.saveAllFiles(importing);
           });
         }
       };
