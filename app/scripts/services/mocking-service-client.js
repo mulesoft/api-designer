@@ -27,18 +27,6 @@
         return match.slice(1);
       }
 
-      self.buildSimpleUrl = function buildSimpleUrl() {
-        var args = Array.prototype.slice.call(arguments, 0);
-        var url   = self.baseUri + SEPARATOR + args.join(SEPARATOR);
-        var proxy = self.proxy || $window.RAML.Settings.proxy;
-
-        if (proxy) {
-          url = proxy + resolveUri(url);
-        }
-
-        return url;
-      };
-
       self.buildURL = function buildURL() {
         var args = ['sources', 'manager', 'apis'].concat(mockingIds()).concat(Array.prototype.slice.call(arguments, 0));
         var url   = self.baseUri + SEPARATOR + args.join(SEPARATOR);
