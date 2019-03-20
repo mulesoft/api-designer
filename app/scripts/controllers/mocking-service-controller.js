@@ -5,6 +5,7 @@
     .controller('mockingServiceController', function mockingServiceControllerFactory(
       $scope,
       mockingService,
+      mockingServiceClient,
       codeMirror,
       getNode
     ) {
@@ -13,13 +14,13 @@
           codeMirror.setLine($scope.editor, lineNumber, (prefix || '') + $scope.editor.getLine(lineNumber) + '\n' + line);
         }
 
-        var baseUri = 'baseUri: ' + $scope.mock.baseUri;
+        var baseUri = 'baseUri: ' + $scope.mock;
         var node    = getNode($scope.editor, 0);
 
         // try to find `baseUri` line
         while (node) {
           if (node.getKey() === 'baseUri') {
-            if (node.getValue().text !== $scope.mock.baseUri) {
+            if (node.getValue().text !== $scope.mock) {
               setLine(node.lineNumber, baseUri, '#');
             }
             return;
@@ -41,7 +42,7 @@
       }
 
       function removeBaseUri() {
-        var baseUriLine = 'baseUri: ' + $scope.mock.baseUri;
+        var baseUriLine = 'baseUri: ' + $scope.mock;
         var lineNumber  = void(0);
         var line        = void(0);
 
@@ -89,17 +90,11 @@
         );
       }
 
-      function createMock() {
-        loading(mockingService.createMock($scope.fileBrowser.selectedFile, $scope.fileBrowser.selectedFile.raml)
+      function enableMock() {
+        loading(mockingService.enableMock($scope.fileBrowser.selectedFile)
           .then(setMock)
           .then(addBaseUri)
         );
-      }
-
-      function updateMock() {
-        mockingService.updateMock($scope.fileBrowser.selectedFile, $scope.fileBrowser.selectedFile.raml)
-          .then(setMock)
-        ;
       }
 
       function deleteMock() {
@@ -121,7 +116,7 @@
           return;
         }
 
-        createMock();
+        enableMock();
       };
 
       $scope.$watch('fileBrowser.selectedFile', function watch(newValue) {
@@ -129,12 +124,6 @@
           getMock();
         } else {
           setMock();
-        }
-      });
-
-      $scope.$watch('fileBrowser.selectedFile.raml', function watch() {
-        if ($scope.enabled) {
-          updateMock();
         }
       });
     })

@@ -17,6 +17,7 @@
           scope.saveFile = function saveFile() {
             var file = scope.fileBrowser.selectedFile;
 
+            $rootScope.$broadcast('event:evict-mocking', file);
             return ramlRepository.saveFile(file)
               .then(function success() {
                 $rootScope.$broadcast('event:notification', {

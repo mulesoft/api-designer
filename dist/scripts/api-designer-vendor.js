@@ -13041,7 +13041,7 @@ return function (global, window, document, undefined) {
 Velocity, however, doesn't make this distinction. Thus, converting to or from the % unit with these subproperties
 will produce an inaccurate conversion value. The same issue exists with the cx/cy attributes of SVG circles and ellipses. */
 /**
- * @license AngularJS v1.3.20
+ * @license AngularJS v1.3.17
  * (c) 2010-2014 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -13096,7 +13096,7 @@ function minErr(module, ErrorConstructor) {
       return match;
     });
 
-    message = message + '\nhttp://errors.angularjs.org/1.3.20/' +
+    message = message + '\nhttp://errors.angularjs.org/1.3.17/' +
       (module ? module + '/' : '') + code;
     for (i = 2; i < arguments.length; i++) {
       message = message + (i == 2 ? '?' : '&') + 'p' + (i - 2) + '=' +
@@ -15181,11 +15181,11 @@ function toDebugString(obj) {
  * - `codeName` – `{string}` – Code name of the release, such as "jiggling-armfat".
  */
 var version = {
-  full: '1.3.20',    // all of these placeholder strings will be replaced by grunt's
+  full: '1.3.17',    // all of these placeholder strings will be replaced by grunt's
   major: 1,    // package task
   minor: 3,
-  dot: 20,
-  codeName: 'shallow-translucence'
+  dot: 17,
+  codeName: 'tsktskskly-euouae'
 };
 
 
@@ -19232,7 +19232,7 @@ function $TemplateCacheProvider() {
  *
  * ### Transclusion
  *
- * Transclusion is the process of extracting a collection of DOM elements from one part of the DOM and
+ * Transclusion is the process of extracting a collection of DOM element from one part of the DOM and
  * copying them to another part of the DOM, while maintaining their connection to the original AngularJS
  * scope from where they were taken.
  *
@@ -19560,6 +19560,14 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
     return bindings;
   }
 
+  function assertValidDirectiveName(name) {
+    var letter = name.charAt(0);
+    if (!letter || letter !== lowercase(letter)) {
+      throw $compileMinErr('baddir', "Directive name '{0}' is invalid. The first character must be a lowercase letter", name);
+    }
+    return name;
+  }
+
   /**
    * @ngdoc method
    * @name $compileProvider#directive
@@ -19578,6 +19586,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
    this.directive = function registerDirective(name, directiveFactory) {
     assertNotHasOwnProperty(name, 'directive');
     if (isString(name)) {
+      assertValidDirectiveName(name);
       assertArg(directiveFactory, 'directiveFactory');
       if (!hasDirectives.hasOwnProperty(name)) {
         hasDirectives[name] = [];
@@ -22773,8 +22782,8 @@ function $HttpProvider() {
        * Resolves the raw $http promise.
        */
       function resolvePromise(response, status, headers, statusText) {
-        //status: HTTP response status code, 0, -1 (aborted by timeout / promise)
-        status = status >= -1 ? status : 0;
+        // normalize internal statuses to 0
+        status = Math.max(status, 0);
 
         (isSuccess(status) ? deferred.resolve : deferred.reject)({
           data: response,
@@ -22881,7 +22890,7 @@ function createHttpBackend($browser, createXhr, $browserDefer, callbacks, rawDoc
       xhr.onload = function requestLoaded() {
         var statusText = xhr.statusText || '';
 
-        // responseText is the old-school way of retrieving response (supported by IE9)
+        // responseText is the old-school way of retrieving response (supported by IE8 & 9)
         // response/responseType properties were introduced in XHR Level2 spec (supported by IE10)
         var response = ('response' in xhr) ? xhr.response : xhr.responseText;
 
@@ -23697,12 +23706,12 @@ function serverBase(url) {
  *
  * @constructor
  * @param {string} appBase application base URL
- * @param {string} appBaseNoFile application base URL stripped of any filename
  * @param {string} basePrefix url path prefix
  */
-function LocationHtml5Url(appBase, appBaseNoFile, basePrefix) {
+function LocationHtml5Url(appBase, basePrefix) {
   this.$$html5 = true;
   basePrefix = basePrefix || '';
+  var appBaseNoFile = stripFile(appBase);
   parseAbsoluteUrl(appBase, this);
 
 
@@ -23776,10 +23785,10 @@ function LocationHtml5Url(appBase, appBaseNoFile, basePrefix) {
  *
  * @constructor
  * @param {string} appBase application base URL
- * @param {string} appBaseNoFile application base URL stripped of any filename
  * @param {string} hashPrefix hashbang prefix
  */
-function LocationHashbangUrl(appBase, appBaseNoFile, hashPrefix) {
+function LocationHashbangUrl(appBase, hashPrefix) {
+  var appBaseNoFile = stripFile(appBase);
 
   parseAbsoluteUrl(appBase, this);
 
@@ -23888,12 +23897,13 @@ function LocationHashbangUrl(appBase, appBaseNoFile, hashPrefix) {
  *
  * @constructor
  * @param {string} appBase application base URL
- * @param {string} appBaseNoFile application base URL stripped of any filename
  * @param {string} hashPrefix hashbang prefix
  */
-function LocationHashbangInHtml5Url(appBase, appBaseNoFile, hashPrefix) {
+function LocationHashbangInHtml5Url(appBase, hashPrefix) {
   this.$$html5 = true;
   LocationHashbangUrl.apply(this, arguments);
+
+  var appBaseNoFile = stripFile(appBase);
 
   this.$$parseLinkUrl = function(url, relHref) {
     if (relHref && relHref[0] === '#') {
@@ -23924,7 +23934,7 @@ function LocationHashbangInHtml5Url(appBase, appBaseNoFile, hashPrefix) {
         hash = this.$$hash ? '#' + encodeUriSegment(this.$$hash) : '';
 
     this.$$url = encodePath(this.$$path) + (search ? '?' + search : '') + hash;
-    // include hashPrefix in $$absUrl when $$url is empty so IE9 does not reload page because of removal of '#'
+    // include hashPrefix in $$absUrl when $$url is empty so IE8 & 9 do not reload page because of removal of '#'
     this.$$absUrl = appBase + hashPrefix + this.$$url;
   };
 
@@ -24430,9 +24440,7 @@ function $LocationProvider() {
       appBase = stripHash(initialUrl);
       LocationMode = LocationHashbangUrl;
     }
-    var appBaseNoFile = stripFile(appBase);
-
-    $location = new LocationMode(appBase, appBaseNoFile, '#' + hashPrefix);
+    $location = new LocationMode(appBase, '#' + hashPrefix);
     $location.$$parseLinkUrl(initialUrl, initialUrl);
 
     $location.$$state = $browser.state();
@@ -24512,13 +24520,6 @@ function $LocationProvider() {
 
     // update $location when $browser url changes
     $browser.onUrlChange(function(newUrl, newState) {
-
-      if (isUndefined(beginsWith(appBaseNoFile, newUrl))) {
-        // If we are navigating outside of the app then force a reload
-        $window.location.href = newUrl;
-        return;
-      }
-
       $rootScope.$evalAsync(function() {
         var oldUrl = $location.absUrl();
         var oldState = $location.$$state;
@@ -24801,25 +24802,6 @@ function ensureSafeMemberName(name, fullExpression) {
       || name === "__proto__") {
     throw $parseMinErr('isecfld',
         'Attempting to access a disallowed field in Angular expressions! '
-        + 'Expression: {0}', fullExpression);
-  }
-  return name;
-}
-
-function getStringValue(name, fullExpression) {
-  // From the JavaScript docs:
-  // Property names must be strings. This means that non-string objects cannot be used
-  // as keys in an object. Any non-string object, including a number, is typecasted
-  // into a string via the toString method.
-  //
-  // So, to ensure that we are checking the same `name` that JavaScript would use,
-  // we cast it to a string, if possible.
-  // Doing `name + ''` can cause a repl error if the result to `toString` is not a string,
-  // this is, this will handle objects that misbehave.
-  name = name + '';
-  if (!isString(name)) {
-    throw $parseMinErr('iseccst',
-        'Cannot convert object to primitive value! '
         + 'Expression: {0}', fullExpression);
   }
   return name;
@@ -25466,7 +25448,7 @@ Parser.prototype = {
 
     return extend(function $parseObjectIndex(self, locals) {
       var o = obj(self, locals),
-          i = getStringValue(indexFn(self, locals), expression),
+          i = indexFn(self, locals),
           v;
 
       ensureSafeMemberName(i, expression);
@@ -25475,7 +25457,7 @@ Parser.prototype = {
       return v;
     }, {
       assign: function(self, value, locals) {
-        var key = ensureSafeMemberName(getStringValue(indexFn(self, locals), expression), expression);
+        var key = ensureSafeMemberName(indexFn(self, locals), expression);
         // prevent overwriting of Function.constructor which would break ensureSafeObject check
         var o = ensureSafeObject(obj(self, locals), expression);
         if (!o) obj.assign(self, o = {}, locals);
@@ -26789,9 +26771,12 @@ function $RootScopeProvider() {
      * A root scope can be retrieved using the {@link ng.$rootScope $rootScope} key from the
      * {@link auto.$injector $injector}. Child scopes are created using the
      * {@link ng.$rootScope.Scope#$new $new()} method. (Most scopes are created automatically when
-     * compiled HTML template is executed.) See also the {@link guide/scope Scopes guide} for
-     * an in-depth introduction and usage examples.
+     * compiled HTML template is executed.)
      *
+     * Here is a simple scope snippet to show how you can interact with the scope.
+     * ```html
+     * <file src="./test/ng/rootScopeSpec.js" tag="docs1" />
+     * ```
      *
      * # Inheritance
      * A scope can inherit from a parent scope, as in this example:
@@ -26952,9 +26937,9 @@ function $RootScopeProvider() {
        *
        *
        * If you want to be notified whenever {@link ng.$rootScope.Scope#$digest $digest} is called,
-       * you can register a `watchExpression` function with no `listener`. (Be prepared for
-       * multiple calls to your `watchExpression` because it will execute multiple times in a
-       * single {@link ng.$rootScope.Scope#$digest $digest} cycle if a change is detected.)
+       * you can register a `watchExpression` function with no `listener`. (Since `watchExpression`
+       * can execute multiple times per {@link ng.$rootScope.Scope#$digest $digest} cycle when a
+       * change is detected, be prepared for multiple calls to your listener.)
        *
        * After a watcher is registered with the scope, the `listener` fn is called asynchronously
        * (via {@link ng.$rootScope.Scope#$evalAsync $evalAsync}) to initialize the
@@ -28626,7 +28611,7 @@ function $SceDelegateProvider() {
  *      characters: '`:`', '`/`', '`.`', '`?`', '`&`' and ';'.  It's a useful wildcard for use
  *      in a whitelist.
  *    - `**`: matches zero or more occurrences of *any* character.  As such, it's not
- *      appropriate for use in a scheme, domain, etc. as it would match too much.  (e.g.
+ *      not appropriate to use in for a scheme, domain, etc. as it would match too much.  (e.g.
  *      http://**.example.com/ would match http://evil.com/?ignore=.example.com/ and that might
  *      not have been the intention.)  Its usage at the very end of the path is ok.  (e.g.
  *      http://foo.example.com/templates/**).
@@ -28634,11 +28619,11 @@ function $SceDelegateProvider() {
  *    - *Caveat*:  While regular expressions are powerful and offer great flexibility,  their syntax
  *      (and all the inevitable escaping) makes them *harder to maintain*.  It's easy to
  *      accidentally introduce a bug when one updates a complex expression (imho, all regexes should
- *      have good test coverage).  For instance, the use of `.` in the regex is correct only in a
+ *      have good test coverage.).  For instance, the use of `.` in the regex is correct only in a
  *      small number of cases.  A `.` character in the regex used when matching the scheme or a
  *      subdomain could be matched against a `:` or literal `.` that was likely not intended.   It
  *      is highly recommended to use the string patterns and only fall back to regular expressions
- *      as a last resort.
+ *      if they as a last resort.
  *    - The regular expression must be an instance of RegExp (i.e. not a string.)  It is
  *      matched against the **entire** *normalized / absolute URL* of the resource being tested
  *      (even when the RegExp did not have the `^` and `$` codes.)  In addition, any flags
@@ -28648,7 +28633,7 @@ function $SceDelegateProvider() {
  *      remember to escape your regular expression (and be aware that you might need more than
  *      one level of escaping depending on your templating engine and the way you interpolated
  *      the value.)  Do make use of your platform's escaping mechanism as it might be good
- *      enough before coding your own.  E.g. Ruby has
+ *      enough before coding your own.  e.g. Ruby has
  *      [Regexp.escape(str)](http://www.ruby-doc.org/core-2.0.0/Regexp.html#method-c-escape)
  *      and Python has [re.escape](http://docs.python.org/library/re.html#re.escape).
  *      Javascript lacks a similar built in function for escaping.  Take a look at Google
@@ -29522,12 +29507,19 @@ var originUrl = urlResolve(window.location.href);
  *
  * Implementation Notes for IE
  * ---------------------------
- * IE <= 10 normalizes the URL when assigned to the anchor node similar to the other
+ * IE >= 8 and <= 10 normalizes the URL when assigned to the anchor node similar to the other
  * browsers.  However, the parsed components will not be set if the URL assigned did not specify
  * them.  (e.g. if you assign a.href = "foo", then a.protocol, a.host, etc. will be empty.)  We
  * work around that by performing the parsing in a 2nd step by taking a previously normalized
  * URL (e.g. by assigning to a.href) and assigning it a.href again.  This correctly populates the
  * properties such as protocol, hostname, port, etc.
+ *
+ * IE7 does not normalize the URL when assigned to an anchor node.  (Apparently, it does, if one
+ * uses the inner HTML approach to assign the URL as part of an HTML snippet -
+ * http://stackoverflow.com/a/472729)  However, setting img[src] does normalize the URL.
+ * Unfortunately, setting img[src] to something like "javascript:foo" on IE throws an exception.
+ * Since the primary usage for normalizing URLs is to sanitize such URLs, we can't use that
+ * method and IE < 8 is unsupported.
  *
  * References:
  *   http://developer.mozilla.org/en-US/docs/Web/API/HTMLAnchorElement
@@ -31951,7 +31943,7 @@ var ngFormDirective = formDirectiveFactory(true);
   DIRTY_CLASS: false,
   UNTOUCHED_CLASS: false,
   TOUCHED_CLASS: false,
-  ngModelMinErr: false,
+  $ngModelMinErr: false,
 */
 
 // Regex code is obtained from SO: https://stackoverflow.com/questions/3143070/javascript-regex-iso-datetime#answer-3143231
@@ -33115,7 +33107,7 @@ function createDateInputType(type, regexp, parseDate, format) {
 
     ctrl.$formatters.push(function(value) {
       if (value && !isDate(value)) {
-        throw ngModelMinErr('datefmt', 'Expected `{0}` to be a date', value);
+        throw $ngModelMinErr('datefmt', 'Expected `{0}` to be a date', value);
       }
       if (isValidDate(value)) {
         previousDate = value;
@@ -33192,7 +33184,7 @@ function numberInputType(scope, element, attr, ctrl, $sniffer, $browser) {
   ctrl.$formatters.push(function(value) {
     if (!ctrl.$isEmpty(value)) {
       if (!isNumber(value)) {
-        throw ngModelMinErr('numfmt', 'Expected `{0}` to be a number', value);
+        throw $ngModelMinErr('numfmt', 'Expected `{0}` to be a number', value);
       }
       value = value.toString();
     }
@@ -33285,7 +33277,7 @@ function parseConstantExpr($parse, context, name, expression, fallback) {
   if (isDefined(expression)) {
     parseFn = $parse(expression);
     if (!parseFn.constant) {
-      throw ngModelMinErr('constexpr', 'Expected constant expression for `{0}`, but saw ' +
+      throw minErr('ngModel')('constexpr', 'Expected constant expression for `{0}`, but saw ' +
                                    '`{1}`.', name, expression);
     }
     return parseFn(context);
@@ -35789,7 +35781,8 @@ var VALID_CLASS = 'ng-valid',
     TOUCHED_CLASS = 'ng-touched',
     PENDING_CLASS = 'ng-pending';
 
-var ngModelMinErr = minErr('ngModel');
+
+var $ngModelMinErr = new minErr('ngModel');
 
 /**
  * @ngdoc type
@@ -36040,7 +36033,7 @@ var NgModelController = ['$scope', '$exceptionHandler', '$attrs', '$element', '$
         }
       };
     } else if (!parsedNgModel.assign) {
-      throw ngModelMinErr('nonassign', "Expression '{0}' is non-assignable. Element: {1}",
+      throw $ngModelMinErr('nonassign', "Expression '{0}' is non-assignable. Element: {1}",
           $attr.ngModel, startingTag($element));
     }
   };
@@ -36369,7 +36362,7 @@ var NgModelController = ['$scope', '$exceptionHandler', '$attrs', '$element', '$
       forEach(ctrl.$asyncValidators, function(validator, name) {
         var promise = validator(modelValue, viewValue);
         if (!isPromiseLike(promise)) {
-          throw ngModelMinErr("$asyncValidators",
+          throw $ngModelMinErr("$asyncValidators",
             "Expected asynchronous validator to return a promise but got '{0}' instead.", promise);
         }
         setValidity(name, undefined);
@@ -39424,9 +39417,8 @@ var patternDirective = function() {
         ctrl.$validate();
       });
 
-      ctrl.$validators.pattern = function(modelValue, viewValue) {
-        // HTML5 pattern constraint validates the input value, so we validate the viewValue
-        return ctrl.$isEmpty(viewValue) || isUndefined(regexp) || regexp.test(viewValue);
+      ctrl.$validators.pattern = function(value) {
+        return ctrl.$isEmpty(value) || isUndefined(regexp) || regexp.test(value);
       };
     }
   };
@@ -39490,7 +39482,215 @@ var minlengthDirective = function() {
 
 })(window, document);
 
-!window.angular.$$csp() && window.angular.element(document.head).prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}ng\\:form{display:block;}</style>');
+!window.angular.$$csp() && window.angular.element(document).find('head').prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}ng\\:form{display:block;}</style>');
+/**
+ * @license AngularJS v1.3.17
+ * (c) 2010-2014 Google, Inc. http://angularjs.org
+ * License: MIT
+ */
+(function(window, angular, undefined) {'use strict';
+
+/**
+ * @ngdoc module
+ * @name ngCookies
+ * @description
+ *
+ * # ngCookies
+ *
+ * The `ngCookies` module provides a convenient wrapper for reading and writing browser cookies.
+ *
+ *
+ * <div doc-module-components="ngCookies"></div>
+ *
+ * See {@link ngCookies.$cookies `$cookies`} and
+ * {@link ngCookies.$cookieStore `$cookieStore`} for usage.
+ */
+
+
+angular.module('ngCookies', ['ng']).
+  /**
+   * @ngdoc service
+   * @name $cookies
+   *
+   * @description
+   * Provides read/write access to browser's cookies.
+   *
+   * Only a simple Object is exposed and by adding or removing properties to/from this object, new
+   * cookies are created/deleted at the end of current $eval.
+   * The object's properties can only be strings.
+   *
+   * Requires the {@link ngCookies `ngCookies`} module to be installed.
+   *
+   * @example
+   *
+   * ```js
+   * angular.module('cookiesExample', ['ngCookies'])
+   *   .controller('ExampleController', ['$cookies', function($cookies) {
+   *     // Retrieving a cookie
+   *     var favoriteCookie = $cookies.myFavorite;
+   *     // Setting a cookie
+   *     $cookies.myFavorite = 'oatmeal';
+   *   }]);
+   * ```
+   */
+   factory('$cookies', ['$rootScope', '$browser', function($rootScope, $browser) {
+      var cookies = {},
+          lastCookies = {},
+          lastBrowserCookies,
+          runEval = false,
+          copy = angular.copy,
+          isUndefined = angular.isUndefined;
+
+      //creates a poller fn that copies all cookies from the $browser to service & inits the service
+      $browser.addPollFn(function() {
+        var currentCookies = $browser.cookies();
+        if (lastBrowserCookies != currentCookies) { //relies on browser.cookies() impl
+          lastBrowserCookies = currentCookies;
+          copy(currentCookies, lastCookies);
+          copy(currentCookies, cookies);
+          if (runEval) $rootScope.$apply();
+        }
+      })();
+
+      runEval = true;
+
+      //at the end of each eval, push cookies
+      //TODO: this should happen before the "delayed" watches fire, because if some cookies are not
+      //      strings or browser refuses to store some cookies, we update the model in the push fn.
+      $rootScope.$watch(push);
+
+      return cookies;
+
+
+      /**
+       * Pushes all the cookies from the service to the browser and verifies if all cookies were
+       * stored.
+       */
+      function push() {
+        var name,
+            value,
+            browserCookies,
+            updated;
+
+        //delete any cookies deleted in $cookies
+        for (name in lastCookies) {
+          if (isUndefined(cookies[name])) {
+            $browser.cookies(name, undefined);
+            delete lastCookies[name];
+          }
+        }
+
+        //update all cookies updated in $cookies
+        for (name in cookies) {
+          value = cookies[name];
+          if (!angular.isString(value)) {
+            value = '' + value;
+            cookies[name] = value;
+          }
+          if (value !== lastCookies[name]) {
+            $browser.cookies(name, value);
+            lastCookies[name] = value;
+            updated = true;
+          }
+        }
+
+        //verify what was actually stored
+        if (updated) {
+          browserCookies = $browser.cookies();
+
+          for (name in cookies) {
+            if (cookies[name] !== browserCookies[name]) {
+              //delete or reset all cookies that the browser dropped from $cookies
+              if (isUndefined(browserCookies[name])) {
+                delete cookies[name];
+                delete lastCookies[name];
+              } else {
+                cookies[name] = lastCookies[name] = browserCookies[name];
+              }
+            }
+          }
+        }
+      }
+    }]).
+
+
+  /**
+   * @ngdoc service
+   * @name $cookieStore
+   * @requires $cookies
+   *
+   * @description
+   * Provides a key-value (string-object) storage, that is backed by session cookies.
+   * Objects put or retrieved from this storage are automatically serialized or
+   * deserialized by angular's toJson/fromJson.
+   *
+   * Requires the {@link ngCookies `ngCookies`} module to be installed.
+   *
+   * @example
+   *
+   * ```js
+   * angular.module('cookieStoreExample', ['ngCookies'])
+   *   .controller('ExampleController', ['$cookieStore', function($cookieStore) {
+   *     // Put cookie
+   *     $cookieStore.put('myFavorite','oatmeal');
+   *     // Get cookie
+   *     var favoriteCookie = $cookieStore.get('myFavorite');
+   *     // Removing a cookie
+   *     $cookieStore.remove('myFavorite');
+   *   }]);
+   * ```
+   */
+   factory('$cookieStore', ['$cookies', function($cookies) {
+
+      return {
+        /**
+         * @ngdoc method
+         * @name $cookieStore#get
+         *
+         * @description
+         * Returns the value of given cookie key
+         *
+         * @param {string} key Id to use for lookup.
+         * @returns {Object} Deserialized cookie value.
+         */
+        get: function(key) {
+          var value = $cookies[key];
+          return value ? angular.fromJson(value) : value;
+        },
+
+        /**
+         * @ngdoc method
+         * @name $cookieStore#put
+         *
+         * @description
+         * Sets a value for given cookie key
+         *
+         * @param {string} key Id for the `value`.
+         * @param {Object} value Value to be stored.
+         */
+        put: function(key, value) {
+          $cookies[key] = angular.toJson(value);
+        },
+
+        /**
+         * @ngdoc method
+         * @name $cookieStore#remove
+         *
+         * @description
+         * Remove given cookie
+         *
+         * @param {string} key Id of the key-value pair to delete.
+         */
+        remove: function(key) {
+          delete $cookies[key];
+        }
+      };
+
+    }]);
+
+
+})(window, window.angular);
+
 /*
  * angular-ui-bootstrap
  * http://angular-ui.github.io/bootstrap/
