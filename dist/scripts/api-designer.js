@@ -79561,7 +79561,8 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
     'validate',
     'autoFocus',
     'rightClick',
-    'dragAndDrop'
+    'dragAndDrop',
+    'ngCookies'
   ]);
 }());
 'use strict';
@@ -82486,123 +82487,72 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
 }());
 (function () {
   'use strict';
-  angular.module('ramlEditorApp').factory('mockingServiceUtils', [
-    '$q',
-    'jsTraverse',
-    'ramlRepository',
-    'refParser',
-    function mockingServiceUtils($q, jsTraverse, ramlRepository, refParser) {
-      return { dereference: dereference };
-      // ---
-      function dereferenceJsons(raml) {
-        return $q.when().then(function () {
-          var promises = [];
-          jsTraverse.traverse(raml).forEach(function (value) {
-            if (this.path.slice(-2).join('.') === 'body.application/json') {
-              var jsonSchema;
-              if (value.schema) {
-                jsonSchema = value.schema;
-              } else if (value.type) {
-                jsonSchema = value.type;
-              }
-              if (Array.isArray(jsonSchema)) {
-                jsonSchema = jsonSchema[0];
-              }
-              try {
-                promises.push(refParser.dereference(JSON.parse(jsonSchema), { $refs: { read$Ref: read$Ref } }).then(JSON.stringify).then(function (schema) {
-                  value.schema = schema;
-                }));
-              } catch (e) {
-              }
-            }
-          });
-          return $q.all(promises);
-        });
-      }
-      function dereference(raml) {
-        return dereferenceJsons(raml);
-      }
-      // ---
-      function read$Ref($ref) {
-        var path = $ref.path[0] === '/' ? $ref.path : '/' + $ref.path;
-        return ramlRepository.getContentByPath(path, true);
-      }
-    }
-  ]);
-  ;
-}());
-(function () {
-  'use strict';
   angular.module('ramlEditorApp').service('mockingServiceClient', [
     '$http',
     '$q',
     '$window',
+    '$rootScope',
+    '$cookies',
     'resolveUri',
-    function mockingServiceClientFactory($http, $q, $window, resolveUri) {
+    function mockingServiceClientFactory($http, $q, $window, $rootScope, $cookies, resolveUri) {
       var self = this;
+      var SEPARATOR = '/';
       self.proxy = null;
-      self.baseUri = 'https://mocksvc.qax.mulesoft.com';
-      self.buildURL = function buildURL() {
-        var url = self.baseUri + ['/mocks'].concat(Array.prototype.slice.call(arguments, 0)).join('/');
+      self.baseUri = 'https://qax.anypoint.mulesoft.com/mocking/api/v1';
+      function mockingIds() {
+        var regExp = /^#\/organizations\/([A-Za-z0-9-]+)\/dashboard\/apis\/([0-9-]+)\/versions\/([0-9-]+).*$/;
+        var match = $window.location.hash.match(regExp);
+        if (match === null || !match[1] || !match[2] || !match[3]) {
+          return [];
+        }
+        return match.slice(1);
+      }
+      self.buildSimpleUrl = function buildSimpleUrl() {
+        var args = Array.prototype.slice.call(arguments, 0);
+        var url = self.baseUri + SEPARATOR + args.join(SEPARATOR);
         var proxy = self.proxy || $window.RAML.Settings.proxy;
         if (proxy) {
           url = proxy + resolveUri(url);
         }
         return url;
       };
-      function cleanBaseUri(mock) {
-        var baseUri = mock.baseUri;
-        var mocksQuantity = baseUri.match(/mocks\//g).length;
-        if (mocksQuantity > 1) {
-          var mocks = 'mocks/';
-          for (var i = mocksQuantity; i > 1; i--) {
-            var from = baseUri.indexOf(mocks);
-            var to = baseUri.indexOf('/', from + mocks.length);
-            baseUri = baseUri.substring(0, from) + baseUri.substring(to + 1, baseUri.length);
-          }
+      self.buildURL = function buildURL() {
+        var args = [
+            'sources',
+            'manager',
+            'apis'
+          ].concat(mockingIds()).concat(Array.prototype.slice.call(arguments, 0));
+        var url = self.baseUri + SEPARATOR + args.join(SEPARATOR);
+        var proxy = self.proxy || $window.RAML.Settings.proxy;
+        if (proxy) {
+          url = proxy + resolveUri(url);
         }
-        mock.baseUri = baseUri;
+        return url;
+      };
+      function getToken() {
+        return $cookies && $cookies.token ? 'Bearer ' + $cookies.token : '';
       }
-      self.simplifyMock = function simplifyMock(mock) {
-        if (mock.baseUri) {
-          cleanBaseUri(mock);
-        }
+      function customHeader(file) {
         return {
-          id: mock.id,
-          baseUri: mock.baseUri,
-          manageKey: mock.manageKey
+          'MS2-Authorization': getToken(),
+          'MS2-Main-File': encodeURI(file && file.name || '')
         };
-      };
-      self.getMock = function getMock(mock) {
-        return $http.get(self.buildURL(mock.id, mock.manageKey)).then(function success(response) {
-          return self.simplifyMock(response.data);
-        }, function failure(response) {
-          if (response.status === 404) {
-            return;
-          }
-          return $q.reject(response);
+      }
+      self.enableMock = function createMock(file) {
+        return $http.post(self.buildURL('link'), null, { headers: customHeader(file) }).then(function (mock) {
+          const mockId = mock.data.id;
+          return $http.get(self.buildURL(), { headers: customHeader(file) }).then(function (mockMetadata) {
+            var baseUriPath = mockMetadata.data && mockMetadata.data.metadata && mockMetadata.data.metadata.baseUriPath;
+            return self.baseUri + '/links/' + mockId + baseUriPath;
+          });
         });
       };
-      self.createMock = function createMock(mock) {
-        return $http.post(self.buildURL(), mock).then(function success(response) {
-          return self.simplifyMock(response.data);
-        });
+      self.deleteMock = function deleteMock(file) {
+        return $http.delete(self.buildURL(), { headers: customHeader(file) });
       };
-      self.updateMock = function updateMock(mock) {
-        return $http({
-          method: 'PATCH',
-          url: self.buildURL(mock.id, mock.manageKey),
-          data: {
-            raml: mock.raml,
-            json: mock.json
-          }
-        }).then(function success(response) {
-          return self.simplifyMock(angular.extend(mock, response.data));
-        });
-      };
-      self.deleteMock = function deleteMock(mock) {
-        return $http.delete(self.buildURL(mock.id, mock.manageKey));
-      };
+      $rootScope.$on('event:evict-mocking', function (event, file) {
+        self.deleteMock(file);
+      });
     }
   ]);
   ;
@@ -82611,15 +82561,13 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
   'use strict';
   angular.module('ramlEditorApp').service('mockingService', [
     'mockingServiceClient',
-    'mockingServiceUtils',
     'ramlRepository',
-    function mockingServiceFactory(mockingServiceClient, mockingServiceUtils, ramlRepository) {
+    function mockingServiceFactory(mockingServiceClient, ramlRepository) {
       var self = this;
       function getMockMeta(file) {
         return ramlRepository.loadMeta(file).then(function success(meta) {
           return meta.mock;
         });
-        ;
       }
       function setMockMeta(file, mock) {
         return ramlRepository.loadMeta(file).then(function success(meta) {
@@ -82628,50 +82576,20 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         }).then(function success() {
           return mock;
         });
-        ;
       }
       self.getMock = function getMock(file) {
         return getMockMeta(file);
       };
-      self.createMock = function createMock(file, raml) {
-        return dereferenceRaml(raml).then(function () {
-          return mockingServiceClient.createMock({
-            raml: file.contents,
-            json: raml
-          });
-        }).then(function (mock) {
+      self.enableMock = function createMock(file) {
+        return mockingServiceClient.enableMock(file).then(function (mock) {
           return setMockMeta(file, mock);
         });
-        ;
-      };
-      self.updateMock = function updateMock(file, raml) {
-        return dereferenceRaml(raml).then(function () {
-          return getMockMeta(file);
-        }).then(function (mock) {
-          return mock && mockingServiceClient.updateMock(angular.extend(mock, {
-            raml: file.contents,
-            json: raml
-          }));
-        }).then(function (mock) {
-          return setMockMeta(file, mock);
-        });
-        ;
       };
       self.deleteMock = function deleteMock(file) {
-        return getMockMeta(file).then(function (mock) {
-          return mock && mockingServiceClient.deleteMock(mock);
-        }).then(function success() {
+        return mockingServiceClient.deleteMock(file).then(function success() {
           return setMockMeta(file, null);
         });
-        ;
       };
-      // ---
-      function dereferenceRaml(raml) {
-        return mockingServiceUtils.dereference(raml).catch(function (error) {
-          console.error('dereferenceRaml failed', error.stack);
-        });
-        ;
-      }
     }
   ]);
   ;
@@ -84398,19 +84316,20 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
   angular.module('ramlEditorApp').controller('mockingServiceController', [
     '$scope',
     'mockingService',
+    'mockingServiceClient',
     'codeMirror',
     'getNode',
-    function mockingServiceControllerFactory($scope, mockingService, codeMirror, getNode) {
+    function mockingServiceControllerFactory($scope, mockingService, mockingServiceClient, codeMirror, getNode) {
       function addBaseUri() {
         function setLine(lineNumber, line, prefix) {
           codeMirror.setLine($scope.editor, lineNumber, (prefix || '') + $scope.editor.getLine(lineNumber) + '\n' + line);
         }
-        var baseUri = 'baseUri: ' + $scope.mock.baseUri;
+        var baseUri = 'baseUri: ' + $scope.mock;
         var node = getNode($scope.editor, 0);
         // try to find `baseUri` line
         while (node) {
           if (node.getKey() === 'baseUri') {
-            if (node.getValue().text !== $scope.mock.baseUri) {
+            if (node.getValue().text !== $scope.mock) {
               setLine(node.lineNumber, baseUri, '#');
             }
             return;
@@ -84428,7 +84347,7 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
         setLine(0, baseUri);
       }
       function removeBaseUri() {
-        var baseUriLine = 'baseUri: ' + $scope.mock.baseUri;
+        var baseUriLine = 'baseUri: ' + $scope.mock;
         var lineNumber = void 0;
         var line = void 0;
         // trying to find mocked baseUri
@@ -84467,12 +84386,8 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
           }
         }));
       }
-      function createMock() {
-        loading(mockingService.createMock($scope.fileBrowser.selectedFile, $scope.fileBrowser.selectedFile.raml).then(setMock).then(addBaseUri));
-      }
-      function updateMock() {
-        mockingService.updateMock($scope.fileBrowser.selectedFile, $scope.fileBrowser.selectedFile.raml).then(setMock);
-        ;
+      function enableMock() {
+        loading(mockingService.enableMock($scope.fileBrowser.selectedFile).then(setMock).then(addBaseUri));
       }
       function deleteMock() {
         loading(mockingService.deleteMock($scope.fileBrowser.selectedFile).then(function () {
@@ -84487,18 +84402,13 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
           deleteMock();
           return;
         }
-        createMock();
+        enableMock();
       };
       $scope.$watch('fileBrowser.selectedFile', function watch(newValue) {
         if (newValue) {
           getMock();
         } else {
           setMock();
-        }
-      });
-      $scope.$watch('fileBrowser.selectedFile.raml', function watch() {
-        if ($scope.enabled) {
-          updateMock();
         }
       });
     }
@@ -85103,7 +85013,7 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
           var file = ramlRepository.getByPath(filePath);
           fileBrowser.selectFile(file);
         });
-        $rootScope.$on('event:raml-parse-file-selected', function () {
+        $rootScope.$on('event:imported-file-selected', function () {
           var currentFile = JSON.parse(config.get('currentFile', '{}'));
           var file = ramlRepository.getByPath(currentFile.path);
           fileBrowser.selectFile(file);
@@ -85332,6 +85242,7 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
         link: function (scope) {
           scope.saveFile = function saveFile() {
             var file = scope.fileBrowser.selectedFile;
+            $rootScope.$broadcast('event:evict-mocking', file);
             return ramlRepository.saveFile(file).then(function success() {
               $rootScope.$broadcast('event:notification', {
                 message: 'File saved.',
@@ -85369,7 +85280,7 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
             });
             return $q.all(promises).then(function success() {
               if (importing) {
-                $rootScope.$broadcast('event:raml-parse-file-selected');
+                $rootScope.$broadcast('event:imported-file-selected');
               }
               $rootScope.$broadcast('event:notification', {
                 message: 'All files saved.',

@@ -3,7 +3,7 @@
 
 'use strict';
 
-process.env.CHROME_BIN = require('puppeteer').executablePath()
+process.env.CHROME_BIN = require('puppeteer').executablePath();
 
 module.exports = function(config) {
   config.set({
@@ -19,6 +19,7 @@ module.exports = function(config) {
     // list of files / patterns to load in the browser
     files: [
       'bower_components/angular/angular.js',
+      'bower_components/angular-cookies/angular-cookies.js',
       'bower_components/angular-bootstrap/ui-bootstrap-tpls.js',
       'bower_components/angular-ui-tree/dist/angular-ui-tree.js',
       'bower_components/angular-sanitize/angular-sanitize.js',
@@ -81,8 +82,8 @@ module.exports = function(config) {
     },
 
     coverageReporter: {
-      type: "lcov",
-      dir: "coverage/"
+      type: 'lcov',
+      dir: 'coverage/'
     },
 
     // web server port

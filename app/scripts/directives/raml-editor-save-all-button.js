@@ -31,7 +31,7 @@
             return $q.all(promises)
               .then(function success() {
                 if(importing){
-                  $rootScope.$broadcast('event:raml-parse-file-selected');
+                  $rootScope.$broadcast('event:imported-file-selected');
                 }
 
                 $rootScope.$broadcast('event:notification', {

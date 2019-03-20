@@ -19,12 +19,8 @@ describe('mockingServiceController', function () {
       return $q.when(file.mock);
     });
 
-    sandbox.stub(mockingService, 'createMock', function createMock(file) {
+    sandbox.stub(mockingService, 'enableMock', function createMock(file) {
       return $q.when(file.mock || {});
-    });
-
-    sandbox.stub(mockingService, 'updateMock', function updateMock(mock) {
-      return $q.when(mock);
     });
 
     sandbox.stub(mockingService, 'deleteMock', function deleteMock() {
@@ -58,17 +54,6 @@ describe('mockingServiceController', function () {
         $scope.should.have.property('enabled').and.be.true;
       });
 
-      describe('when raml is updated', function () {
-        beforeEach(function () {
-          $scope.fileBrowser.selectedFile.raml = {};
-          $scope.$apply();
-        });
-
-        it('should update mocking service', function () {
-          mockingService.updateMock.should.have.been.called;
-        });
-      }); // when raml is updated
-
       describe('#toggleMockingService', function () {
         it('should disable mocking service', function () {
           $scope.toggleMockingService();
@@ -98,17 +83,6 @@ describe('mockingServiceController', function () {
         $scope.should.have.property('enabled').and.be.false;
       });
 
-      describe('when raml is updated', function () {
-        beforeEach(function () {
-          $scope.fileBrowser.selectedFile.raml = {};
-          $scope.$apply();
-        });
-
-        it('should not update mocking service', function () {
-          mockingService.updateMock.should.not.have.been.called;
-        });
-      }); // when raml is updated
-
       describe('when switch to another file with mocking service enabled', function () {
         beforeEach(function () {
           $scope.fileBrowser.selectedFile = {
@@ -123,9 +97,6 @@ describe('mockingServiceController', function () {
           $scope.should.have.property('enabled').and.be.true;
         });
 
-        it('should not update mocking service', function () {
-          mockingService.updateMock.should.not.have.been.called;
-        });
       }); // when switch to another file with mocking service enabled
 
       describe('#toggleMockingService', function () {

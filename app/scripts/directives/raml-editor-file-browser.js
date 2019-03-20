@@ -101,7 +101,7 @@
           fileBrowser.selectFile(file);
         });
 
-        $rootScope.$on('event:raml-parse-file-selected', function () {
+        $rootScope.$on('event:imported-file-selected', function () {
           var currentFile = JSON.parse(config.get('currentFile', '{}'));
           var file = ramlRepository.getByPath(currentFile.path);
           fileBrowser.selectFile(file);
