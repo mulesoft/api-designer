@@ -160,9 +160,7 @@ describe('mockingServiceController', function () {
     }));
 
     it('should add `baseUri` when there is only RAML version tag', function () {
-      selectedFile.mock = {
-        baseUri: 'http://my.api.com'
-      };
+      selectedFile.mock = 'http://my.api.com';
 
       $scope.editor.setValue([
         '#%RAML 0.8'
@@ -173,14 +171,12 @@ describe('mockingServiceController', function () {
 
       $scope.editor.getValue().should.be.equal([
         '#%RAML 0.8',
-        'baseUri: ' + selectedFile.mock.baseUri
+        'baseUri: ' + selectedFile.mock
       ].join('\n'));
     });
 
     it('should add `baseUri` right after `---`', function () {
-      selectedFile.mock = {
-        baseUri: 'http://my.api.com'
-      };
+      selectedFile.mock = 'http://my.api.com';
 
       $scope.editor.setValue([
         '#%RAML 0.8',
@@ -193,14 +189,12 @@ describe('mockingServiceController', function () {
       $scope.editor.getValue().should.be.equal([
         '#%RAML 0.8',
         '---',
-        'baseUri: ' + selectedFile.mock.baseUri
+        'baseUri: ' + selectedFile.mock
       ].join('\n'));
     });
 
     it('should replace `baseUri` with mocked one', function () {
-      selectedFile.mock = {
-        baseUri: 'http://my.api.com'
-      };
+      selectedFile.mock = 'http://my.api.com';
 
       $scope.editor.setValue([
         '#%RAML 0.8',
@@ -215,7 +209,7 @@ describe('mockingServiceController', function () {
         '#%RAML 0.8',
         '---',
         '#baseUri: http://old.my.api.com',
-        'baseUri: ' + selectedFile.mock.baseUri
+        'baseUri: ' + selectedFile.mock
       ].join('\n'));
     });
   }); // enabling mocking service
