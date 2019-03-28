@@ -21,7 +21,6 @@
     'validate',
     'autoFocus',
     'rightClick',
-    'dragAndDrop',
-    'ngCookies'
+    'dragAndDrop'
   ]);
 })();

@@ -79561,8 +79561,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
     'validate',
     'autoFocus',
     'rightClick',
-    'dragAndDrop',
-    'ngCookies'
+    'dragAndDrop'
   ]);
 }());
 'use strict';
@@ -82492,9 +82491,8 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     '$q',
     '$window',
     '$rootScope',
-    '$cookies',
     'resolveUri',
-    function mockingServiceClientFactory($http, $q, $window, $rootScope, $cookies, resolveUri) {
+    function mockingServiceClientFactory($http, $q, $window, $rootScope, resolveUri) {
       var self = this;
       var SEPARATOR = '/';
       self.proxy = null;
@@ -82521,7 +82519,11 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         return url;
       };
       function getToken() {
-        return $cookies && $cookies.token ? 'Bearer ' + $cookies.token : '';
+        try {
+          return JSON.parse(localStorage.user).token || '';
+        } catch (e) {
+          return '';
+        }
       }
       function customHeader(file) {
         return {
