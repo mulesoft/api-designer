@@ -7,7 +7,6 @@
       $q,
       $window,
       $rootScope,
-      $cookies,
       resolveUri
     ) {
       var self = this;
@@ -40,7 +39,11 @@
       };
 
       function getToken() {
-        return $cookies && $cookies.token ? 'Bearer ' + $cookies.token : '';
+        try {
+          return JSON.parse(localStorage.user).token || '';
+        } catch (e) {
+          return '';
+        }
       }
 
       function customHeader(file) {
