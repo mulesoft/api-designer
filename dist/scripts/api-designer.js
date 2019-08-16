@@ -82528,7 +82528,8 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       function customHeader(file) {
         return {
           'MS2-Authorization': getToken(),
-          'MS2-Main-File': encodeURI(file && file.name || '')
+          'MS2-Main-File': encodeURI(file && file.name || ''),
+          'MS2-Origin': 'API Designer'
         };
       }
       self.enableMock = function createMock(file) {
