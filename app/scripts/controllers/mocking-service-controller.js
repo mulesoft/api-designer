@@ -4,6 +4,7 @@
   angular.module('ramlEditorApp')
     .controller('mockingServiceController', function mockingServiceControllerFactory(
       $scope,
+      $rootScope,
       mockingService,
       mockingServiceClient,
       codeMirror,
@@ -41,8 +42,7 @@
         setLine(0, baseUri);
       }
 
-      function removeBaseUri() {
-        var baseUriLine = 'baseUri: ' + $scope.mock;
+      function removeBaseUri(baseUriLine) {
         var lineNumber  = void(0);
         var line        = void(0);
 
@@ -100,11 +100,17 @@
       function deleteMock() {
         loading(mockingService.deleteMock($scope.fileBrowser.selectedFile)
           .then(function () {
-            removeBaseUri();
+            removeBaseUri('baseUri: ' + $scope.mock);
           })
           .then(setMock)
         );
       }
+
+      $scope.cleanAndToggleMockingService = function cleanAndToggleMockingService() {
+        removeBaseUri('baseUri: ' + $scope.raml.baseUri);
+        $scope.toggleMockingService();
+        $rootScope.mockingMigrated = true;
+      };
 
       $scope.toggleMockingService = function toggleMockingService() {
         if (!$scope.fileBrowser.selectedFile) {

@@ -55,6 +55,26 @@
     <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="470"><div class="split split-right">&nbsp;</div></div>
 
     <div ng-show="getIsConsoleVisible()" role="preview-wrapper" class="raml-console-embedded">
+      <div ng-show="getIsMockingService1()">
+        <div class="{{mockingMigrated ? 'mocking-service-popover green' : 'mocking-service-popover orange'}}">
+          <div class="col">
+            <div class="mocking-service-text">{{mockingServiceText}}</div>
+            <div>
+              <a class="mocking-service-link" href="https://docs.mulesoft.com/design-center/design-migrating-ms" rel="noopener" target="_blank">See what’s new</a>
+            </div>
+          </div>
+          <div class="col right">
+            <div ng-if="!mockingMigrated" class="right-col" ng-controller="mockingServiceController" ng-click="cleanAndToggleMockingService()">
+              <button class="mocking-service-button" ng-click="">Upgrade</button>
+            </div>
+
+            <div ng-if="mockingMigrated" class="right-col" ng-click="closeMigrationHint()">
+              <button class="mocking-service-button" ng-click="">Dismiss</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div ng-if="!splitterCollapsed_consoleAndEditor && getIsConsoleVisible()">
         <raml-console raml="raml" errors="ramlError" disable-description="true"
             options="{ singleView: true, disableThemeSwitcher: true, disableRamlClientGenerator: true, disableTitle: true}"

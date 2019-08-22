@@ -84236,6 +84236,9 @@ exports.javascript = require('./javascript');
           $scope.responseDetails = false;
           $scope.response        = {};
 
+          var mockingServiceDetector = /(?:mocksvc\.[a-z\.]*)mulesoft\.com(\/(.*))?/;
+          var mockingService2Detector = /(?:(?:[a-z.]*anypoint\.mulesoft\.com)|(?:localhost:3000))\/mocking\/api\/v1(\/(.*))?$/;
+
           if (!$scope.context.forceRequest) {
             jQuery($event.currentTarget).closest('form').find('.ng-invalid').first().focus();
           }
@@ -84243,6 +84246,15 @@ exports.javascript = require('./javascript');
           if($scope.context.forceRequest || validateForm($scope.form)) {
             var context = $scope.context;
             var request = getRequest($event);
+            var requestOptions = request.toOptions();
+
+            if (mockingServiceDetector.exec(requestOptions.baseUrl)) {
+              request.header('x-origin', 'API Designer');
+            }
+
+            if (mockingService2Detector.exec(requestOptions.baseUrl)) {
+              request.header('MS2-Origin', 'API Designer');
+            }
 
             if (context.bodyContent) {
               request.header('Content-Type', context.bodyContent.selected);
@@ -84734,6 +84746,15 @@ exports.javascript = require('./javascript');
         return object ? object[typeName] : object;
       }
 
+      function merge() {
+        for (var i = 1; i < arguments.length; i++) {
+          for (var prop in arguments[i]) {
+            arguments[0][prop] = arguments[i][prop];
+          }
+        }
+        return arguments[0];
+      }
+
       function replaceTypeIfExists(raml, type, value) {
         var valueHasExamples = value.example || value.examples;
         var expandedType = retrieveType(raml, type);
@@ -84742,7 +84763,7 @@ exports.javascript = require('./javascript');
             if (expandedType.hasOwnProperty(key)) {
               if ((key === 'example' || key === 'examples') && valueHasExamples) { continue; }
               if (key === 'properties') { // can have extra properties
-                value[key] = Object.assign(value.properties || {}, expandedType[key]);
+                value[key] = merge(value.properties || {}, expandedType[key]);
               } else {
                 value[key] = expandedType[key];
               }
@@ -86678,6 +86699,20 @@ RAML.Inspector = (function() {
   }
 })();
 
+(function () {
+  /* jshint -W034 */
+  'use strict';
+
+  if (!String.prototype.startsWith) {
+    Object.defineProperty(String.prototype, 'startsWith', {
+      value: function(search, pos) {
+        pos = !pos || pos < 0 ? 0 : +pos;
+        return this.substring(pos, pos + search.length) === search;
+      }
+    });
+  }
+})();
+
 (function() {
   'use strict';
 
@@ -86699,6 +86734,16 @@ RAML.Inspector = (function() {
     this.selected = this.contentTypes[0];
 
     var definitions = this.definitions = {};
+
+    function merge() {
+      for (var i = 1; i < arguments.length; i++) {
+        for (var prop in arguments[i]) {
+          arguments[0][prop] = arguments[i][prop];
+        }
+      }
+      return arguments[0];
+    }
+
     this.contentTypes.forEach(function(contentType) {
       var definition = contentTypes[contentType] || {};
 
@@ -86729,7 +86774,7 @@ RAML.Inspector = (function() {
               rootProperties = rootType && rootType.properties ? toObjectArray(rootType.properties) : undefined;
             }
 
-            var properties = Object.assign({}, inlineProperties, rootProperties);
+            var properties = merge({}, inlineProperties, rootProperties);
             definitions[contentType] = new RAML.Services.TryIt.NamedParameters(properties);
           }
           break;

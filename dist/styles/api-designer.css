@@ -234,6 +234,119 @@ div[role=preview-wrapper] {
   min-width: 475px;
   position: relative;
 }
+.raml-console-embedded .mocking-service-popover {
+  border-radius: 4px;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  margin: 10px;
+  padding: 10px;
+  position: relative;
+  cursor: auto;
+}
+.raml-console-embedded .mocking-service-popover::after {
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  content: '';
+  display: block;
+  height: 0;
+  position: absolute;
+  right: 27px;
+  top: -7px;
+  width: 0;
+}
+.raml-console-embedded .mocking-service-popover.orange {
+  background: #eabe4a;
+  box-shadow: 0 -2px 6px rgba(234, 190, 74, 0.4);
+}
+.raml-console-embedded .mocking-service-popover.orange::after {
+  border-bottom: 7px solid #eabe4a;
+}
+.raml-console-embedded .mocking-service-popover.orange .mocking-service-text {
+  color: #61490A;
+}
+.raml-console-embedded .mocking-service-popover.orange .mocking-service-link {
+  border-bottom: 1px solid rgba(97, 73, 10, 0.5);
+  color: rgba(97, 73, 10, 0.75);
+}
+.raml-console-embedded .mocking-service-popover.orange .mocking-service-button {
+  background: #61490A;
+  color: #eabe4a;
+}
+.raml-console-embedded .mocking-service-popover.orange .mocking-service-button:hover,
+.raml-console-embedded .mocking-service-popover.orange .mocking-service-button:active {
+  background: #84640F;
+}
+.raml-console-embedded .mocking-service-popover.orange .mocking-service-button:focus {
+  box-shadow: 0 0 0 3px rgba(97, 73, 10, 0.2);
+}
+.raml-console-embedded .mocking-service-popover.green {
+  background: #33cc7a;
+  box-shadow: 0 -2px 6px rgba(51, 204, 122, 0.4);
+}
+.raml-console-embedded .mocking-service-popover.green::after {
+  border-bottom: 7px solid #33cc7a;
+}
+.raml-console-embedded .mocking-service-popover.green .mocking-service-text {
+  color: #174d30;
+}
+.raml-console-embedded .mocking-service-popover.green .mocking-service-link {
+  border-bottom: 1px solid rgba(23, 77, 48, 0.5);
+  color: rgba(23, 77, 48, 0.75);
+}
+.raml-console-embedded .mocking-service-popover.green .mocking-service-button {
+  background: #174d30;
+  color: #33cc7a;
+}
+.raml-console-embedded .mocking-service-popover.green .mocking-service-button:hover,
+.raml-console-embedded .mocking-service-popover.green .mocking-service-button:active {
+  background: #0e8c48;
+}
+.raml-console-embedded .mocking-service-popover.green .mocking-service-button:focus {
+  box-shadow: 0 0 0 3px rgba(24, 76, 48, 0.2);
+}
+.raml-console-embedded .mocking-service-popover .col {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+  -webkit-flex-direction: column;
+  -ms-flex-direction: column;
+  flex-direction: column;
+  -webkit-box-pack: center;
+  -webkit-justify-content: center;
+  -ms-flex-pack: center;
+  justify-content: center;
+}
+.raml-console-embedded .mocking-service-popover .col.right {
+  margin-left: auto;
+}
+.raml-console-embedded .mocking-service-popover .mocking-service-text {
+  font-size: 13px;
+}
+.raml-console-embedded .mocking-service-popover .mocking-service-link {
+  display: inline-block;
+  font-size: 12px;
+  margin-top: 5px;
+  text-decoration: none;
+}
+.raml-console-embedded .mocking-service-popover .mocking-service-button {
+  border: 0;
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  height: 26px;
+  -webkit-transition: box-shadow 0.15s cubic-bezier(0.46, 0.03, 0.52, 0.96);
+  transition: box-shadow 0.15s cubic-bezier(0.46, 0.03, 0.52, 0.96);
+  margin-left: 20px;
+}
+.raml-console-embedded .mocking-service-popover .mocking-service-button:focus {
+  outline: 0;
+}
 
 /* Shelf */
 div[role=shelf] {
