@@ -218,3 +218,127 @@ div[role=preview-wrapper] {
 
   position: relative;
 }
+
+.raml-console-embedded {
+  .mocking-service-popover {
+    border-radius: 4px;
+    display: flex;
+    margin: 10px;
+    padding: 10px;
+    position: relative;
+    cursor: auto;
+
+    // arrow
+    &::after {
+      border-left: 7px solid transparent;
+      border-right: 7px solid transparent;
+      content: '';
+      display: block;
+      height: 0;
+      position: absolute;
+      right: 27px;
+      top: -7px;
+      width: 0;
+    }
+
+    &.orange {
+      background: #eabe4a;
+      box-shadow: 0 -2px 6px rgba(234,190,74,.4);
+
+      &::after {
+        border-bottom: 7px solid #eabe4a;
+      }
+
+      .mocking-service-text {
+        color: #61490A;
+      }
+
+      .mocking-service-link {
+        border-bottom: 1px solid rgba(97,73,10,.5);
+        color: rgba(97,73,10,.75); // #61490a
+      }
+
+      .mocking-service-button {
+        background: #61490A;
+        color: #eabe4a;
+
+        &:hover,
+        &:active {
+          background: #84640F;
+        }
+
+        &:focus {
+          box-shadow: 0 0 0 3px rgba(97,73,10,.2);
+        }
+      }
+    }
+
+    &.green {
+      background: #33cc7a;
+      box-shadow: 0 -2px 6px rgba(51,204,122,.4);
+
+      &::after {
+        border-bottom: 7px solid #33cc7a;
+      }
+
+      .mocking-service-text {
+        color: #174d30;
+      }
+
+      .mocking-service-link {
+        border-bottom: 1px solid rgba(23,77,48,.5);
+        color: rgba(23,77,48,.75); // #174d30
+      }
+
+      .mocking-service-button {
+        background: #174d30;
+        color: #33cc7a;
+
+        &:hover,
+        &:active {
+          background: #0e8c48;
+        }
+
+        &:focus {
+          box-shadow: 0 0 0 3px rgba(24, 76, 48,.2);
+        }
+      }
+    }
+
+    .col {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+
+      &.right {
+        margin-left: auto;
+      }
+    }
+
+    .mocking-service-text {
+      font-size: 13px;
+    }
+
+    .mocking-service-link {
+      display: inline-block;
+      font-size: 12px;
+      margin-top: 5px;
+      text-decoration: none;
+    }
+
+    .mocking-service-button {
+      border: 0;
+      border-radius: 2px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      height: 26px;
+      transition: box-shadow .15s cubic-bezier(.46,.03,.52,.96);
+      margin-left: 20px;
+
+      &:focus {
+        outline: 0;
+      }
+    }
+  }
+}
