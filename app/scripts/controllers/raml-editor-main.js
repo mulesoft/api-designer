@@ -9,6 +9,7 @@
     ) {
       var editor, lineOfCurrentError, currentFile;
 
+      $rootScope.mockMigrated = false;
       $scope.mockingMigratedDismissed = false;
 
       function extractCurrentFileLabel(file) {
@@ -300,12 +301,12 @@
       };
 
       $scope.getIsMockingService1 = function getIsMockingServiceVisible() {
-        $scope.mockingMigrated = $rootScope.mockingMigrated;
-        $scope.mockingServiceText = !$scope.mockingMigrated ? 'A new mocking service is available. Upgrading takes just seconds.' : 'Your mocking service has been successfully upgraded!';
+        $scope.mockMigrated = $rootScope.mockMigrated;
+        $scope.mockingServiceText = !$scope.mockMigrated ? 'A new mocking service is available. Upgrading takes just seconds.' : 'Your mocking service has been successfully upgraded!';
 
         var mockingServiceDetector = /(?:mocksvc\.[a-z\.]*)mulesoft\.com(\/(.*))?/;
         var isBaseUriOfMocking1 = $scope.raml && $scope.raml.baseUri && mockingServiceDetector.exec($scope.raml.baseUri);
-        var needsMigration = isBaseUriOfMocking1 !== null || $scope.mockingMigrated;
+        var needsMigration = isBaseUriOfMocking1 !== null || $scope.mockMigrated;
 
         return !$scope.mockingMigratedDismissed && (needsMigration);
       };

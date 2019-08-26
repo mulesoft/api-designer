@@ -82497,6 +82497,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       var SEPARATOR = '/';
       self.proxy = null;
       self.baseUri = 'https://qax.anypoint.mulesoft.com/mocking/api/v1';
+      self.legacyBaseUri = 'https://mocksvc.mulesoft.com';
       function mockingIds() {
         var regExp = /^#\/organizations\/([A-Za-z0-9-]+)\/dashboard\/apis\/([0-9-]+)\/versions\/([0-9-]+).*$/;
         var match = $window.location.hash.match(regExp);
@@ -82505,18 +82506,24 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         }
         return match.slice(1);
       }
-      self.buildURL = function buildURL() {
+      self.buildMockingService1Url = function buildMockingService2Url() {
+        return self.legacyBaseUri + ['/mocks'].concat(Array.prototype.slice.call(arguments, 0)).join('/');
+      };
+      self.buildMockingService2Url = function buildMockingService2Url() {
         var args = [
             'sources',
             'manager',
             'apis'
           ].concat(mockingIds()).concat(Array.prototype.slice.call(arguments, 0));
-        var url = self.baseUri + SEPARATOR + args.join(SEPARATOR);
+        return self.baseUri + SEPARATOR + args.join(SEPARATOR);
+      };
+      self.buildURL = function buildURL(url) {
+        var completeUrl = url ? url : self.buildMockingService2Url();
         var proxy = self.proxy || $window.RAML.Settings.proxy;
         if (proxy) {
-          url = proxy + resolveUri(url);
+          completeUrl = proxy + resolveUri(completeUrl);
         }
-        return url;
+        return completeUrl;
       };
       function getToken() {
         try {
@@ -82542,6 +82549,9 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       };
       self.deleteMock = function deleteMock(file) {
         return $http.delete(self.buildURL(), { headers: customHeader(file) });
+      };
+      self.deleteMock1 = function deleteMock1(mock) {
+        return $http.delete(self.buildURL(self.buildMockingService1Url(), mock.id, mock.manageKey));
       };
       $rootScope.$on('event:evict-mocking', function (event, file) {
         self.deleteMock(file);
@@ -82581,6 +82591,11 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       self.deleteMock = function deleteMock(file) {
         return mockingServiceClient.deleteMock(file).then(function success() {
           return setMockMeta(file, null);
+        });
+      };
+      self.deleteMock1 = function deleteMock1(file) {
+        return getMockMeta(file).then(function (mock) {
+          return mock && mockingServiceClient.deleteMock(mock);
         });
       };
     }
@@ -83803,6 +83818,7 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
     'ramlEditorMainHelpers',
     function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, ramlWorker, ramlRepository, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q, ramlEditorMainHelpers) {
       var editor, lineOfCurrentError, currentFile;
+      $rootScope.mockMigrated = false;
       $scope.mockingMigratedDismissed = false;
       function extractCurrentFileLabel(file) {
         var label = '';
@@ -84058,11 +84074,11 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
         return !($scope.mockingServiceDisabled || !$scope.fileParsable);
       };
       $scope.getIsMockingService1 = function getIsMockingServiceVisible() {
-        $scope.mockingMigrated = $rootScope.mockingMigrated;
-        $scope.mockingServiceText = !$scope.mockingMigrated ? 'A new mocking service is available. Upgrading takes just seconds.' : 'Your mocking service has been successfully upgraded!';
+        $scope.mockMigrated = $rootScope.mockMigrated;
+        $scope.mockingServiceText = !$scope.mockMigrated ? 'A new mocking service is available. Upgrading takes just seconds.' : 'Your mocking service has been successfully upgraded!';
         var mockingServiceDetector = /(?:mocksvc\.[a-z\.]*)mulesoft\.com(\/(.*))?/;
         var isBaseUriOfMocking1 = $scope.raml && $scope.raml.baseUri && mockingServiceDetector.exec($scope.raml.baseUri);
-        var needsMigration = isBaseUriOfMocking1 !== null || $scope.mockingMigrated;
+        var needsMigration = isBaseUriOfMocking1 !== null || $scope.mockMigrated;
         return !$scope.mockingMigratedDismissed && needsMigration;
       };
       $scope.closeMigrationHint = function closeMigrationHing() {
@@ -84394,22 +84410,23 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
       function enableMock() {
         loading(mockingService.enableMock($scope.fileBrowser.selectedFile).then(setMock).then(addBaseUri));
       }
-      function deleteMock() {
-        loading(mockingService.deleteMock($scope.fileBrowser.selectedFile).then(function () {
-          removeBaseUri('baseUri: ' + $scope.mock);
-        }).then(setMock));
+      function deleteMock(isLegacyMockingService) {
+        var deleteMockPromise = isLegacyMockingService ? mockingService.deleteMock1($scope.fileBrowser.selectedFile) : mockingService.deleteMock($scope.fileBrowser.selectedFile);
+        var baseUri = isLegacyMockingService ? 'baseUri: ' + $scope.raml.baseUri : 'baseUri: ' + $scope.mock;
+        loading(deleteMockPromise.then(function () {
+          removeBaseUri(baseUri);
+        }).then(setMock).then(function mockMigrated() {
+          if (isLegacyMockingService) {
+            $rootScope.mockMigrated = true;
+          }
+        }));
       }
-      $scope.cleanAndToggleMockingService = function cleanAndToggleMockingService() {
-        removeBaseUri('baseUri: ' + $scope.raml.baseUri);
-        $scope.toggleMockingService();
-        $rootScope.mockingMigrated = true;
-      };
-      $scope.toggleMockingService = function toggleMockingService() {
+      $scope.toggleMockingService = function toggleMockingService(isLegacyMockingService) {
         if (!$scope.fileBrowser.selectedFile) {
           return;
         }
         if ($scope.enabled) {
-          deleteMock();
+          deleteMock(isLegacyMockingService);
           return;
         }
         enableMock();
@@ -85952,7 +85969,7 @@ angular.module('ramlEditorApp').run([
     $templateCache.put('views/new-name-modal.html', '<form name="form" novalidate ng-submit="submit(form)">\n' + '  <div class="modal-header">\n' + '    <h3>{{input.title}}</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    <!-- name -->\n' + '    <div class="form-group" ng-class="{\'has-error\': form.$submitted && form.name.$invalid}">\n' + '      <p>\n' + '        {{input.message}}\n' + '      </p>\n' + '      <p ng-if="input.link">\n' + '        Learn more\n' + '        <a target="_blank" href="{{input.link}}">\n' + '          <i class="fa fa-external-link"></i>\n' + '        </a>\n' + '      </p>\n' + '      <!-- label -->\n' + '      <label for="name" class="control-label required-field-label">Name</label>\n' + '\n' + '      <!-- input -->\n' + '      <input id="name" name="name" type="text"\n' + '             ng-model="input.newName" class="form-control"\n' + '             ng-validate="isValid($value)"\n' + '             ng-maxlength="64" ng-auto-focus="true" value="{{input.suggestedName}}" required>\n' + '\n' + '      <!-- error -->\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.required">Please provide a name.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.maxlength">Name must be shorter than 64 characters.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.validate">{{validationErrorMessage}}</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n' + '    <button type="submit" class="btn btn-primary">OK</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/raml-editor-context-menu.tmpl.html', '<ul role="context-menu" ng-show="opened">\n' + '  <li role="context-menu-item" ng-mouseenter="openFileMenu(action)" ng-mouseleave="closeFileMenu()" ng-repeat="action in actions" ng-click="action.execute()">\n' + '    {{ action.label }}\n' + '    <i class="submenu-icon fa fa-caret-right" ng-if="action.fragments !== undefined"></i>\n' + '    <raml-editor-new-file-menu ng-if="action.fragments !== undefined" target="target" show-file-menu="showFileMenu" show-fragment-menu="showFragmentMenu" open-file-menu-condition="showFragmentMenu" menu-role="context-menu"></raml-editor-new-file-menu>\n' + '  </li>\n' + '</ul>\n');
     $templateCache.put('views/raml-editor-file-browser.tmpl.html', '<raml-editor-context-menu></raml-editor-context-menu>\n' + '\n' + '<script type="text/ng-template" id="file-item.html">\n' + '  <div ui-tree-handle class="file-item" ng-right-click="fileBrowser.showContextMenu($event, node)" ng-click="fileBrowser.select(node)"\n' + '    ng-class="{currentfile: fileBrowser.currentTarget.path === node.path && !isDragging,\n' + '      dirty: node.dirty,\n' + '      geared: fileBrowser.contextMenuOpenedFor(node),\n' + '      directory: node.isDirectory,\n' + '      \'no-drop\': fileBrowser.cursorState === \'no\',\n' + '      copy: fileBrowser.cursorState === \'ok\'}"\n' + '    ng-drop="node.isDirectory && fileBrowser.dropFile($event, node)">\n' + '    <span class="file-name" ng-click="toggleFolderCollapse(node)">\n' + '      <i class="fa icon fa-caret-right fa-fw" ng-if="node.isDirectory" ng-class="{\'fa-rotate-90\': !collapsed}"></i>\n' + '      <i class="fa icon fa-fw" ng-class="{\'fa-folder-o\': node.isDirectory, \'fa-file-text-o\': !node.isDirectory}"></i>\n' + '      &nbsp;{{node.name}}\n' + '    </span>\n' + '    <i class="fa fa-cog" ng-click="fileBrowser.showContextMenu($event, node)" ng-class="{hidden: isDragging}" data-nodrag></i>\n' + '  </div>\n' + '\n' + '  <ul ui-tree-nodes ng-if="node.isDirectory" ng-class="{hidden: collapsed}" ng-model="node.children">\n' + '    <li ui-tree-node ng-repeat="node in node.children" ng-include="\'file-item.html\'" data-collapsed="node.collapsed" data-path="{{node.path}}">\n' + '    </li>\n' + '  </ul>\n' + '</script>\n' + '\n' + '<div ui-tree="fileTreeOptions" ng-model="homeDirectory" class="file-list" data-drag-delay="300" data-empty-place-holder-enabled="false" ng-drop="fileBrowser.dropFile($event, homeDirectory)" ng-right-click="fileBrowser.showContextMenu($event, homeDirectory)">\n' + '  <ul ui-tree-nodes ng-model="homeDirectory.children" id="tree-root">\n' + '    <ui-tree-dummy-node class="top"></ui-tree-dummy-node>\n' + '    <li ui-tree-node ng-repeat="node in homeDirectory.children" ng-include="\'file-item.html\'" data-collapsed="node.collapsed"\n' + '     data-path="{{node.path}}"\n' + '     ng-drag-enter="node.collapsed = false"\n' + '     ng-drag-leave="node.collapsed = true"></li>\n' + '    <ui-tree-dummy-node class="bottom" ng-click="fileBrowser.select(homeDirectory)"></ui-tree-dummy-node>\n' + '  </ul>\n' + '</div>\n');
-    $templateCache.put('views/raml-editor-main.tmpl.html', '<div role="raml-editor" class="{{theme}}">\n' + '  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications, error: level === \'error\'}">\n' + '    {{message}}\n' + '    <i class="fa" ng-class="{\'fa-check\': level === \'info\', \'fa-warning\': level === \'error\'}" ng-click="hideNotifications()"></i>\n' + '  </div>\n' + '\n' + '  <header>\n' + '    <h1>\n' + '      <strong>API</strong> Designer\n' + '    </h1>\n' + '\n' + '    <a role="logo" target="_blank" href="http://mulesoft.com"></a>\n' + '  </header>\n' + '\n' + '  <ul class="menubar">\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-project-button></raml-editor-project-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-view-button></raml-editor-view-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-help-button></raml-editor-help-button>\n' + '    </li>\n' + '    <li class="spacer file-absolute-path">{{getSelectedFileAbsolutePath()}}</li>\n' + '    <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">\n' + '      <div class="title">Mocking Service</div>\n' + '      <div class="field-wrapper" ng-class="{loading: loading}">\n' + '        <i class="fa fa-spin fa-spinner" ng-if="loading"></i>\n' + '        <div class="field" ng-if="!loading">\n' + '          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />\n' + '          <label for="mockingServiceEnabled"></label>\n' + '        </div>\n' + '      </div>\n' + '    </li>\n' + '  </ul>\n' + '\n' + '  <div role="flexColumns">\n' + '    <raml-editor-file-browser role="browser"></raml-editor-file-browser>\n' + '\n' + '    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev"><div class="split split-left">&nbsp;</div></div>\n' + '\n' + '    <div role="editor" ng-class="{error: currentError}">\n' + '      <div id="code" role="code"></div>\n' + '\n' + '      <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">\n' + '        <div role="shelf-tab" ng-click="toggleShelf()">\n' + '          <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? \'fa-caret-up\' : \'fa-caret-down\'"></i>\n' + '        </div>\n' + '\n' + '        <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="\'views/raml-editor-shelf.tmpl.html\'"></div>\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="470"><div class="split split-right">&nbsp;</div></div>\n' + '\n' + '    <div ng-show="getIsConsoleVisible()" role="preview-wrapper" class="raml-console-embedded">\n' + '      <div ng-show="getIsMockingService1()">\n' + '        <div class="{{mockingMigrated ? \'mocking-service-popover green\' : \'mocking-service-popover orange\'}}">\n' + '          <div class="col">\n' + '            <div class="mocking-service-text">{{mockingServiceText}}</div>\n' + '            <div>\n' + '              <a class="mocking-service-link" href="https://docs.mulesoft.com/design-center/design-migrating-ms" rel="noopener" target="_blank">See what\u2019s new</a>\n' + '            </div>\n' + '          </div>\n' + '          <div class="col right">\n' + '            <div ng-if="!mockingMigrated" class="right-col" ng-controller="mockingServiceController" ng-click="cleanAndToggleMockingService()">\n' + '              <button class="mocking-service-button" ng-click="">Upgrade</button>\n' + '            </div>\n' + '\n' + '            <div ng-if="mockingMigrated" class="right-col" ng-click="closeMigrationHint()">\n' + '              <button class="mocking-service-button" ng-click="">Dismiss</button>\n' + '            </div>\n' + '          </div>\n' + '        </div>\n' + '      </div>\n' + '\n' + '      <div ng-if="!splitterCollapsed_consoleAndEditor && getIsConsoleVisible()">\n' + '        <raml-console raml="raml" errors="ramlError" disable-description="true"\n' + '            options="{ singleView: true, disableThemeSwitcher: true, disableRamlClientGenerator: true, disableTitle: true}"\n' + '            style="padding: 0; margin-top: 0;"></raml-console>\n' + '      </div>\n' + '    </div>\n' + '  </div>\n' + '</div>\n');
+    $templateCache.put('views/raml-editor-main.tmpl.html', '<div role="raml-editor" class="{{theme}}">\n' + '  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications, error: level === \'error\'}">\n' + '    {{message}}\n' + '    <i class="fa" ng-class="{\'fa-check\': level === \'info\', \'fa-warning\': level === \'error\'}" ng-click="hideNotifications()"></i>\n' + '  </div>\n' + '\n' + '  <header>\n' + '    <h1>\n' + '      <strong>API</strong> Designer\n' + '    </h1>\n' + '\n' + '    <a role="logo" target="_blank" href="http://mulesoft.com"></a>\n' + '  </header>\n' + '\n' + '  <ul class="menubar">\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-project-button></raml-editor-project-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-view-button></raml-editor-view-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-help-button></raml-editor-help-button>\n' + '    </li>\n' + '    <li class="spacer file-absolute-path">{{getSelectedFileAbsolutePath()}}</li>\n' + '    <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">\n' + '      <div class="title">Mocking Service</div>\n' + '      <div class="field-wrapper" ng-class="{loading: loading}">\n' + '        <i class="fa fa-spin fa-spinner" ng-if="loading"></i>\n' + '        <div class="field" ng-if="!loading">\n' + '          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />\n' + '          <label for="mockingServiceEnabled"></label>\n' + '        </div>\n' + '      </div>\n' + '    </li>\n' + '  </ul>\n' + '\n' + '  <div role="flexColumns">\n' + '    <raml-editor-file-browser role="browser"></raml-editor-file-browser>\n' + '\n' + '    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev"><div class="split split-left">&nbsp;</div></div>\n' + '\n' + '    <div role="editor" ng-class="{error: currentError}">\n' + '      <div id="code" role="code"></div>\n' + '\n' + '      <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">\n' + '        <div role="shelf-tab" ng-click="toggleShelf()">\n' + '          <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? \'fa-caret-up\' : \'fa-caret-down\'"></i>\n' + '        </div>\n' + '\n' + '        <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="\'views/raml-editor-shelf.tmpl.html\'"></div>\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="470"><div class="split split-right">&nbsp;</div></div>\n' + '\n' + '    <div ng-show="getIsConsoleVisible()" role="preview-wrapper" class="raml-console-embedded">\n' + '      <div ng-show="getIsMockingService1()">\n' + '        <div class="{{mockMigrated ? \'mocking-service-popover green\' : \'mocking-service-popover orange\'}}">\n' + '          <div class="col">\n' + '            <div class="mocking-service-text">{{mockingServiceText}}</div>\n' + '            <div>\n' + '              <a class="mocking-service-link" href="https://docs.mulesoft.com/design-center/design-migrating-ms" rel="noopener" target="_blank">See what\u2019s new</a>\n' + '            </div>\n' + '          </div>\n' + '          <div class="col right">\n' + '            <div ng-if="!mockMigrated" class="right-col" ng-controller="mockingServiceController" ng-click="toggleMockingService(true)">\n' + '              <button class="mocking-service-button" ng-click="">Upgrade</button>\n' + '            </div>\n' + '\n' + '            <div ng-if="mockMigrated" class="right-col" ng-click="closeMigrationHint()">\n' + '              <button class="mocking-service-button" ng-click="">Dismiss</button>\n' + '            </div>\n' + '          </div>\n' + '        </div>\n' + '      </div>\n' + '\n' + '      <div ng-if="!splitterCollapsed_consoleAndEditor && getIsConsoleVisible()">\n' + '        <raml-console raml="raml" errors="ramlError" disable-description="true"\n' + '            options="{ singleView: true, disableThemeSwitcher: true, disableRamlClientGenerator: true, disableTitle: true}"\n' + '            style="padding: 0; margin-top: 0;"></raml-console>\n' + '      </div>\n' + '    </div>\n' + '  </div>\n' + '</div>\n');
     $templateCache.put('views/raml-editor-shelf.tmpl.html', '<ul role="sections" ng-controller="ramlEditorShelf">\n' + '  <li role="section" ng-repeat="category in model.categories | orderBy:orderSections" class="{{category.name | dasherize}}">\n' + '    {{category.name}}&nbsp;({{category.items.length}})\n' + '    <ul role="items">\n' + '      <li ng-repeat="item in category.items" ng-click="itemClick(item)"><i class="fa fa-reply"></i><span>{{item.title}}</span></li>\n' + '    </ul>\n' + '  </li>\n' + '</ul>\n');
   }
 ]);
