@@ -56,7 +56,7 @@
 
     <div ng-show="getIsConsoleVisible()" role="preview-wrapper" class="raml-console-embedded">
       <div ng-show="getIsMockingService1()">
-        <div class="{{mockingMigrated ? 'mocking-service-popover green' : 'mocking-service-popover orange'}}">
+        <div class="{{mockMigrated ? 'mocking-service-popover green' : 'mocking-service-popover orange'}}">
           <div class="col">
             <div class="mocking-service-text">{{mockingServiceText}}</div>
             <div>
@@ -64,11 +64,11 @@
             </div>
           </div>
           <div class="col right">
-            <div ng-if="!mockingMigrated" class="right-col" ng-controller="mockingServiceController" ng-click="cleanAndToggleMockingService()">
+            <div ng-if="!mockMigrated" class="right-col" ng-controller="mockingServiceController" ng-click="toggleMockingService(true)">
               <button class="mocking-service-button" ng-click="">Upgrade</button>
             </div>
 
-            <div ng-if="mockingMigrated" class="right-col" ng-click="closeMigrationHint()">
+            <div ng-if="mockMigrated" class="right-col" ng-click="closeMigrationHint()">
               <button class="mocking-service-button" ng-click="">Dismiss</button>
             </div>
           </div>

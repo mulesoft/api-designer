@@ -14,6 +14,7 @@
 
       self.proxy   = null;
       self.baseUri = 'https://qax.anypoint.mulesoft.com/mocking/api/v1';
+      self.legacyBaseUri = 'https://mocksvc.mulesoft.com';
 
       function mockingIds() {
         var regExp = /^#\/organizations\/([A-Za-z0-9-]+)\/dashboard\/apis\/([0-9-]+)\/versions\/([0-9-]+).*$/;
@@ -26,16 +27,24 @@
         return match.slice(1);
       }
 
-      self.buildURL = function buildURL() {
+      self.buildMockingService1Url = function buildMockingService2Url() {
+        return self.legacyBaseUri + ['/mocks'].concat(Array.prototype.slice.call(arguments, 0)).join('/');
+      };
+
+      self.buildMockingService2Url = function buildMockingService2Url() {
         var args = ['sources', 'manager', 'apis'].concat(mockingIds()).concat(Array.prototype.slice.call(arguments, 0));
-        var url   = self.baseUri + SEPARATOR + args.join(SEPARATOR);
+        return self.baseUri + SEPARATOR + args.join(SEPARATOR);
+      };
+
+      self.buildURL = function buildURL(url) {
+        var completeUrl = url ? url : self.buildMockingService2Url();
         var proxy = self.proxy || $window.RAML.Settings.proxy;
 
         if (proxy) {
-          url = proxy + resolveUri(url);
+          completeUrl = proxy + resolveUri(completeUrl);
         }
 
-        return url;
+        return completeUrl;
       };
 
       function getToken() {
@@ -67,6 +76,10 @@
 
       self.deleteMock = function deleteMock(file) {
         return $http.delete(self.buildURL(), { headers:customHeader(file) });
+      };
+
+      self.deleteMock1 = function deleteMock1(mock) {
+        return $http.delete(self.buildURL(self.buildMockingService1Url(), mock.id, mock.manageKey));
       };
 
       $rootScope.$on('event:evict-mocking', function(event, file) {
