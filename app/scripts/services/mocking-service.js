@@ -43,6 +43,14 @@
             return setMockMeta(file, null);
           });
       };
+
+      self.deleteMock1 = function deleteMock1(file) {
+        return getMockMeta(file)
+          .then(function (mock) {
+            return mock && mockingServiceClient.deleteMock(mock);
+          });
+      };
+
     })
   ;
 })();

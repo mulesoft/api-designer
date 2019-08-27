@@ -4,6 +4,7 @@
   angular.module('ramlEditorApp')
     .controller('mockingServiceController', function mockingServiceControllerFactory(
       $scope,
+      $rootScope,
       mockingService,
       mockingServiceClient,
       codeMirror,
@@ -41,8 +42,7 @@
         setLine(0, baseUri);
       }
 
-      function removeBaseUri() {
-        var baseUriLine = 'baseUri: ' + $scope.mock;
+      function removeBaseUri(baseUriLine) {
         var lineNumber  = void(0);
         var line        = void(0);
 
@@ -97,22 +97,34 @@
         );
       }
 
-      function deleteMock() {
-        loading(mockingService.deleteMock($scope.fileBrowser.selectedFile)
-          .then(function () {
-            removeBaseUri();
-          })
-          .then(setMock)
+      function deleteMock(isLegacyMockingService) {
+        var deleteMockPromise = isLegacyMockingService ?
+          mockingService.deleteMock1($scope.fileBrowser.selectedFile) :
+          mockingService.deleteMock($scope.fileBrowser.selectedFile);
+
+        var baseUri = isLegacyMockingService ? 'baseUri: ' + $scope.raml.baseUri : 'baseUri: ' + $scope.mock;
+
+        loading(
+          deleteMockPromise
+            .then(function () {
+              removeBaseUri(baseUri);
+            })
+            .then(setMock)
+            .then(function mockMigrated() {
+              if (isLegacyMockingService) {
+                $rootScope.mockMigrated = true;
+              }
+            })
         );
       }
 
-      $scope.toggleMockingService = function toggleMockingService() {
+      $scope.toggleMockingService = function toggleMockingService(isLegacyMockingService) {
         if (!$scope.fileBrowser.selectedFile) {
           return;
         }
 
         if ($scope.enabled) {
-          deleteMock();
+          deleteMock(isLegacyMockingService);
           return;
         }
 
