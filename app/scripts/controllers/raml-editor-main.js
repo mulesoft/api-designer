@@ -306,7 +306,7 @@
 
         var mockingServiceDetector = /(?:mocksvc\.[a-z\.]*)mulesoft\.com(\/(.*))?/;
         var isBaseUriOfMocking1 = $scope.raml && $scope.raml.baseUri && mockingServiceDetector.exec($scope.raml.baseUri);
-        var needsMigration = isBaseUriOfMocking1 !== null || $scope.mockMigrated;
+        var needsMigration = isBaseUriOfMocking1 || $scope.mockMigrated;
 
         return !$scope.mockingMigratedDismissed && (needsMigration);
       };
