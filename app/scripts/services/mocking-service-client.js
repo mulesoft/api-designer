@@ -59,7 +59,7 @@
         return {
           'MS2-Authorization': getToken(),
           'MS2-Main-File': encodeURI((file && file.name) || ''),
-          'MS2-Origin': 'API Designer'
+          'MS2-Origin': 'API Designer Legacy'
         };
       }
 
