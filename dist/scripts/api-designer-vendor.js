@@ -84249,11 +84249,11 @@ exports.javascript = require('./javascript');
             var requestOptions = request.toOptions();
 
             if (mockingServiceDetector.exec(requestOptions.baseUrl)) {
-              request.header('x-origin', 'API Designer');
+              request.header('x-origin', 'API Designer Legacy');
             }
 
             if (mockingService2Detector.exec(requestOptions.baseUrl)) {
-              request.header('MS2-Origin', 'API Designer');
+              request.header('MS2-Origin', 'API Designer Legacy');
             }
 
             if (context.bodyContent) {
