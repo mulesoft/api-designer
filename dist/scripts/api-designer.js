@@ -82540,7 +82540,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         };
       }
       self.enableMock = function createMock(file) {
-        return $http.post(self.buildURL('link'), null, { headers: customHeader(file) }).then(function (mock) {
+        return $http.post(self.buildURL(this.buildMockingService2Url('link')), null, { headers: customHeader(file) }).then(function (mock) {
           const mockId = mock.data.id;
           return $http.get(self.buildURL(), { headers: customHeader(file) }).then(function (mockMetadata) {
             var baseUriPath = mockMetadata.data && mockMetadata.data.metadata && mockMetadata.data.metadata.baseUriPath;
