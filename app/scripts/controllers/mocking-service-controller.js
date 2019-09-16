@@ -123,7 +123,7 @@
           return;
         }
 
-        if ($scope.enabled) {
+        if ($scope.enabled || isLegacyMockingService) {
           deleteMock(isLegacyMockingService);
           return;
         }
