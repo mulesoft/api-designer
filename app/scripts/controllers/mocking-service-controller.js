@@ -118,13 +118,19 @@
         );
       }
 
-      $scope.toggleMockingService = function toggleMockingService(isLegacyMockingService) {
+      $scope.toggleMockingService = function toggleMockingService(isLegacyMockingMigration) {
         if (!$scope.fileBrowser.selectedFile) {
           return;
         }
 
-        if ($scope.enabled || isLegacyMockingService) {
-          deleteMock(isLegacyMockingService);
+        if (isLegacyMockingMigration) {
+          deleteMock(isLegacyMockingMigration);
+          enableMock();
+          return;
+        }
+
+        if ($scope.enabled) {
+          deleteMock();
           return;
         }
 
