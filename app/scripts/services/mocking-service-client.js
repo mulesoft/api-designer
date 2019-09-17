@@ -76,7 +76,7 @@
       };
 
       self.deleteMock = function deleteMock(file) {
-        return $http.delete(self.buildURL(), { headers:customHeader(file) });
+        return $http.delete(self.buildURL(), { headers: customHeader(file) });
       };
 
       self.deleteMock1 = function deleteMock1(mock) {
