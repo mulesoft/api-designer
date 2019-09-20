@@ -90,19 +90,24 @@
         );
       }
 
-      function enableMock() {
+      function enableMock(isLegacyMockingMigration) {
         loading(mockingService.enableMock($scope.fileBrowser.selectedFile)
           .then(setMock)
           .then(addBaseUri)
+          .then(function mockMigrated() {
+            if (isLegacyMockingMigration) {
+              $rootScope.mockMigrated = true;
+            }
+          })
         );
       }
 
-      function deleteMock(isLegacyMockingService) {
-        var deleteMockPromise = isLegacyMockingService ?
+      function deleteMock(isLegacyMockingMigration) {
+        var deleteMockPromise = isLegacyMockingMigration ?
           mockingService.deleteMock1($scope.fileBrowser.selectedFile) :
           mockingService.deleteMock($scope.fileBrowser.selectedFile);
 
-        var baseUri = isLegacyMockingService ? 'baseUri: ' + $scope.raml.baseUri : 'baseUri: ' + $scope.mock;
+        var baseUri = isLegacyMockingMigration ? 'baseUri: ' + $scope.raml.baseUri : 'baseUri: ' + $scope.mock;
 
         loading(
           deleteMockPromise
@@ -110,11 +115,6 @@
               removeBaseUri(baseUri);
             })
             .then(setMock)
-            .then(function mockMigrated() {
-              if (isLegacyMockingService) {
-                $rootScope.mockMigrated = true;
-              }
-            })
         );
       }
 
@@ -125,7 +125,7 @@
 
         if (isLegacyMockingMigration) {
           deleteMock(isLegacyMockingMigration);
-          enableMock();
+          enableMock(isLegacyMockingMigration);
           return;
         }
 

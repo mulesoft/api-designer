@@ -56,18 +56,30 @@
 
     <div ng-show="getIsConsoleVisible()" role="preview-wrapper" class="raml-console-embedded">
       <div ng-show="getIsMockingService1()">
-        <div class="{{mockMigrated ? 'mocking-service-popover green' : 'mocking-service-popover orange'}}">
+        <div class="mocking-service-popover orange">
           <div class="col">
-            <div class="mocking-service-text">{{mockingServiceText}}</div>
+            <div class="mocking-service-text">A new mocking service is available. Upgrading takes just seconds.</div>
             <div>
               <a class="mocking-service-link" href="https://docs.mulesoft.com/design-center/design-migrating-ms" rel="noopener" target="_blank">See what’s new</a>
             </div>
           </div>
           <div class="col right">
-            <div ng-if="!mockMigrated" class="right-col" ng-controller="mockingServiceController" ng-click="toggleMockingService(true)">
+            <div class="right-col" ng-controller="mockingServiceController" ng-click="toggleMockingService(true)">
               <button class="mocking-service-button" ng-click="">Upgrade</button>
             </div>
+          </div>
+        </div>
+      </div>
 
+      <div ng-show="getIsMigrationSuccessful()">
+        <div class="mocking-service-popover green">
+          <div class="col">
+            <div class="mocking-service-text">Your mocking service has been successfully upgraded!</div>
+            <div>
+              <a class="mocking-service-link" href="https://docs.mulesoft.com/design-center/design-migrating-ms" rel="noopener" target="_blank">See what’s new</a>
+            </div>
+          </div>
+          <div class="col right">
             <div ng-if="mockMigrated" class="right-col" ng-click="closeMigrationHint()">
               <button class="mocking-service-button" ng-click="">Dismiss</button>
             </div>
