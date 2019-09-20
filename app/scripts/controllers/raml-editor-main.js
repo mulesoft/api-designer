@@ -301,12 +301,17 @@
       };
 
       $scope.getIsMockingService1 = function getIsMockingServiceVisible() {
-        var mockingServiceDetector = /(?:mocksvc\.[a-z\.]*)mulesoft\.com(\/(.*))?/;
-        var isBaseUriOfMocking1 = $scope.raml && $scope.raml.baseUri && mockingServiceDetector.exec($scope.raml.baseUri);
-        var needsMigration = (isBaseUriOfMocking1 !== undefined || isBaseUriOfMocking1 !== null) && !$rootScope.mockMigrated;
+        if (!$scope.raml || !$scope.raml.baseUri || $scope.mockingMigratedDismissed) {
+          return false;
+        }
 
-        $scope.mockingServiceText = !$rootScope.mockMigrated ? 'A new mocking service is available. Upgrading takes just seconds.' : 'Your mocking service has been successfully upgraded!';
-        return !$scope.mockingMigratedDismissed && needsMigration;
+        var mockingServiceDetector = /(?:mocksvc\.[a-z\.]*)mulesoft\.com(\/(.*))?/;
+        var isBaseUriOfMocking1 = mockingServiceDetector.exec($scope.raml.baseUri);
+        return isBaseUriOfMocking1 !== null;
+      };
+
+      $scope.getIsMigrationSuccessful = function getIsMigrationSuccessful() {
+        return $rootScope.mockMigrated && !$scope.mockingMigratedDismissed;
       };
 
       $scope.closeMigrationHint = function closeMigrationHing() {
