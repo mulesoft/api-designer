@@ -77,8 +77,8 @@
       }
 
       function setMock(mock) {
-        $scope.mock    = mock;
-        $scope.enabled = !!mock;
+        $rootScope.mock    = mock;
+        $rootScope.enabled = !!mock;
       }
 
       function getMock() {
@@ -129,7 +129,7 @@
           return;
         }
 
-        if ($scope.enabled) {
+        if ($rootScope.enabled) {
           deleteMock();
           return;
         }
