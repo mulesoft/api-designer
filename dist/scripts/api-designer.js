@@ -84350,12 +84350,12 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
         function setLine(lineNumber, line, prefix) {
           codeMirror.setLine($scope.editor, lineNumber, (prefix || '') + $scope.editor.getLine(lineNumber) + '\n' + line);
         }
-        var baseUri = 'baseUri: ' + $scope.mock;
+        var baseUri = 'baseUri: ' + $rootScope.mock;
         var node = getNode($scope.editor, 0);
         // try to find `baseUri` line
         while (node) {
           if (node.getKey() === 'baseUri') {
-            if (node.getValue().text !== $scope.mock) {
+            if (node.getValue().text !== $rootScope.mock) {
               setLine(node.lineNumber, baseUri, '#');
             }
             return;
@@ -84406,7 +84406,7 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
       }
       function getMock() {
         loading(mockingService.getMock($scope.fileBrowser.selectedFile).then(setMock).then(function () {
-          if ($scope.mock) {
+          if ($rootScope.mock) {
             addBaseUri();
           }
         }));
@@ -84420,7 +84420,7 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
       }
       function deleteMock(isLegacyMockingMigration) {
         var deleteMockPromise = isLegacyMockingMigration ? mockingService.deleteMock1($scope.fileBrowser.selectedFile) : mockingService.deleteMock($scope.fileBrowser.selectedFile);
-        var baseUri = isLegacyMockingMigration ? 'baseUri: ' + $scope.raml.baseUri : 'baseUri: ' + $scope.mock;
+        var baseUri = isLegacyMockingMigration ? 'baseUri: ' + $scope.raml.baseUri : 'baseUri: ' + $rootScope.mock;
         loading(deleteMockPromise.then(function () {
           removeBaseUri(baseUri);
         }).then(setMock));

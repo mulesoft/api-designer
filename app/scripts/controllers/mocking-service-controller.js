@@ -15,13 +15,13 @@
           codeMirror.setLine($scope.editor, lineNumber, (prefix || '') + $scope.editor.getLine(lineNumber) + '\n' + line);
         }
 
-        var baseUri = 'baseUri: ' + $scope.mock;
+        var baseUri = 'baseUri: ' + $rootScope.mock;
         var node    = getNode($scope.editor, 0);
 
         // try to find `baseUri` line
         while (node) {
           if (node.getKey() === 'baseUri') {
-            if (node.getValue().text !== $scope.mock) {
+            if (node.getValue().text !== $rootScope.mock) {
               setLine(node.lineNumber, baseUri, '#');
             }
             return;
@@ -85,7 +85,7 @@
         loading(mockingService.getMock($scope.fileBrowser.selectedFile)
           .then(setMock)
           .then(function() {
-            if ($scope.mock) { addBaseUri(); }
+            if ($rootScope.mock) { addBaseUri(); }
           })
         );
       }
@@ -107,7 +107,7 @@
           mockingService.deleteMock1($scope.fileBrowser.selectedFile) :
           mockingService.deleteMock($scope.fileBrowser.selectedFile);
 
-        var baseUri = isLegacyMockingMigration ? 'baseUri: ' + $scope.raml.baseUri : 'baseUri: ' + $scope.mock;
+        var baseUri = isLegacyMockingMigration ? 'baseUri: ' + $scope.raml.baseUri : 'baseUri: ' + $rootScope.mock;
 
         loading(
           deleteMockPromise
