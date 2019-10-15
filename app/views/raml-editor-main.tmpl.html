@@ -28,7 +28,7 @@
       <div class="field-wrapper" ng-class="{loading: loading}">
         <i class="fa fa-spin fa-spinner" ng-if="loading"></i>
         <div class="field" ng-if="!loading">
-          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />
+          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="$root.enabled" ng-click="$event.preventDefault()" />
           <label for="mockingServiceEnabled"></label>
         </div>
       </div>
