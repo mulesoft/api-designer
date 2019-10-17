@@ -59,7 +59,7 @@ The following example details how to embed the API Designer:
       var deferred = $q.defer();
 
       // Your magic goes here:
-      // Do deferred.resolve(data); to fulfull the promise or
+      // Do deferred.resolve(data); to fulfill the promise or
       // deferred.reject(error); to reject it.
 
       // In case you want to send notifications to the user
@@ -76,7 +76,7 @@ The following example details how to embed the API Designer:
       var deferred = $q.defer();
 
       // Your magic goes here:
-      // Do deferred.resolve(data); to fulfull the promise or
+      // Do deferred.resolve(data); to fulfill the promise or
       // deferred.reject(error); to reject it.
 
       return deferred.promise;
@@ -86,7 +86,7 @@ The following example details how to embed the API Designer:
       var deferred = $q.defer();
 
       // Your magic goes here:
-      // Do deferred.resolve(data); to fulfull the promise or
+      // Do deferred.resolve(data); to fulfill the promise or
       // deferred.reject(error); to reject it.
 
       return deferred.promise;
@@ -96,7 +96,7 @@ The following example details how to embed the API Designer:
       var deferred = $q.defer();
 
       // Your magic goes here:
-      // Do deferred.resolve(data); to fulfull the promise or
+      // Do deferred.resolve(data); to fulfill the promise or
       // deferred.reject(error); to reject it.
 
       return deferred.promise;
