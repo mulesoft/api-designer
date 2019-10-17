@@ -520,9 +520,14 @@
 
       service.loadMeta = function loadMeta(file) {
         var metaFile = new RamlFile(file.path + '.meta');
+        //var metaFile = new RamlFile(file.path);
         return service.loadFile(metaFile).then(
-          function success(file) {
-            return JSON.parse(file.contents);
+          //function success(file) {
+          function success() {
+            //return JSON.parse(file.contents);
+            // pour le moment on ne traite pas les meta
+            //return {};
+            return { key: 'value' };
           },
 
           function failure() {
