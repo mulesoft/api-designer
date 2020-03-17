@@ -19,10 +19,11 @@ There is an online preview version of the API Designer, check it out a [differen
 ```
 npm install -g api-designer
 
-api-designer
+api-designer --port=3000 --open-browser=true
 ```
 
 This will start a local designer instance using the in-browser filesystem.
+This example shows the default values for `--port` and `--open-browser`
 
 ## Embedding
 
@@ -42,7 +43,7 @@ The following example details how to embed the API Designer:
 <script src="scripts/api-designer-parser.js"></script>
 <script>
   if (window.Worker) {
-    // enable optional web worker for raml parsing 
+    // enable optional web worker for raml parsing
     window.RAML.worker = new Worker('scripts/api-designer-worker.js#parser=./api-designer-parser.js&proxy=/proxy/');
   }
 </script>
