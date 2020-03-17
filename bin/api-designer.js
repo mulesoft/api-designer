@@ -13,6 +13,12 @@ var argv = require('yargs')
     describe: 'Port number to run the API designer',
     type: 'number'
   })
+  .option('o', {
+    alias: 'open-browser',
+    default: true,
+    describe: 'Automatically open the browser when server starts',
+    type: 'boolean'
+  })
   .argv
 
 var app = express()
@@ -21,7 +27,7 @@ app.use(express.static(join(__dirname, '../dist')))
 
 app.use('/proxy', function (req, res, next) {
   if (req.method.toUpperCase() === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Origin',  '*')
+    res.setHeader('Access-Control-Allow-Origin', '*')
     res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With')
     return next()
   }
@@ -40,7 +46,7 @@ app.use('/proxy', function (req, res, next) {
   // Workaround for some remote services that do not handle
   // multi-valued Accept header properly by omitting precedence
   if (req.headers.accept) {
-    req.headers.accept = req.headers.accept.split(',')[0].trim()
+    req.headers.accept = req.headers.accept.split(',')[ 0 ].trim()
   }
 
   // Pipe the request data directly into the proxy request and back to the
@@ -52,5 +58,7 @@ app.use('/proxy', function (req, res, next) {
 app.listen(argv.p, function () {
   console.log('API designer running on port ' + argv.p + '...')
 
-  open('http://localhost:' + argv.p + '/')
+  if (argv.o) {
+    open('http://localhost:' + argv.p + '/')
+  }
 })
