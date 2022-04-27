@@ -30,7 +30,7 @@
     "babelify": "^7.3.0",
     "chai": "~1.10.0",
     "connect-livereload": "~0.3.2",
-    "grunt": "~0.4.5",
+    "grunt": "~1.5.2",
     "grunt-angular-templates": "~0.4.7",
     "grunt-autoprefixer": "~0.6.4",
     "grunt-browserify": "~4.0.1",
