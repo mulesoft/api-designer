@@ -49,7 +49,7 @@ module.exports = function(config) {
       'bower_components/angular-marked/angular-marked.js',
       'bower_components/angular-highlightjs/angular-highlightjs.js',
       'bower_components/api-console/dist/scripts/api-console.js',
-      'bower_components/file-saver.js/FileSaver.js',
+      'bower_components/file-saver.js/dist/FileSaver.js',
       'bower_components/json-schema-ref-parser/dist/ref-parser.js',
 
       'bower_components/angular-mocks/angular-mocks.js',
