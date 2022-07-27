@@ -14,7 +14,7 @@
     "es5-shim": "~2.3.0",
     "file-saver.js": "https://github.com/eligrey/FileSaver.js.git#2.0.4",
     "font-awesome": "~4.0.3",
-    "json-schema-ref-parser": "xaka/json-schema-ref-parser#v2.2.1",
+    "json-schema-ref-parser": "https://github.com/xaka/json-schema-ref-parser.git#v2.2.1",
     "jszip": "~2.0.0",
     "promise-polyfill": "~6.0.2",
     "crypto-js": "https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/crypto-js/CryptoJS%20v3.1.2.zip",
