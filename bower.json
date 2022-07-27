@@ -21,7 +21,6 @@
     "js-polyfills": "0.1.42"
   },
   "devDependencies": {
-    "sinonjs": "~1.7.1",
     "angular-mocks": ">=1.2.0 <1.4.0"
   },
   "resolutions": {
