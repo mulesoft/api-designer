@@ -12,7 +12,7 @@
     "angular-ui-tree": "2.1.5",
     "api-console": "https://github.com/mulesoft/api-console.git#v3.0.34",
     "es5-shim": "~2.3.0",
-    "file-saver.js": "https://github.com/eligrey/FileSaver.js.git#2.0.4",
+    "file-saver.js": "https://github.com/eligrey/FileSaver.js.git",
     "font-awesome": "~4.0.3",
     "json-schema-ref-parser": "https://github.com/xaka/json-schema-ref-parser.git#v2.2.1",
     "jszip": "~2.0.0",
