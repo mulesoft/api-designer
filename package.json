@@ -16,7 +16,7 @@
   ],
   "license": "CPAL 1.0",
   "dependencies": {
-    "express": "~4.12.4",
+    "express": "~4.17.3",
     "open": "0.0.5",
     "raml-suggestions": "0.0.53",
     "request": "~2.33.0",
