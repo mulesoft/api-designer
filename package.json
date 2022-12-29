@@ -27,7 +27,7 @@
     "browserify-global-shim": "^1.0.3",
     "babel-preset-flow": "^6.23.0",
     "babel-preset-latest": "^6.16.0",
-    "babelify": "^7.3.0",
+    "babelify": "^10.0.0",
     "chai": "~1.10.0",
     "connect-livereload": "~0.3.2",
     "grunt": "~0.4.5",
